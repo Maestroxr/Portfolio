@@ -1,0 +1,212 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &3476957050540418157
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3476957050540418159}
+  - component: {fileID: 3476957050540418156}
+  - component: {fileID: 3476957050540418153}
+  - component: {fileID: 3476957050540418158}
+  - component: {fileID: 3476957050540418152}
+  - component: {fileID: 2065626874}
+  m_Layer: 0
+  m_Name: GameManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3476957050540418159
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3476957050540418157}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3476957050540418156
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3476957050540418157}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1adf81af5f3ff141af0de2238c3a486, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  UsingDefaultSettings: 1
+  GameState: 0
+  StorageBehaviour: {fileID: 3476957050540418153}
+  CardsCacheBehaviour: {fileID: 3476957050540418158}
+  CardLineCacheBehaviour: {fileID: 3476957050540418152}
+  DefaultSettings: {fileID: 11400000, guid: 85fb9ecd92c6c8845b7127701f1b5530, type: 2}
+  CustomSettings: {fileID: 11400000, guid: a02296c8f39402345b70534f35349e05, type: 2}
+  CurrentGameSettings: {fileID: 11400000, guid: 830ff3f132e11184f9ce9fd4c35b4499,
+    type: 2}
+  CardsPanel: {fileID: 0}
+  GameUI: {fileID: 0}
+  SettingsUI: {fileID: 0}
+  Audio: {fileID: 2065626874}
+  VictoryAudio: {fileID: 8300000, guid: 337fe1619fc884d92806e0b16b427b3e, type: 3}
+  GameOverAudio: {fileID: 8300000, guid: 0b3e5bdccd22242cab2df15c33af91fb, type: 3}
+  GameRunningAudio: {fileID: 8300000, guid: 957aeaf862aae481895bfbc37033041a, type: 3}
+  Settings: {fileID: 0}
+  PlayerScore: 0
+  Timer: 0
+  CardRectSize: {x: 80, y: 110}
+--- !u!114 &3476957050540418153
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3476957050540418157}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 78c40d923ebcdd9429708e69d754ff63, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  DefaultStorageStrategy: 0
+--- !u!114 &3476957050540418158
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3476957050540418157}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af117dbf206bae048a7937f5dfbe0dc0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  MaxSize: 200
+  Instance: {fileID: 7611503959671437951, guid: 19a34158d09b46a4ab1a1f61eb8cedd0,
+    type: 3}
+  DeployedParent: {fileID: 0}
+  UndeployedParent: {fileID: 0}
+--- !u!114 &3476957050540418152
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3476957050540418157}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53c733d49c24d72419bd1354c25e0579, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  MaxSize: 50
+  Instance: {fileID: 3338818751398109209, guid: 315902f9ecb2ab74db1d0c401237fa72,
+    type: 3}
+  DeployedParent: {fileID: 0}
+  UndeployedParent: {fileID: 0}
+--- !u!82 &2065626874
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3476957050540418157}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_PlayOnAwake: 1
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4

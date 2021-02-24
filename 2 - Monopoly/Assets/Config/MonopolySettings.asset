@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9753a2787ecb3824b879b02e927f855b, type: 3}
+  m_Name: MonopolySettings
+  m_EditorClassIdentifier: 
+  board: {fileID: 11400000, guid: 4dfd305af3e53644aa3f4fede22f4ab8, type: 2}
+  maxPlayers: 2
+  PlayerPrefab: {fileID: 6224361311072987631, guid: eb1de7269df6407408f46e504aae01ca, type: 3}
+  initialPlayerLocation: 0
+  <InitialPlayerMoney>k__BackingField: 100
+  diceRollTime: 2
+  diceRollChangeValueTime: 0.2
+  playerMoveTime: 0.5
