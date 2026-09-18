@@ -1,8 +1,8 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+using Gamebox;
 
-public class CollidableCache : Cache<Collidable>
+namespace Portfolio.EndlessRunner
 {
-
+    public class CollidableCache : PrefabPool<Collidable>
+    {
+    }
 }

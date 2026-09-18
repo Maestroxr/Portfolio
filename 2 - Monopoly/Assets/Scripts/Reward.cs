@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+namespace Portfolio.Monopoly
+{
+
 [CreateAssetMenu(fileName = "Reward", menuName = "Monopoly/Reward", order = 1)]
 public class Reward : ScriptableObject
 {
@@ -60,4 +63,6 @@ public class Reward : ScriptableObject
         error = null;
         return true;
     }
+}
+
 }

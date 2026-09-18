@@ -1,16 +1,17 @@
-﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-public class Playground : MonoBehaviour
+namespace Portfolio.Asteroids
 {
-    
-    [field: SerializeField]
-    public Vector3 Middle { get; private set; }
-    [field: SerializeField]
-    public Vector3 Margin { get; private set; }
-    public Vector3 Size => playroundMesh.bounds.size;
+    /// <summary>The wrapping playfield: its middle, size (from the mesh bounds) and the margin objects wrap at.</summary>
+    public class Playground : MonoBehaviour
+    {
+        [field: SerializeField]
+        public Vector3 Middle { get; private set; }
+        [field: SerializeField]
+        public Vector3 Margin { get; private set; }
+        public Vector3 Size => playroundMesh.bounds.size;
 
-    [SerializeField]
-    private MeshRenderer playroundMesh;
+        [SerializeField]
+        private MeshRenderer playroundMesh;
+    }
 }

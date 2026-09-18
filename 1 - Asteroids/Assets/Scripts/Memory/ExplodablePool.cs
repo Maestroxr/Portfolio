@@ -1,9 +1,8 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-namespace Portfolio
+using Gamebox;
+
+namespace Portfolio.Asteroids
 {
-    public class ExplodablePool : Cache<Explodable>
+    public class ExplodablePool : PrefabPool<Explodable>
     {
     }
 }

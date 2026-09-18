@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Portfolio
+namespace Portfolio.Asteroids
 {
     /// <summary>
     /// Decoupler for MonoBehaviours to pure C# classes.

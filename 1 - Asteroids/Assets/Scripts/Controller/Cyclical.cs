@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Portfolio
+namespace Portfolio.Asteroids
 {
     /// <summary>
     /// Generic component which adds cyclical behaviour to objects that

@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-namespace Portfolio
+namespace Portfolio.Asteroids
 {
     /// <summary>
     /// Base class to add to anything that might be shot.

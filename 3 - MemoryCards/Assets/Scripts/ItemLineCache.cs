@@ -1,11 +1,9 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+using Gamebox;
 using UnityEngine.UI;
-namespace Portfolio
-{
-    public class ItemLineCache : Cache<HorizontalLayoutGroup>
-    {
 
+namespace Portfolio.MemoryCards
+{
+    public class ItemLineCache : PrefabPool<HorizontalLayoutGroup>
+    {
     }
 }

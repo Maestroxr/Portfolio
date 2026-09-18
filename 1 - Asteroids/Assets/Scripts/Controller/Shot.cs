@@ -1,17 +1,17 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+using System.Collections;
 using UnityEngine;
-namespace Portfolio
+
+namespace Portfolio.Asteroids
 {
     /// <summary>
     /// Base class for anything that might hit a Shootable as a shot.
-    /// Register to ShotHitEvent in ordder to know when a shot hit something.
+    /// Register to ShotHitEvent in order to know when a shot hit something.
     /// </summary>
     public class Shot : MonoBehaviour
     {
         public delegate void ShotHit(Shot shot, GameObject objectHit);
         public event ShotHit ShotHitEvent;
-        public Player FiredBy;
+        public AsteroidsPlayer FiredBy;
         public float TimeAlive;
 
         private Coroutine enforceTimeAlive;

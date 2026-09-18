@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Portfolio
+namespace Portfolio.Asteroids
 {
     [CreateAssetMenu(fileName = "Loot", menuName = "Asteroids/Loot", order = 1)]
     public class Loot : ScriptableObject

@@ -1,33 +1,36 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
-public class AssetTile : Tile
+namespace Portfolio.Monopoly
 {
-    public Asset Asset { get; private set; }
-
-
-    public void InitAsset(Asset asset)
+    public class AssetTile : Tile
     {
-        Asset = asset;
-    }
+        public Asset Asset { get; private set; }
 
 
-    public override void PlayerVisit(Player player)
-    {
-        base.PlayerVisit(player);
-        if (Asset.OwningPlayer != null)
+        public void InitAsset(Asset asset)
         {
-            if (Asset.OwningPlayer.PlayerId != player.PlayerId)
-            {
-                player.PayFine(Asset);
-            }
+            Asset = asset;
         }
-        else
+
+
+        public override void PlayerVisit(MonopolyPlayer player)
         {
-            if (player.CanBuyAsset(Asset))
+            base.PlayerVisit(player);
+            if (Asset == null)
             {
-                player.BuyAsset(Asset);
+                return;
+            }
+            if (Asset.OwningPlayer != null)
+            {
+                if (Asset.OwningPlayer.PlayerId != player.PlayerId)
+                {
+                    player.PayFine(Asset);
+                }
+            }
+            else
+            {
+                if (player.CanBuyAsset(Asset))
+                {
+                    player.BuyAsset(Asset);
+                }
             }
         }
     }

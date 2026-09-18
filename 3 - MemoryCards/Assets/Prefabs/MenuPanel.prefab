@@ -196,18 +196,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1013842534}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 0}
-        m_MethodName: Exit
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!1 &5593927868580356213
 GameObject:
   m_ObjectHideFlags: 0
@@ -623,18 +612,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 6591834850185922487}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 0}
-        m_MethodName: SwitchCustomDefaultSettings
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!1 &6591834850272836274
 GameObject:
   m_ObjectHideFlags: 0
@@ -1398,7 +1376,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 88c34ad337fb7cc4882ff8d6be481a95, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SettingsUI: {fileID: 6591834850636398671}
+  GameSettingsUI: {fileID: 6591834850636398671}
   MenuButtonsUI: {fileID: 6591834850610031694}
   Score: {fileID: 0}
   Timer: {fileID: 0}
@@ -1576,7 +1554,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5ad7f02d96ea7db4aafc23e44f0b94a9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  CustomSettingsButtonText: {fileID: 6591834851049205035}
+  customSettingsButtonText: {fileID: 6591834851049205035}
   SaveSettingsButton: {fileID: 6591834851244822020}
   LoadSettingsButton: {fileID: 6591834851450028395}
   CardsAmount: {fileID: 6591834850132375861}
@@ -1860,18 +1838,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 6591834850852482298}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 0}
-        m_MethodName: ReturnToGame
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!1 &6591834850908297495
 GameObject:
   m_ObjectHideFlags: 0
@@ -2146,18 +2113,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 6591834851025416386}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 6591834850591158524}
-        m_MethodName: HideSettings
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!1 &6591834851047612272
 GameObject:
   m_ObjectHideFlags: 0
@@ -2511,18 +2467,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 6591834851077836418}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 6591834850591158524}
-        m_MethodName: ShowSettings
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!1 &6591834851091413755
 GameObject:
   m_ObjectHideFlags: 0
@@ -2860,18 +2805,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 6591834851183729541}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 0}
-        m_MethodName: LoadGame
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!1 &6591834851244822018
 GameObject:
   m_ObjectHideFlags: 0
@@ -2990,18 +2924,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 6591834851244822021}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 0}
-        m_MethodName: SaveSettings
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!1 &6591834851275020209
 GameObject:
   m_ObjectHideFlags: 0
@@ -3432,18 +3355,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 6591834851450028396}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 0}
-        m_MethodName: LoadSettings
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!1 &6591834851629678310
 GameObject:
   m_ObjectHideFlags: 0
@@ -4093,18 +4005,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 6591834851957034717}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 0}
-        m_MethodName: StartNewGame
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!1 &6591834852015764448
 GameObject:
   m_ObjectHideFlags: 0
@@ -4457,18 +4358,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 6591834852162637507}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 0}
-        m_MethodName: SaveGame
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!1 &6591834852194367982
 GameObject:
   m_ObjectHideFlags: 0

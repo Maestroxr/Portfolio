@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Portfolio
+namespace Portfolio.MemoryCards
 {
     public enum FlippableState { Hidden, Flipped, Matched }
     /// <summary>

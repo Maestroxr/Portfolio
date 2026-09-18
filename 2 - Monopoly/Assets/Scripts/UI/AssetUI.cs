@@ -1,36 +1,45 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
 using UnityEngine.UI;
 
-public class AssetUI : TileUI  
+namespace Portfolio.Monopoly
 {
-    public Image AssetImage;
-    
-    private AssetTile assetTile;
-
-
-    // Start is called before the first frame update
-    public override void Start()
+    public class AssetUI : TileUI
     {
-        base.Start();
-        assetTile = GetComponent<AssetTile>();
-        assetTile.Asset.OwnershipChangedEvent += AssetChangedOwnership;
-        AssetImage.sprite = monopolyUI.AssetFree;
-    }
+        public Image AssetImage;
+
+        private AssetTile assetTile;
 
 
-    public void AssetChangedOwnership(Player newOwner, Player oldOwner)
-    {
-        if (newOwner != null)
+        // Start is called before the first frame update
+        public override void Start()
         {
-        AssetImage.sprite = monopolyUI.AssetOwnedSprites[newOwner.PlayerId];
-
+            base.Start();
+            assetTile = GetComponent<AssetTile>();
+            if (assetTile != null && assetTile.Asset != null)
+            {
+                assetTile.Asset.OwnershipChangedEvent += AssetChangedOwnership;
+                AssetChangedOwnership(assetTile.Asset.OwningPlayer, null);
+            }
+            else if (AssetImage != null && monopolyUI != null)
+            {
+                AssetImage.sprite = monopolyUI.AssetFree;
+            }
         }
-        else
+
+
+        public void AssetChangedOwnership(MonopolyPlayer newOwner, MonopolyPlayer oldOwner)
         {
-            AssetImage.sprite = monopolyUI.AssetFree;
+            if (AssetImage == null || monopolyUI == null)
+            {
+                return;
+            }
+            if (newOwner != null && monopolyUI.AssetOwnedSprites.TryGetValue(newOwner.PlayerId, out var sprite))
+            {
+                AssetImage.sprite = sprite;
+            }
+            else
+            {
+                AssetImage.sprite = monopolyUI.AssetFree;
+            }
         }
     }
 }

@@ -1,68 +1,79 @@
-﻿using System;
-using System.Collections;
 using System.Collections.Generic;
+using Gamebox;
+using Gamebox.UI;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Portfolio
+namespace Portfolio.Asteroids
 {
     /// <summary>
-    /// Main UI class for dealing with asteroids context UI behaviour.
+    /// HUD and menu of the Asteroids module. The per-player score and health bars are the game's own; the menu
+    /// buttons and texts come from the shared base game menu prefab and are wired through <see cref="GameUI"/>.
     /// </summary>
-    public class AsteroidsUI : MonoBehaviour
+    public class AsteroidsUI : GameUI
     {
         [SerializeField]
-        private Asteroids asteroids;
-        [SerializeField]
-        private List<PlayerUI> playerUIs;
-        private List<Player> players;
+        private List<PlayerUI> playerUIs = new List<PlayerUI>();
         [SerializeField]
         private Text gameOver;
-        [SerializeField]
-        private Button reset, save, load;
 
-        void Awake()
+        private AsteroidsGameManager Asteroids => Manager as AsteroidsGameManager;
+
+
+        protected override void Awake()
         {
-            players = asteroids.Players;
+            base.Awake();
+            if (Asteroids == null)
+            {
+                Debug.LogWarning("AsteroidsUI has no AsteroidsGameManager assigned; player HUDs stay unbound.", this);
+                return;
+            }
+            List<AsteroidsPlayer> players = Asteroids.AsteroidPlayers;
             if (players.Count != playerUIs.Count)
             {
-                throw new ArgumentException($"Player controllers{players.Count} and views{playerUIs.Count} amounts are not equal");
+                Debug.LogWarning($"Player controllers {players.Count} and views {playerUIs.Count} amounts are not equal", this);
             }
-            for (int i = 0; i < players.Count; i++)
+            for (int i = 0; i < players.Count && i < playerUIs.Count; i++)
             {
                 playerUIs[i].Setup(players[i]);
             }
-            asteroids.StateChangedEvent += GameStateChanged;
+            Asteroids.StateChangedEvent += GameStateChanged;
         }
 
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.F1))
+            if (Input.GetKeyDown(KeyCode.F1) && StartNewGame != null)
             {
-                reset.onClick.Invoke();
+                StartNewGame.onClick.Invoke();
             }
-            if (Input.GetKeyDown(KeyCode.F4))
+            if (Input.GetKeyDown(KeyCode.F4) && SaveGame != null)
             {
-                save.onClick.Invoke();
+                SaveGame.onClick.Invoke();
             }
-            if (Input.GetKeyDown(KeyCode.F5))
+            if (Input.GetKeyDown(KeyCode.F5) && LoadGame != null)
             {
-                load.onClick.Invoke();
+                LoadGame.onClick.Invoke();
             }
         }
 
 
-        void GameStateChanged(GameState state)
+        private void GameStateChanged(BaseGameState state)
         {
             switch (state)
             {
-                case GameState.Over:
-                    gameOver.gameObject.SetActive(true);
+                case BaseGameState.GameOver:
+                    if (gameOver != null)
+                    {
+                        gameOver.gameObject.SetActive(true);
+                    }
                     break;
-                case GameState.Run:
+                case BaseGameState.Running:
                     playerUIs.ForEach(playerUI => playerUI.ResetHealth());
-                    gameOver.gameObject.SetActive(false);
+                    if (gameOver != null)
+                    {
+                        gameOver.gameObject.SetActive(false);
+                    }
                     break;
             }
         }

@@ -1,8 +1,7 @@
-﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-namespace Portfolio
+
+namespace Portfolio.Asteroids
 {
     public class PlayerUI : MonoBehaviour
     {
@@ -13,30 +12,38 @@ namespace Portfolio
         private float playerStartingHealth;
 
 
-        public void Setup(Player player)
+        public void Setup(AsteroidsPlayer player)
         {
             player.PointsChangedEvent += OnPointsChanged;
             player.HealthChangedEvent += OnHealthChanged;
-            playerStartingHealth = player.PlayerSettings.StartingLife;
-
+            playerStartingHealth = player.PlayerSettings != null ? player.PlayerSettings.StartingLife : 1f;
         }
 
 
         private void OnPointsChanged(int amount)
         {
-            points.text = $"Score\n{amount}";
+            if (points != null)
+            {
+                points.text = $"Score\n{amount}";
+            }
         }
 
 
         private void OnHealthChanged(float amount)
         {
-            health.BarValue = amount * 100 / playerStartingHealth ;
+            if (health != null && playerStartingHealth > 0f)
+            {
+                health.BarValue = amount * 100 / playerStartingHealth;
+            }
         }
 
 
         public void ResetHealth()
         {
-            health.enabled = true;
+            if (health != null)
+            {
+                health.enabled = true;
+            }
         }
     }
 }

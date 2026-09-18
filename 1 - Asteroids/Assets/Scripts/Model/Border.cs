@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Portfolio
+namespace Portfolio.Asteroids
 {
     public enum Boundary { Upper, Lower, Left, Right }
     public class Border : MonoBehaviour

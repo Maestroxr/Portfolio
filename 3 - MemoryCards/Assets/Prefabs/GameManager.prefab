@@ -47,26 +47,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d1adf81af5f3ff141af0de2238c3a486, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  UsingDefaultSettings: 1
-  GameState: 0
+  usingDefaultSettings: 1
   StorageBehaviour: {fileID: 3476957050540418153}
   CardsCacheBehaviour: {fileID: 3476957050540418158}
   CardLineCacheBehaviour: {fileID: 3476957050540418152}
-  DefaultSettings: {fileID: 11400000, guid: 85fb9ecd92c6c8845b7127701f1b5530, type: 2}
-  CustomSettings: {fileID: 11400000, guid: a02296c8f39402345b70534f35349e05, type: 2}
-  CurrentGameSettings: {fileID: 11400000, guid: 830ff3f132e11184f9ce9fd4c35b4499,
+  defaultSettings: {fileID: 11400000, guid: 85fb9ecd92c6c8845b7127701f1b5530, type: 2}
+  customSettings: {fileID: 11400000, guid: a02296c8f39402345b70534f35349e05, type: 2}
+  currentGameSettings: {fileID: 11400000, guid: 830ff3f132e11184f9ce9fd4c35b4499,
     type: 2}
   CardsPanel: {fileID: 0}
-  GameUI: {fileID: 0}
-  SettingsUI: {fileID: 0}
+  gameUI: {fileID: 0}
+  settingsUI: {fileID: 0}
   Audio: {fileID: 2065626874}
   VictoryAudio: {fileID: 8300000, guid: 337fe1619fc884d92806e0b16b427b3e, type: 3}
   GameOverAudio: {fileID: 8300000, guid: 0b3e5bdccd22242cab2df15c33af91fb, type: 3}
   GameRunningAudio: {fileID: 8300000, guid: 957aeaf862aae481895bfbc37033041a, type: 3}
-  Settings: {fileID: 0}
-  PlayerScore: 0
+  settings: {fileID: 0}
   Timer: 0
   CardRectSize: {x: 80, y: 110}
+  isAuthoritative: 1
+  GameIdentifier: 3
+  campaign: {fileID: 11400000, guid: 258b367eb2f34d378455aa5db377cf45, type: 2}
 --- !u!114 &3476957050540418153
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -76,7 +77,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 3476957050540418157}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 78c40d923ebcdd9429708e69d754ff63, type: 3}
+  m_Script: {fileID: 11500000, guid: b83dabb736d1e25449c8a540428d75f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   DefaultStorageStrategy: 0

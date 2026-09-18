@@ -1,10 +1,8 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+using Gamebox;
 
-namespace Portfolio
+namespace Portfolio.Asteroids
 {
-    public class ShotPool : Cache<Shot>
+    public class ShotPool : PrefabPool<Shot>
     {
     }
 }

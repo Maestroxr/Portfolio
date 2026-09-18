@@ -1,17 +1,23 @@
-﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-public class Collidable : MonoBehaviour
+namespace Portfolio.EndlessRunner
 {
-    public Manager GameManager { private get; set; }
-    public TerrainBehaviour BelongedTerrain { get; set; }
-
-
-    private void OnTriggerEnter(Collider other)
+    public class Collidable : MonoBehaviour
     {
-        GameManager.ObjectCollided(this);
+        public RunnerGameManager GameManager { private get; set; }
+        public TerrainBehaviour BelongedTerrain { get; set; }
 
-        BelongedTerrain.Collidables.Remove(this);
+
+        private void OnTriggerEnter(Collider other)
+        {
+            if (GameManager != null)
+            {
+                GameManager.ObjectCollided(this);
+            }
+            if (BelongedTerrain != null)
+            {
+                BelongedTerrain.Collidables.Remove(this);
+            }
+        }
     }
 }

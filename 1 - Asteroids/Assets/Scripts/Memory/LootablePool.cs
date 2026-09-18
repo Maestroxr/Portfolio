@@ -1,7 +1,8 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-namespace Portfolio
+using Gamebox;
+
+namespace Portfolio.Asteroids
 {
-    public class LootablePool : Cache<Lootable>, ICache<Lootable> { }
+    public class LootablePool : PrefabPool<Lootable>
+    {
+    }
 }

@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-namespace Portfolio
+namespace Portfolio.Asteroids
 {
     // Solely created for changing appearance of text
     public class HealthBar : ProgressBar

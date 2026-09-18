@@ -1,25 +1,26 @@
-﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-public class Dice : MonoBehaviour
+namespace Portfolio.Monopoly
 {
-    public delegate void DieRolling(float seconds);
-    public event DieRolling DieRollingEvent;
-    public delegate void DieCast(int reuslt);
-    public event DieCast DieCastEvent;
-
-
-    public void RollDie(float rollForSeconds)
+    public class Dice : MonoBehaviour
     {
-        DieRollingEvent(rollForSeconds);
-    }
+        public delegate void DieRolling(float seconds);
+        public event DieRolling DieRollingEvent;
+        public delegate void DieCast(int reuslt);
+        public event DieCast DieCastEvent;
 
 
-    public int CastDie()
-    {
-        int result = Random.Range(1, 6);
-        DieCastEvent(result);
-        return result;
+        public void RollDie(float rollForSeconds)
+        {
+            DieRollingEvent?.Invoke(rollForSeconds);
+        }
+
+
+        public int CastDie()
+        {
+            int result = Random.Range(1, 7);
+            DieCastEvent?.Invoke(result);
+            return result;
+        }
     }
 }

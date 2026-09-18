@@ -1,9 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
-namespace Portfolio
+namespace Portfolio.Asteroids
 {
-    public class CyclicalPlayer : Cyclical<Player> { }
+    public class CyclicalPlayer : Cyclical<AsteroidsPlayer> { }
 }
-

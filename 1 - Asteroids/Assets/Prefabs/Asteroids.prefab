@@ -47,15 +47,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e620d1b81389bfa4abbf5f7b3bcba336, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Settings: {fileID: 11400000, guid: f8f447d623215824aac7e5ebbfc90a41, type: 2}
-  <Players>k__BackingField:
+  asteroidSettings: {fileID: 11400000, guid: f8f447d623215824aac7e5ebbfc90a41, type: 2}
+  PlayerList:
   - {fileID: 3610180467575513460}
   Playground: {fileID: 0}
-  storage: {fileID: 261845502}
+  StorageBehaviour: {fileID: 261845502}
   rewardParent: {fileID: 0}
   shots: {fileID: 2620353933331550631}
   lootables: {fileID: 8112802013049165212}
   explodables: {fileID: 8923257903666973927}
+  isAuthoritative: 1
+  GameIdentifier: 1
+  usingDefaultSettings: 1
+  campaign: {fileID: 11400000, guid: 846587f456494c14b83344ebb5f6253b, type: 2}
 --- !u!114 &261845502
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -65,7 +69,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 137864587232889261}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 78c40d923ebcdd9429708e69d754ff63, type: 3}
+  m_Script: {fileID: 11500000, guid: b83dabb736d1e25449c8a540428d75f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   DefaultStorageStrategy: 0

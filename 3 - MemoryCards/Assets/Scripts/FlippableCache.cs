@@ -1,9 +1,8 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-namespace Portfolio
+using Gamebox;
+
+namespace Portfolio.MemoryCards
 {
-    public class FlippableCache : Cache<Flippable>
+    public class FlippableCache : PrefabPool<Flippable>
     {
     }
 }

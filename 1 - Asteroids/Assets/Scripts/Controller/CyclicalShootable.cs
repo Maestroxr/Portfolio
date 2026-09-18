@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Portfolio
+namespace Portfolio.Asteroids
 {
     //To be able to add as component
     public class CyclicalShootable : Cyclical<Shootable>

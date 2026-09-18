@@ -1,97 +1,157 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using Gamebox.UI;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class MonopolyUI : MonoBehaviour
+namespace Portfolio.Monopoly
 {
-    public Sprite AssetFree => assetFree;
-    public Dictionary<PlayerId, Sprite> AssetOwnedSprites { get; private set; } = new Dictionary<PlayerId, Sprite>();
-    public Dictionary<PlayerId, Image> PlayerInTileImages { get; private set; } = new Dictionary<PlayerId, Image>();
-    public MonopolySettings Settings { get; private set; }
-
-    [SerializeField] private Monopoly monopoly;
-    [SerializeField] private List<PlayerUI> playerUIs;
-    [SerializeField] private Dice dice;
-    [SerializeField] private List<Sprite> diceValues;
-    [SerializeField] private Image DiceImage;
-    [SerializeField] private List<Image> playerInTileImagesList;
-    [SerializeField] private List<Sprite> assetOwnedSpritesList;
-    [SerializeField] private Sprite assetFree;
-    [SerializeField] private Text playerHeaderDialog;
-    [SerializeField] private Text playerBodyDialog;
-    [SerializeField] private AudioSource audioSource;
-    [SerializeField] private AudioClip diceSound;
-    [SerializeField] private AudioClip playerMoveSound;
-    
-    private Coroutine diceRolling;
-    private float diceRollChangeImageTime;
-    private float playerMoveTime;
-
-
-    void Awake()
+    /// <summary>
+    /// Board UI of the Monopoly module: dice animation, player tokens, dialogs and sounds. The shared menu
+    /// (start, save, load, settings, exit) is wired through the <see cref="GameUI"/> base.
+    /// </summary>
+    public class MonopolyUI : GameUI
     {
-        Settings = monopoly.Settings;
-        monopoly.PlayerMovedEvent += PlayerMoved;
-        for (int i = 0; i < monopoly.Settings.MaxPlayers; i++)
+        public Sprite AssetFree => assetFree;
+        public Dictionary<PlayerId, Sprite> AssetOwnedSprites { get; private set; } = new Dictionary<PlayerId, Sprite>();
+        public Dictionary<PlayerId, Image> PlayerInTileImages { get; private set; } = new Dictionary<PlayerId, Image>();
+        public MonopolySettings Settings => Monopoly != null ? Monopoly.MonopolySettings : null;
+
+        [SerializeField] private List<PlayerUI> playerUIs;
+        [SerializeField] private Dice dice;
+        [SerializeField] private List<Sprite> diceValues;
+        [SerializeField] private Image DiceImage;
+        [SerializeField] private List<Image> playerInTileImagesList;
+        [SerializeField] private List<Sprite> assetOwnedSpritesList;
+        [SerializeField] private Sprite assetFree;
+        [SerializeField] private Text playerHeaderDialog;
+        [SerializeField] private Text playerBodyDialog;
+        [SerializeField] private AudioSource audioSource;
+        [SerializeField] private AudioClip diceSound;
+        [SerializeField] private AudioClip playerMoveSound;
+
+        private Coroutine diceRolling;
+
+        public MonopolyGameManager Monopoly => Manager as MonopolyGameManager;
+
+
+        protected override void Awake()
         {
-            PlayerId playerId = (PlayerId)i + 1;
-            AssetOwnedSprites.Add(playerId, assetOwnedSpritesList[i]);
-            PlayerInTileImages.Add(playerId, playerInTileImagesList[i]);
-            monopoly.NowPlayingEvent += playerUIs[i].NowPlaying;
+            base.Awake();
+            if (Monopoly == null)
+            {
+                Debug.LogError("MonopolyUI has no MonopolyGameManager assigned.", this);
+                return;
+            }
+            Monopoly.PlayerMovedEvent += PlayerMoved;
+            Monopoly.PlayerResetEvent += PlayerReset;
+            MonopolySettings settings = Monopoly.MonopolySettings;
+            for (int i = 0; i < settings.MaxPlayers; i++)
+            {
+                PlayerId playerId = (PlayerId)i + 1;
+                if (i < assetOwnedSpritesList.Count)
+                {
+                    AssetOwnedSprites[playerId] = assetOwnedSpritesList[i];
+                }
+                if (i < playerInTileImagesList.Count)
+                {
+                    PlayerInTileImages[playerId] = playerInTileImagesList[i];
+                }
+                if (i < playerUIs.Count)
+                {
+                    Monopoly.NowPlayingEvent += playerUIs[i].NowPlaying;
+                }
+            }
+
+            if (dice != null)
+            {
+                dice.DieRollingEvent += DieRolling;
+                dice.DieCastEvent += DieCast;
+            }
         }
 
-        dice.DieRollingEvent += DieRolling;
-        dice.DieCastEvent += DieCast;
 
-        diceRollChangeImageTime = Settings.DiceRollChangeValueTime;
-        playerMoveTime = Settings.PlayerMoveTime;
-    }
-
-
-    public void DisplayPlayerDialog(string header, string body)
-    {
-        playerHeaderDialog.text = header;
-        playerBodyDialog.text = body;
-    }
-
-
-    private void PlayerMoved(Player player)
-    {
-        audioSource.clip = playerMoveSound;
-        audioSource.time = Math.Max(1, playerMoveSound.length - playerMoveTime * player.DistanceFromLastLocation() - 1);
-        audioSource.Play();
-    }
-
-
-    private void DieRolling(float rollForSeconds)
-    {
-        diceRolling = StartCoroutine(AnimateDice(rollForSeconds));
-        audioSource.clip = diceSound;
-        audioSource.time = 0;
-        audioSource.Play();
-    }
-
-
-    private IEnumerator AnimateDice(float rollForSeconds)
-    {
-        while (rollForSeconds > 0)
+        public void DisplayPlayerDialog(string header, string body)
         {
-            int dieValue = UnityEngine.Random.Range(1, 6);
-            DiceImage.sprite = diceValues[dieValue];
-            yield return new WaitForSeconds(diceRollChangeImageTime);
-            rollForSeconds -= diceRollChangeImageTime;
+            if (playerHeaderDialog != null)
+            {
+                playerHeaderDialog.text = header;
+            }
+            if (playerBodyDialog != null)
+            {
+                playerBodyDialog.text = body;
+            }
         }
-    }
 
 
-    private void DieCast(int result)
-    {
-        if (diceRolling != null)
+        /// <summary>Puts the token of <paramref name="player"/> on <paramref name="tile"/> without animating it.</summary>
+        public void PlaceToken(MonopolyPlayer player, Tile tile)
         {
-            StopCoroutine(diceRolling);
+            if (tile == null || !PlayerInTileImages.TryGetValue(player.PlayerId, out Image token))
+            {
+                return;
+            }
+            token.transform.SetParent(tile.transform, false);
+            token.transform.rotation = Quaternion.LookRotation(Vector3.forward);
+            token.gameObject.SetActive(true);
         }
-        DiceImage.sprite = diceValues[result - 1];
+
+
+        private void PlayerReset(MonopolyPlayer player)
+        {
+            PlaceToken(player, Monopoly.GetTile(player.Location));
+        }
+
+
+        private void PlayerMoved(MonopolyPlayer player)
+        {
+            if (audioSource == null || playerMoveSound == null)
+            {
+                return;
+            }
+            float playerMoveTime = Settings != null ? Settings.PlayerMoveTime : 0f;
+            audioSource.clip = playerMoveSound;
+            audioSource.time = Math.Max(1, playerMoveSound.length - playerMoveTime * player.DistanceFromLastLocation() - 1);
+            audioSource.Play();
+        }
+
+
+        private void DieRolling(float rollForSeconds)
+        {
+            diceRolling = StartCoroutine(AnimateDice(rollForSeconds));
+            if (audioSource != null && diceSound != null)
+            {
+                audioSource.clip = diceSound;
+                audioSource.time = 0;
+                audioSource.Play();
+            }
+        }
+
+
+        private IEnumerator AnimateDice(float rollForSeconds)
+        {
+            float diceRollChangeImageTime = Settings != null ? Mathf.Max(0.01f, Settings.DiceRollChangeValueTime) : 0.1f;
+            while (rollForSeconds > 0)
+            {
+                int dieValue = UnityEngine.Random.Range(0, diceValues.Count);
+                DiceImage.sprite = diceValues[dieValue];
+                yield return new WaitForSeconds(diceRollChangeImageTime);
+                rollForSeconds -= diceRollChangeImageTime;
+            }
+        }
+
+
+        private void DieCast(int result)
+        {
+            if (diceRolling != null)
+            {
+                StopCoroutine(diceRolling);
+            }
+            if (result >= 1 && result <= diceValues.Count)
+            {
+                DiceImage.sprite = diceValues[result - 1];
+            }
+        }
     }
 }

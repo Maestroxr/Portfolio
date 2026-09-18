@@ -3,6 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+namespace Portfolio.Monopoly
+{
+
 public enum TileBehaviour { Start, Asset, Reward}
 [CreateAssetMenu(fileName = "Board", menuName = "Monopoly/Board", order = 1)]
 public class Board : ScriptableObject
@@ -29,4 +32,6 @@ public class Board : ScriptableObject
         error = null;
         return true;
     }
+}
+
 }

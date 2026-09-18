@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Portfolio
+namespace Portfolio.Asteroids
 {
     [ExecuteInEditMode]
     public class ProgressBar : MonoBehaviour
