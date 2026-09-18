@@ -32,19 +32,34 @@ namespace Portfolio.Asteroids.Tests
     /// <summary>Loads the test scenes without requiring them in the build settings.</summary>
     public static class TestScenes
     {
-        public const string Folder = "Assets/Tests/Runtime/Scenes/";
+        public const string Folder = "Tests/Runtime/Scenes/";
 
         public static IEnumerator Load(string sceneName)
         {
 #if UNITY_EDITOR
             UnityEditor.SceneManagement.EditorSceneManager.LoadSceneInPlayMode(
-                $"{Folder}{sceneName}.unity",
+                $"{RootPath}/{Folder}{sceneName}.unity",
                 new UnityEngine.SceneManagement.LoadSceneParameters(UnityEngine.SceneManagement.LoadSceneMode.Single));
 #else
             UnityEngine.SceneManagement.SceneManager.LoadScene(sceneName);
 #endif
             yield return null;
         }
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// Asset path of the folder these tests ship in: "Assets" in the game's own project, the package folder
+        /// when BaseGame references that Assets folder as the package com.skinnerboxes.asteroids.
+        /// </summary>
+        private static string RootPath
+        {
+            get
+            {
+                var package = UnityEditor.PackageManager.PackageInfo.FindForAssembly(typeof(TestScenes).Assembly);
+                return package != null ? package.assetPath : "Assets";
+            }
+        }
+#endif
 
         /// <summary>Puts the scene's Asteroids manager into the running state so players and asteroids simulate.</summary>
         public static void StartRunning()

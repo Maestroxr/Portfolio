@@ -24,10 +24,15 @@ settings. This project has no main menu scene, so the Exit button of the shared 
 ## Project setup
 
 - Unity 6000.6.0f1 with URP 17.6.0. The render pipeline assets are the ones that ship in the BaseGame package.
-- `Packages/manifest.json` references BaseGame as a local package (`file:../../../BaseGame/Assets`), so the
-  BaseGame repository has to sit next to this one (`BaseGame` beside `Portfolio`).
-- The same game is embedded in BaseGame as the package `com.skinnerboxes.monopoly`, and the two are mirrors:
-  `Runtime/` there is `Assets/` here. Only the scene path in the `GameDefinition` asset differs.
+- This project and BaseGame reference each other in place. Nothing is copied either way, so the two repositories
+  have to sit next to each other (`BaseGame` beside `Portfolio`):
+  - `Packages/manifest.json` references BaseGame as the local package `com.skinnerboxes.basegame`
+    (`file:../../../BaseGame/Assets`), which provides the base classes, the shared menu and the URP assets.
+  - `Assets/package.json` makes this project's `Assets` folder the package `com.skinnerboxes.monopoly`. BaseGame's
+    manifest references it (`file:../../Portfolio/2 - Monopoly/Assets`) and lists the game in its launcher.
+- The same files therefore serve two projects and are mounted at `Assets/` here and at `Packages/com.skinnerboxes.monopoly/`
+  in BaseGame, so nothing in them may depend on either location. The `GameDefinition` asset re-derives its scene
+  path from its scene reference in the editor, and the launcher falls back to the scene name.
 
 ## Notes
 
