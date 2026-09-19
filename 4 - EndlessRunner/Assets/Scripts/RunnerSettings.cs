@@ -3,40 +3,74 @@ using UnityEngine;
 
 namespace Portfolio.EndlessRunner
 {
-    /// <summary>User configurable values of a run: player speeds and how many collectibles each terrain gets.</summary>
+    /// <summary>
+    /// User configurable values of a run: how fast the runner starts, how fast it can get, how quickly it switches
+    /// lanes, how high it jumps and how many hits it can take. Every campaign level carries its own settings asset.
+    /// </summary>
     [CreateAssetMenu(fileName = "RunnerSettings", menuName = "Endless Runner/Settings", order = 1)]
     public class RunnerSettings : GameSettings
     {
-        [field: SerializeField]
-        public float ForwardSpeed { get; set; } = 12f;
-        [field: SerializeField]
-        public float SideSpeed { get; set; } = 15f;
-        [field: SerializeField]
-        public int CollidablesPerTerrain { get; set; } = 5;
-        [field: SerializeField]
-        public int CollidablesRadius { get; set; } = 10;
+        public const float SpeedLimit = 60f;
+        public const int HeartLimit = 9;
+
+        [field: SerializeField, Tooltip("Speed at the start of a run, in meters per second.")]
+        public float ForwardSpeed { get; set; } = 10f;
+
+        [field: SerializeField, Tooltip("Top speed the run accelerates to, in meters per second.")]
+        public float MaxSpeed { get; set; } = 16f;
+
+        [field: SerializeField, Tooltip("Speed gained per meter run, as in v^2 = v0^2 + 2 * a * distance.")]
+        public float Acceleration { get; set; } = 0.15f;
+
+        [field: SerializeField, Tooltip("Sideways speed of a lane switch, in meters per second.")]
+        public float SideSpeed { get; set; } = 14f;
+
+        [field: SerializeField, Tooltip("Height of a normal jump, in meters.")]
+        public float JumpHeight { get; set; } = 1.8f;
+
+        [field: SerializeField, Tooltip("Hits the runner can take before the run ends.")]
+        public int Hearts { get; set; } = 3;
+
+
+        /// <summary>Target speed of the run after <paramref name="distance"/> meters.</summary>
+        public float SpeedAtDistance(float distance)
+        {
+            float start = Mathf.Max(0.1f, ForwardSpeed);
+            float speed = Mathf.Sqrt(start * start + 2f * Mathf.Max(0f, Acceleration) * Mathf.Max(0f, distance));
+            return Mathf.Min(Mathf.Max(MaxSpeed, start), speed);
+        }
 
 
         public override bool AreSettingsValid(out string message)
         {
-            if (ForwardSpeed <= 0f)
+            if (ForwardSpeed <= 0f || ForwardSpeed > SpeedLimit)
             {
-                message = $"Forward speed {ForwardSpeed} has to be positive";
+                message = $"Start speed {ForwardSpeed} has to be between 0 and {SpeedLimit}";
                 return false;
             }
-            if (SideSpeed < 0f)
+            if (MaxSpeed < ForwardSpeed || MaxSpeed > SpeedLimit)
             {
-                message = $"Side speed {SideSpeed} cannot be negative";
+                message = $"Max speed {MaxSpeed} has to be between the start speed and {SpeedLimit}";
                 return false;
             }
-            if (CollidablesPerTerrain < 0)
+            if (Acceleration < 0f || Acceleration > 5f)
             {
-                message = $"Collidables per terrain {CollidablesPerTerrain} cannot be negative";
+                message = $"Acceleration {Acceleration} has to be between 0 and 5";
                 return false;
             }
-            if (CollidablesRadius < 0)
+            if (SideSpeed <= 0f || SideSpeed > SpeedLimit)
             {
-                message = $"Collidables radius {CollidablesRadius} cannot be negative";
+                message = $"Lane switch speed {SideSpeed} has to be between 0 and {SpeedLimit}";
+                return false;
+            }
+            if (JumpHeight < 0.5f || JumpHeight > 6f)
+            {
+                message = $"Jump height {JumpHeight} has to be between 0.5 and 6";
+                return false;
+            }
+            if (Hearts < 1 || Hearts > HeartLimit)
+            {
+                message = $"Hearts {Hearts} has to be between 1 and {HeartLimit}";
                 return false;
             }
             message = "OK";
@@ -51,29 +85,24 @@ namespace Portfolio.EndlessRunner
                 throw new GameSettingsException($"Cannot save invalid settings. Reason: {error}");
             }
             storage.SetFloat($"{prefix}ForwardSpeed", ForwardSpeed);
+            storage.SetFloat($"{prefix}MaxSpeed", MaxSpeed);
+            storage.SetFloat($"{prefix}Acceleration", Acceleration);
             storage.SetFloat($"{prefix}SideSpeed", SideSpeed);
-            storage.SetInt($"{prefix}CollidablesPerTerrain", CollidablesPerTerrain);
-            storage.SetInt($"{prefix}CollidablesRadius", CollidablesRadius);
+            storage.SetFloat($"{prefix}JumpHeight", JumpHeight);
+            storage.SetInt($"{prefix}Hearts", Hearts);
         }
 
 
         public override void LoadSettings(IStorageStrategy storage, string prefix)
         {
-            if (storage.DoesKeyExist($"{prefix}ForwardSpeed"))
+            ForwardSpeed = LoadFloat(storage, $"{prefix}ForwardSpeed", ForwardSpeed);
+            MaxSpeed = LoadFloat(storage, $"{prefix}MaxSpeed", MaxSpeed);
+            Acceleration = LoadFloat(storage, $"{prefix}Acceleration", Acceleration);
+            SideSpeed = LoadFloat(storage, $"{prefix}SideSpeed", SideSpeed);
+            JumpHeight = LoadFloat(storage, $"{prefix}JumpHeight", JumpHeight);
+            if (storage.DoesKeyExist($"{prefix}Hearts"))
             {
-                ForwardSpeed = storage.GetFloat($"{prefix}ForwardSpeed");
-            }
-            if (storage.DoesKeyExist($"{prefix}SideSpeed"))
-            {
-                SideSpeed = storage.GetFloat($"{prefix}SideSpeed");
-            }
-            if (storage.DoesKeyExist($"{prefix}CollidablesPerTerrain"))
-            {
-                CollidablesPerTerrain = storage.GetInt($"{prefix}CollidablesPerTerrain");
-            }
-            if (storage.DoesKeyExist($"{prefix}CollidablesRadius"))
-            {
-                CollidablesRadius = storage.GetInt($"{prefix}CollidablesRadius");
+                Hearts = storage.GetInt($"{prefix}Hearts");
             }
         }
 
@@ -85,9 +114,17 @@ namespace Portfolio.EndlessRunner
                 return;
             }
             ForwardSpeed = source.ForwardSpeed;
+            MaxSpeed = source.MaxSpeed;
+            Acceleration = source.Acceleration;
             SideSpeed = source.SideSpeed;
-            CollidablesPerTerrain = source.CollidablesPerTerrain;
-            CollidablesRadius = source.CollidablesRadius;
+            JumpHeight = source.JumpHeight;
+            Hearts = source.Hearts;
+        }
+
+
+        private static float LoadFloat(IStorageStrategy storage, string key, float fallback)
+        {
+            return storage.DoesKeyExist(key) ? storage.GetFloat(key) : fallback;
         }
     }
 }
