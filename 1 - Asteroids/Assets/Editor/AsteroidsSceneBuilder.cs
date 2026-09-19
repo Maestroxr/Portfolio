@@ -105,7 +105,7 @@ namespace Portfolio.Asteroids.EditorTools
             settingsUi.lives = GameMenuInstaller.AddInputField(menu, "Lives", "Ships per mission", TMP_InputField.ContentType.IntegerNumber);
             settingsUi.hullStrength = GameMenuInstaller.AddInputField(menu, "HullStrength", "Hull strength", TMP_InputField.ContentType.DecimalNumber);
             settingsUi.asteroidSpeed = GameMenuInstaller.AddInputField(menu, "AsteroidSpeed", "Asteroid speed", TMP_InputField.ContentType.DecimalNumber);
-            settingsUi.spawnRate = GameMenuInstaller.AddInputField(menu, "SpawnRate", "Seconds between drifters", TMP_InputField.ContentType.DecimalNumber);
+            settingsUi.spawnRate = GameMenuInstaller.AddInputField(menu, "SpawnRate", "Rock spawn delay (s)", TMP_InputField.ContentType.DecimalNumber);
             settingsUi.explosionRadius = GameMenuInstaller.AddInputField(menu, "ExplosionRadius", "Explosion radius (m)", TMP_InputField.ContentType.DecimalNumber);
             int missions = campaign != null ? campaign.Count : 13;
             int sectors = campaign != null ? campaign.SectorCount : 4;
@@ -154,7 +154,6 @@ namespace Portfolio.Asteroids.EditorTools
             }
             lighting.bakedGI = false;
             lighting.realtimeGI = false;
-            lighting.autoGenerate = false;
             EditorUtility.SetDirty(lighting);
             Lightmapping.lightingSettings = lighting;
             RenderSettings.skybox = null;
@@ -234,7 +233,8 @@ namespace Portfolio.Asteroids.EditorTools
             float unit = planetMesh != null ? 1f / planetMesh.bounds.size.x : 1f / 24.88f;
             MeshRenderer surface = Part(planet.transform, "Surface", planetMesh, AsteroidsArtBuilder.Material("PlanetKepler"), Vector3.one * unit);
             MeshRenderer clouds = Part(planet.transform, "Clouds", cloudMesh, AsteroidsArtBuilder.PackMaterial("BonusContent/CloudsRed"), Vector3.one * unit * 1.01f);
-            MeshRenderer atmosphere = Part(planet.transform, "Atmosphere", sphere, AsteroidsArtBuilder.Material("Atmosphere"), AsteroidsPrefabBuilder.SphereScale(1.08f));
+            MeshRenderer atmosphere = Part(planet.transform, "Atmosphere", sphere, AsteroidsArtBuilder.Material("Atmosphere"), AsteroidsPrefabBuilder.SphereScale(1.02f));
+            MeshRenderer halo = Part(planet.transform, "Halo", quad, AsteroidsArtBuilder.Material("AtmosphereHalo"), Vector3.one * 1.7f);
             MeshRenderer rings = Part(planet.transform, "Rings", AsteroidsArtBuilder.Model("PlanetRing"), AsteroidsArtBuilder.Material("PlanetRing"), Vector3.one * 0.5f);
             rings.gameObject.SetActive(false);
 
@@ -269,6 +269,7 @@ namespace Portfolio.Asteroids.EditorTools
             backdrop.planetRenderer = surface;
             backdrop.cloudRenderer = clouds;
             backdrop.atmosphere = atmosphere;
+            backdrop.halo = halo;
             backdrop.rings = rings;
             backdrop.sun = sun;
             backdrop.motes = motes;

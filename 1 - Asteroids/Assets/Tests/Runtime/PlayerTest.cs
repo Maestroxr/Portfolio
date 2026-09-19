@@ -73,7 +73,7 @@ namespace Portfolio.Asteroids.Tests
     {
         public const string GameScene = "Scenes/Asteroids.unity";
 
-        public static AsteroidsGameManager Manager => Object.FindFirstObjectByType<AsteroidsGameManager>();
+        public static AsteroidsGameManager Manager => Object.FindAnyObjectByType<AsteroidsGameManager>();
 
         public static IEnumerator Load(string relativePath)
         {

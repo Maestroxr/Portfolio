@@ -99,6 +99,31 @@ namespace Portfolio.Asteroids.EditorTools
                 settingsImage.type = UnityEngine.UI.Image.Type.Sliced;
                 settingsImage.color = new Color(0.4f, 0.8f, 1f, 1f);
             }
+            Transform inputs = GameMenuInstaller.FindChild(root, "InputPanel");
+            if (inputs != null)
+            {
+                if (inputs.TryGetComponent(out Image inputsImage))
+                {
+                    inputsImage.sprite = panel;
+                    inputsImage.type = UnityEngine.UI.Image.Type.Sliced;
+                    inputsImage.color = new Color(0.03f, 0.08f, 0.16f, 0.92f);
+                }
+                foreach (TMP_InputField field in inputs.GetComponentsInChildren<TMP_InputField>(true))
+                {
+                    StyleInputField(field);
+                }
+            }
+            if (menuPanel != null)
+            {
+                // The HUD stays visible while paused: lower the menu (a fresh instance on every rebuild) below its objective line.
+                foreach (string part in new[] { "Header", "MenuButtons", "SettingsPanel" })
+                {
+                    if (GameMenuInstaller.FindChild(menuPanel, part) is RectTransform rect)
+                    {
+                        rect.anchoredPosition += new Vector2(0f, -60f);
+                    }
+                }
+            }
             SetLabel(GameMenuInstaller.FindChildComponent<TMP_Text>(root, "Header"), "PAUSED", Cyan, titleFont);
             SetLabel(GameMenuInstaller.FindChildComponent<TMP_Text>(root, "SettingsHeader"), "SETTINGS", Cyan, titleFont);
             StyleMenuButton(root, "ReturnToGame", "Resume", Green);
@@ -131,6 +156,39 @@ namespace Portfolio.Asteroids.EditorTools
             if (material != null)
             {
                 text.fontSharedMaterial = material;
+            }
+        }
+
+        /// <summary>A settings row in the game's look: a soft label that shrinks to fit and a dark chamfered field.</summary>
+        private static void StyleInputField(TMP_InputField field)
+        {
+            if (field.TryGetComponent(out Image background))
+            {
+                background.sprite = button;
+                background.type = UnityEngine.UI.Image.Type.Sliced;
+                background.color = new Color(0.14f, 0.3f, 0.5f, 1f);
+            }
+            field.customCaretColor = true;
+            field.caretColor = Cyan;
+            field.selectionColor = new Color(0.35f, 0.75f, 1f, 0.45f);
+            if (field.textComponent != null)
+            {
+                field.textComponent.color = Color.white;
+                field.textComponent.fontStyle = FontStyles.Bold;
+            }
+            if (field.placeholder is TMP_Text placeholder)
+            {
+                placeholder.color = new Color(1f, 1f, 1f, 0.35f);
+            }
+            TMP_Text label = field.transform.parent != null ? GameMenuInstaller.FindChildComponent<TMP_Text>(field.transform.parent, "Label") : null;
+            if (label != null)
+            {
+                label.color = Soft;
+                label.fontStyle = FontStyles.Bold;
+                label.textWrappingMode = TextWrappingModes.NoWrap;
+                label.enableAutoSizing = true;
+                label.fontSizeMin = 14f;
+                label.fontSizeMax = 22f;
             }
         }
 
@@ -595,6 +653,10 @@ namespace Portfolio.Asteroids.EditorTools
             hintGroup.interactable = false;
             ui.hintGroup = hintGroup;
             ui.hintText = Text(hint, "Text", "Hint", 28f, Color.white, TextAlignmentOptions.Center, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1060f, 70f), hudFont);
+            ui.hintText.textWrappingMode = TextWrappingModes.NoWrap;
+            ui.hintText.enableAutoSizing = true;
+            ui.hintText.fontSizeMin = 18f;
+            ui.hintText.fontSizeMax = 28f;
         }
 
         private static Image Meter(Transform parent, string name, Vector2 position, Vector2 size, Color color)

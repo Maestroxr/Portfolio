@@ -15,6 +15,8 @@ namespace Portfolio.Asteroids
         [SerializeField] internal Renderer planetRenderer;
         [SerializeField] internal Renderer cloudRenderer;
         [SerializeField] internal Renderer atmosphere;
+        [SerializeField] internal Renderer halo;
+        [SerializeField] internal float haloStrength = 0.65f;
         [SerializeField] internal Renderer rings;
         [SerializeField] internal Light sun;
         [SerializeField] internal Light rim;
@@ -210,6 +212,11 @@ namespace Portfolio.Asteroids
             float halfWidth = halfHeight * aspect;
             planet.position = new Vector3((placement.x - 0.5f) * 2f * halfWidth, (placement.y - 0.5f) * 2f * halfHeight, depth);
             planet.localRotation = Quaternion.Euler(next.PlanetTilt);
+            if (halo != null)
+            {
+                // The glow is a flat disc through the planet's centre, facing the camera whatever the planet's tilt.
+                halo.transform.rotation = Quaternion.identity;
+            }
         }
 
 
@@ -231,6 +238,14 @@ namespace Portfolio.Asteroids
                 block.Clear();
                 block.SetColor(BaseColorId, look.Atmosphere);
                 atmosphere.SetPropertyBlock(block);
+            }
+            if (halo != null)
+            {
+                block.Clear();
+                Color glow = look.Atmosphere * haloStrength;
+                glow.a = 1f;
+                block.SetColor(BaseColorId, glow);
+                halo.SetPropertyBlock(block);
             }
             if (rings != null)
             {

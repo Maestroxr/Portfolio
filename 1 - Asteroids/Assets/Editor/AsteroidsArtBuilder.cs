@@ -83,6 +83,7 @@ namespace Portfolio.Asteroids.EditorTools
             });
             AsteroidsAssets.SaveTexture(SpaceTextures.AccretionDisk(), "Art/Textures/AccretionDisk.png", AsteroidsAssets.ParticleTexture);
             AsteroidsAssets.SaveTexture(SpaceTextures.SoftDot(), "Art/Textures/SoftDot.png", AsteroidsAssets.ParticleTexture);
+            AsteroidsAssets.SaveTexture(SpaceTextures.AtmosphereHalo(), "Art/Textures/AtmosphereHalo.png", AsteroidsAssets.ParticleTexture);
             AsteroidsAssets.SaveTexture(SpaceTextures.Glow(), "Art/Textures/Glow.png", AsteroidsAssets.ParticleTexture);
             AsteroidsAssets.SaveTexture(SpaceTextures.Flare(), "Art/Textures/Flare.png", AsteroidsAssets.ParticleTexture);
             AsteroidsAssets.SaveTexture(SpaceTextures.Streak(), "Art/Textures/Streak.png", AsteroidsAssets.ParticleTexture);
@@ -150,12 +151,12 @@ namespace Portfolio.Asteroids.EditorTools
             var rockDetail = AsteroidsAssets.Load<Texture2D>($"{RockPack}/Textures/seamless_rock_texture_detail.jpg");
 
             AsteroidsAssets.SaveMaterial("Art/Materials/Palette.mat", Lit, m => SetupLit(m, Color.white, palette, null, 0.45f, 0.25f, paletteEmission, new Color(2.2f, 2.2f, 2.2f)));
-            AsteroidsAssets.SaveMaterial("Art/Materials/IcePalette.mat", Lit, m => SetupLit(m, Color.white, palette, null, 0.9f, 0.05f, paletteEmission, new Color(1.6f, 1.6f, 1.6f)));
+            AsteroidsAssets.SaveMaterial("Art/Materials/IcePalette.mat", Lit, m => SetupLit(m, new Color(0.86f, 0.9f, 0.95f), palette, null, 0.8f, 0.05f, paletteEmission, new Color(0.9f, 0.9f, 0.9f)));
             AsteroidsAssets.SaveMaterial("Art/Materials/CrystalPalette.mat", Lit, m => SetupLit(m, Color.white, palette, null, 0.75f, 0.2f, paletteEmission, new Color(3f, 3f, 3f)));
             AsteroidsAssets.SaveMaterial("Art/Materials/Rock.mat", Lit, m => SetupLit(m, new Color(0.82f, 0.78f, 0.74f), rock, rockDetail, 0.12f, 0f, null, Color.black));
             AsteroidsAssets.SaveMaterial("Art/Materials/Ore.mat", Lit, m => SetupLit(m, new Color(0.62f, 0.5f, 0.4f), rock, rockDetail, 0.35f, 0.45f, Texture("OreVeins"), new Color(3.2f, 2.3f, 0.8f)));
             AsteroidsAssets.SaveMaterial("Art/Materials/Magma.mat", Lit, m => SetupLit(m, new Color(0.3f, 0.26f, 0.26f), rock, rockDetail, 0.2f, 0f, Texture("LavaCracks"), new Color(3.4f, 1.3f, 0.4f)));
-            AsteroidsAssets.SaveMaterial("Art/Materials/TitanRock.mat", Lit, m => SetupLit(m, new Color(0.45f, 0.38f, 0.36f), rock, rockDetail, 0.2f, 0.1f, Texture("LavaCracks"), new Color(2.4f, 0.6f, 1.6f), 0.6f));
+            AsteroidsAssets.SaveMaterial("Art/Materials/TitanRock.mat", Lit, m => SetupLit(m, new Color(0.64f, 0.56f, 0.52f), rock, rockDetail, 0.25f, 0.1f, Texture("LavaCracks"), new Color(3.2f, 0.8f, 2.1f), 0.6f));
             AsteroidsAssets.SaveMaterial("Art/Materials/Debris.mat", Lit, m => SetupLit(m, Color.white, rock, null, 0.1f, 0f, null, Color.black));
 
             var insectAlbedo = AsteroidsAssets.Load<Texture2D>($"{StarSparrow}/Textures/BonusContent/FlyingInsect/FlyingInsect_Purple.png");
@@ -174,7 +175,7 @@ namespace Portfolio.Asteroids.EditorTools
             });
 
             AsteroidsAssets.SaveMaterial("Art/Materials/PlanetKepler.mat", Lit, m => SetupLit(m, Color.white, Texture("PlanetKepler"), null, 0.3f, 0f, null, Color.black));
-            AsteroidsAssets.SaveMaterial("Art/Materials/PlanetFrost.mat", Lit, m => SetupLit(m, Color.white, Texture("PlanetFrost"), null, 0.55f, 0f, null, Color.black));
+            AsteroidsAssets.SaveMaterial("Art/Materials/PlanetFrost.mat", Lit, m => SetupLit(m, Color.white, Texture("PlanetFrost"), null, 0.35f, 0f, null, Color.black));
             AsteroidsAssets.SaveMaterial("Art/Materials/PlanetVoid.mat", Lit, m => SetupLit(m, Color.white, Texture("PlanetVoid"), null, 0.3f, 0f, null, Color.black));
             AsteroidsAssets.SaveMaterial("Art/Materials/Atmosphere.mat", ShieldShader, m =>
             {
@@ -207,6 +208,7 @@ namespace Portfolio.Asteroids.EditorTools
 
             GlowMaterial("PlanetRing", Texture("RingBands"), new Color(1f, 1f, 1f, 1f), false, true);
             GlowMaterial("Accretion", Texture("AccretionDisk"), new Color(1.6f, 1.2f, 2f, 1f), true);
+            GlowMaterial("AtmosphereHalo", Texture("AtmosphereHalo"), new Color(0.3f, 0.6f, 1f, 1f), true);
             GlowMaterial("Glow", Texture("Glow"), Color.white, true);
             GlowMaterial("Beacon", Texture("Glow"), Color.white, true);
             GlowMaterial("Solid", Texture("Square"), Color.white, true);

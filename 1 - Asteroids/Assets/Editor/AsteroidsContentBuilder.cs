@@ -237,11 +237,11 @@ namespace Portfolio.Asteroids.EditorTools
                 t.planetMaterial = AsteroidsArtBuilder.Material("PlanetFrost");
                 t.cloudMaterial = null;
                 t.atmosphereColor = new Color(0.6f, 0.85f, 1.3f);
-                t.planetPlacement = new Vector3(0.84f, 0.8f, 160f);
-                t.planetSize = 78f;
+                t.planetPlacement = new Vector3(0.83f, 0.78f, 200f);
+                t.planetSize = 46f;
                 t.planetTilt = new Vector3(62f, 0f, 22f);
                 t.rings = true;
-                t.ringColor = new Color(0.9f, 0.95f, 1f, 0.85f);
+                t.ringColor = new Color(0.62f, 0.7f, 0.8f, 0.5f);
                 t.sunColor = new Color(0.85f, 0.92f, 1f);
                 t.sunIntensity = 1.5f;
                 t.sunAngles = new Vector3(40f, -30f, 0f);
@@ -336,11 +336,13 @@ namespace Portfolio.Asteroids.EditorTools
             };
         }
 
+        // ScoreGoal (the third star) is about 55% of what AsteroidsAutopilot scores on the mission, so a clean clear
+        // without combos stays below it. Re-measure after changing waves, scores or bosses.
         private static readonly Mission[] Missions =
         {
             new Mission
             {
-                Title = "First Light", Sector = 0, Objective = LevelObjective.ClearWaves, ScoreGoal = 5000, Speed = 0.85f, SpawnRate = 7f,
+                Title = "First Light", Sector = 0, Objective = LevelObjective.ClearWaves, ScoreGoal = 15000, Speed = 0.85f, SpawnRate = 7f,
                 Description = "Your first patrol in the Kepler Belt. Break up the drifting rocks before they break you.",
                 Introduces = "Big rocks split into smaller, faster ones. Shoot supply pods for upgrades.",
                 Hints = new[]
@@ -354,7 +356,7 @@ namespace Portfolio.Asteroids.EditorTools
             },
             new Mission
             {
-                Title = "Ore Rush", Sector = 0, Objective = LevelObjective.Collect, Target = 12, ScoreGoal = 8000, Speed = 0.9f, SpawnRate = 6.5f,
+                Title = "Ore Rush", Sector = 0, Objective = LevelObjective.Collect, Target = 12, ScoreGoal = 6500, Speed = 0.9f, SpawnRate = 6.5f,
                 Description = "Gold-veined ore rocks drift through the belt. Crack them open and scoop up the crystals.",
                 Introduces = "Ore rocks: tougher, and full of crystals.",
                 Hints = new[] { "Ore rocks take more hits but drop crystals.", "Crystals drift toward you when you fly close." },
@@ -362,7 +364,7 @@ namespace Portfolio.Asteroids.EditorTools
             },
             new Mission
             {
-                Title = "Titan", Sector = 0, Objective = LevelObjective.Boss, Boss = "RockTitan", ScoreGoal = 14000, Speed = 0.9f, SpawnRate = 7f,
+                Title = "Titan", Sector = 0, Objective = LevelObjective.Boss, Boss = "RockTitan", ScoreGoal = 28000, Speed = 0.9f, SpawnRate = 7f,
                 Description = "Something enormous moves through the belt, shedding rocks as it goes. Destroy it.",
                 Introduces = "Your first boss: the Rock Titan.",
                 Hints = new[] { "Bosses take many hits and grow angrier as they weaken.", "Keep moving - the Titan throws rocks and shrapnel." },
@@ -370,7 +372,7 @@ namespace Portfolio.Asteroids.EditorTools
             },
             new Mission
             {
-                Title = "Minefield", Sector = 1, Objective = LevelObjective.ClearWaves, ScoreGoal = 11000, Speed = 0.95f, SpawnRate = 6f,
+                Title = "Minefield", Sector = 1, Objective = LevelObjective.ClearWaves, ScoreGoal = 15000, Speed = 0.95f, SpawnRate = 6f,
                 Description = "Raiders seeded the Crimson Expanse with proximity mines. Clear the rocks without tripping them.",
                 Introduces = "Proximity mines arm when you come close. Their blast breaks rocks too.",
                 Hints = new[] { "Mines arm when you get close - back off or shoot them from afar.", "A mine's blast destroys nearby rocks: use it!" },
@@ -378,7 +380,7 @@ namespace Portfolio.Asteroids.EditorTools
             },
             new Mission
             {
-                Title = "Magma Run", Sector = 1, Objective = LevelObjective.ClearWaves, ScoreGoal = 15000, Speed = 1f, SpawnRate = 6f, Explosion = 3.2f,
+                Title = "Magma Run", Sector = 1, Objective = LevelObjective.ClearWaves, ScoreGoal = 20000, Speed = 1f, SpawnRate = 6f, Explosion = 3.2f,
                 Description = "Molten rocks from a shattered world. They explode when destroyed, and comets streak through the sector.",
                 Introduces = "Magma rocks explode. Comets cross the sector after a warning.",
                 Hints = new[] { "Magma rocks explode - keep your distance when you pop them.", "A red lane warns of an incoming comet. Get out of its path!" },
@@ -386,7 +388,7 @@ namespace Portfolio.Asteroids.EditorTools
             },
             new Mission
             {
-                Title = "Raider Mothership", Sector = 1, Objective = LevelObjective.Boss, Boss = "Mothership", ScoreGoal = 22000, Speed = 1f, SpawnRate = 6f, Explosion = 3.2f,
+                Title = "Raider Mothership", Sector = 1, Objective = LevelObjective.Boss, Boss = "Mothership", ScoreGoal = 26000, Speed = 1f, SpawnRate = 6f, Explosion = 3.2f,
                 Description = "The raiders' flagship arrives, escorted by flying saucers that shoot back.",
                 Introduces = "Flying saucers. Boss: the Raider Mothership.",
                 Hints = new[] { "Saucers shoot back. The small scouts aim at you - and are worth 1000 points.", "The Mothership drops mines and calls in saucers." },
@@ -394,7 +396,7 @@ namespace Portfolio.Asteroids.EditorTools
             },
             new Mission
             {
-                Title = "Shatter Point", Sector = 2, Objective = LevelObjective.ClearWaves, ScoreGoal = 17000, Speed = 1.05f, SpawnRate = 5.5f, Explosion = 3.2f,
+                Title = "Shatter Point", Sector = 2, Objective = LevelObjective.ClearWaves, ScoreGoal = 14000, Speed = 1.05f, SpawnRate = 5.5f, Explosion = 3.2f,
                 Description = "The Frost Rings are full of ice. Every chunk you hit shatters into a spray of fast shards.",
                 Introduces = "Ice rocks shatter into shards. New weapon: the Lancer Laser.",
                 Hints = new[] { "Ice shatters into many small shards at once - be ready.", "The laser pierces through several rocks in a row." },
@@ -402,7 +404,7 @@ namespace Portfolio.Asteroids.EditorTools
             },
             new Mission
             {
-                Title = "Event Horizon", Sector = 2, Objective = LevelObjective.Survive, Target = 90, ScoreGoal = 20000, Speed = 1.05f, SpawnRate = 5f, Explosion = 3.4f,
+                Title = "Event Horizon", Sector = 2, Objective = LevelObjective.Survive, Target = 90, ScoreGoal = 24000, Speed = 1.05f, SpawnRate = 5f, Explosion = 3.4f,
                 Description = "Gravity wells tear open in the rings. Hold out for ninety seconds while they pull everything in.",
                 Introduces = "Black holes pull you in. Cluster bombs burst into shrapnel.",
                 Hints = new[] { "Black holes pull everything in - thrust away from them!", "Cluster bombs count down and burst. Shoot them early or get clear of the ring." },
@@ -415,7 +417,7 @@ namespace Portfolio.Asteroids.EditorTools
             },
             new Mission
             {
-                Title = "The Hive", Sector = 2, Objective = LevelObjective.Boss, Boss = "HiveQueen", ScoreGoal = 26000, Speed = 1.1f, SpawnRate = 5.5f, Explosion = 3.4f,
+                Title = "The Hive", Sector = 2, Objective = LevelObjective.Boss, Boss = "HiveQueen", ScoreGoal = 24000, Speed = 1.1f, SpawnRate = 5.5f, Explosion = 3.4f,
                 Description = "Alien wasps nest among the rings, and their queen is angry.",
                 Introduces = "Alien wasps hunt you. Boss: the Hive Queen.",
                 Hints = new[] { "Wasps chase you - shoot them before they reach you.", "A nova bomb (B) clears the screen when you are swamped." },
@@ -436,7 +438,7 @@ namespace Portfolio.Asteroids.EditorTools
             },
             new Mission
             {
-                Title = "Gauntlet", Sector = 3, Objective = LevelObjective.Survive, Target = 120, ScoreGoal = 30000, Speed = 1.15f, SpawnRate = 4.5f, Explosion = 3.5f,
+                Title = "Gauntlet", Sector = 3, Objective = LevelObjective.Survive, Target = 120, ScoreGoal = 60000, Speed = 1.15f, SpawnRate = 4.5f, Explosion = 3.5f,
                 Description = "Everything the Void can throw at you, all at once. Survive for two minutes.",
                 Introduces = "Everything you have faced - at once.",
                 Hints = new[] { "Wing drones fight at your side for a while.", "A chrono field slows everything but you." },
@@ -450,7 +452,7 @@ namespace Portfolio.Asteroids.EditorTools
             },
             new Mission
             {
-                Title = "Dreadnought", Sector = 3, Objective = LevelObjective.Boss, Boss = "Dreadnought", ScoreGoal = 38000, Speed = 1.15f, SpawnRate = 5f, Explosion = 3.5f,
+                Title = "Dreadnought", Sector = 3, Objective = LevelObjective.Boss, Boss = "Dreadnought", ScoreGoal = 32000, Speed = 1.15f, SpawnRate = 5f, Explosion = 3.5f,
                 Description = "The raiders' capital ship guards the heart of the Void. End this.",
                 Introduces = "The final boss: the Dreadnought.",
                 Hints = new[] { "The Dreadnought fires homing missiles - keep moving.", "Save a nova bomb for when it enrages." },

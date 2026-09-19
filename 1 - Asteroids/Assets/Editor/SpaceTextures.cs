@@ -258,10 +258,14 @@ namespace Portfolio.Asteroids.EditorTools
                 float x = px / (float)width;
                 float y = py / (float)height;
                 float n = Fbm(x, y * 0.5f, 8, 5, 401);
-                float edge = CellEdge(x, y * 0.5f, 10, 402);
-                float cracks = 1f - Smooth(0.01f, 0.05f, edge);
-                Color plains = Color.Lerp(new Color(0.55f, 0.72f, 0.86f), new Color(0.88f, 0.95f, 1f), Smooth(0.35f, 0.7f, n));
-                Color color = Color.Lerp(plains, new Color(0.3f, 0.5f, 0.72f), cracks * 0.7f);
+                float detail = Fbm(x, y * 0.5f, 32, 3, 403);
+                // A fine network of thin fractures over a few faint large plates, on banded, mottled ice.
+                float fine = 1f - Smooth(0.004f, 0.025f, CellEdge(x, y * 0.5f, 28, 402));
+                float plates = 1f - Smooth(0.006f, 0.03f, CellEdge(x, y * 0.5f, 7, 404));
+                float bands = 0.5f + 0.5f * Mathf.Sin((y + (n - 0.5f) * 0.1f) * Mathf.PI * 14f);
+                Color plains = Color.Lerp(new Color(0.46f, 0.62f, 0.76f), new Color(0.8f, 0.88f, 0.95f), Smooth(0.3f, 0.75f, n * 0.7f + bands * 0.3f));
+                plains *= 0.9f + detail * 0.2f;
+                Color color = Color.Lerp(plains, new Color(0.3f, 0.47f, 0.66f), Mathf.Clamp01(fine * 0.4f + plates * 0.25f));
                 float cap = Smooth(0.32f, 0.44f, Mathf.Abs(y - 0.5f) + (n - 0.5f) * 0.05f);
                 color = Color.Lerp(color, new Color(0.96f, 0.98f, 1f), cap);
                 color.a = 1f;
@@ -318,6 +322,23 @@ namespace Portfolio.Asteroids.EditorTools
         private static float Radial(int x, int y, int size)
         {
             return Vector2.Distance(new Vector2(x + 0.5f, y + 0.5f), new Vector2(size / 2f, size / 2f)) / (size / 2f);
+        }
+
+        /// <summary>
+        /// The glow around a planet, for a quad 1.7 times the planet's size behind it: full inside the planet's disc (which
+        /// hides it) and fading out from the edge of the disc.
+        /// </summary>
+        public static Texture2D AtmosphereHalo()
+        {
+            const int size = 256;
+            const float edge = 1f / 1.7f;
+            return Make(size, (x, y) =>
+            {
+                float r = Radial(x, y, size);
+                float t = Mathf.Max(0f, (r - edge) / (1f - edge));
+                float a = Mathf.Exp(-t * 4.5f) * (1f - Smooth(0.8f, 1f, r));
+                return new Color(1f, 1f, 1f, a);
+            });
         }
 
         public static Texture2D SoftDot()
