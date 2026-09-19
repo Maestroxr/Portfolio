@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Portfolio.Asteroids
 {
-    /// <summary>Where the ship's commands come from: the keyboard and a gamepad, or the autopilot.</summary>
+    /// <summary>Where the ship's commands come from: the player (keyboard, gamepad, touch), or the autopilot.</summary>
     public interface IShipInput
     {
         /// <summary>-1 turns right, 1 turns left.</summary>
@@ -28,12 +28,23 @@ namespace Portfolio.Asteroids
 
 
     /// <summary>
-    /// Keyboard and gamepad controls: the keys of the ship's <see cref="PlayerSettings"/> plus the arrow keys, and the
-    /// input manager's Horizontal / Vertical axes and fire buttons when the project defines them.
+    /// The player's controls: the keys of the ship's <see cref="PlayerSettings"/> plus the arrow keys, the input
+    /// manager's Horizontal / Vertical axes and fire buttons when the project defines them, and the on-screen
+    /// <see cref="ShipTouchControls"/> on phones and tablets. The touch stick turns the ship toward where it points and
+    /// thrusts once the nose points roughly that way, so a light touch aims and a full push flies.
     /// </summary>
-    public class KeyboardShipInput : IShipInput
+    public class PlayerShipInput : IShipInput
     {
+        /// <summary>Angle between the nose and the stick, in degrees, that turns at full rate.</summary>
+        public const float FullTurnAngle = 40f;
+
+        /// <summary>Seconds of the current turn rate counted against the angle left, so the nose settles instead of swinging past.</summary>
+        public const float TurnLead = 0.12f;
+
         private static bool? axesAvailable;
+
+        /// <summary>The on-screen controls read next to the keyboard and gamepad; null without touch controls.</summary>
+        public ShipTouchControls Touch { get; set; }
 
         public float Turn { get; private set; }
         public float Thrust { get; private set; }
@@ -86,12 +97,48 @@ namespace Portfolio.Asteroids
             fire |= Input.GetKey(KeyCode.JoystickButton0) || Input.GetKey(KeyCode.JoystickButton5);
             dash |= Input.GetKeyDown(KeyCode.JoystickButton2) || Input.GetKeyDown(KeyCode.JoystickButton4);
             bomb |= Input.GetKeyDown(KeyCode.JoystickButton1) || Input.GetKeyDown(KeyCode.JoystickButton3);
+
+            ShipTouchControls touch = Touch;
+            if (touch != null && touch.Active)
+            {
+                if (touch.Steering && ship != null)
+                {
+                    float angularVelocity = ship.Simulation != null ? ship.Simulation.AngularVelocity : 0f;
+                    Steer(ship.Forward, touch.Stick, angularVelocity, out float stickTurn, out float stickThrust);
+                    turn = stickTurn;
+                    thrust = Mathf.Max(thrust, stickThrust);
+                }
+                fire |= touch.Fire;
+                dash |= touch.ConsumeDash();
+                bomb |= touch.ConsumeBomb();
+            }
             Turn = Mathf.Clamp(turn, -1f, 1f);
             Thrust = Mathf.Clamp01(thrust);
             Brake = brake;
             Fire = fire;
             DashPressed = dash;
             BombPressed = bomb;
+        }
+
+        /// <summary>
+        /// The commands of a touch stick pointing along <paramref name="stick"/> (its length is how far it is pushed) for a
+        /// ship whose nose points along <paramref name="forward"/> and turns at <paramref name="angularVelocity"/> degrees
+        /// per second: turn toward the stick, easing off near it, and thrust by the push once the nose is within about 70
+        /// degrees of it.
+        /// </summary>
+        public static void Steer(Vector2 forward, Vector2 stick, float angularVelocity, out float turn, out float thrust)
+        {
+            turn = 0f;
+            thrust = 0f;
+            if (stick.sqrMagnitude < 1e-6f || forward.sqrMagnitude < 1e-6f)
+            {
+                return;
+            }
+            // Positive angles are counter-clockwise, which is a left turn for both the stick and the ship.
+            float error = Vector2.SignedAngle(forward, stick);
+            turn = Mathf.Clamp((error - angularVelocity * TurnLead) / FullTurnAngle, -1f, 1f);
+            float alignment = Mathf.Cos(error * Mathf.Deg2Rad);
+            thrust = Mathf.Clamp01(stick.magnitude) * Mathf.Clamp01((alignment - 0.35f) / 0.65f);
         }
 
         private static bool Held(KeyCode key)

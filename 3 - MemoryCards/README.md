@@ -7,9 +7,10 @@ offers an endless run and free play with your own rules.
 
 ## Playing
 
-- Click a card to flip it; flip its twin to make a match. Matches in a row build a combo worth up to x5 points.
-- After a mistake the cards flip back on their own; click anywhere to flip them back sooner.
-- Escape or the pause button opens the pause menu (resume, restart, save or load the game, settings, level select).
+- Click or tap a card to flip it; flip its twin to make a match. Matches in a row build a combo worth up to x5 points.
+- After a mistake the cards flip back on their own; click or tap a card to flip them back sooner.
+- Escape, the back button on a phone or the pause button opens the pause menu (resume, restart, save or load the
+  game, settings, level select).
 - Every campaign level has three stars: clear the board, stay under the level's mistake count, and reach its third
   goal (time, moves, combo or score). Worlds open with stars; progress, best scores and records are saved automatically.
 
@@ -81,7 +82,7 @@ save, load, settings, level select, quit) and the settings panel of free play. T
 rules; "Use Custom Rules" switches free play between the default and the custom rules, as the base class does. A game
 in progress can be saved from the pause menu and continued from the level select. The `GameDefinition` asset under
 `Assets/Resources/Games` registers the game with the BaseGame launcher (with its icon). This project has no main menu
-scene, so the Quit button reloads the game scene.
+scene, so the Quit button closes a build of the game on its own; in the editor it reloads the game scene.
 
 ## How it works
 
@@ -115,6 +116,16 @@ Everything the game shows is built by the editor code in `Assets/Editor` (menu *
 The generators write to fixed paths, update existing assets in place (GUIDs and references are kept) and do not
 rewrite files whose content did not change. Run them in one editor at a time: an editor that imports the files while
 the other one writes them can hold a lock on a file and make the save fail.
+
+## Phones and tablets
+
+The game runs on Android with the shared mobile code of BaseGame (see its README, "Phones and tablets"). Cards and
+buttons take taps like clicks, and with touch the tips say "tap" instead of "click". The canvas expands from 1920 x 1080
+to any screen shape; the board, the level select, the HUD and the results keep to a safe area, while the backdrop and
+the dims cover the whole screen. The back button closes the settings, pauses and resumes a level, returns from the
+results to the level select and leaves the level select for the launcher (or closes the app when the game is built on
+its own). `Gamebox > Android > Build APK` builds `Build/Android/MemoryCards.apk` (`com.skinnerboxes.memorycards`, with
+the game's icon).
 
 ## Art and sound
 

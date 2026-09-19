@@ -50,6 +50,7 @@ namespace Portfolio.Asteroids
         private readonly List<Barrel> barrels = new List<Barrel>(12);
         private PlayerSimulation simulation;
         private IShipInput input;
+        private ShipTouchControls touchControls;
         private int points;
         private float health = 100f;
         private float shield;
@@ -100,10 +101,25 @@ namespace Portfolio.Asteroids
 
         public PlayerSimulation Simulation => simulation ??= new PlayerSimulation(this, PlayerSettings);
 
+        /// <summary>Where the commands come from: the player's controls unless something else (the autopilot) flies.</summary>
         public IShipInput Input
         {
-            get => input ??= new KeyboardShipInput();
+            get => input ??= new PlayerShipInput { Touch = touchControls };
             set => input = value;
+        }
+
+        /// <summary>The on-screen controls of phones and tablets, read by the player's controls.</summary>
+        public ShipTouchControls TouchControls
+        {
+            get => touchControls;
+            set
+            {
+                touchControls = value;
+                if (input is PlayerShipInput player)
+                {
+                    player.Touch = value;
+                }
+            }
         }
 
         internal SpaceField Field { get; set; }

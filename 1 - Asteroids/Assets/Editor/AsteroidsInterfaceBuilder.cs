@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Gamebox.Editor;
+using Gamebox.UI;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -8,9 +9,10 @@ using UnityEngine.UI;
 namespace Portfolio.Asteroids.EditorTools
 {
     /// <summary>
-    /// Builds the Asteroids module's own canvas (mission select with the sector map and the hangar, the HUD and the
-    /// results screen) and restyles the shared BaseGame menu as the pause menu, wiring everything to
-    /// <see cref="AsteroidsUI"/>.
+    /// Builds the Asteroids module's own canvas (mission select with the sector map and the hangar, the HUD with the touch
+    /// controls, and the results screen) and restyles the shared BaseGame menu as the pause menu, wiring everything to
+    /// <see cref="AsteroidsUI"/>. The canvas expands from 1920 x 1080 to any screen shape, and the texts and buttons of
+    /// every screen sit in a safe area so notches and rounded corners do not cover them.
     /// </summary>
     internal static class AsteroidsInterfaceBuilder
     {
@@ -43,11 +45,7 @@ namespace Portfolio.Asteroids.EditorTools
             var canvas = canvasObject.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = 50;
-            var scaler = canvasObject.GetComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
-            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-            scaler.matchWidthOrHeight = 0.5f;
+            UIBuildUtils.ConfigureScaler(canvasObject.GetComponent<CanvasScaler>());
             Transform root = canvasObject.transform;
 
             BuildHud(root, ui);
@@ -241,6 +239,7 @@ namespace Portfolio.Asteroids.EditorTools
             bottom.rectTransform.anchorMax = new Vector2(1f, 0f);
             bottom.rectTransform.sizeDelta = new Vector2(0f, 220f);
             bottom.raycastTarget = false;
+            root = UIBuildUtils.CreateSafeArea(root);
 
             // Logo
             TextMeshProUGUI logo = Text(root, "Logo", "ASTEROIDS", 118f, Color.white, TextAlignmentOptions.Left, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(60f, -18f), new Vector2(900f, 130f), titleFont);
@@ -253,7 +252,7 @@ namespace Portfolio.Asteroids.EditorTools
             RectTransform stars = Panel(root, "Stars", new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-60f, -40f), new Vector2(330f, 96f));
             Image(stars, "Icon", AsteroidsArtBuilder.Icon("Star"), Color.white, new Vector2(0f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(58f, 0f), new Vector2(72f, 72f)).raycastTarget = false;
             ui.starsTotal = Text(stars, "Total", "0 / 36", 48f, Color.white, TextAlignmentOptions.Left, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(110f, 0f), new Vector2(210f, 70f), titleFont);
-            ui.resetProgressButton = TextButton(root, "ResetProgress", "Reset progress", new Vector2(1f, 1f), new Vector2(-60f, -150f), new Vector2(330f, 34f), 20f, out TextMeshProUGUI resetLabel);
+            ui.resetProgressButton = TextButton(root, "ResetProgress", "Reset progress", new Vector2(1f, 1f), new Vector2(-60f, -168f), new Vector2(330f, 60f), 20f, out TextMeshProUGUI resetLabel);
             ui.resetProgressLabel = resetLabel;
 
             // Mission details
@@ -318,8 +317,12 @@ namespace Portfolio.Asteroids.EditorTools
             ui.hangarButton = Button(buttons, "Hangar", "Hangar", AsteroidsArtBuilder.Icon("Hangar"), Blue, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(250f, 80f), 30f, out _);
             ui.titleSettingsButton = Button(buttons, "Settings", "Settings", AsteroidsArtBuilder.Icon("Settings"), Blue, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(250f, 80f), 30f, out _);
             ui.titleExitButton = Button(buttons, "Quit", "Quit", AsteroidsArtBuilder.Icon("Exit"), Red, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(220f, 80f), 30f, out _);
-            Text(root, "Controls", "W A S D / ARROWS fly    SPACE fire    SHIFT dash    B nova bomb    ESC pause", 21f, Dim, TextAlignmentOptions.Left,
+            TextMeshProUGUI keys = Text(root, "Controls", "W A S D / ARROWS fly    SPACE fire    SHIFT dash    B nova bomb    ESC pause", 21f, Dim, TextAlignmentOptions.Left,
                 new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(60f, 40f), new Vector2(760f, 70f), null, false);
+            UIBuildUtils.ShowOnly(keys.gameObject, TouchLayout.Visibility.WithoutTouch);
+            TextMeshProUGUI thumbs = Text(root, "TouchControls", "LEFT THUMB steer and thrust    HOLD FIRE to shoot    DASH    NOVA bomb    BACK pause", 21f, Dim,
+                TextAlignmentOptions.Left, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(60f, 40f), new Vector2(760f, 70f), null, false);
+            UIBuildUtils.ShowOnly(thumbs.gameObject, TouchLayout.Visibility.TouchOnly);
         }
 
         private static MissionNode HexNode(Transform parent, int index, Vector2 position)
@@ -387,6 +390,7 @@ namespace Portfolio.Asteroids.EditorTools
             ui.hangarScreen = screen;
             Image dim = Image(root, "Dim", null, new Color(0f, 0.01f, 0.04f, 0.85f), Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero);
             StretchFull(dim.rectTransform);
+            root = UIBuildUtils.CreateSafeArea(root);
             TextMeshProUGUI title = Text(root, "Title", "HANGAR", 76f, Color.white, TextAlignmentOptions.Center, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -40f), new Vector2(1000f, 100f), titleFont);
             title.characterSpacing = 16f;
             Gradient(title, new Color(0.75f, 0.97f, 1f), new Color(0.25f, 0.6f, 1f));
@@ -476,6 +480,7 @@ namespace Portfolio.Asteroids.EditorTools
                 warnings.Add(new AsteroidsUI.WarningMarker { arrow = arrow.rectTransform, lane = lane });
             }
             ui.warnings = warnings.ToArray();
+            root = UIBuildUtils.CreateSafeArea(root);
 
             // Score and combo
             RectTransform score = Panel(root, "Score", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(28f, -24f), new Vector2(360f, 118f));
@@ -550,12 +555,15 @@ namespace Portfolio.Asteroids.EditorTools
 
             // Hull, shield, dash
             RectTransform ship = Panel(root, "ShipStatus", new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(28f, 24f), new Vector2(430f, 118f));
+            // With touch the stick takes the lower left corner: hull and shield go under the score.
+            UIBuildUtils.MoveForTouch(ship, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(28f, -154f));
             Image(ship, "HullIcon", AsteroidsArtBuilder.Icon("Repair"), Color.white, new Vector2(0f, 1f), new Vector2(0.5f, 0.5f), new Vector2(40f, -36f), new Vector2(40f, 40f)).raycastTarget = false;
             ui.hullFill = Meter(ship, "Hull", new Vector2(70f, -28f), new Vector2(330f, 18f), new Color(0.35f, 1f, 0.55f));
             Image(ship, "ShieldIcon", AsteroidsArtBuilder.Icon("Shield"), Color.white, new Vector2(0f, 1f), new Vector2(0.5f, 0.5f), new Vector2(40f, -80f), new Vector2(40f, 40f)).raycastTarget = false;
             ui.shieldFill = Meter(ship, "ShieldBar", new Vector2(70f, -72f), new Vector2(330f, 18f), new Color(0.35f, 0.75f, 1f));
             Image dashIcon = Image(root, "Dash", AsteroidsArtBuilder.Icon("Dash"), new Color(1f, 1f, 1f, 0.9f), new Vector2(0f, 0f), new Vector2(0.5f, 0.5f), new Vector2(510f, 84f), new Vector2(58f, 58f));
             dashIcon.raycastTarget = false;
+            UIBuildUtils.ShowOnly(dashIcon.gameObject, TouchLayout.Visibility.WithoutTouch);
             Image dash = Image(root, "DashRing", AsteroidsArtBuilder.Interface("TimerRing"), Cyan, new Vector2(0f, 0f), new Vector2(0.5f, 0.5f), new Vector2(510f, 84f), new Vector2(86f, 86f));
             dash.type = UnityEngine.UI.Image.Type.Filled;
             dash.fillMethod = UnityEngine.UI.Image.FillMethod.Radial360;
@@ -563,9 +571,13 @@ namespace Portfolio.Asteroids.EditorTools
             dash.preserveAspect = false;
             dash.raycastTarget = false;
             ui.dashFill = dash;
+            // The touch dash button shows the recharge itself.
+            UIBuildUtils.ShowOnly(dash.gameObject, TouchLayout.Visibility.WithoutTouch);
 
             // Weapon and bombs
             RectTransform weapon = Panel(root, "Weapon", new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-28f, 24f), new Vector2(430f, 118f));
+            // With touch the buttons take the lower right corner: the weapon goes under the lives.
+            UIBuildUtils.MoveForTouch(weapon, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-28f, -118f));
             ui.weaponIcon = Image(weapon, "Icon", AsteroidsArtBuilder.Icon("Blaster"), Color.white, new Vector2(0f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(60f, 4f), new Vector2(76f, 76f));
             ui.weaponIcon.raycastTarget = false;
             ui.weaponText = Text(weapon, "Name", "BLASTER", 30f, Cyan, TextAlignmentOptions.Left, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(112f, -14f), new Vector2(200f, 40f), hudFont);
@@ -586,7 +598,8 @@ namespace Portfolio.Asteroids.EditorTools
             }
             bombs.Reverse();
             ui.bombIcons = bombs.ToArray();
-            Text(weapon, "BombKey", "B", 18f, Dim, TextAlignmentOptions.Center, new Vector2(1f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-80f, 22f), new Vector2(40f, 24f), null);
+            TextMeshProUGUI bombKey = Text(weapon, "BombKey", "B", 18f, Dim, TextAlignmentOptions.Center, new Vector2(1f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-80f, 22f), new Vector2(40f, 24f), null);
+            UIBuildUtils.ShowOnly(bombKey.gameObject, TouchLayout.Visibility.WithoutTouch);
 
             // Power-ups
             RectTransform powerUps = Rect(root, "PowerUps", new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-26f, 20f), new Vector2(104f, 460f));
@@ -647,16 +660,64 @@ namespace Portfolio.Asteroids.EditorTools
             ui.toastText = toast;
 
             RectTransform hint = Panel(root, "Hint", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 160f), new Vector2(1100f, 78f));
+            // Above the thumbs with touch, under the objective and the boss bar.
+            UIBuildUtils.MoveForTouch(hint, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -205f), new Vector2(880f, 78f));
             var hintGroup = hint.gameObject.AddComponent<CanvasGroup>();
             hintGroup.alpha = 0f;
             hintGroup.blocksRaycasts = false;
             hintGroup.interactable = false;
             ui.hintGroup = hintGroup;
             ui.hintText = Text(hint, "Text", "Hint", 28f, Color.white, TextAlignmentOptions.Center, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1060f, 70f), hudFont);
+            // The text follows the panel, which is narrower with touch.
+            ui.hintText.rectTransform.anchorMin = Vector2.zero;
+            ui.hintText.rectTransform.anchorMax = Vector2.one;
+            ui.hintText.rectTransform.offsetMin = new Vector2(20f, 4f);
+            ui.hintText.rectTransform.offsetMax = new Vector2(-20f, -4f);
             ui.hintText.textWrappingMode = TextWrappingModes.NoWrap;
             ui.hintText.enableAutoSizing = true;
             ui.hintText.fontSizeMin = 18f;
             ui.hintText.fontSizeMax = 28f;
+
+            BuildTouchControls(root, ui);
+        }
+
+        /// <summary>
+        /// The controls of touch play: a floating stick anywhere on the lower left for the left thumb, and a big fire
+        /// button with dash and nova bomb buttons around it for the right thumb. Shown only when the game is played by touch.
+        /// </summary>
+        private static void BuildTouchControls(Transform parent, AsteroidsUI ui)
+        {
+            RectTransform root = Rect(parent, "TouchControls", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero);
+            StretchFull(root);
+            UIBuildUtils.ShowOnly(root.gameObject, TouchLayout.Visibility.TouchOnly);
+            var controls = root.gameObject.AddComponent<ShipTouchControls>();
+            Sprite hexagon = AsteroidsArtBuilder.Interface("Hexagon");
+            Sprite ring = AsteroidsArtBuilder.Interface("TimerRing");
+
+            controls.stick = UIBuildUtils.CreateJoystick(root, "Stick", Vector2.zero, new Vector2(0.45f, 0.78f), ring, hexagon,
+                new Color(0.35f, 0.85f, 1f, 0.9f), 120f, new Vector2(250f, 240f));
+
+            controls.fire = UIBuildUtils.CreateTouchButton(root, "Fire", hexagon, new Color(1f, 0.42f, 0.32f, 0.8f), AsteroidsArtBuilder.Icon("Blaster"),
+                new Vector2(1f, 0f), new Vector2(-220f, 230f), 220f);
+            controls.fireIcon = controls.fire.transform.Find("Icon").GetComponent<Image>();
+
+            controls.dash = UIBuildUtils.CreateTouchButton(root, "Dash", hexagon, new Color(0.3f, 0.6f, 1f, 0.8f), AsteroidsArtBuilder.Icon("Dash"),
+                new Vector2(1f, 0f), new Vector2(-470f, 150f), 150f);
+            Image ready = Image(controls.dash.transform, "Ready", ring, new Color(0.5f, 0.9f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero,
+                new Vector2(186f, 186f));
+            ready.type = UnityEngine.UI.Image.Type.Filled;
+            ready.fillMethod = UnityEngine.UI.Image.FillMethod.Radial360;
+            ready.fillOrigin = (int)UnityEngine.UI.Image.Origin360.Top;
+            ready.preserveAspect = false;
+            ready.raycastTarget = false;
+            controls.dashReady = ready;
+
+            controls.bomb = UIBuildUtils.CreateTouchButton(root, "Nova", hexagon, new Color(1f, 0.8f, 0.3f, 0.8f), AsteroidsArtBuilder.Icon("Nova"),
+                new Vector2(1f, 0f), new Vector2(-430f, 390f), 140f);
+            controls.bombGroup = controls.bomb.gameObject.AddComponent<CanvasGroup>();
+            controls.bombCount = Text(controls.bomb.transform, "Count", "1", 30f, Color.white, TextAlignmentOptions.Center, new Vector2(1f, 0f),
+                new Vector2(0.5f, 0.5f), new Vector2(-16f, 20f), new Vector2(60f, 40f), hudFont);
+            ui.shipControls = controls;
         }
 
         private static Image Meter(Transform parent, string name, Vector2 position, Vector2 size, Color color)
@@ -680,6 +741,7 @@ namespace Portfolio.Asteroids.EditorTools
             ui.resultsScreen = screen;
             Image dim = Image(root, "Dim", null, new Color(0f, 0.01f, 0.04f, 0.6f), Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero);
             StretchFull(dim.rectTransform);
+            root = UIBuildUtils.CreateSafeArea(root);
 
             RectTransform panelRect = Panel(root, "Panel", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(980f, 880f));
             ui.resultTitle = Text(panelRect, "Title", "MISSION COMPLETE", 76f, Green, TextAlignmentOptions.Center, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -30f), new Vector2(940f, 100f), titleFont);

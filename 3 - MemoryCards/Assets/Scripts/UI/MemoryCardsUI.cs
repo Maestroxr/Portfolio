@@ -295,17 +295,10 @@ namespace Portfolio.MemoryCards
             }
         }
 
-        private void OnPauseClicked()
+        protected override void OnPauseClicked()
         {
             Cards?.PlayClick();
-            if (Controller != null)
-            {
-                Controller.TransitionState(BaseGameState.Paused);
-            }
-            else
-            {
-                Manager?.TransitionState(BaseGameState.Paused);
-            }
+            base.OnPauseClicked();
         }
 
         private void OnResetProgress()
@@ -319,7 +312,7 @@ namespace Portfolio.MemoryCards
             }
             Cards?.PlayClick();
             resetConfirmUntil = Time.unscaledTime + 3f;
-            SetLabel(resetProgressLabel, "Click again to reset");
+            SetLabel(resetProgressLabel, MobilePlatform.Pick("Click again to reset", "Tap again to reset"));
         }
 
         /// <summary>Fades a curtain in the world colour over everything; it clears by itself.</summary>
@@ -625,8 +618,15 @@ namespace Portfolio.MemoryCards
             bannerLength = duration;
         }
 
+        /// <summary>Words a tip for the way the game is played: clicks become taps on phones and tablets.</summary>
+        private static string ForInput(string text)
+        {
+            return MobilePlatform.UsesTouch && text != null ? text.Replace("Click", "Tap").Replace("click", "tap") : text;
+        }
+
         public void ShowTip(string text)
         {
+            text = ForInput(text);
             if (tipText == null || string.IsNullOrEmpty(text))
             {
                 return;
@@ -792,7 +792,7 @@ namespace Portfolio.MemoryCards
             }
             else if (!result.Victory)
             {
-                SetLabel(resultBest, Tips[Random.Range(0, Tips.Length)]);
+                SetLabel(resultBest, ForInput(Tips[Random.Range(0, Tips.Length)]));
             }
             else
             {

@@ -104,6 +104,10 @@ namespace Portfolio.Asteroids
         [SerializeField] internal Image damageFlash;
         [SerializeField] internal WarningMarker[] warnings = new WarningMarker[0];
 
+        [Header("Touch")]
+        [Tooltip("The on-screen stick and buttons, shown when the game is played by touch.")]
+        [SerializeField] internal ShipTouchControls shipControls;
+
         [Header("Results")]
         [SerializeField] internal TMP_Text resultTitle;
         [SerializeField] internal TMP_Text resultSubtitle;
@@ -307,19 +311,6 @@ namespace Portfolio.Asteroids
         }
 
 
-        private void OnPauseClicked()
-        {
-            if (Controller != null)
-            {
-                Controller.TransitionState(BaseGameState.Paused);
-            }
-            else
-            {
-                Manager?.TransitionState(BaseGameState.Paused);
-            }
-        }
-
-
         private void OnResetProgress()
         {
             if (Time.unscaledTime < resetConfirmUntil)
@@ -330,7 +321,19 @@ namespace Portfolio.Asteroids
                 return;
             }
             resetConfirmUntil = Time.unscaledTime + 3f;
-            SetLabel(resetProgressLabel, "Click again to reset");
+            SetLabel(resetProgressLabel, MobilePlatform.Pick("Click again to reset", "Tap again to reset"));
+        }
+
+
+        /// <summary>Back closes the settings, then the hangar, before the manager pauses or leaves.</summary>
+        public override bool HandleBack()
+        {
+            if (!IsSettingsShown && hangarScreen != null && hangarScreen.gameObject.activeInHierarchy)
+            {
+                HideHangar();
+                return true;
+            }
+            return base.HandleBack();
         }
 
 
@@ -583,6 +586,10 @@ namespace Portfolio.Asteroids
                 dashFill.fillAmount = 1f - hud.DashRecharge;
                 dashFill.color = hud.DashRecharge <= 0f ? new Color(0.5f, 0.9f, 1f) : new Color(0.35f, 0.45f, 0.6f);
             }
+            if (shipControls != null)
+            {
+                shipControls.ShowState(hud.DashRecharge, hud.Bombs);
+            }
             if (hud.Lives != shownLives)
             {
                 shownLives = hud.Lives;
@@ -607,6 +614,10 @@ namespace Portfolio.Asteroids
                 if (weaponIcon != null && (int)hud.Weapon < weaponSprites.Length)
                 {
                     weaponIcon.sprite = weaponSprites[(int)hud.Weapon];
+                }
+                if (shipControls != null && (int)hud.Weapon < weaponSprites.Length)
+                {
+                    shipControls.ShowWeapon(weaponSprites[(int)hud.Weapon]);
                 }
                 for (int i = 0; i < weaponPips.Length; i++)
                 {

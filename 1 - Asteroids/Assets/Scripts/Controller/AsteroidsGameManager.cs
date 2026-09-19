@@ -146,6 +146,7 @@ namespace Portfolio.Asteroids
             if (ship != null)
             {
                 ship.Field = field;
+                ship.TouchControls = ui != null ? ui.shipControls : null;
                 ship.Destroyed += OnShipDestroyed;
                 ship.Damaged += OnShipDamaged;
                 ship.CrystalCollected += OnCrystalCollected;
@@ -831,8 +832,8 @@ namespace Portfolio.Asteroids
 
         private void UpdateHints(float deltaTime)
         {
-            string[] hints = Mission != null ? Mission.Hints : null;
-            if (hints == null || hintIndex >= hints.Length)
+            AsteroidsLevel mission = Mission;
+            if (mission == null || hintIndex >= mission.HintCount)
             {
                 return;
             }
@@ -841,7 +842,7 @@ namespace Portfolio.Asteroids
             {
                 return;
             }
-            ui?.ShowHint(hints[hintIndex]);
+            ui?.ShowHint(mission.Hint(hintIndex, MobilePlatform.UsesTouch));
             hintIndex++;
             hintTimer = 6.5f;
         }

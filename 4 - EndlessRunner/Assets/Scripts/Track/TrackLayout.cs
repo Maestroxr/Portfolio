@@ -259,7 +259,7 @@ namespace Portfolio.EndlessRunner
                 }
                 if (level.ShowHints)
                 {
-                    layout.Hints.Add(new HintPlacement { Z = cursor - 18f, Text = HintFor(feature) });
+                    layout.Hints.Add(new HintPlacement { Z = cursor - 18f, Text = HintFor(feature, Gamebox.MobilePlatform.UsesTouch) });
                 }
                 end = IntroPattern(feature)(cursor, Mathf.Min(difficulty, 0.15f));
                 return true;
@@ -283,13 +283,14 @@ namespace Portfolio.EndlessRunner
             }
         }
 
-        private static string HintFor(TrackFeatures feature)
+        /// <summary>The tip shown before the first <paramref name="feature"/> of a level, worded for touch or the keyboard.</summary>
+        private static string HintFor(TrackFeatures feature, bool touch)
         {
             switch (feature)
             {
-                case TrackFeatures.Hurdles: return "Jump over hurdles: UP, SPACE or swipe up";
-                case TrackFeatures.Blocks: return "Dodge the crates: LEFT / RIGHT or swipe sideways";
-                case TrackFeatures.Barriers: return "Slide under barriers: DOWN or swipe down";
+                case TrackFeatures.Hurdles: return touch ? "Swipe up to jump over hurdles" : "Jump over hurdles: UP, SPACE or swipe up";
+                case TrackFeatures.Blocks: return touch ? "Swipe sideways to dodge the crates" : "Dodge the crates: LEFT / RIGHT or swipe sideways";
+                case TrackFeatures.Barriers: return touch ? "Swipe down to slide under barriers" : "Slide under barriers: DOWN or swipe down";
                 case TrackFeatures.Ramps: return "Run up the ramp - coins are waiting on the wagon!";
                 case TrackFeatures.Chasms: return "Mind the gap! Jump across";
                 case TrackFeatures.JumpPads: return "Bounce pads launch you into the sky!";

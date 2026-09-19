@@ -121,6 +121,8 @@ namespace Portfolio.Asteroids
         [SerializeField] internal string introduces;
         [Tooltip("Tips shown one after the other while the mission starts.")]
         [SerializeField] internal string[] hints = new string[0];
+        [Tooltip("Wording of the tips for touch play, by position in Hints; empty entries keep the tip as it is.")]
+        [SerializeField] internal string[] touchHints = new string[0];
         [SerializeField] internal int sector;
         [SerializeField] internal SectorTheme theme;
         [Tooltip("Endless missions move on to the next of these themes every Waves Per Theme waves.")]
@@ -146,6 +148,18 @@ namespace Portfolio.Asteroids
         public string Description => description;
         public string Introduces => introduces;
         public string[] Hints => hints ?? new string[0];
+
+        public int HintCount => hints != null ? hints.Length : 0;
+
+        /// <summary>Tip <paramref name="index"/>, in its touch wording when there is one and <paramref name="touch"/>.</summary>
+        public string Hint(int index, bool touch)
+        {
+            if (touch && touchHints != null && index < touchHints.Length && !string.IsNullOrEmpty(touchHints[index]))
+            {
+                return touchHints[index];
+            }
+            return hints[index];
+        }
         public int Sector => sector;
         public SectorTheme Theme => theme;
         public LevelObjective Objective => objective;

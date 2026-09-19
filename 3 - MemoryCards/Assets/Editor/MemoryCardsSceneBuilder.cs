@@ -65,7 +65,9 @@ namespace Portfolio.MemoryCards.EditorTools
             Canvas canvas = BuildCanvas("MemoryCardsCanvas", 0);
             Transform root = canvas.transform;
             AmbientBackdrop backdrop = BuildBackdrop(root);
-            RectTransform boardArea = Stretch(root, "BoardArea", 70f, 92f, 70f, 196f);
+            // The board, the screens' texts and buttons stay clear of notches and rounded corners; backgrounds, dims and
+            // overlays cover the whole screen.
+            RectTransform boardArea = Stretch(UIBuildUtils.CreateSafeArea(root, "BoardSafeArea"), "BoardArea", 70f, 92f, 70f, 196f);
             RectTransform boardRect = Stretch(boardArea, "Board");
             var board = boardRect.gameObject.AddComponent<CardBoard>();
             FlippableCache pool = BuildPool(game.transform, cardPrefab, boardRect);
@@ -202,11 +204,8 @@ namespace Portfolio.MemoryCards.EditorTools
             var canvas = canvasObject.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = order;
-            var scaler = canvasObject.GetComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = Reference;
-            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-            scaler.matchWidthOrHeight = 0.5f;
+            // Expands from the reference to any screen shape: phones add room at the sides, tablets above and below.
+            UIBuildUtils.ConfigureScaler(canvasObject.GetComponent<CanvasScaler>(), Reference);
             return canvas;
         }
 
@@ -305,7 +304,7 @@ namespace Portfolio.MemoryCards.EditorTools
         {
             CanvasGroup screen = Screen(parent, "Title");
             ui.titleScreen = screen;
-            Transform root = screen.transform;
+            Transform root = UIBuildUtils.CreateSafeArea(screen.transform);
 
             // Logo with animals around it.
             RectTransform logo = Rect(root, "Logo", new Vector2(0.5f, 1f), Center, new Vector2(0f, -104f), new Vector2(1180f, 170f));
@@ -524,7 +523,7 @@ namespace Portfolio.MemoryCards.EditorTools
         {
             CanvasGroup screen = Screen(parent, "Hud");
             ui.hudScreen = screen;
-            Transform root = screen.transform;
+            Transform root = UIBuildUtils.CreateSafeArea(screen.transform);
 
             // Level and mode, top left.
             RectTransform level = Rect(root, "Level", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(26f, -22f), new Vector2(560f, 112f));
@@ -651,6 +650,7 @@ namespace Portfolio.MemoryCards.EditorTools
             Transform root = screen.transform;
             Image dim = Image(root, "Dim", null, Dim, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, false, true);
             StretchRect(dim.rectTransform);
+            root = UIBuildUtils.CreateSafeArea(root);
 
             RectTransform panel = Rect(root, "Panel", Center, Center, new Vector2(0f, -20f), new Vector2(940f, 800f));
             ui.resultPanel = panel;

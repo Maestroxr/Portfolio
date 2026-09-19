@@ -1413,7 +1413,7 @@ namespace Portfolio.MemoryCards
             }
             if (!State.Is(BaseGameState.Paused))
             {
-                UI?.UpdateError("Pause the game (Escape) to save it.");
+                UI?.UpdateError(MobilePlatform.Pick("Pause the game (Escape) to save it.", "Pause the game to save it."));
                 return;
             }
             if (round == null || round.IsOver || phase == Phase.Finished)

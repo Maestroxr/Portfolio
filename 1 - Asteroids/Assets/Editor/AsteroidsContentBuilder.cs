@@ -27,6 +27,8 @@ namespace Portfolio.Asteroids.EditorTools
             public string Description;
             public string Introduces;
             public string[] Hints = new string[0];
+            /// <summary>Touch wording of the hints that name keys, by position in Hints; null or empty keeps the hint.</summary>
+            public string[] TouchHints = new string[0];
             public int Sector;
             public LevelObjective Objective;
             public int Target;
@@ -352,6 +354,13 @@ namespace Portfolio.Asteroids.EditorTools
                     "Shoot the green supply pods for weapon upgrades and shields.",
                     "SHIFT dashes through danger. Kills in a row build a combo."
                 },
+                TouchHints = new[]
+                {
+                    "Left thumb steers and thrusts toward where it points. Hold FIRE to shoot.",
+                    null,
+                    null,
+                    "DASH bursts through danger. Kills in a row build a combo."
+                },
                 Waves = new[] { W(rocks: 3), W(rocks: 4, pods: 1, interval: 5f), W(rocks: 5, pods: 1) }
             },
             new Mission
@@ -421,6 +430,7 @@ namespace Portfolio.Asteroids.EditorTools
                 Description = "Alien wasps nest among the rings, and their queen is angry.",
                 Introduces = "Alien wasps hunt you. Boss: the Hive Queen.",
                 Hints = new[] { "Wasps chase you - shoot them before they reach you.", "A nova bomb (B) clears the screen when you are swamped." },
+                TouchHints = new[] { null, "A nova bomb (NOVA) clears the screen when you are swamped." },
                 Waves = new[] { W(rocks: 3, ice: 2, wasps: 4, pods: 1, interval: 3.5f) }
             },
             new Mission
@@ -492,6 +502,7 @@ namespace Portfolio.Asteroids.EditorTools
                     l.description = mission.Description;
                     l.introduces = mission.Introduces;
                     l.hints = mission.Hints;
+                    l.touchHints = mission.TouchHints;
                     l.sector = sector;
                     l.theme = Theme(themeName);
                     l.themeRotation = new SectorTheme[0];

@@ -8,14 +8,14 @@ sector until you run out of ships.
 
 ## Playing
 
-| Control | Keyboard | Gamepad |
-| --- | --- | --- |
-| Turn | A / D, Left / Right | Left stick |
-| Thrust / brake | W / S, Up / Down | Left stick up / down |
-| Fire (hold) | Space | A or right bumper |
-| Dash (short burst, invulnerable) | Left Shift | X or left bumper |
-| Nova bomb (clears the screen) | B | B or Y |
-| Pause | Escape or the pause button | |
+| Control | Keyboard | Gamepad | Touch (phones and tablets) |
+| --- | --- | --- | --- |
+| Turn | A / D, Left / Right | Left stick | Left thumb anywhere on the lower left: a stick that turns the ship toward where it points |
+| Thrust / brake | W / S, Up / Down | Left stick up / down | The stick thrusts once the nose points its way, harder the further it is pushed |
+| Fire (hold) | Space | A or right bumper | Hold FIRE (shows the current weapon) |
+| Dash (short burst, invulnerable) | Left Shift | X or left bumper | DASH (its ring shows the recharge) |
+| Nova bomb (clears the screen) | B | B or Y | NOVA (shows the bombs left) |
+| Pause | Escape or the pause button | | Back button or the pause button |
 
 - **Ship.** The hull takes damage from collisions and enemy fire; the shield absorbs hits first and recharges from
   shield cells. Losing the hull costs a ship (and one weapon level), and you respawn with a moment of invulnerability.
@@ -106,6 +106,25 @@ The generators write to fixed paths and update existing assets in place (GUIDs a
 belong to the content (missions, waves, theme colours, ship stats) live in the builders, so hand edits to those
 assets are overwritten by the next rebuild. The scene is rebuilt from scratch, so its diff after a rebuild is large.
 
+## Phones and tablets
+
+The game runs on Android with the shared mobile code of BaseGame (see its README, "Phones and tablets"):
+
+- **Touch controls.** `ShipTouchControls` (built by `AsteroidsInterfaceBuilder.BuildTouchControls`) holds a floating
+  `VirtualJoystick` for the left thumb and the FIRE, DASH and NOVA `TouchButton`s for the right one. The player's input
+  (`PlayerShipInput`) reads them next to the keyboard and gamepad: `PlayerShipInput.Steer` turns the ship toward the
+  stick, easing off as the nose gets there, and thrusts once the nose is within about 70 degrees of it (covered by
+  `ShipInputTest`). The controls show only when the game is played by touch.
+- **HUD.** With touch the hull and shield panel moves under the score and the weapon panel under the lives, the dash
+  ring and the B key hint give way to the DASH button, and the tips move to the top (`TouchLayout`). The missions whose
+  tips name keys have touch wording (`AsteroidsLevel.touchHints`, set by the content builder).
+- **Screens.** The canvas expands from 1920 x 1080 to any screen shape and every screen keeps its texts and buttons in
+  a safe area. The playfield is as wide as the camera shows, so wider phones see more space. The back button closes
+  the settings and the hangar, pauses and resumes a mission, and leaves the mission select for the launcher (or closes
+  the app when the game is built on its own).
+- **Builds.** `Gamebox > Android > Build APK` builds `Build/Android/Asteroids.apk` (`com.skinnerboxes.asteroids`, with the
+  game's icon).
+
 ## Project setup
 
 - Unity 6000.6.0f1 with URP 17.6.0. The render pipeline assets are the ones that ship in the BaseGame package.
@@ -126,5 +145,5 @@ assets are overwritten by the next rebuild. The scene is rebuilt from scratch, s
 
 ## Notes
 
-Escape pauses the game and opens the shared menu; F1/F4/F5 restart, save and load a mission, and Enter launches the
-selected mission. Saving needs the PlayerPrefs storage strategy.
+Escape (the back button on a phone) pauses the game and opens the shared menu; F1/F4/F5 restart, save and load a
+mission, and Enter launches the selected mission. Saving needs the PlayerPrefs storage strategy.

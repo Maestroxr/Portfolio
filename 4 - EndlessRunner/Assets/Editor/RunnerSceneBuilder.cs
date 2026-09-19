@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Gamebox;
 using Gamebox.Editor;
+using Gamebox.UI;
 using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -490,11 +491,8 @@ namespace Portfolio.EndlessRunner.EditorTools
             var canvas = canvasObject.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = 50;
-            var scaler = canvasObject.GetComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
-            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-            scaler.matchWidthOrHeight = 0.5f;
+            // Expands from 1920 x 1080 to any screen shape; the screens keep their texts and buttons in a safe area.
+            UIBuildUtils.ConfigureScaler(canvasObject.GetComponent<CanvasScaler>());
             Transform root = canvasObject.transform;
 
             BuildHud(root, ui);
@@ -523,6 +521,7 @@ namespace Portfolio.EndlessRunner.EditorTools
             fade.rectTransform.anchorMax = new Vector2(1f, 0f);
             fade.rectTransform.sizeDelta = new Vector2(0f, 420f);
             fade.raycastTarget = false;
+            root = UIBuildUtils.CreateSafeArea(root);
 
             RectTransform logo = Rect(root, "Logo", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -18f), new Vector2(1100f, 270f));
             logo.localRotation = Quaternion.Euler(0f, 0f, 2.5f);
@@ -552,7 +551,10 @@ namespace Portfolio.EndlessRunner.EditorTools
             ui.titleExitButton = Button(progress, "Exit", "Quit", RunnerArtBuilder.Icon("Exit"), Red, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -272f), new Vector2(340f, 82f), 34f, out _);
             ui.resetProgressButton = TextButton(progress, "ResetProgress", "Reset progress", new Vector2(0.5f, 0f), new Vector2(0f, 58f), new Vector2(300f, 40f), 22f, out TextMeshProUGUI resetLabel);
             ui.resetProgressLabel = resetLabel;
-            Text(progress, "Controls", "Arrows / WASD / Space - or swipe", 20f, new Color(0.7f, 0.74f, 0.85f), TextAlignmentOptions.Center, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 18f), new Vector2(390f, 34f), null, false);
+            TextMeshProUGUI keys = Text(progress, "Controls", "Arrows / WASD / Space - or swipe", 20f, new Color(0.7f, 0.74f, 0.85f), TextAlignmentOptions.Center, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 18f), new Vector2(390f, 34f), null, false);
+            UIBuildUtils.ShowOnly(keys.gameObject, TouchLayout.Visibility.WithoutTouch);
+            TextMeshProUGUI swipes = Text(progress, "TouchControls", "Swipe to switch lanes, jump and slide", 20f, new Color(0.7f, 0.74f, 0.85f), TextAlignmentOptions.Center, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 18f), new Vector2(390f, 34f), null, false);
+            UIBuildUtils.ShowOnly(swipes.gameObject, TouchLayout.Visibility.TouchOnly);
 
             // Level strip
             RectTransform strip = Rect(root, "Levels", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 26f), new Vector2(1860f, 250f));
@@ -612,6 +614,7 @@ namespace Portfolio.EndlessRunner.EditorTools
             StretchFull(flash.rectTransform);
             flash.raycastTarget = false;
             ui.damageFlash = flash;
+            root = UIBuildUtils.CreateSafeArea(root);
 
             RectTransform coins = Panel(root, "Coins", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(28f, -24f), new Vector2(330f, 96f));
             Image coinIcon = Image(coins, "Icon", RunnerArtBuilder.Icon("Coin"), Color.white, new Vector2(0f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(56f, 0f), new Vector2(78f, 78f));
@@ -718,6 +721,7 @@ namespace Portfolio.EndlessRunner.EditorTools
             ui.resultsScreen = screen;
             Image dim = Image(root, "Dim", null, new Color(0f, 0f, 0.04f, 0.5f), Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero);
             StretchFull(dim.rectTransform);
+            root = UIBuildUtils.CreateSafeArea(root);
 
             RectTransform panel = Panel(root, "Panel", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(900f, 900f));
             ui.resultTitle = Text(panel, "Title", "LEVEL COMPLETE!", 80f, Gold, TextAlignmentOptions.Center, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -26f), new Vector2(860f, 104f), titleFont);

@@ -225,18 +225,6 @@ namespace Portfolio.EndlessRunner
             }
         }
 
-        private void OnPauseClicked()
-        {
-            if (Controller != null)
-            {
-                Controller.TransitionState(BaseGameState.Paused);
-            }
-            else
-            {
-                Manager?.TransitionState(BaseGameState.Paused);
-            }
-        }
-
         private void OnResetProgress()
         {
             if (Time.unscaledTime < resetConfirmUntil)
@@ -247,7 +235,7 @@ namespace Portfolio.EndlessRunner
                 return;
             }
             resetConfirmUntil = Time.unscaledTime + 3f;
-            SetLabel(resetProgressLabel, "Click again to reset");
+            SetLabel(resetProgressLabel, MobilePlatform.Pick("Click again to reset", "Tap again to reset"));
         }
 
         #endregion

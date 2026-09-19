@@ -17,9 +17,22 @@ The game is built on the base classes of the BaseGame package (`com.skinnerboxes
 | `GameSettings` | `MonopolySettings` |
 | `GameLevel` | `MonopolyLevel` |
 
-The `GameDefinition` asset under `Assets/Resources/Games` registers the game with the BaseGame launcher, and the
-editor tooling of the package (Gamebox > Sync Game Scenes To Build Settings) keeps the game scene in the build
-settings. This project has no main menu scene, so the Exit button of the shared menu reloads the game scene.
+The `GameDefinition` asset under `Assets/Resources/Games` registers the game with the BaseGame launcher (with its icon,
+`Art/Icons/GameIcon.png`, the game's die on a red tile), and the editor tooling of the package (Gamebox > Sync Game
+Scenes To Build Settings) keeps the game scene in the build settings. This project has no main menu scene, so the Exit
+button of the shared menu closes a build of the game on its own; in the editor it reloads the game scene.
+
+## Phones and tablets
+
+The game runs on Android with the shared mobile code of BaseGame (see its README, "Phones and tablets"). The board is
+laid out for 16:9, so the scene keeps it at that shape (`Board`, an `AspectRatioFitter` in the `MonopolyUI` canvas,
+which expands from a 16:9 reference): wider phones get bars at the sides, 4:3 tablets above and below. The dialog is
+half as big again as before, with a taller OK button, since one tap on it plays a turn. The shared menu brings the
+pause button (shown while a game runs), finger sized buttons and settings rows. The back button pauses and resumes a
+game and leaves the menu for the launcher (or closes the app when the game is built on its own).
+`Gamebox > Android > Build APK` builds `Build/Android/Monopoly.apk` (`com.skinnerboxes.monopoly`, with the game's icon).
+
+The scene has no builder: these changes were made to `Scenes/Monopoly.unity` directly.
 
 ## Project setup
 
