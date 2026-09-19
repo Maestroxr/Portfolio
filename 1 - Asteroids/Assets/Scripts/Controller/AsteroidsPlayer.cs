@@ -1,179 +1,542 @@
+using System;
+using System.Collections.Generic;
 using Gamebox;
 using UnityEngine;
 
 namespace Portfolio.Asteroids
 {
     /// <summary>
-    /// A spaceship. Moves through <see cref="PlayerSimulation"/>, shoots from the shared <see cref="ShotPool"/> and
-    /// only simulates while its <see cref="BaseGameManager"/> reports the game as running.
+    /// The ship. Flies through <see cref="PlayerSimulation"/> (thrust, drift, brake, dash), fires the current weapon of
+    /// <see cref="Weapons"/>, sets off nova bombs, and carries a hull and a shield that soaks up hits first and slowly
+    /// recharges half-way after a few quiet seconds. Pickups repair it, charge the shield, upgrade the gun, add bombs
+    /// and switch on timed power-ups. Its <see cref="AsteroidsGameManager"/> steps it while a mission runs and decides
+    /// what happens when it is destroyed.
     /// </summary>
-    public class AsteroidsPlayer : PlayerBase, ILocalTransformAdapter, ICyclic<AsteroidsPlayer>
+    public class AsteroidsPlayer : PlayerBase, ILocalTransformAdapter
     {
+        public const int MaxBombs = 3;
+        private const float ShieldRegenDelay = 5f;
+        private const float ShieldRegenRate = 7f;
+
         public Vector3 LocalPosition { get => transform.position; set => transform.position = value; }
         public Quaternion LocalRotation { get => transform.rotation; set => transform.rotation = value; }
-        public Vector3 Forward { get => transform.up; }
+        public Vector3 Forward => transform.up;
+
         [field: SerializeField]
         public PlayerSettings PlayerSettings { get; private set; }
+
+        [SerializeField] internal ShipVisuals visuals;
+        [SerializeField] internal Drone[] drones = new Drone[0];
+        [SerializeField] internal float novaDamage = 8f;
+        [SerializeField] internal float novaBossDamage = 18f;
+
         public delegate void PointsChanged(int points);
         public delegate void HealthChanged(float health);
+
         public event PointsChanged PointsChangedEvent;
         public event HealthChanged HealthChangedEvent;
-        public int Points { get => points; set { points = value; PointsChangedEvent?.Invoke(points); } }
-        public float Health { get => health; set { health = value; HealthChangedEvent?.Invoke(health); } }
-        public AsteroidsPlayer Mirror { get; private set; }
-        public bool IsMirror { get; private set; }
-        public bool IsOppositeShown { get; set; }
-        public ShotPool ShotsPool;
+        public event Action<float> ShieldChanged;
+        public event Action<int> BombsChanged;
+        public event Action<PowerUpType, bool> PowerUpChanged;
+        public event Action<DamageInfo> Damaged;
+        public event Action<AsteroidsPlayer> Destroyed;
+        public event Action<PointReward> CrystalCollected;
+        public event Action LifeAwarded;
+        public event Action<int> VolleyFired;
+        public event Action NovaFired;
+        public event Action Dashed;
 
+        private readonly float[] powerUps = new float[PowerUps.Count];
+        private readonly List<Barrel> barrels = new List<Barrel>(12);
+        private PlayerSimulation simulation;
+        private IShipInput input;
+        private int points;
+        private float health = 100f;
+        private float shield;
+        private float fireCooldown;
+        private float hurtCooldown;
+        private float invulnerable;
+        private float regenDelay;
+        private bool destroyed;
 
-        [SerializeField]
-        private Shot shotGameObject;
-        private float health = 1000;
-        private int points = 0;
-        private PlayerSimulation playerSimulation;
-        private float lifeLose;
-        private float timeUntilLifeLoseIncrease;
-        private int shotsCount = 0;
+        public int Points
+        {
+            get => points;
+            set
+            {
+                points = value;
+                PointsChangedEvent?.Invoke(points);
+            }
+        }
+
+        /// <summary>Hull points.</summary>
+        public float Health
+        {
+            get => health;
+            set
+            {
+                health = Mathf.Min(value, MaxHealth > 0f ? MaxHealth : value);
+                HealthChangedEvent?.Invoke(health);
+            }
+        }
+
+        public float MaxHealth { get; private set; } = 100f;
+
+        public float Shield
+        {
+            get => shield;
+            private set
+            {
+                shield = Mathf.Clamp(value, 0f, MaxShield);
+                ShieldChanged?.Invoke(shield);
+            }
+        }
+
+        public float MaxShield => PlayerSettings != null ? PlayerSettings.ShieldCapacity : 100f;
+
+        public int Bombs { get; private set; }
+
+        public ShipWeapons Weapons { get; } = new ShipWeapons();
+
+        public PlayerSimulation Simulation => simulation ??= new PlayerSimulation(this, PlayerSettings);
+
+        public IShipInput Input
+        {
+            get => input ??= new KeyboardShipInput();
+            set => input = value;
+        }
+
+        internal SpaceField Field { get; set; }
+
+        public bool IsAlive => !destroyed && health > 0f && gameObject.activeInHierarchy;
+
+        public bool IsDashing => simulation != null && simulation.IsDashing;
+
+        public bool IsInvulnerable => invulnerable > 0f || IsDashing;
+
+        public float InvulnerableTime => invulnerable;
+
+        public float Radius => PlayerSettings != null ? PlayerSettings.HitRadius : 0.6f;
+
+        public float PickupRadius => Radius + 0.45f;
+
+        public Vector2 Position
+        {
+            get
+            {
+                Vector3 position = transform.position;
+                return new Vector2(position.x, position.y);
+            }
+            set => transform.position = new Vector3(value.x, value.y, 0f);
+        }
+
+        public Vector2 Velocity => simulation != null ? (Vector2)simulation.Velocity : Vector2.zero;
 
         private AsteroidsGameManager Asteroids => GameManager as AsteroidsGameManager;
-
-        /// <summary>The player only flies, shoots and loses life while its game is running.</summary>
-        private bool IsSimulating => GameManager == null || GameManager.IsGameRunning;
 
 
         protected override void Start()
         {
             base.Start();
-            if (IsMirror)
-            {
-                return;
-            }
-
-            playerSimulation = new PlayerSimulation(this, PlayerSettings);
-            ResetForNewGame();
+            simulation ??= new PlayerSimulation(this, PlayerSettings);
         }
 
 
-        /// <summary>Restores the starting life, points and life-loss rate.</summary>
+        /// <summary>Switches to another ship of the hangar: flight values, toughness and looks.</summary>
+        public void ApplyHull(PlayerSettings hull)
+        {
+            if (hull == null)
+            {
+                return;
+            }
+            PlayerSettings = hull;
+            Simulation.Apply(hull);
+            if (visuals != null)
+            {
+                visuals.SetModel(hull);
+            }
+        }
+
+
+        /// <summary>Kept from the original: a fresh ship with the default hull strength.</summary>
         public void ResetForNewGame()
         {
-            if (PlayerSettings == null)
-            {
-                return;
-            }
-            Health = PlayerSettings.StartingLife;
+            ResetForMission(MaxHealth > 0f ? MaxHealth : 100f);
+        }
+
+
+        /// <summary>A fresh ship for a new mission, in the middle of the playfield, with <paramref name="hullStrength"/> hull points.</summary>
+        public void ResetForMission(float hullStrength)
+        {
+            float multiplier = PlayerSettings != null ? PlayerSettings.HullMultiplier : 1f;
+            MaxHealth = Mathf.Max(1f, hullStrength * multiplier);
+            destroyed = false;
+            gameObject.SetActive(true);
+            Health = MaxHealth;
+            Shield = MaxShield * 0.5f;
             Points = 0;
-            lifeLose = PlayerSettings.LifeLosePerSecond;
-            timeUntilLifeLoseIncrease = PlayerSettings.LifeLoseIncreaseTime;
+            Weapons.Reset();
+            SetBombs(1);
+            ClearPowerUps();
+            Position = Vector2.zero;
+            transform.rotation = Quaternion.identity;
+            Simulation.Stop();
+            fireCooldown = 0f;
+            hurtCooldown = 0f;
+            regenDelay = 0f;
+            invulnerable = 1.5f;
+            visuals?.ResetVisuals();
         }
 
 
-        void Update()
+        /// <summary>A replacement ship after one was lost: full hull, half a shield, one weapon level less.</summary>
+        public void Respawn(Vector2 position)
         {
-            if (IsMirror || Health <= 0 || !IsSimulating || playerSimulation == null)
+            destroyed = false;
+            gameObject.SetActive(true);
+            Health = MaxHealth;
+            Shield = MaxShield * 0.5f;
+            Weapons.Downgrade();
+            ClearPowerUps();
+            Position = position;
+            transform.rotation = Quaternion.identity;
+            Simulation.Stop();
+            fireCooldown = 0.4f;
+            hurtCooldown = 0f;
+            invulnerable = 3f;
+            visuals?.ResetVisuals();
+            Field?.Effects?.WarpIn(position, 1.8f, PlayerSettings != null ? PlayerSettings.EngineColor : Color.cyan);
+            Field?.Sounds?.Respawn();
+        }
+
+
+        /// <summary>One frame of flight and combat. The manager calls it while a mission runs.</summary>
+        public void Simulate(float deltaTime, bool controls = true)
+        {
+            if (!IsAlive)
             {
                 return;
             }
+            PlayerSimulation flight = Simulation;
+            IShipInput commands = Input;
+            if (controls)
+            {
+                commands.Read(this, deltaTime);
+            }
+            invulnerable = Mathf.Max(0f, invulnerable - deltaTime);
+            hurtCooldown = Mathf.Max(0f, hurtCooldown - deltaTime);
+            fireCooldown -= deltaTime;
+            TickPowerUps(deltaTime);
+            RegenerateShield(deltaTime);
 
-            var deltaTime = Time.deltaTime;
-            if (Input.GetKey(PlayerSettings.Forward))
+            float turn = controls ? commands.Turn : 0f;
+            float thrust = controls ? commands.Thrust : 0f;
+            flight.Steer(turn, deltaTime);
+            if (thrust > 0f)
             {
-                playerSimulation.MoveForward(deltaTime);
+                flight.Thrust(deltaTime, thrust);
             }
-            if (Input.GetKey(PlayerSettings.Left))
+            if (controls && commands.Brake)
             {
-                playerSimulation.Rotate(Vector3.forward, deltaTime);
+                flight.Brake(deltaTime);
             }
-            else if (Input.GetKey(PlayerSettings.Right))
+            if (controls && commands.DashPressed && flight.Dash())
             {
-                playerSimulation.Rotate(Vector3.back, deltaTime);
+                Field?.Effects?.DashTrail(Position, Forward, PlayerSettings != null ? PlayerSettings.EngineColor : Color.cyan);
+                Field?.Sounds?.Dash();
+                Dashed?.Invoke();
             }
-
-            playerSimulation.UpdateRotation(deltaTime);
-
-            if (Input.GetKeyDown(PlayerSettings.Shoot))
+            flight.Step(deltaTime);
+            if (Field != null && Field.Playground != null)
             {
-                Shoot();
+                Position = Field.Playground.Wrap(Position, Radius);
             }
-
-            timeUntilLifeLoseIncrease -= deltaTime;
-            if (timeUntilLifeLoseIncrease < 0)
+            if (controls && commands.Fire && fireCooldown <= 0f)
             {
-                lifeLose += PlayerSettings.LifeLoseIncreaseRate;
-                timeUntilLifeLoseIncrease += PlayerSettings.LifeLoseIncreaseTime;
+                FireVolley();
             }
-            Health -= deltaTime * lifeLose;
+            if (controls && commands.BombPressed)
+            {
+                FireNova();
+            }
+            foreach (Drone drone in drones)
+            {
+                if (drone != null && drone.isActiveAndEnabled)
+                {
+                    drone.Tick(this, deltaTime);
+                }
+            }
+            if (visuals != null)
+            {
+                visuals.Animate(this, thrust, turn, deltaTime);
+            }
         }
 
 
-        public void Shoot()
+        // ------------------------------------------------------------------ weapons
+
+        private void FireVolley()
         {
-            if (IsMirror || ShotsPool == null)
+            SpawnService spawner = Field != null ? Field.Spawner : null;
+            if (spawner == null)
             {
                 return;
             }
-            Shot shot = ShotsPool.Deploy();
-            shot.transform.position = transform.position;
-            shot.transform.rotation = transform.rotation;
-            shot.FiredBy = this;
-            shot.ShotHitEvent += (shotHit, obj) => ShotsPool.Undeploy(shotHit);
-            shot.StartTimeAlive();
-
-            Floatable floatingShot = shot.GetComponent<Floatable>();
-            if (floatingShot != null)
+            WeaponType type = Weapons.Type;
+            int level = Weapons.Level;
+            float rate = (PlayerSettings != null ? PlayerSettings.FireRateMultiplier : 1f) * (IsPowerUpActive(PowerUpType.Overdrive) ? 2f : 1f);
+            fireCooldown = WeaponRules.Cooldown(type, level) / Mathf.Max(0.1f, rate);
+            WeaponRules.Volley(type, level, barrels);
+            Vector2 forward = Forward;
+            var right = new Vector2(forward.y, -forward.x);
+            Vector2 gun = PlayerSettings != null ? PlayerSettings.GunPoint : new Vector2(0f, 0.8f);
+            Vector2 origin = Position + forward * gun.y + right * gun.x;
+            int fired = 0;
+            foreach (Barrel barrel in barrels)
             {
-                floatingShot.Direction = transform.up;
+                Vector2 direction = Quaternion.Euler(0f, 0f, -barrel.Angle) * forward;
+                if (spawner.FirePlayerShot(type, level, origin + right * barrel.Offset, direction, Velocity, this) != null)
+                {
+                    fired++;
+                }
             }
-
-            shotsCount++;
-            shot.name = $"Shot {shotsCount}";
+            if (fired == 0)
+            {
+                return;
+            }
+            visuals?.MuzzleFlash(WeaponRules.Tint(type));
+            Field.Sounds?.Fire(type);
+            VolleyFired?.Invoke(fired);
         }
 
 
+        private void FireNova()
+        {
+            if (Bombs <= 0 || Field == null)
+            {
+                Field?.Sounds?.Denied();
+                return;
+            }
+            SetBombs(Bombs - 1);
+            Field.Nova(Position, novaDamage, novaBossDamage);
+            Field.Effects?.Nova(Position);
+            Field.Sounds?.Nova();
+            Field.CameraRig?.Shake(0.8f);
+            Field.CameraRig?.Pulse(1f);
+            invulnerable = Mathf.Max(invulnerable, 0.6f);
+            NovaFired?.Invoke();
+        }
+
+
+        // ------------------------------------------------------------------ damage
+
+        /// <summary>
+        /// Applies <paramref name="hit"/> to the shield and then the hull. Hits right after another are ignored unless
+        /// <paramref name="continuous"/> (a black hole's core). Returns false when the ship could not be hurt.
+        /// </summary>
+        public bool TakeDamage(DamageInfo hit, bool continuous = false)
+        {
+            if (!IsAlive || IsInvulnerable || (!continuous && hurtCooldown > 0f) || hit.Amount <= 0f)
+            {
+                return false;
+            }
+            float amount = hit.Amount;
+            if (Shield > 0f)
+            {
+                float absorbed = Mathf.Min(Shield, amount);
+                Shield -= absorbed;
+                amount -= absorbed;
+                visuals?.ShieldHit(hit.Direction);
+                Field?.Sounds?.ShieldHit(Shield <= 0f);
+            }
+            if (amount > 0f)
+            {
+                Health -= amount;
+                Field?.Effects?.Spark(Position - hit.Direction * Radius, new Color(1f, 0.6f, 0.3f), 1.4f);
+                Field?.Sounds?.HullHit();
+            }
+            hurtCooldown = continuous ? 0f : 0.45f;
+            regenDelay = ShieldRegenDelay;
+            Damaged?.Invoke(hit);
+            if (Health <= 0f)
+            {
+                Explode();
+            }
+            return true;
+        }
+
+
+        private void Explode()
+        {
+            if (destroyed)
+            {
+                return;
+            }
+            destroyed = true;
+            health = 0f;
+            HealthChangedEvent?.Invoke(0f);
+            Field?.Effects?.ShipExplosion(Position, PlayerSettings != null ? PlayerSettings.EngineColor : Color.cyan);
+            Field?.Sounds?.ShipExplode();
+            Field?.CameraRig?.Shake(1f);
+            ClearPowerUps();
+            gameObject.SetActive(false);
+            Destroyed?.Invoke(this);
+        }
+
+
+        /// <summary>Kept from the original: a hit by something shootable destroys the ship outright.</summary>
         public void OnTriggerEnter(Collider other)
         {
-            if (!IsSimulating)
+            if (other != null && other.GetComponent<Shootable>() != null && GameManager != null && GameManager.IsGameRunning)
             {
-                // Asteroids keep drifting behind the menu; they only hurt the ship while a game is running.
-                return;
-            }
-            Shootable willKillMe = other.gameObject.GetComponent<Shootable>();
-            if (willKillMe != null)
-            {
-                // Player Destroyed
-                gameObject.SetActive(false);
-                if (IsMirror)
-                {
-                    if (Mirror != null)
-                    {
-                        Mirror.Health = 0;
-                        Mirror.gameObject.SetActive(false);
-                    }
-                }
-                else
-                {
-                    Health = 0;
-                }
+                TakeDamage(new DamageInfo(MaxHealth + MaxShield, Vector2.up, Position, DamageSource.Collision, false));
             }
         }
 
 
+        public void Push(Vector2 impulse)
+        {
+            Simulation.Push(impulse);
+        }
+
+
+        private void RegenerateShield(float deltaTime)
+        {
+            regenDelay -= deltaTime;
+            float cap = MaxShield * 0.5f;
+            if (regenDelay > 0f || Shield >= cap)
+            {
+                return;
+            }
+            Shield = Mathf.Min(cap, Shield + ShieldRegenRate * deltaTime);
+        }
+
+
+        // ------------------------------------------------------------------ pickups
+
+        /// <summary>A crystal (points and progress toward a collection objective).</summary>
         public void AwardPoints(PointReward reward)
         {
             Points += reward.PointsAward;
-            Asteroids?.IncreaseScore(reward.PointsAward);
+            CrystalCollected?.Invoke(reward);
+            if (CrystalCollected == null)
+            {
+                Asteroids?.IncreaseScore(reward.PointsAward);
+            }
         }
 
 
         public void AwardHealth(HealthReward reward)
         {
-            Health += reward.HealthAward;
+            Repair(reward.HealthAward);
         }
 
-        public void Setup(AsteroidsPlayer mirror, bool isMirror)
+
+        public void Repair(float amount)
         {
-            Mirror = mirror;
-            IsMirror = isMirror;
+            Health = Mathf.Min(MaxHealth, Health + amount);
+        }
+
+
+        public void RestoreShield(float amount)
+        {
+            Shield += amount;
+        }
+
+
+        public void AddBomb()
+        {
+            SetBombs(Bombs + 1);
+        }
+
+
+        public void AwardLife()
+        {
+            LifeAwarded?.Invoke();
+        }
+
+
+        private void SetBombs(int count)
+        {
+            Bombs = Mathf.Clamp(count, 0, MaxBombs);
+            BombsChanged?.Invoke(Bombs);
+        }
+
+
+        public void ActivatePowerUp(PowerUpType type, float duration)
+        {
+            bool wasActive = IsPowerUpActive(type);
+            powerUps[(int)type] = Mathf.Max(powerUps[(int)type], duration);
+            if (type == PowerUpType.Drones)
+            {
+                SetDrones(true);
+            }
+            if (!wasActive)
+            {
+                PowerUpChanged?.Invoke(type, true);
+            }
+        }
+
+
+        public bool IsPowerUpActive(PowerUpType type)
+        {
+            return powerUps[(int)type] > 0f;
+        }
+
+
+        /// <summary>Seconds left on a power-up.</summary>
+        public float PowerUpTime(PowerUpType type)
+        {
+            return powerUps[(int)type];
+        }
+
+
+        private void TickPowerUps(float deltaTime)
+        {
+            for (int i = 0; i < powerUps.Length; i++)
+            {
+                if (powerUps[i] <= 0f)
+                {
+                    continue;
+                }
+                powerUps[i] -= deltaTime;
+                if (powerUps[i] <= 0f)
+                {
+                    powerUps[i] = 0f;
+                    var type = (PowerUpType)i;
+                    if (type == PowerUpType.Drones)
+                    {
+                        SetDrones(false);
+                    }
+                    PowerUpChanged?.Invoke(type, false);
+                }
+            }
+        }
+
+
+        private void ClearPowerUps()
+        {
+            for (int i = 0; i < powerUps.Length; i++)
+            {
+                if (powerUps[i] > 0f)
+                {
+                    powerUps[i] = 0f;
+                    PowerUpChanged?.Invoke((PowerUpType)i, false);
+                }
+            }
+            SetDrones(false);
+        }
+
+
+        private void SetDrones(bool active)
+        {
+            for (int i = 0; i < drones.Length; i++)
+            {
+                if (drones[i] != null)
+                {
+                    drones[i].SetActive(active, i, drones.Length);
+                }
+            }
         }
     }
 }

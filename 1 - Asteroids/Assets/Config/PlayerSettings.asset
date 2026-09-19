@@ -12,15 +12,35 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0ac6dcd659e5f87478b16796d92713c4, type: 3}
   m_Name: PlayerSettings
   m_EditorClassIdentifier: 
-  <MovementSpeed>k__BackingField: 5
-  <RotationSpeed>k__BackingField: 150
-  <TorqueDrag>k__BackingField: 1.5
-  <TorqueClamp>k__BackingField: 50
-  <LifeLosePerSecond>k__BackingField: 1
-  <StartingLife>k__BackingField: 1000
-  <LifeLoseIncreaseRate>k__BackingField: 5
-  <LifeLoseIncreaseTime>k__BackingField: 5
+  <DisplayName>k__BackingField: Sparrow
+  <Description>k__BackingField: Balanced interceptor. Easy to fly and good at everything.
+  <StarsToUnlock>k__BackingField: 0
+  <Thrust>k__BackingField: 22
+  <MovementSpeed>k__BackingField: 11
+  <Drag>k__BackingField: 0.55
+  <BrakeForce>k__BackingField: 20
+  <RotationSpeed>k__BackingField: 250
+  <TorqueDrag>k__BackingField: 10
+  <DashSpeed>k__BackingField: 22
+  <DashDuration>k__BackingField: 0.22
+  <DashCooldown>k__BackingField: 2.2
+  <HullMultiplier>k__BackingField: 1
+  <ShieldCapacity>k__BackingField: 100
+  <FireRateMultiplier>k__BackingField: 1
+  <HitRadius>k__BackingField: 0.68
+  <ModelMesh>k__BackingField: {fileID: 4300000, guid: e0f90ad78680d6145b082ac69f7fc504, type: 3}
+  <ModelMaterial>k__BackingField: {fileID: 2100000, guid: ca28c97d23f98024fb31e22662eb58e7, type: 2}
+  <ModelScale>k__BackingField: 0.17971478
+  <EnginePoints>k__BackingField:
+  - {x: -0.703078, y: -0.897}
+  - {x: 0.00000056982327, y: -0.897}
+  - {x: 0.698518, y: -0.897}
+  <GunPoint>k__BackingField: {x: 0, y: 0.975}
+  <EngineColor>k__BackingField: {r: 0.4, g: 0.8, b: 1, a: 1}
   <Forward>k__BackingField: 119
   <Left>k__BackingField: 97
   <Right>k__BackingField: 100
+  <Brake>k__BackingField: 115
   <Shoot>k__BackingField: 32
+  <Dash>k__BackingField: 304
+  <Bomb>k__BackingField: 98
