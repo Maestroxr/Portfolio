@@ -1,29 +1,57 @@
-﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace Portfolio.Asteroids
 {
-    public class Lootable : Shootable, ICyclic<Shootable>
+    /// <summary>
+    /// A supply pod drifting through the sector with a blinking beacon. It takes a couple of hits and always drops a
+    /// pickup from its drop table: weapons, shields, repairs, power-ups. If nobody shoots it, it drifts away.
+    /// </summary>
+    public class Lootable : Shootable
     {
-        public Transform RewardParent;
+        [SerializeField] internal Renderer beacon;
+        [SerializeField, ColorUsage(false, true)] internal Color beaconColor = new Color(0.4f, 2.5f, 0.8f);
 
-        [SerializeField]
-        private Loot loot;
+        private static MaterialPropertyBlock block;
+        private static readonly int ColorId = Shader.PropertyToID("_BaseColor");
 
 
-        public override void WasShot(Shot shot)
+        public override void Tick(float deltaTime)
         {
-            base.WasShot(shot);
-            Loot(shot);
+            base.Tick(deltaTime);
+            if (beacon == null)
+            {
+                return;
+            }
+            bool on = Mathf.Repeat(Age, 0.9f) < 0.18f;
+            block ??= new MaterialPropertyBlock();
+            block.Clear();
+            block.SetColor(ColorId, on ? beaconColor : beaconColor * 0.1f);
+            beacon.SetPropertyBlock(block);
         }
 
 
-        private void Loot(Shot shot)
+        protected override void OnDestroyed(DamageInfo hit)
         {
-            int index = Random.Range(0, loot.Rewards.Count);
-            Reward reward = Instantiate(loot.Rewards[index], Camera.main.WorldToScreenPoint(transform.position), Quaternion.identity, RewardParent);
-            reward.Cause = shot;
+            if (Field == null)
+            {
+                return;
+            }
+            if (Field.Effects != null)
+            {
+                Field.Effects.Explosion(Position, 1.2f, new Color(0.5f, 1f, 0.6f));
+            }
+            if (Field.Sounds != null)
+            {
+                Field.Sounds.PodOpen();
+            }
+            if (Field.Spawner != null && Loot != null)
+            {
+                Reward drop = Loot.Pick();
+                if (drop != null)
+                {
+                    Field.Spawner.SpawnReward(drop, Position, Velocity * 0.3f);
+                }
+            }
         }
     }
 }

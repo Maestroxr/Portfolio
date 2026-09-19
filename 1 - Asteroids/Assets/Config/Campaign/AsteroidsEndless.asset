@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25edec1141714089bb4a39576791ecca, type: 3}
+  m_Name: AsteroidsEndless
+  m_EditorClassIdentifier: Skinnerboxes.Asteroids::Portfolio.Asteroids.AsteroidsLevel
+  <Index>k__BackingField: 12
+  <Title>k__BackingField: Deep Field
+  <Settings>k__BackingField: {fileID: 11400000, guid: 5c7ad5d2c87ad0e4f9e89e78e5e2b94d, type: 2}
+  description: Endless waves through every sector, with a boss every ten waves. How far can you get?
+  introduces: Endless survival. Your best score and wave are kept.
+  hints:
+  - Waves keep coming and keep growing. Bosses arrive every ten waves.
+  sector: 4
+  theme: {fileID: 11400000, guid: e8b5ed969170b89419e36b0b81c5ff8c, type: 2}
+  themeRotation:
+  - {fileID: 11400000, guid: e8b5ed969170b89419e36b0b81c5ff8c, type: 2}
+  - {fileID: 11400000, guid: b9c43084b72c9ff4d8804d6653ae841e, type: 2}
+  - {fileID: 11400000, guid: f0c8ff538a1918b49990cd7c00e166f7, type: 2}
+  - {fileID: 11400000, guid: 9a9ff548805707043b700b1ba546a47e, type: 2}
+  wavesPerTheme: 5
+  objective: 4
+  objectiveTarget: 0
+  waves: []
+  boss: {fileID: 0}
+  bossRotation:
+  - {fileID: 6950834682264284379, guid: e1026246045581a458caba5c50d034e7, type: 3}
+  - {fileID: 8022309903210479663, guid: 8fbb2540d146a5d469c04074c18dfddb, type: 3}
+  - {fileID: 3559230958208128197, guid: a30e7241d1b89e8439b8ae0dd828754c, type: 3}
+  - {fileID: 1797795269192501292, guid: 24982b62b8c22524997b38c75e3a7cbb, type: 3}
+  bossEvery: 10
+  asteroidLoot: {fileID: 11400000, guid: 2eaa5cee3c825b741a3b11ed13f25597, type: 2}
+  lootChance: 0.07
+  podLoot: {fileID: 11400000, guid: d33a134b1546f4145a660f4d2aaf79be, type: 2}
+  scoreGoal: 0
+  speedMultiplier: 1

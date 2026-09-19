@@ -1,19 +1,17 @@
-﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace Portfolio.Asteroids
 {
+    /// <summary>A repair kit: restores hull points.</summary>
     public class HealthReward : Reward
     {
         [field: SerializeField]
-        public float HealthAward { get; private set; }
+        public float HealthAward { get; private set; } = 40f;
 
 
-        public override void Award()
+        public override void Award(AsteroidsPlayer player)
         {
-            Cause.FiredBy.AwardHealth(this);
-            Destroy(gameObject);
+            player.AwardHealth(this);
         }
     }
 }

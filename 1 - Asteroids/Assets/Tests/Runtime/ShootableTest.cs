@@ -1,7 +1,5 @@
 using System.Collections;
-using System.Collections.Generic;
 using NUnit.Framework;
-using Portfolio.Asteroids;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -9,50 +7,95 @@ namespace Portfolio.Asteroids.Tests
 {
     public class ShootableTest
     {
-        private float secondsTillShotHits = 3f;
-
-        [UnityTest]
-        public IEnumerator LootableDropsLootTest()
+        private static int CountAsteroids(SpaceField field, AsteroidKind kind, AsteroidSize size)
         {
-            yield return TestScenes.Load("LootableDropsLootTest");
-            TestScenes.StartRunning();
-
-            var lootables = Object.FindObjectsByType<Lootable>(FindObjectsSortMode.None);
-            var lootable = new List<Lootable>(lootables).Find(p => p.isActiveAndEnabled);
-            Assert.NotNull(lootable, "No active lootable in the test scene.");
-            Assert.True(lootable.gameObject.activeInHierarchy, "Asteroid already inactive.");
-
-            Assert.Zero(Object.FindObjectsByType<Reward>(FindObjectsSortMode.None).Length, "Rewards exist in scene before the test.");
-
-            bool wasHit = false;
-            lootable.OnShotEvent += (shootable, shot) => wasHit = true;
-            yield return new WaitForSeconds(secondsTillShotHits);
-            Assert.True(wasHit, "Asteroid wasn't hit.");
-            Assert.False(lootable.gameObject.activeInHierarchy, "Asteroid didn't deactivate when hit.");
-            Assert.NotZero(Object.FindObjectsByType<Reward>(FindObjectsSortMode.None).Length, "Lootable did not drop loot.");
+            return field.CountTargets(target => target is Asteroid asteroid && asteroid.Kind == kind && asteroid.Size == size);
         }
 
 
         [UnityTest]
-        public IEnumerator ExplodableExplodesOthersTest()
+        public IEnumerator LargeAsteroidSplitsWhenDestroyed()
         {
-            yield return TestScenes.Load("ExplodableExplodesOthersTest");
-            TestScenes.StartRunning();
+            yield return TestScenes.StartFirstMission();
+            AsteroidsGameManager manager = TestScenes.Manager;
+            SpaceField field = manager.Field;
+            field.Clear();
+            int before = CountAsteroids(field, AsteroidKind.Rock, AsteroidSize.Medium);
+            Asteroid rock = manager.spawner.SpawnAsteroid(AsteroidKind.Rock, AsteroidSize.Large, new Vector2(8f, 6f), Vector2.zero, false);
+            Assert.NotNull(rock);
+            rock.Velocity = Vector2.zero;
+            bool destroyed = false;
+            rock.OnShotEvent += (shootable, shot) => destroyed = true;
+            rock.TakeHit(new DamageInfo(100f, Vector2.right, rock.Position, DamageSource.PlayerShot, true));
+            yield return null;
+            Assert.IsTrue(destroyed, "The asteroid reported its destruction.");
+            Assert.IsFalse(rock.InPlay, "The destroyed asteroid left play.");
+            Assert.GreaterOrEqual(CountAsteroids(field, AsteroidKind.Rock, AsteroidSize.Medium) - before, 2, "It broke into at least two medium rocks.");
+        }
 
-            var shootablesInScene = Object.FindObjectsByType<Shootable>(FindObjectsSortMode.None);
-            var shootables = new List<Shootable>(shootablesInScene).FindAll(e => e.gameObject.activeInHierarchy && !e.IsMirror);
-            Assert.Greater(shootables.Count, 1, "Not enough active shootables for test.");
 
-            var explodablesInScene = Object.FindObjectsByType<Explodable>(FindObjectsSortMode.None);
-            var explodables = new List<Explodable>(explodablesInScene).FindAll(e => e.gameObject.activeInHierarchy && !e.IsMirror);
-            var explodable = explodables.Find(e => e.name == "TestExplodable");
-            Assert.NotNull(explodable, "Origin explodable not found.");
-
-            yield return new WaitForSeconds(secondsTillShotHits);
-            foreach (var shootable in shootables)
+        [UnityTest]
+        public IEnumerator OreDropsCrystals()
+        {
+            yield return TestScenes.StartFirstMission();
+            AsteroidsGameManager manager = TestScenes.Manager;
+            SpaceField field = manager.Field;
+            field.Clear();
+            Asteroid ore = manager.spawner.SpawnAsteroid(AsteroidKind.Ore, AsteroidSize.Small, new Vector2(-8f, 6f), Vector2.zero, false);
+            Assert.NotNull(ore);
+            ore.TakeHit(new DamageInfo(100f, Vector2.right, ore.Position, DamageSource.PlayerShot, true));
+            yield return null;
+            int crystals = 0;
+            foreach (Reward reward in field.Rewards)
             {
-                Assert.False(shootable.gameObject.activeInHierarchy, $"{shootable.name} was not exploded.");
+                if (reward is PointReward && reward.InPlay)
+                {
+                    crystals++;
+                }
             }
+            Assert.GreaterOrEqual(crystals, 1, "The ore rock dropped a crystal.");
+        }
+
+
+        [UnityTest]
+        public IEnumerator ExplodableExplodesOthers()
+        {
+            yield return TestScenes.StartFirstMission();
+            AsteroidsGameManager manager = TestScenes.Manager;
+            SpaceField field = manager.Field;
+            field.Clear();
+            manager.Ship.Position = new Vector2(-12f, -7f);
+            Mine mine = manager.spawner.SpawnMine(new Vector2(8f, 0f), Vector2.zero);
+            Assert.NotNull(mine, "The scene has a mine pool.");
+            Asteroid near = manager.spawner.SpawnAsteroid(AsteroidKind.Rock, AsteroidSize.Small, new Vector2(9f, 0.5f), Vector2.zero, false);
+            Asteroid far = manager.spawner.SpawnAsteroid(AsteroidKind.Rock, AsteroidSize.Small, new Vector2(-8f, 6f), Vector2.zero, false);
+            near.Velocity = Vector2.zero;
+            far.Velocity = Vector2.zero;
+            mine.TakeHit(new DamageInfo(100f, Vector2.right, mine.Position, DamageSource.PlayerShot, true));
+            yield return null;
+            Assert.IsFalse(mine.InPlay, "The mine blew up.");
+            Assert.IsFalse(near.InPlay, "The rock next to the mine was caught in the blast.");
+            Assert.IsTrue(far.InPlay, "The rock far away survived.");
+        }
+
+
+        [UnityTest]
+        public IEnumerator ShotsDestroyAsteroidsAndScore()
+        {
+            yield return TestScenes.StartFirstMission();
+            AsteroidsGameManager manager = TestScenes.Manager;
+            SpaceField field = manager.Field;
+            field.Clear();
+            AsteroidsPlayer ship = manager.Ship;
+            ship.Position = Vector2.zero;
+            ship.transform.rotation = Quaternion.identity;
+            Asteroid target = manager.spawner.SpawnAsteroid(AsteroidKind.Rock, AsteroidSize.Small, new Vector2(0f, 5f), Vector2.zero, false);
+            target.Velocity = Vector2.zero;
+            int score = manager.Scoring.Score;
+            manager.spawner.FirePlayerShot(WeaponType.Blaster, 1, ship.Position + Vector2.up, Vector2.up, Vector2.zero, ship);
+            yield return new WaitForSeconds(0.5f);
+            Assert.IsFalse(target.InPlay, "The shot destroyed the small rock.");
+            Assert.Greater(manager.Scoring.Score, score, "Destroying it scored.");
         }
     }
 }

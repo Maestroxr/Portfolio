@@ -1,0 +1,97 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25edec1141714089bb4a39576791ecca, type: 3}
+  m_Name: AsteroidsLevel11
+  m_EditorClassIdentifier: Skinnerboxes.Asteroids::Portfolio.Asteroids.AsteroidsLevel
+  <Index>k__BackingField: 10
+  <Title>k__BackingField: Gauntlet
+  <Settings>k__BackingField: {fileID: 11400000, guid: 7ff3ad248d8e0204699678af199c870b, type: 2}
+  description: Everything the Void can throw at you, all at once. Survive for two minutes.
+  introduces: Everything you have faced - at once.
+  hints:
+  - Wing drones fight at your side for a while.
+  - A chrono field slows everything but you.
+  sector: 3
+  theme: {fileID: 11400000, guid: 9a9ff548805707043b700b1ba546a47e, type: 2}
+  themeRotation: []
+  wavesPerTheme: 5
+  objective: 1
+  objectiveTarget: 120
+  waves:
+  - title: 
+    rocks: 3
+    ores: 0
+    magma: 2
+    ice: 0
+    crystals: 0
+    mines: 3
+    bombs: 0
+    comets: 0
+    wells: 0
+    saucers: 0
+    wasps: 2
+    pods: 0
+    hazardInterval: 5
+    duration: 30
+  - title: 
+    rocks: 0
+    ores: 0
+    magma: 0
+    ice: 3
+    crystals: 2
+    mines: 0
+    bombs: 2
+    comets: 1
+    wells: 0
+    saucers: 2
+    wasps: 0
+    pods: 1
+    hazardInterval: 4.5
+    duration: 30
+  - title: 
+    rocks: 0
+    ores: 3
+    magma: 3
+    ice: 0
+    crystals: 0
+    mines: 0
+    bombs: 0
+    comets: 0
+    wells: 1
+    saucers: 0
+    wasps: 3
+    pods: 0
+    hazardInterval: 4.5
+    duration: 30
+  - title: 
+    rocks: 3
+    ores: 0
+    magma: 0
+    ice: 0
+    crystals: 3
+    mines: 3
+    bombs: 0
+    comets: 2
+    wells: 0
+    saucers: 2
+    wasps: 0
+    pods: 1
+    hazardInterval: 4
+    duration: 30
+  boss: {fileID: 0}
+  bossRotation: []
+  bossEvery: 10
+  asteroidLoot: {fileID: 11400000, guid: eeb56632e6d081046a460357959c3b32, type: 2}
+  lootChance: 0.074999996
+  podLoot: {fileID: 11400000, guid: 064a872bdc171154ca5a8300d4672502, type: 2}
+  scoreGoal: 30000
+  speedMultiplier: 1

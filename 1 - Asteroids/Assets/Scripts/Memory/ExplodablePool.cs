@@ -2,7 +2,12 @@ using Gamebox;
 
 namespace Portfolio.Asteroids
 {
-    public class ExplodablePool : PrefabPool<Explodable>
+    /// <summary>Pool of one kind of explosive (proximity mines, cluster bombs).</summary>
+    public class ExplodablePool : PrefabPool<Explodable>, IBodyPool
     {
+        public void Release(SpaceBody body)
+        {
+            Recycle(body as Explodable);
+        }
     }
 }

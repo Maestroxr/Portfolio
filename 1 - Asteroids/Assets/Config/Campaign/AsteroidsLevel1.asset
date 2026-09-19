@@ -13,5 +13,72 @@ MonoBehaviour:
   m_Name: AsteroidsLevel1
   m_EditorClassIdentifier: 
   <Index>k__BackingField: 0
-  <Title>k__BackingField: Asteroid field
+  <Title>k__BackingField: First Light
   <Settings>k__BackingField: {fileID: 11400000, guid: f8f447d623215824aac7e5ebbfc90a41, type: 2}
+  description: Your first patrol in the Kepler Belt. Break up the drifting rocks before they break you.
+  introduces: Big rocks split into smaller, faster ones. Shoot supply pods for upgrades.
+  hints:
+  - W / UP thrusts, A D / LEFT RIGHT turn, SPACE fires.
+  - Big rocks split in two - the small ones are worth the most points.
+  - Shoot the green supply pods for weapon upgrades and shields.
+  - SHIFT dashes through danger. Kills in a row build a combo.
+  sector: 0
+  theme: {fileID: 11400000, guid: e8b5ed969170b89419e36b0b81c5ff8c, type: 2}
+  themeRotation: []
+  wavesPerTheme: 5
+  objective: 0
+  objectiveTarget: 0
+  waves:
+  - title: 
+    rocks: 3
+    ores: 0
+    magma: 0
+    ice: 0
+    crystals: 0
+    mines: 0
+    bombs: 0
+    comets: 0
+    wells: 0
+    saucers: 0
+    wasps: 0
+    pods: 0
+    hazardInterval: 6
+    duration: 30
+  - title: 
+    rocks: 4
+    ores: 0
+    magma: 0
+    ice: 0
+    crystals: 0
+    mines: 0
+    bombs: 0
+    comets: 0
+    wells: 0
+    saucers: 0
+    wasps: 0
+    pods: 1
+    hazardInterval: 5
+    duration: 30
+  - title: 
+    rocks: 5
+    ores: 0
+    magma: 0
+    ice: 0
+    crystals: 0
+    mines: 0
+    bombs: 0
+    comets: 0
+    wells: 0
+    saucers: 0
+    wasps: 0
+    pods: 1
+    hazardInterval: 6
+    duration: 30
+  boss: {fileID: 0}
+  bossRotation: []
+  bossEvery: 10
+  asteroidLoot: {fileID: 11400000, guid: c51122af20547d34595834403c283ed1, type: 2}
+  lootChance: 0.06
+  podLoot: {fileID: 11400000, guid: 0fab954725ba97749916f5a718846774, type: 2}
+  scoreGoal: 5000
+  speedMultiplier: 1
