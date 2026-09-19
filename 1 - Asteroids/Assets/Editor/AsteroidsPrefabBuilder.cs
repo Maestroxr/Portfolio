@@ -962,7 +962,7 @@ namespace Portfolio.Asteroids.EditorTools
         {
             // Rock Titan: a giant molten asteroid that sheds rocks and shrapnel.
             {
-                Boss boss = BossRoot("RockTitan", "Rock Titan", 3.1f, 70f, 5000, out Transform visual);
+                Boss boss = BossRoot("RockTitan", "Rock Titan", 3.1f, 75f, 5000, out Transform visual);
                 MeshRenderer body = Model(visual, "Body", AsteroidsArtBuilder.Model("TitanRock"), M("TitanRock"), Vector3.zero, Quaternion.identity, Vector3.one * 3.2f);
                 Transform orbit = Child(boss.transform, "Orbit");
                 for (int i = 0; i < 3; i++)
@@ -997,7 +997,7 @@ namespace Portfolio.Asteroids.EditorTools
 
             // Raider Mothership: a giant saucer that sends scouts, mines and plasma.
             {
-                Boss boss = BossRoot("Mothership", "Raider Mothership", 2.7f, 95f, 7500, out Transform visual);
+                Boss boss = BossRoot("Mothership", "Raider Mothership", 2.7f, 150f, 7500, out Transform visual);
                 visual.localRotation = FaceCamera;
                 MeshRenderer hull = Model(visual, "Hull", AsteroidsArtBuilder.Model("Saucer"), M("Palette"), Vector3.zero, Quaternion.identity, Vector3.one * 2.8f);
                 Transform rotor = Child(boss.transform, "Lights", Vector3.zero, FaceCamera, Vector3.one * 2.8f);
@@ -1026,7 +1026,7 @@ namespace Portfolio.Asteroids.EditorTools
 
             // Hive Queen: a giant alien wasp that spits acid, calls her brood and charges.
             {
-                Boss boss = BossRoot("HiveQueen", "Hive Queen", 2.3f, 110f, 9000, out Transform visual);
+                Boss boss = BossRoot("HiveQueen", "Hive Queen", 2.3f, 125f, 9000, out Transform visual);
                 visual.localRotation = FaceCamera;
                 Transform body = CopyModel(PackPrefab("BonusContent/Flying Insect"), visual, "Queen", M("HiveQueen"));
                 body.localScale = Vector3.one * (5f / 6.76f);
@@ -1063,7 +1063,7 @@ namespace Portfolio.Asteroids.EditorTools
 
             // Dreadnought: a capital ship with missiles, mines and walls of plasma.
             {
-                Boss boss = BossRoot("Dreadnought", "Dreadnought", 3f, 150f, 12000, out Transform visual);
+                Boss boss = BossRoot("Dreadnought", "Dreadnought", 3f, 210f, 12000, out Transform visual);
                 visual.localRotation = FaceCamera;
                 Mesh mesh = AsteroidsArtBuilder.ShipMesh("StarSparrow8");
                 float scale = 6.6f / Mathf.Max(0.01f, mesh != null ? mesh.bounds.size.z : 13f);
