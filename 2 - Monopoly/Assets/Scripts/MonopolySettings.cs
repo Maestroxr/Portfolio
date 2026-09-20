@@ -4,50 +4,44 @@ using UnityEngine;
 namespace Portfolio.Monopoly
 {
     /// <summary>
-    /// Board layout, player prefab and the timings of a Monopoly game. The starting money, dice roll time and
-    /// player move time are the user configurable part edited by the settings menu.
+    /// The board, the rules and the pace of a game. Every game mode (<see cref="MonopolyLevel"/>) has its own settings
+    /// asset; the default settings asset is also the starting point of the custom rules that the settings panel edits
+    /// (the house rules, starting cash, round limit, dealt properties and animation speed).
     /// </summary>
     [CreateAssetMenu(fileName = "MonopolySettings", menuName = "Monopoly/Settings", order = 1)]
     public class MonopolySettings : GameSettings
     {
-        // Board class contains the tile layout of the monopoly board
-        [SerializeField]
-        private Board board;
-        public Board Board => board;
+        [SerializeField] private Board board;
+        [SerializeField] private RuleSet rules = new RuleSet();
+        [Tooltip("1 plays the animations at normal speed, 2 twice as fast.")]
+        [SerializeField] private float animationSpeed = 1f;
+        [Tooltip("Seconds a computer player waits before each move.")]
+        [SerializeField] private float botThinkTime = 0.45f;
 
-        [SerializeField]
-        private uint maxPlayers = 2;
-        public uint MaxPlayers => maxPlayers;
-
-        public MonopolyPlayer PlayerPrefab;
-
-        [SerializeField]
-        private int initialPlayerLocation = 0;
-        public int InitialPlayerLocation => initialPlayerLocation;
-
-        [field: SerializeField]
-        public int InitialPlayerMoney { get; set; } = 5;
-
-        [SerializeField]
-        private float diceRollTime;
-        public float DiceRollTime
+        public Board Board
         {
-            get => diceRollTime;
-            set => diceRollTime = value;
+            get => board;
+            set => board = value;
         }
 
-        [SerializeField]
-        private float diceRollChangeValueTime;
-        public float DiceRollChangeValueTime => diceRollChangeValueTime;
+        public RuleSet Rules => rules ??= new RuleSet();
 
-        [SerializeField]
-        private float playerMoveTime;
-        public float PlayerMoveTime
+        public float AnimationSpeed
         {
-            get => playerMoveTime;
-            set => playerMoveTime = value;
+            get => animationSpeed;
+            set => animationSpeed = value;
         }
 
+        public float BotThinkTime
+        {
+            get => botThinkTime;
+            set => botThinkTime = value;
+        }
+
+        public void SetRules(RuleSet value)
+        {
+            rules = value != null ? value.Clone() : new RuleSet();
+        }
 
         public override bool AreSettingsValid(out string message)
         {
@@ -60,30 +54,23 @@ namespace Portfolio.Monopoly
             {
                 return false;
             }
-            if (maxPlayers < 2)
+            if (!Rules.IsValid(out message))
             {
-                message = $"Max players {maxPlayers} has to be 2 or more";
                 return false;
             }
-            if (InitialPlayerMoney <= 0)
+            if (animationSpeed < 0.25f || animationSpeed > 4f)
             {
-                message = $"Initial player money {InitialPlayerMoney} has to be positive";
+                message = $"Animation speed {animationSpeed} has to be between 0.25 and 4";
                 return false;
             }
-            if (diceRollTime <= 0f)
+            if (botThinkTime < 0f)
             {
-                message = $"Dice roll time {diceRollTime} has to be positive";
-                return false;
-            }
-            if (playerMoveTime <= 0f)
-            {
-                message = $"Player move time {playerMoveTime} has to be positive";
+                message = "The computer players' thinking time cannot be negative";
                 return false;
             }
             message = "OK";
             return true;
         }
-
 
         public override void SaveSettings(IStorageStrategy storage, string prefix)
         {
@@ -91,28 +78,40 @@ namespace Portfolio.Monopoly
             {
                 throw new GameSettingsException($"Cannot save invalid settings. Reason: {error}");
             }
-            storage.SetInt($"{prefix}InitialPlayerMoney", InitialPlayerMoney);
-            storage.SetFloat($"{prefix}DiceRollTime", diceRollTime);
-            storage.SetFloat($"{prefix}PlayerMoveTime", playerMoveTime);
+            RuleSet r = Rules;
+            storage.SetInt($"{prefix}.StartingCash", r.startingCash);
+            storage.SetInt($"{prefix}.RoundLimit", r.roundLimit);
+            storage.SetInt($"{prefix}.DealtProperties", r.dealtProperties);
+            storage.SetInt($"{prefix}.HousesForHotel", r.housesForHotel);
+            storage.SetBool($"{prefix}.Auctions", r.auctions);
+            storage.SetBool($"{prefix}.SpeedDie", r.speedDie);
+            storage.SetBool($"{prefix}.Jackpot", r.freeParkingJackpot);
+            storage.SetBool($"{prefix}.DoubleGo", r.doubleSalaryOnGo);
+            storage.SetBool($"{prefix}.NoRentInJail", r.noRentInJail);
+            storage.SetBool($"{prefix}.PartyCards", r.partyCards);
+            storage.SetFloat($"{prefix}.AnimationSpeed", animationSpeed);
         }
-
 
         public override void LoadSettings(IStorageStrategy storage, string prefix)
         {
-            if (storage.DoesKeyExist($"{prefix}InitialPlayerMoney"))
+            RuleSet r = Rules;
+            r.startingCash = ReadInt(storage, $"{prefix}.StartingCash", r.startingCash);
+            r.roundLimit = ReadInt(storage, $"{prefix}.RoundLimit", r.roundLimit);
+            r.dealtProperties = ReadInt(storage, $"{prefix}.DealtProperties", r.dealtProperties);
+            r.housesForHotel = ReadInt(storage, $"{prefix}.HousesForHotel", r.housesForHotel);
+            r.auctions = ReadBool(storage, $"{prefix}.Auctions", r.auctions);
+            r.speedDie = ReadBool(storage, $"{prefix}.SpeedDie", r.speedDie);
+            r.freeParkingJackpot = ReadBool(storage, $"{prefix}.Jackpot", r.freeParkingJackpot);
+            r.doubleSalaryOnGo = ReadBool(storage, $"{prefix}.DoubleGo", r.doubleSalaryOnGo);
+            r.noRentInJail = ReadBool(storage, $"{prefix}.NoRentInJail", r.noRentInJail);
+            r.partyCards = ReadBool(storage, $"{prefix}.PartyCards", r.partyCards);
+            if (storage.DoesKeyExist($"{prefix}.AnimationSpeed"))
             {
-                InitialPlayerMoney = storage.GetInt($"{prefix}InitialPlayerMoney");
+                animationSpeed = storage.GetFloat($"{prefix}.AnimationSpeed");
             }
-            if (storage.DoesKeyExist($"{prefix}DiceRollTime"))
-            {
-                diceRollTime = storage.GetFloat($"{prefix}DiceRollTime");
-            }
-            if (storage.DoesKeyExist($"{prefix}PlayerMoveTime"))
-            {
-                playerMoveTime = storage.GetFloat($"{prefix}PlayerMoveTime");
-            }
+            // A dealt short game ends at the second bankruptcy, as the official short game does.
+            r.bankruptciesToEnd = r.dealtProperties > 0 ? 2 : 0;
         }
-
 
         public override void CopySettings(IGameSettings other)
         {
@@ -121,13 +120,19 @@ namespace Portfolio.Monopoly
                 return;
             }
             board = source.board;
-            maxPlayers = source.maxPlayers;
-            PlayerPrefab = source.PlayerPrefab;
-            initialPlayerLocation = source.initialPlayerLocation;
-            InitialPlayerMoney = source.InitialPlayerMoney;
-            diceRollTime = source.diceRollTime;
-            diceRollChangeValueTime = source.diceRollChangeValueTime;
-            playerMoveTime = source.playerMoveTime;
+            rules = source.Rules.Clone();
+            animationSpeed = source.animationSpeed;
+            botThinkTime = source.botThinkTime;
+        }
+
+        private static int ReadInt(IStorageStrategy storage, string key, int fallback)
+        {
+            return storage.DoesKeyExist(key) ? storage.GetInt(key) : fallback;
+        }
+
+        private static bool ReadBool(IStorageStrategy storage, string key, bool fallback)
+        {
+            return storage.DoesKeyExist(key) ? storage.GetBool(key) : fallback;
         }
     }
 }

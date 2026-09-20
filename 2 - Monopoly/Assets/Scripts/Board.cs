@@ -1,37 +1,38 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace Portfolio.Monopoly
 {
-
-public enum TileBehaviour { Start, Asset, Reward}
-[CreateAssetMenu(fileName = "Board", menuName = "Monopoly/Board", order = 1)]
-public class Board : ScriptableObject
-{
-    public List<Asset> Assets => new List<Asset>(assets);
-    public List<Reward> Rewards => new List<Reward>(rewards);
-    public List<TileBehaviour> TileLayout => new List<TileBehaviour>(tileLayout);
-   
-    [SerializeField]
-    private List<Asset> assets = new List<Asset>();
-    [SerializeField]
-    private List<Reward> rewards = new List<Reward>();
-    [SerializeField]
-    private List<TileBehaviour> tileLayout = new List<TileBehaviour>();
-
-
-    public bool Check(out string error)
+    /// <summary>
+    /// The board of the game as an asset: the 40 spaces with their prices and rents, the Chance and Community Chest
+    /// cards and the bank's houses and hotels. The content builder fills it with the World Tour board
+    /// (<see cref="WorldTourBoard"/>); the rules engine plays on a copy of its <see cref="Layout"/>.
+    /// </summary>
+    [CreateAssetMenu(fileName = "Board", menuName = "Monopoly/Board", order = 1)]
+    public class Board : ScriptableObject
     {
-        if (tileLayout.Count == 0 || tileLayout[0] != TileBehaviour.Start)
-        {
-            error = $"Tiles number cannot be 0 or the first tile has to be the starting tile";
-            return false;
-        }
-        error = null;
-        return true;
-    }
-}
+        [SerializeField] private BoardLayout layout = new BoardLayout();
 
+        public BoardLayout Layout => layout;
+
+        /// <summary>A fresh copy for a match, so nothing a match does can change the asset.</summary>
+        public BoardLayout CreateLayout()
+        {
+            return layout.Clone();
+        }
+
+        public void SetLayout(BoardLayout value)
+        {
+            layout = value.Clone();
+        }
+
+        public bool Check(out string error)
+        {
+            if (layout == null)
+            {
+                error = "The board has no layout";
+                return false;
+            }
+            return layout.Check(out error);
+        }
+    }
 }

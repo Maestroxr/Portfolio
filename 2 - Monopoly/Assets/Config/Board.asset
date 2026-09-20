@@ -12,32 +12,590 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d45306b6dceccd04f9a6e8ff6349df64, type: 3}
   m_Name: Board
   m_EditorClassIdentifier: 
-  start: {fileID: 0}
-  assets:
-  - {fileID: 11400000, guid: 5d9707f27eed79c4d867547fecb2c20a, type: 2}
-  - {fileID: 11400000, guid: 2883f75b77ae13449b6201bd892f2d0c, type: 2}
-  - {fileID: 11400000, guid: a10a90fa29feeb942ae1788288233837, type: 2}
-  - {fileID: 11400000, guid: 99451ed2484686b4f864bd8872a11f6b, type: 2}
-  - {fileID: 11400000, guid: b8cca4cedd0b98a4e99d318cfb573db7, type: 2}
-  - {fileID: 11400000, guid: f6b4885ed0481b64da91872420a40a62, type: 2}
-  - {fileID: 11400000, guid: ee4cd946b59db55418fa80318ddd7b27, type: 2}
-  - {fileID: 11400000, guid: c86a7b3487aec3a4ab630a3ed7769db3, type: 2}
-  - {fileID: 11400000, guid: 2ba85d61e07c86042a5a9820d4b96420, type: 2}
-  - {fileID: 11400000, guid: 3eb3b75a3c9e4e04d8171275467b69af, type: 2}
-  - {fileID: 11400000, guid: 30294ccc0b8a99b4da9cd17c73aaf7d8, type: 2}
-  - {fileID: 11400000, guid: 7117b64c8ac891a47b8a53399b118a11, type: 2}
-  - {fileID: 11400000, guid: 17b3ea7753589e6479ff3e50e2dee926, type: 2}
-  - {fileID: 11400000, guid: 787cd7cd716529148a6ffabc361c8204, type: 2}
-  - {fileID: 11400000, guid: 87b973f03cb1aed48891102b5cd4b3a9, type: 2}
-  - {fileID: 11400000, guid: 91dcea6b65e38e94db854906d0c75438, type: 2}
-  - {fileID: 11400000, guid: db572d6fadbb98f45871334ead66631a, type: 2}
-  - {fileID: 11400000, guid: 8cdb23779af52f142b2ad5d2edf8ad41, type: 2}
-  - {fileID: 11400000, guid: 5b6a3ca97f6251248af458dde346b87f, type: 2}
-  - {fileID: 11400000, guid: 7d9d5483d048d614ab3c89f7addaefe5, type: 2}
-  rewards:
-  - {fileID: 11400000, guid: c2c3ce7a0a2b509478e350ea7b23a1fd, type: 2}
-  - {fileID: 11400000, guid: 65bb357748da5da49ae04144548329fd, type: 2}
-  - {fileID: 11400000, guid: 65bb357748da5da49ae04144548329fd, type: 2}
-  - {fileID: 11400000, guid: 65bb357748da5da49ae04144548329fd, type: 2}
-  - {fileID: 11400000, guid: 65bb357748da5da49ae04144548329fd, type: 2}
-  tileLayout: 000000000100000001000000010000000100000001000000020000000100000001000000010000000100000001000000020000000100000001000000010000000100000001000000020000000100000001000000010000000100000001000000
+  layout:
+    title: Monopoly
+    edition: World Tour
+    spaces:
+    - name: GO
+      city: Collect $200 salary as you pass
+      kind: 0
+      group: 0
+      price: 0
+      rent: 000000000000000000000000000000000000000000000000i
+      houseCost: 0
+      tax: 0
+    - name: Rua Augusta
+      city: Lisbon
+      kind: 1
+      group: 1
+      price: 60
+      rent: 020000000a0000001e0000005a000000a0000000fa000000i
+      houseCost: 50
+      tax: 0
+    - name: Community Chest
+      city: 
+      kind: 5
+      group: 0
+      price: 0
+      rent: 000000000000000000000000000000000000000000000000i
+      houseCost: 0
+      tax: 0
+    - name: Alfama
+      city: Lisbon
+      kind: 1
+      group: 1
+      price: 60
+      rent: 04000000140000003c000000b400000040010000c2010000i
+      houseCost: 50
+      tax: 0
+    - name: Income Tax
+      city: Pay $200
+      kind: 6
+      group: 0
+      price: 0
+      rent: 000000000000000000000000000000000000000000000000i
+      houseCost: 0
+      tax: 200
+    - name: Grand Central
+      city: New York
+      kind: 2
+      group: 9
+      price: 200
+      rent: 190000003200000064000000c80000000000000000000000i
+      houseCost: 0
+      tax: 0
+    - name: Damrak
+      city: Amsterdam
+      kind: 1
+      group: 2
+      price: 100
+      rent: 060000001e0000005a0000000e0100009001000026020000i
+      houseCost: 50
+      tax: 0
+    - name: Chance
+      city: 
+      kind: 4
+      group: 0
+      price: 0
+      rent: 000000000000000000000000000000000000000000000000i
+      houseCost: 0
+      tax: 0
+    - name: Kalverstraat
+      city: Amsterdam
+      kind: 1
+      group: 2
+      price: 100
+      rent: 060000001e0000005a0000000e0100009001000026020000i
+      houseCost: 50
+      tax: 0
+    - name: Prinsengracht
+      city: Amsterdam
+      kind: 1
+      group: 2
+      price: 120
+      rent: 0800000028000000640000002c010000c201000058020000i
+      houseCost: 50
+      tax: 0
+    - name: Jail
+      city: Just visiting
+      kind: 7
+      group: 0
+      price: 0
+      rent: 000000000000000000000000000000000000000000000000i
+      houseCost: 0
+      tax: 0
+    - name: Lapa
+      city: Rio de Janeiro
+      kind: 1
+      group: 3
+      price: 140
+      rent: 0a0000003200000096000000c201000071020000ee020000i
+      houseCost: 100
+      tax: 0
+    - name: Electric Company
+      city: 
+      kind: 3
+      group: 10
+      price: 150
+      rent: 040000000a00000000000000000000000000000000000000i
+      houseCost: 0
+      tax: 0
+    - name: Ipanema
+      city: Rio de Janeiro
+      kind: 1
+      group: 3
+      price: 140
+      rent: 0a0000003200000096000000c201000071020000ee020000i
+      houseCost: 100
+      tax: 0
+    - name: Copacabana
+      city: Rio de Janeiro
+      kind: 1
+      group: 3
+      price: 160
+      rent: 0c0000003c000000b4000000f4010000bc02000084030000i
+      houseCost: 100
+      tax: 0
+    - name: King's Cross
+      city: London
+      kind: 2
+      group: 9
+      price: 200
+      rent: 190000003200000064000000c80000000000000000000000i
+      houseCost: 0
+      tax: 0
+    - name: La Rambla
+      city: Barcelona
+      kind: 1
+      group: 4
+      price: 180
+      rent: 0e00000046000000c800000026020000ee020000b6030000i
+      houseCost: 100
+      tax: 0
+    - name: Community Chest
+      city: 
+      kind: 5
+      group: 0
+      price: 0
+      rent: 000000000000000000000000000000000000000000000000i
+      houseCost: 0
+      tax: 0
+    - name: "Pla\xE7a Reial"
+      city: Barcelona
+      kind: 1
+      group: 4
+      price: 180
+      rent: 0e00000046000000c800000026020000ee020000b6030000i
+      houseCost: 100
+      tax: 0
+    - name: "Passeig de Gr\xE0cia"
+      city: Barcelona
+      kind: 1
+      group: 4
+      price: 200
+      rent: 1000000050000000dc0000005802000020030000e8030000i
+      houseCost: 100
+      tax: 0
+    - name: Free Parking
+      city: 
+      kind: 8
+      group: 0
+      price: 0
+      rent: 000000000000000000000000000000000000000000000000i
+      houseCost: 0
+      tax: 0
+    - name: Shibuya
+      city: Tokyo
+      kind: 1
+      group: 5
+      price: 220
+      rent: 120000005a000000fa000000bc0200006b0300001a040000i
+      houseCost: 150
+      tax: 0
+    - name: Chance
+      city: 
+      kind: 4
+      group: 0
+      price: 0
+      rent: 000000000000000000000000000000000000000000000000i
+      houseCost: 0
+      tax: 0
+    - name: Omotesando
+      city: Tokyo
+      kind: 1
+      group: 5
+      price: 220
+      rent: 120000005a000000fa000000bc0200006b0300001a040000i
+      houseCost: 150
+      tax: 0
+    - name: Ginza
+      city: Tokyo
+      kind: 1
+      group: 5
+      price: 240
+      rent: 14000000640000002c010000ee0200009d0300004c040000i
+      houseCost: 150
+      tax: 0
+    - name: Gare du Nord
+      city: Paris
+      kind: 2
+      group: 9
+      price: 200
+      rent: 190000003200000064000000c80000000000000000000000i
+      houseCost: 0
+      tax: 0
+    - name: Via Appia
+      city: Rome
+      kind: 1
+      group: 6
+      price: 260
+      rent: 160000006e0000004a01000020030000cf0300007e040000i
+      houseCost: 150
+      tax: 0
+    - name: Via del Corso
+      city: Rome
+      kind: 1
+      group: 6
+      price: 260
+      rent: 160000006e0000004a01000020030000cf0300007e040000i
+      houseCost: 150
+      tax: 0
+    - name: Water Works
+      city: 
+      kind: 3
+      group: 10
+      price: 150
+      rent: 040000000a00000000000000000000000000000000000000i
+      houseCost: 0
+      tax: 0
+    - name: Via Condotti
+      city: Rome
+      kind: 1
+      group: 6
+      price: 280
+      rent: 1800000078000000680100005203000001040000b0040000i
+      houseCost: 150
+      tax: 0
+    - name: Go to Jail
+      city: 
+      kind: 9
+      group: 0
+      price: 0
+      rent: 000000000000000000000000000000000000000000000000i
+      houseCost: 0
+      tax: 0
+    - name: Abbey Road
+      city: London
+      kind: 1
+      group: 7
+      price: 300
+      rent: 1a0000008200000086010000840300004c040000fb040000i
+      houseCost: 200
+      tax: 0
+    - name: Carnaby Street
+      city: London
+      kind: 1
+      group: 7
+      price: 300
+      rent: 1a0000008200000086010000840300004c040000fb040000i
+      houseCost: 200
+      tax: 0
+    - name: Community Chest
+      city: 
+      kind: 5
+      group: 0
+      price: 0
+      rent: 000000000000000000000000000000000000000000000000i
+      houseCost: 0
+      tax: 0
+    - name: Savile Row
+      city: London
+      kind: 1
+      group: 7
+      price: 320
+      rent: 1c00000096000000c2010000e8030000b004000078050000i
+      houseCost: 200
+      tax: 0
+    - name: Shinjuku
+      city: Tokyo
+      kind: 2
+      group: 9
+      price: 200
+      rent: 190000003200000064000000c80000000000000000000000i
+      houseCost: 0
+      tax: 0
+    - name: Chance
+      city: 
+      kind: 4
+      group: 0
+      price: 0
+      rent: 000000000000000000000000000000000000000000000000i
+      houseCost: 0
+      tax: 0
+    - name: Fifth Avenue
+      city: New York
+      kind: 1
+      group: 8
+      price: 350
+      rent: 23000000af000000f40100004c04000014050000dc050000i
+      houseCost: 200
+      tax: 0
+    - name: Luxury Tax
+      city: Pay $100
+      kind: 6
+      group: 0
+      price: 0
+      rent: 000000000000000000000000000000000000000000000000i
+      houseCost: 0
+      tax: 100
+    - name: "Champs-\xC9lys\xE9es"
+      city: Paris
+      kind: 1
+      group: 8
+      price: 400
+      rent: 32000000c80000005802000078050000a4060000d0070000i
+      houseCost: 200
+      tax: 0
+    chance:
+    - deck: 0
+      text: Advance to GO. Collect $200.
+      action: 0
+      value: 0
+      value2: 0
+      group: 0
+      party: 0
+    - deck: 0
+      text: "Go shopping on the Champs-\xC9lys\xE9es. Advance there."
+      action: 0
+      value: 39
+      value2: 0
+      group: 0
+      party: 0
+    - deck: 0
+      text: Advance to Ginza. If you pass GO, collect $200.
+      action: 0
+      value: 24
+      value2: 0
+      group: 0
+      party: 0
+    - deck: 0
+      text: Advance to Lapa. If you pass GO, collect $200.
+      action: 0
+      value: 11
+      value2: 0
+      group: 0
+      party: 0
+    - deck: 0
+      text: Catch a train at Grand Central. If you pass GO, collect $200.
+      action: 0
+      value: 5
+      value2: 0
+      group: 0
+      party: 0
+    - deck: 0
+      text: All aboard! Advance to the nearest station. If it is owned, pay the owner twice the rent.
+      action: 1
+      value: 2
+      value2: 0
+      group: 9
+      party: 0
+    - deck: 0
+      text: All aboard! Advance to the nearest station. If it is owned, pay the owner twice the rent.
+      action: 1
+      value: 2
+      value2: 0
+      group: 9
+      party: 0
+    - deck: 0
+      text: Advance to the nearest utility. If it is owned, roll the dice and pay the owner ten times the roll.
+      action: 1
+      value: 10
+      value2: 0
+      group: 10
+      party: 0
+    - deck: 0
+      text: Your travel blog goes viral. Collect $50.
+      action: 3
+      value: 50
+      value2: 0
+      group: 0
+      party: 0
+    - deck: 0
+      text: Get Out of Jail Free. Keep this card until you need it, or trade it.
+      action: 9
+      value: 0
+      value2: 0
+      group: 0
+      party: 0
+    - deck: 0
+      text: Wrong turn! Go back three spaces.
+      action: 2
+      value: -3
+      value2: 0
+      group: 0
+      party: 0
+    - deck: 0
+      text: Go to Jail. Move directly to Jail. Do not pass GO, do not collect $200.
+      action: 8
+      value: 0
+      value2: 0
+      group: 0
+      party: 0
+    - deck: 0
+      text: Your hotels need a makeover. Pay $25 for each house and $100 for each hotel.
+      action: 7
+      value: 25
+      value2: 100
+      group: 0
+      party: 0
+    - deck: 0
+      text: Speeding ticket on the autobahn. Pay $15.
+      action: 4
+      value: 15
+      value2: 0
+      group: 0
+      party: 0
+    - deck: 0
+      text: You treat the whole tour group to dinner. Pay each player $50.
+      action: 5
+      value: 50
+      value2: 0
+      group: 0
+      party: 0
+    - deck: 0
+      text: Your travel savings mature. Collect $150.
+      action: 3
+      value: 150
+      value2: 0
+      group: 0
+      party: 0
+    - deck: 0
+      text: Hitch a ride to Free Parking. Advance there.
+      action: 0
+      value: 20
+      value2: 0
+      group: 0
+      party: 1
+    - deck: 0
+      text: Robin Hood! The richest player pays you $100.
+      action: 10
+      value: 100
+      value2: 0
+      group: 0
+      party: 1
+    - deck: 0
+      text: Tailwind! Move forward five spaces.
+      action: 2
+      value: 5
+      value2: 0
+      group: 0
+      party: 1
+    communityChest:
+    - deck: 1
+      text: Advance to GO. Collect $200.
+      action: 0
+      value: 0
+      value2: 0
+      group: 0
+      party: 0
+    - deck: 1
+      text: The bank made a mistake in your favor. Collect $200.
+      action: 3
+      value: 200
+      value2: 0
+      group: 0
+      party: 0
+    - deck: 1
+      text: Travel insurance co-payment. Pay $50.
+      action: 4
+      value: 50
+      value2: 0
+      group: 0
+      party: 0
+    - deck: 1
+      text: You sell your holiday photos. Collect $50.
+      action: 3
+      value: 50
+      value2: 0
+      group: 0
+      party: 0
+    - deck: 1
+      text: Get Out of Jail Free. Keep this card until you need it, or trade it.
+      action: 9
+      value: 0
+      value2: 0
+      group: 0
+      party: 0
+    - deck: 1
+      text: Go to Jail. Move directly to Jail. Do not pass GO, do not collect $200.
+      action: 8
+      value: 0
+      value2: 0
+      group: 0
+      party: 0
+    - deck: 1
+      text: Your holiday fund matures. Collect $100.
+      action: 3
+      value: 100
+      value2: 0
+      group: 0
+      party: 0
+    - deck: 1
+      text: Tax refund. Collect $20.
+      action: 3
+      value: 20
+      value2: 0
+      group: 0
+      party: 0
+    - deck: 1
+      text: It is your birthday! Collect $10 from every player.
+      action: 6
+      value: 10
+      value2: 0
+      group: 0
+      party: 0
+    - deck: 1
+      text: Your life insurance matures. Collect $100.
+      action: 3
+      value: 100
+      value2: 0
+      group: 0
+      party: 0
+    - deck: 1
+      text: Hospital bill after a ski trip. Pay $100.
+      action: 4
+      value: 100
+      value2: 0
+      group: 0
+      party: 0
+    - deck: 1
+      text: Language school fees. Pay $50.
+      action: 4
+      value: 50
+      value2: 0
+      group: 0
+      party: 0
+    - deck: 1
+      text: You guide a city tour. Collect a $25 fee.
+      action: 3
+      value: 25
+      value2: 0
+      group: 0
+      party: 0
+    - deck: 1
+      text: Street repairs. Pay $40 for each house and $115 for each hotel.
+      action: 7
+      value: 40
+      value2: 115
+      group: 0
+      party: 0
+    - deck: 1
+      text: You win second prize in a sandcastle contest. Collect $10.
+      action: 3
+      value: 10
+      value2: 0
+      group: 0
+      party: 0
+    - deck: 1
+      text: You inherit $100 from a long lost aunt.
+      action: 3
+      value: 100
+      value2: 0
+      group: 0
+      party: 0
+    - deck: 1
+      text: Charity gala! Every player pays $25 into the Free Parking pot.
+      action: 11
+      value: 25
+      value2: 0
+      group: 0
+      party: 1
+    - deck: 1
+      text: Free upgrade! A free house on your cheapest complete set.
+      action: 12
+      value: 0
+      value2: 0
+      group: 0
+      party: 1
+    houses: 32
+    hotels: 12

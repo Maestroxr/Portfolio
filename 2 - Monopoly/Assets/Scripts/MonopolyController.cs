@@ -1,101 +1,204 @@
 using System.Collections;
 using Gamebox;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Portfolio.Monopoly
 {
     /// <summary>
-    /// Local controller of the Monopoly module: rolls the dice for the current player when the dialog's OK button
-    /// is pressed, moves the player and shows the dialogs. Starting a game goes through the base
-    /// <see cref="OfflineGameController"/> flow into <see cref="MonopolyGameManager.StartGame"/>.
+    /// The local controller of the Monopoly module: it takes the commands of the human players from the interface
+    /// (roll, buy, bid, build, trade...), checks that the player may give them now and passes them to the rules engine
+    /// of the running match. Starting a game goes through the base <see cref="OfflineGameController"/> flow into
+    /// <see cref="MonopolyGameManager.StartGame"/>.
     /// </summary>
     public class MonopolyController : OfflineGameController
     {
-        [SerializeField] private Dice dice;
-        [SerializeField] private Button okButton;
-
-        private bool diceRolling = false;
-
         public MonopolyGameManager Monopoly => BaseManager as MonopolyGameManager;
 
+        private MonopolyMatch Match => Monopoly != null ? Monopoly.Match : null;
 
-        protected override void Start()
+        /// <summary>Whether <paramref name="seat"/> is a human player the match waits for right now.</summary>
+        private bool Deciding(int seat)
         {
-            base.Start();
-            if (Monopoly != null)
-            {
-                Monopoly.PlayerMovedEvent += PlayerMoved;
-            }
-            if (okButton != null)
-            {
-                okButton.onClick.AddListener(OK);
-            }
-            PlayerDialog("", "");
+            MonopolyMatch match = Match;
+            return match != null && Monopoly.IsGameRunning && match.Decider == seat && !match.players[seat].bot && !match.HasEvents;
         }
 
-
-        public void OK()
+        /// <summary>Whether <paramref name="seat"/> is a human player who may build, sell, mortgage or trade now.</summary>
+        private bool Managing(int seat)
         {
-            if (diceRolling || Monopoly == null || !Monopoly.IsGameRunning)
-            {
-                return;
-            }
-            diceRolling = true;
-            StartCoroutine(RollTheDice());
+            MonopolyMatch match = Match;
+            return match != null && Monopoly.IsGameRunning && match.CanManage(seat) && !match.players[seat].bot && !match.HasEvents;
         }
 
-
-        public void NextTurn()
+        private void Done(bool accepted)
         {
-            PlayerDialog("", "");
-            int move = dice.CastDie();
-            MonopolyPlayer player = Monopoly.GetPlayer(Monopoly.CurrentPlayer);
-            if (player != null)
+            if (accepted)
             {
-                player.Move(move);
-            }
-            Monopoly.NextTurn();
-            diceRolling = false;
-        }
-
-
-        private IEnumerator RollTheDice()
-        {
-            float diceRollTime = Monopoly.MonopolySettings.DiceRollTime;
-            dice.RollDie(diceRollTime);
-            yield return new WaitForSeconds(diceRollTime);
-            if (Monopoly.IsGameRunning)
-            {
-                NextTurn();
+                Monopoly.HumanActed();
             }
             else
             {
-                diceRolling = false;
+                Monopoly.MonopolyUI.Sound?.Play(Sfx.Error, 0.7f);
             }
         }
 
-
-        public void PlayerMoved(MonopolyPlayer player)
+        public void Roll(int seat)
         {
-            Tile newTile = Monopoly.GetTile(player.Location);
-            if (newTile != null)
+            if (Deciding(seat))
             {
-                newTile.PlayerVisit(player);
+                Monopoly.MonopolyUI.Manage.Close();
+                Done(Match.Roll());
             }
         }
 
-
-        public void PlayerDialog(string header, string body)
+        public void Buy(int seat)
         {
-            (UI as MonopolyUI)?.DisplayPlayerDialog(header, body);
+            if (Deciding(seat))
+            {
+                Done(Match.Buy());
+            }
         }
 
-
-        public void ResetDialog()
+        public void DeclineBuy(int seat)
         {
-            diceRolling = false;
-            PlayerDialog("", "");
+            if (Deciding(seat))
+            {
+                Done(Match.DeclineBuy());
+            }
+        }
+
+        public void PayJailFine(int seat)
+        {
+            if (Deciding(seat))
+            {
+                Done(Match.PayJailFine());
+            }
+        }
+
+        public void UseJailCard(int seat)
+        {
+            if (Deciding(seat))
+            {
+                Done(Match.UseJailCard());
+            }
+        }
+
+        public void ChooseBus(int seat, int option)
+        {
+            if (Deciding(seat))
+            {
+                Done(Match.ChooseBus(option));
+            }
+        }
+
+        public void ChooseDestination(int seat, int space)
+        {
+            if (Deciding(seat))
+            {
+                Monopoly.Board.ClearHighlights();
+                Done(Match.ChooseDestination(space));
+            }
+        }
+
+        public void Bid(int seat, int amount)
+        {
+            if (Deciding(seat))
+            {
+                Done(Match.PlaceBid(seat, amount));
+            }
+        }
+
+        public void PassBid(int seat)
+        {
+            if (Deciding(seat))
+            {
+                Done(Match.PassBid(seat));
+            }
+        }
+
+        public void EndTurn(int seat)
+        {
+            if (Deciding(seat))
+            {
+                Monopoly.MonopolyUI.Manage.Close();
+                Done(Match.EndTurn());
+            }
+        }
+
+        public void DeclareBankruptcy(int seat)
+        {
+            if (Deciding(seat))
+            {
+                Monopoly.MonopolyUI.Manage.Close();
+                Done(Match.DeclareBankruptcy());
+            }
+        }
+
+        public void Build(int seat, int space)
+        {
+            if (Managing(seat))
+            {
+                Done(Match.Build(seat, space));
+            }
+        }
+
+        public void Sell(int seat, int space)
+        {
+            if (Managing(seat))
+            {
+                Done(Match.SellBuilding(seat, space));
+            }
+        }
+
+        public void Mortgage(int seat, int space)
+        {
+            if (Managing(seat))
+            {
+                Done(Match.Mortgage(seat, space));
+            }
+        }
+
+        public void Unmortgage(int seat, int space)
+        {
+            if (Managing(seat))
+            {
+                Done(Match.Unmortgage(seat, space));
+            }
+        }
+
+        public void OpenManager(int seat)
+        {
+            if (Managing(seat))
+            {
+                Monopoly.MonopolyUI.Trade.Close();
+                Monopoly.MonopolyUI.Manage.Show(Match, seat, this);
+            }
+        }
+
+        public void OpenTrade(int seat)
+        {
+            if (Managing(seat) && Match.ActiveCount > 1)
+            {
+                Monopoly.MonopolyUI.Manage.Close();
+                Monopoly.MonopolyUI.Trade.Show(Match, seat, this, Monopoly.MonopolyUI.TokenSprite);
+            }
+        }
+
+        /// <summary>A human player proposes a trade: the other side answers (on screen for a human, at once for a computer).</summary>
+        public void ProposeTrade(TradeOffer offer)
+        {
+            if (offer == null || !Managing(offer.from) || !Match.CanTrade(offer, out _))
+            {
+                Done(false);
+                return;
+            }
+            StartCoroutine(Propose(offer));
+        }
+
+        private IEnumerator Propose(TradeOffer offer)
+        {
+            yield return Monopoly.ResolveOffer(offer);
+            Monopoly.HumanActed();
         }
     }
 }
