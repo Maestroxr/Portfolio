@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The server module of this game: the Gamebox base server plus the Lib.cs next to this file.
+    BaseServer.props brings the settings, the SpacetimeDB runtime and the base server sources (shown under
+    BaseServer/). The path leads to the BaseServer package of the BaseGame repository, which sits next to this
+    repository. The TargetFramework stays here because the spacetime CLI reads it from this file.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+
+  <Import Project="../../../BaseGame/BaseServer/Server~/BaseServer.props" />
+
+</Project>

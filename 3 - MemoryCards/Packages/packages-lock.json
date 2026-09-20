@@ -1,7 +1,20 @@
 {
   "dependencies": {
+    "com.clockworklabs.spacetimedbsdk": {
+      "version": "https://github.com/clockworklabs/com.clockworklabs.spacetimedbsdk.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "c02dab75310d8117a7d1162bbed5011a0cd718e8"
+    },
     "com.skinnerboxes.basegame": {
       "version": "file:../../../BaseGame/Assets",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {}
+    },
+    "com.skinnerboxes.baseserver": {
+      "version": "file:../../../BaseGame/BaseServer",
       "depth": 0,
       "source": "local",
       "dependencies": {}

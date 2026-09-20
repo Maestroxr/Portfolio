@@ -1,0 +1,12 @@
+{
+  "module-path": "./Server",
+  "server": "local",
+  "database": "skinnerboxes-monopoly",
+  "generate": [
+    {
+      "language": "csharp",
+      "out-dir": "./Assets/Scripts/Server/Bindings",
+      "namespace": "Portfolio.Monopoly.Server"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "module-path": "./Server",
+  "server": "local",
+  "database": "skinnerboxes-memorycards",
+  "generate": [
+    {
+      "language": "csharp",
+      "out-dir": "./Assets/Scripts/Server/Bindings",
+      "namespace": "Portfolio.MemoryCards.Server"
+    }
+  ]
+}
