@@ -48,6 +48,10 @@ namespace Portfolio.Asteroids
         public bool HasNext;
         public bool NextLocked;
         public string NextLockReason;
+        /// <summary>A mission flown with other pilots: no stars and records, but everybody's scores.</summary>
+        public bool Coop;
+        /// <summary>The pilots of a shared mission by place, a line each.</summary>
+        public string Standings;
     }
 
 

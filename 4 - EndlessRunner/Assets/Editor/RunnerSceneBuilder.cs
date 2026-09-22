@@ -3,6 +3,7 @@ using System.Linq;
 using Gamebox;
 using Gamebox.Editor;
 using Gamebox.UI;
+using Portfolio.EndlessRunner.Server;
 using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -17,12 +18,15 @@ namespace Portfolio.EndlessRunner.EditorTools
 {
     /// <summary>
     /// Builds the Endless Runner scene from the generated assets: environment, camera, runner, the game object with
-    /// the manager, track pools, effects and audio, the shared menu (restyled as the pause menu) and the runner's own
-    /// canvas with the level select, the HUD and the results screen.
+    /// the manager, track pools, effects and audio, the shared menu (restyled as the pause menu), the runner's own
+    /// canvas with the level select, the HUD and the results screen, and online play (the server client, the online
+    /// controller and the shared lobby, through <see cref="OnlineInstaller"/>).
     /// </summary>
     internal static class RunnerSceneBuilder
     {
         public const string ScenePath = "Scenes/EndlessRunner.unity";
+        /// <summary>The name the module of Server/ is published under (spacetime.json of the game's project).</summary>
+        public const string Database = "skinnerboxes-endlessrunner";
 
         private static readonly Color PanelColor = new Color(0.06f, 0.08f, 0.2f, 0.86f);
         private static readonly Color Gold = new Color(1f, 0.83f, 0.26f);
@@ -116,6 +120,20 @@ namespace Portfolio.EndlessRunner.EditorTools
             manager.effects = effects;
             manager.sounds = sounds;
             track.catalog = RunnerContentBuilder.Catalog;
+
+            // Online play: the ghosts of the other runners of a race are copies of the runner prefab. A race has no turns,
+            // so the lobby's turn banner stays off.
+            manager.ghostPrefab = playerPrefab;
+            manager.ghostLabelMaterial = hudFont;
+            manager.online = (RunnerOnlineController)OnlineInstaller.Install(scene, typeof(GameServerClient), typeof(RunnerOnlineController),
+                manager, ui, Database, new OnlineInstaller.LobbyStyle
+                {
+                    Title = "MULTIPLAYER",
+                    Accent = Blue,
+                    Window = new Color(0.07f, 0.09f, 0.22f, 0.98f),
+                    Row = new Color(0.13f, 0.17f, 0.36f, 1f),
+                    HideTurnBanner = true
+                });
 
             GameMenuInstaller.EnsureUrpCameras();
             string path = RunnerAssets.Path(ScenePath);
@@ -543,12 +561,14 @@ namespace Portfolio.EndlessRunner.EditorTools
             ui.playLabel = playLabel;
 
             // Progress and menu buttons
-            RectTransform progress = Panel(root, "Progress", new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-50f, 110f), new Vector2(420f, 440f));
+            RectTransform progress = Panel(root, "Progress", new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-50f, 110f), new Vector2(420f, 560f));
             Text(progress, "Header", "YOUR STARS", 30f, Gold, TextAlignmentOptions.Center, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -24f), new Vector2(380f, 40f), hudFont);
             Image(progress, "StarIcon", RunnerArtBuilder.Icon("Star"), Color.white, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(-110f, -72f), new Vector2(84f, 84f));
             ui.starsTotal = Text(progress, "Total", "0 / 24", 54f, Color.white, TextAlignmentOptions.Left, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(60f, -80f), new Vector2(240f, 70f), titleFont);
-            ui.titleSettingsButton = Button(progress, "Settings", "Settings", RunnerArtBuilder.Icon("Settings"), Blue, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -178f), new Vector2(340f, 82f), 34f, out _);
-            ui.titleExitButton = Button(progress, "Exit", "Quit", RunnerArtBuilder.Icon("Exit"), Red, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -272f), new Vector2(340f, 82f), 34f, out _);
+            // A race against other players, in a room of the game's server.
+            ui.multiplayerButton = Button(progress, "Multiplayer", "Multiplayer", RunnerArtBuilder.Icon("Runner"), Orange, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -178f), new Vector2(340f, 82f), 32f, out _);
+            ui.titleSettingsButton = Button(progress, "Settings", "Settings", RunnerArtBuilder.Icon("Settings"), Blue, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -276f), new Vector2(340f, 82f), 34f, out _);
+            ui.titleExitButton = Button(progress, "Exit", "Quit", RunnerArtBuilder.Icon("Exit"), Red, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -374f), new Vector2(340f, 82f), 34f, out _);
             ui.resetProgressButton = TextButton(progress, "ResetProgress", "Reset progress", new Vector2(0.5f, 0f), new Vector2(0f, 58f), new Vector2(300f, 40f), 22f, out TextMeshProUGUI resetLabel);
             ui.resetProgressLabel = resetLabel;
             TextMeshProUGUI keys = Text(progress, "Controls", "Arrows / WASD / Space - or swipe", 20f, new Color(0.7f, 0.74f, 0.85f), TextAlignmentOptions.Center, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 18f), new Vector2(390f, 34f), null, false);
@@ -626,6 +646,7 @@ namespace Portfolio.EndlessRunner.EditorTools
             ui.multiplierBadge = badge.gameObject;
             Text(root, "ScoreLabel", "SCORE", 24f, new Color(1f, 1f, 1f, 0.75f), TextAlignmentOptions.Left, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(40f, -132f), new Vector2(120f, 40f), hudFont);
             ui.scoreText = Text(root, "Score", "0", 38f, Color.white, TextAlignmentOptions.Left, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(140f, -126f), new Vector2(300f, 48f), hudFont);
+            ui.raceHud = BuildRaceHud(root);
 
             ui.levelText = Text(root, "Level", "LEVEL 1", 28f, Color.white, TextAlignmentOptions.Center, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -18f), new Vector2(1000f, 42f), hudFont);
             RectTransform progress = Rect(root, "Progress", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -70f), new Vector2(640f, 28f));
@@ -714,6 +735,45 @@ namespace Portfolio.EndlessRunner.EditorTools
             ui.hintText = Text(hint, "Text", "Hint", 34f, Color.white, TextAlignmentOptions.Center, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1140f, 90f), hudFont);
         }
 
+        /// <summary>The scoreboard of a race: the place of the local runner and a row per runner, under the coins and the score.</summary>
+        private static RaceHud BuildRaceHud(Transform root)
+        {
+            const int runners = 4;
+            const float header = 62f;
+            const float rowHeight = 58f;
+            RectTransform panel = Panel(root, "Race", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(28f, -190f), new Vector2(390f, header + runners * rowHeight + 10f));
+            panel.GetComponent<Image>().raycastTarget = false;
+            var hud = panel.gameObject.AddComponent<RaceHud>();
+            hud.panel = panel;
+            hud.headerHeight = header;
+            hud.rowHeight = rowHeight;
+            Text(panel, "Header", "RACE", 26f, Gold, TextAlignmentOptions.Left, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(22f, -14f), new Vector2(160f, 38f), hudFont);
+            hud.placeText = Text(panel, "Place", "1st", 46f, Color.white, TextAlignmentOptions.Right, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-22f, -4f), new Vector2(200f, 56f), titleFont);
+            var rows = new List<RaceHud.Row>();
+            for (int i = 0; i < runners; i++)
+            {
+                RectTransform row = Rect(panel, $"Runner{i + 1}", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -header - i * rowHeight), new Vector2(374f, rowHeight - 4f));
+                Image highlight = Image(row, "Highlight", panelSprite, new Color(1f, 1f, 1f, 0.14f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(374f, rowHeight - 4f), true);
+                highlight.raycastTarget = false;
+                highlight.enabled = false;
+                Image chip = Image(row, "Chip", buttonSprite, Color.white, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(8f, 0f), new Vector2(44f, 44f), true);
+                chip.raycastTarget = false;
+                TextMeshProUGUI place = Text(chip.transform, "Place", (i + 1).ToString(), 30f, Color.white, TextAlignmentOptions.Center, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 2f), new Vector2(44f, 44f), hudFont);
+                TextMeshProUGUI name = Text(row, "Name", "Runner", 23f, Color.white, TextAlignmentOptions.Left, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(62f, -2f), new Vector2(208f, 30f), hudFont);
+                name.textWrappingMode = TextWrappingModes.NoWrap;
+                name.enableAutoSizing = true;
+                name.fontSizeMin = 13f;
+                name.fontSizeMax = 23f;
+                TextMeshProUGUI score = Text(row, "Score", "0", 26f, Color.white, TextAlignmentOptions.Right, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-10f, -1f), new Vector2(100f, 30f), hudFont);
+                TextMeshProUGUI detail = Text(row, "Detail", "0 m   0 coins", 18f, Soft, TextAlignmentOptions.Left, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(62f, 1f), new Vector2(300f, 24f), null, false);
+                detail.textWrappingMode = TextWrappingModes.NoWrap;
+                rows.Add(new RaceHud.Row { root = row.gameObject, highlight = highlight, chip = chip, place = place, runnerName = name, score = score, detail = detail });
+            }
+            hud.rows = rows.ToArray();
+            panel.gameObject.SetActive(false);
+            return hud;
+        }
+
         private static void BuildResults(Transform canvas, RunnerUI ui)
         {
             CanvasGroup screen = Screen(canvas, "Results");
@@ -748,7 +808,8 @@ namespace Portfolio.EndlessRunner.EditorTools
             row.childControlHeight = false;
             row.childForceExpandWidth = false;
             row.childForceExpandHeight = false;
-            ui.levelsButton = Button(buttons, "Levels", "Levels", RunnerArtBuilder.Icon("Levels"), Blue, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(250f, 100f), 36f, out _);
+            ui.levelsButton = Button(buttons, "Levels", "Levels", RunnerArtBuilder.Icon("Levels"), Blue, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(250f, 100f), 36f, out TextMeshProUGUI levelsLabel);
+            ui.levelsLabel = levelsLabel;
             ui.retryButton = Button(buttons, "Retry", "Retry", RunnerArtBuilder.Icon("Retry"), Orange, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(250f, 100f), 36f, out _);
             ui.nextButton = Button(buttons, "Next", "Next", RunnerArtBuilder.Icon("Play"), Green, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(250f, 100f), 36f, out _);
         }

@@ -7,7 +7,9 @@ namespace Portfolio.MemoryCards
     /// <summary>
     /// Plays Memory Cards by itself: add it to any object in play mode to play the running level end to end. It
     /// remembers every card, so it only misses on purpose (<see cref="mistakeRate"/>); it follows the parade, cracks
-    /// ice, plays the wild card and the clocks and, unless told otherwise, stays away from bombs.
+    /// ice, plays the wild card and the clocks and, unless told otherwise, stays away from bombs. In an online game
+    /// the board only knows the cards that were turned, so there it plays like somebody with a perfect memory, and
+    /// its clicks count on its own turn only.
     /// </summary>
     public class MemoryCardsAutopilot : MonoBehaviour
     {
@@ -63,8 +65,13 @@ namespace Portfolio.MemoryCards
         {
             int animal = -1;
             bool wildShowing = false;
-            foreach (MemoryCard card in round.Revealed)
+            // The cards themselves say what is face up: the mirror of an online board keeps no list of them.
+            foreach (MemoryCard card in round.Cards)
             {
+                if (card.State != CardState.Revealed)
+                {
+                    continue;
+                }
                 if (card.IsAnimal)
                 {
                     animal = card.Animal;

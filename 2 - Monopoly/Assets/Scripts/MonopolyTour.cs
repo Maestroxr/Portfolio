@@ -3,6 +3,7 @@ using System.Collections;
 using System.IO;
 using System.Linq;
 using Gamebox;
+using Gamebox.Online;
 using UnityEngine;
 
 namespace Portfolio.Monopoly
@@ -249,7 +250,14 @@ namespace Portfolio.Monopoly
             yield return Shot("17_results");
 
             Write("tour finished");
+            // The tour leaves no progress behind; the login of the online game is not the tour's to forget.
+            string server = manager.Online != null && manager.Online.ServerClient != null ? manager.Online.ServerClient.ServerUri : null;
+            string token = server != null ? IdentityTokens.Load(server) : "";
             PlayerPrefs.DeleteAll();
+            if (!string.IsNullOrEmpty(token))
+            {
+                IdentityTokens.Save(server, token);
+            }
             PlayerPrefs.Save();
             log.Dispose();
             yield return null;

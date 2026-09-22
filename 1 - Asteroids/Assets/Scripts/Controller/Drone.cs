@@ -42,7 +42,7 @@ namespace Portfolio.Asteroids
             }
             cooldown -= deltaTime;
             SpaceField field = ship.Field;
-            if (cooldown > 0f || field == null || field.Spawner == null)
+            if (cooldown > 0f || field == null || field.Spawner == null || ship.IsRemote)
             {
                 return;
             }

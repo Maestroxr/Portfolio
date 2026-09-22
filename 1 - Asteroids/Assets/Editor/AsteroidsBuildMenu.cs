@@ -1,5 +1,8 @@
+using System;
+using System.IO;
 using Gamebox;
 using UnityEditor;
+using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 
@@ -81,6 +84,46 @@ namespace Portfolio.Asteroids.EditorTools
             {
                 AsteroidsSceneBuilder.Build();
             }
+        }
+
+        /// <summary>
+        /// Batch mode only: builds a Windows development player of the Asteroids scene into the folder given after
+        /// <c>-asteroidsPlayer</c>, for trying the game (and the tour of its online missions) outside the editor.
+        /// </summary>
+        public static void BuildPlayer()
+        {
+            string output = Argument("-asteroidsPlayer");
+            if (string.IsNullOrEmpty(output))
+            {
+                throw new ArgumentException("Pass the output folder with -asteroidsPlayer <folder>.");
+            }
+            Directory.CreateDirectory(output);
+            var options = new BuildPlayerOptions
+            {
+                scenes = new[] { AsteroidsAssets.Path(AsteroidsSceneBuilder.ScenePath) },
+                locationPathName = Path.Combine(output, "Asteroids.exe"),
+                target = BuildTarget.StandaloneWindows64,
+                options = BuildOptions.Development
+            };
+            BuildReport report = BuildPipeline.BuildPlayer(options);
+            if (report.summary.result != BuildResult.Succeeded)
+            {
+                throw new InvalidOperationException($"Asteroids player build {report.summary.result}: {report.summary.totalErrors} errors.");
+            }
+            Debug.Log($"Asteroids player built to {options.locationPathName} ({report.summary.totalSize / 1024 / 1024} MB).");
+        }
+
+        private static string Argument(string name)
+        {
+            string[] args = Environment.GetCommandLineArgs();
+            for (int i = 0; i < args.Length - 1; i++)
+            {
+                if (args[i] == name)
+                {
+                    return args[i + 1];
+                }
+            }
+            return null;
         }
 
         /// <summary>Gives every campaign mission three stars in this editor's saved progress (for trying later sectors).</summary>

@@ -11,7 +11,8 @@ namespace Portfolio.EndlessRunner
 {
     /// <summary>
     /// Interface of the Endless Runner: the level select, the HUD of a run and the results screen. The shared menu of
-    /// <see cref="GameUI"/> serves as the pause menu and hosts the settings panel.
+    /// <see cref="GameUI"/> serves as the pause menu and hosts the settings panel. A race against the runners of an
+    /// online room adds the scoreboard of the <see cref="RaceHud"/> and shows the standings as its results.
     /// </summary>
     public class RunnerUI : GameUI
     {
@@ -49,6 +50,7 @@ namespace Portfolio.EndlessRunner
         [SerializeField] internal TMP_Text starsTotal;
         [SerializeField] internal Button playButton;
         [SerializeField] internal TMP_Text playLabel;
+        [SerializeField] internal Button multiplayerButton;
         [SerializeField] internal Button titleSettingsButton;
         [SerializeField] internal Button titleExitButton;
         [SerializeField] internal Button resetProgressButton;
@@ -73,6 +75,7 @@ namespace Portfolio.EndlessRunner
         [SerializeField] internal CanvasGroup hintGroup;
         [SerializeField] internal TMP_Text hintText;
         [SerializeField] internal Image damageFlash;
+        [SerializeField] internal RaceHud raceHud;
 
         [Header("Results")]
         [SerializeField] internal TMP_Text resultTitle;
@@ -84,6 +87,7 @@ namespace Portfolio.EndlessRunner
         [SerializeField] internal Button nextButton;
         [SerializeField] internal Button retryButton;
         [SerializeField] internal Button levelsButton;
+        [SerializeField] internal TMP_Text levelsLabel;
 
         [Header("Sprites")]
         [SerializeField] internal Sprite starFull;
@@ -113,6 +117,7 @@ namespace Portfolio.EndlessRunner
         private int starsPopped;
         private float resetConfirmUntil = -1f;
         private Vector2 heartsRest;
+        private float resultStatsSize = 36f;
 
         private RunnerGameManager Runner => Manager as RunnerGameManager;
 
@@ -120,6 +125,7 @@ namespace Portfolio.EndlessRunner
         {
             base.Awake();
             Listen(playButton, () => Runner?.PlaySelectedLevel());
+            Listen(multiplayerButton, () => Runner?.OpenOnline());
             Listen(titleSettingsButton, ShowSettings);
             Listen(titleExitButton, () => GameManager?.ExitGame());
             Listen(resetProgressButton, OnResetProgress);
@@ -138,6 +144,10 @@ namespace Portfolio.EndlessRunner
             {
                 heartsRest = heartsRoot.anchoredPosition;
             }
+            if (resultStats != null)
+            {
+                resultStatsSize = resultStats.fontSize;
+            }
             SetAlpha(damageFlash, 0f);
             SetAlpha(curtain, 0f);
             if (countdownText != null)
@@ -151,6 +161,10 @@ namespace Portfolio.EndlessRunner
             if (hintGroup != null)
             {
                 hintGroup.alpha = 0f;
+            }
+            if (raceHud != null)
+            {
+                raceHud.Hide();
             }
         }
 
@@ -451,6 +465,43 @@ namespace Portfolio.EndlessRunner
             hintTime = 0f;
         }
 
+        /// <summary>A line in the place of the hints that stays until the next hint or run: what the player is waiting for.</summary>
+        public void ShowNotice(string text)
+        {
+            SetLabel(hintText, text);
+            hintTime = -1f;
+            if (hintGroup != null)
+            {
+                hintGroup.alpha = 1f;
+            }
+        }
+
+        /// <summary>Shows the scoreboard of a race of <paramref name="runners"/>.</summary>
+        public void ShowRace(int runners)
+        {
+            if (raceHud != null)
+            {
+                raceHud.Show(runners);
+            }
+        }
+
+        /// <summary>The runners of the race in the order of their places.</summary>
+        public void UpdateRace(IReadOnlyList<Racer> ranking, Color[] colors)
+        {
+            if (raceHud != null && raceHud.gameObject.activeSelf)
+            {
+                raceHud.Refresh(ranking, colors);
+            }
+        }
+
+        public void HideRace()
+        {
+            if (raceHud != null)
+            {
+                raceHud.Hide();
+            }
+        }
+
         public void PunchCoins()
         {
             coinPunch = 1f;
@@ -478,7 +529,36 @@ namespace Portfolio.EndlessRunner
 
         public void ShowResults(RunResult result)
         {
-            if (result.Endless)
+            SetLabel(levelsLabel, result.Online ? "Room" : "Levels");
+            if (retryButton != null)
+            {
+                retryButton.gameObject.SetActive(!result.Online);
+            }
+            if (resultStats != null)
+            {
+                // The standings are a line a runner, however long the names are.
+                resultStats.enableAutoSizing = result.Online;
+                resultStats.textWrappingMode = result.Online ? TextWrappingModes.NoWrap : TextWrappingModes.Normal;
+                if (result.Online)
+                {
+                    resultStats.fontSizeMax = resultStatsSize;
+                    resultStats.fontSizeMin = 16f;
+                }
+                else
+                {
+                    resultStats.fontSize = resultStatsSize;
+                }
+            }
+            if (result.Online)
+            {
+                // A race: the places are the server's, and the next one starts from the room.
+                SetLabel(resultTitle, result.Runners < 2 ? "RUN OVER" : result.Place == 1 ? "YOU WIN!" : $"{RaceStandings.Ordinal(result.Place).ToUpperInvariant()} PLACE");
+                SetLabel(resultSubtitle, result.Runners < 2 ? $"{result.LevelTitle} - online" : $"{result.LevelTitle} - race of {result.Runners}");
+                SetLabel(resultStats, result.Standings);
+                SetLabel(resultGoals, $"You ran <b>{result.Distance:0} m</b> and took <b>{result.Coins}</b> coins.\nThe host starts the next race from the room.");
+                resultStarCount = 0;
+            }
+            else if (result.Endless)
             {
                 SetLabel(resultTitle, result.NewBest ? "NEW RECORD!" : "RUN OVER");
                 SetLabel(resultSubtitle, "Endless Run");
@@ -507,7 +587,7 @@ namespace Portfolio.EndlessRunner
             }
             if (resultStarsRoot != null)
             {
-                resultStarsRoot.gameObject.SetActive(!result.Endless);
+                resultStarsRoot.gameObject.SetActive(!result.Endless && !result.Online);
             }
             foreach (Image star in resultStars)
             {

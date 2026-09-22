@@ -275,6 +275,27 @@ namespace Portfolio.MemoryCards
             return hidden;
         }
 
+        /// <summary>
+        /// Turns every face up card that waits for the rest of its set back down (a mistake still showing included)
+        /// and ends the combo: the player ran out of time in a versus game. Returns the cards that turned face down.
+        /// </summary>
+        public List<MemoryCard> HideRevealed()
+        {
+            var hidden = new List<MemoryCard>();
+            foreach (MemoryCard card in revealed)
+            {
+                if (card.State == CardState.Revealed)
+                {
+                    card.State = CardState.Hidden;
+                    hidden.Add(card);
+                }
+            }
+            revealed.Clear();
+            MismatchShowing = false;
+            Combo = 0;
+            return hidden;
+        }
+
         /// <summary>Runs the clock; a countdown that reaches zero ends the round.</summary>
         public void Tick(float deltaTime)
         {

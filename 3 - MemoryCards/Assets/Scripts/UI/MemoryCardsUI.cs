@@ -119,6 +119,15 @@ namespace Portfolio.MemoryCards
         [Header("Pause")]
         [SerializeField] internal Button levelSelectButton;
 
+        [Header("Versus")]
+        [Tooltip("Steps through the number of players at this device: one, or a versus game for two to four.")]
+        [SerializeField] internal Button playersButton;
+        [SerializeField] internal TMP_Text playersLabel;
+        [SerializeField] internal Button onlineButton;
+        [SerializeField] internal VersusHud versusHud;
+        [Tooltip("What the HUD shows only in a game for one: the score and the clock.")]
+        [SerializeField] internal GameObject[] soloWidgets = new GameObject[0];
+
         [Header("Sprites")]
         [SerializeField] internal Sprite starFull;
         [SerializeField] internal Sprite starEmpty;
@@ -154,6 +163,10 @@ namespace Portfolio.MemoryCards
         private int starsPopped;
         private float resetConfirmUntil = -1f;
         private float titleTime;
+        private float resultStatsSize;
+        private bool resultButtonsKnown;
+        private Vector2 levelsRest;
+        private Vector2 retryRest;
         private Vector2 heartsRest;
         private Vector2 logoRest;
 
@@ -172,6 +185,8 @@ namespace Portfolio.MemoryCards
             Listen(retryButton, () => Cards?.RetryLevel());
             Listen(levelsButton, () => Cards?.ReturnToLevelSelect());
             Listen(levelSelectButton, () => Cards?.ReturnToLevelSelect());
+            Listen(playersButton, () => Cards?.CyclePlayers());
+            Listen(onlineButton, () => Cards?.OpenOnline());
             // The shared menu buttons are wired by the base class; they only need their click sound here.
             foreach (Button button in new[] { StartNewGame, ReturnToGame, SaveGame, LoadGame, SettingsButton, ExitButton })
             {
@@ -486,7 +501,7 @@ namespace Portfolio.MemoryCards
         {
             hud = setup;
             SetLabel(levelText, setup.Title);
-            SetLabel(modeText, setup.Endless ? $"BOARD {setup.Board}" : ModeName(setup.Mode));
+            SetLabel(modeText, setup.Versus ? setup.VersusLabel : setup.Endless ? $"BOARD {setup.Board}" : ModeName(setup.Mode));
             if (modeIcon != null)
             {
                 modeIcon.sprite = ModeIcon(setup.Mode);
@@ -505,7 +520,23 @@ namespace Portfolio.MemoryCards
             }
             if (setsRoot != null)
             {
-                setsRoot.SetActive(!setup.Parade);
+                setsRoot.SetActive(!setup.Parade && !setup.Versus);
+            }
+            // The scoreboard of a versus game takes the place of the score and the clock of a game for one.
+            foreach (GameObject widget in soloWidgets)
+            {
+                if (widget != null)
+                {
+                    widget.SetActive(!setup.Versus);
+                }
+            }
+            if (setup.Versus && comboBadge != null)
+            {
+                comboBadge.gameObject.SetActive(false);
+            }
+            if (versusHud != null && !setup.Versus)
+            {
+                versusHud.Hide();
             }
             shownScore = shownCombo = shownClock = shownHearts = shownMoves = shownSets = -1;
             bannerTime = -1f;
@@ -522,8 +553,44 @@ namespace Portfolio.MemoryCards
             ClearPopups();
         }
 
+        /// <summary>The number of players the play button starts a game for; the button is off for levels only one can play.</summary>
+        public void ShowPlayers(int players, bool allowed)
+        {
+            SetLabel(playersLabel, players <= 1 ? "1 PLAYER" : $"{players} PLAYERS");
+            if (playersButton != null)
+            {
+                playersButton.interactable = allowed;
+            }
+        }
+
+        /// <summary>The players of a versus game that starts. <paramref name="localSeat"/> is "you" online; -1 on one device.</summary>
+        public void ShowVersus(IReadOnlyList<VersusSeat> seats, int localSeat)
+        {
+            versusHud?.Show(seats, localSeat);
+        }
+
+        public void UpdateVersus(IReadOnlyList<VersusSeat> seats, int currentSeat, float turnFraction, float secondsLeft)
+        {
+            versusHud?.Refresh(seats, currentSeat, turnFraction, secondsLeft);
+        }
+
+        /// <summary>Where the points of <paramref name="seat"/> show on the scoreboard, for popups.</summary>
+        public Vector3 VersusChipPosition(int seat)
+        {
+            return versusHud != null ? versusHud.ChipPosition(seat) : transform.position;
+        }
+
+        public Color VersusSeatColor(int seat)
+        {
+            return versusHud != null ? versusHud.SeatColor(seat) : Color.white;
+        }
+
         public void UpdateHud(int score, int combo, float clock, int heartsLeft, int movesLeft, int sets, int totalSets)
         {
+            if (hud.Versus)
+            {
+                return;
+            }
             if (score != shownScore)
             {
                 shownScore = score;
@@ -732,6 +799,18 @@ namespace Portfolio.MemoryCards
             {
                 resultHeader.color = result.Victory ? result.Accent : new Color(0.55f, 0.5f, 0.62f);
             }
+            if (retryButton != null)
+            {
+                // The host starts the next game of an online room from the lobby.
+                retryButton.gameObject.SetActive(!result.Online);
+            }
+            if (result.Versus)
+            {
+                ShowVersusResults(result);
+                return;
+            }
+            FitResultStats(false);
+            PlaceResultButtons(false);
             string title;
             if (result.Kind == LevelKind.Endless)
             {
@@ -816,6 +895,88 @@ namespace Portfolio.MemoryCards
             if (nextButton != null)
             {
                 nextButton.gameObject.SetActive(result.HasNext);
+            }
+            if (resultPanel != null)
+            {
+                resultPanel.localScale = Vector3.one * 0.6f;
+            }
+        }
+
+        /// <summary>The standings of a versus game shrink to fit (four players with long names); the stats of a game for one keep their size.</summary>
+        private void FitResultStats(bool standings)
+        {
+            if (resultStats == null)
+            {
+                return;
+            }
+            if (resultStatsSize <= 0f)
+            {
+                resultStatsSize = resultStats.fontSize;
+            }
+            resultStats.enableAutoSizing = standings;
+            resultStats.fontSizeMax = resultStatsSize;
+            resultStats.fontSizeMin = 16f;
+            resultStats.fontSize = resultStatsSize;
+            resultStats.textWrappingMode = standings ? TextWrappingModes.NoWrap : TextWrappingModes.Normal;
+        }
+
+        /// <summary>
+        /// The results of a game for one keep their buttons where the scene has them, with room for the next level on
+        /// the right. A versus game has no next level: what is left (the levels, and the rematch at one device) sits in
+        /// the middle.
+        /// </summary>
+        private void PlaceResultButtons(bool centred)
+        {
+            if (levelsButton == null || retryButton == null)
+            {
+                return;
+            }
+            var levels = (RectTransform)levelsButton.transform;
+            var retry = (RectTransform)retryButton.transform;
+            if (!resultButtonsKnown)
+            {
+                resultButtonsKnown = true;
+                levelsRest = levels.anchoredPosition;
+                retryRest = retry.anchoredPosition;
+            }
+            float half = retryButton.gameObject.activeSelf ? (retryRest.x - levelsRest.x) * 0.5f : 0f;
+            levels.anchoredPosition = centred ? new Vector2(-half, levelsRest.y) : levelsRest;
+            retry.anchoredPosition = centred ? new Vector2(half, retryRest.y) : retryRest;
+        }
+
+        /// <summary>The results of a versus game: who won, and the standings in place of the stars and the goals.</summary>
+        private void ShowVersusResults(RoundResult result)
+        {
+            SetLabel(resultTitle, result.VersusTitle);
+            SetLabel(resultSubtitle, result.LevelTitle);
+            SetLabel(resultStats, result.VersusStandings);
+            FitResultStats(true);
+            PlaceResultButtons(true);
+            SetLabel(resultBest, result.Online ? "Back to the room for another game." : string.Empty);
+            foreach (TMP_Text goal in resultGoals)
+            {
+                if (goal != null)
+                {
+                    goal.gameObject.SetActive(false);
+                }
+            }
+            foreach (Image icon in resultGoalIcons)
+            {
+                if (icon != null)
+                {
+                    icon.gameObject.SetActive(false);
+                }
+            }
+            if (resultStarsRoot != null)
+            {
+                resultStarsRoot.gameObject.SetActive(false);
+            }
+            resultStarCount = 0;
+            starsPopped = 0;
+            resultsTime = 0f;
+            if (nextButton != null)
+            {
+                nextButton.gameObject.SetActive(false);
             }
             if (resultPanel != null)
             {

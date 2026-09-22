@@ -18,6 +18,12 @@ namespace Portfolio.Asteroids
         /// <summary>The ship that fired the shot; null for enemy fire.</summary>
         public AsteroidsPlayer FiredBy;
 
+        /// <summary>
+        /// A ghost shows the shot of a pilot on another device (a shared mission): it flies and stops like the real one,
+        /// but hurts nothing. What the real shot hit is decided on the client of the pilot who fired it.
+        /// </summary>
+        public bool IsGhost { get; internal set; }
+
         /// <summary>Kept from the original: seconds the shot flies.</summary>
         public float TimeAlive
         {
@@ -117,8 +123,9 @@ namespace Portfolio.Asteroids
             Vector2 goal;
             if (enemy)
             {
-                AsteroidsPlayer ship = Field.Player;
-                if (ship == null || !ship.IsAlive)
+                // A puppet follows the course the simulator reports instead of picking a ship itself.
+                AsteroidsPlayer ship = IsPuppet ? null : Field.NearestShip(Position);
+                if (ship == null)
                 {
                     return;
                 }
@@ -177,13 +184,20 @@ namespace Portfolio.Asteroids
             hits.Add(target);
             Vector2 direction = Velocity.sqrMagnitude > 0.01f ? Velocity.normalized : Vector2.up;
             Vector2 point = target.Position - direction * target.Radius * 0.8f;
-            target.TakeHit(new DamageInfo(damage, direction, point, DamageSource.PlayerShot, true, this));
+            if (!IsGhost)
+            {
+                target.TakeHit(new DamageInfo(damage, direction, point, DamageSource.PlayerShot, true, this));
+            }
             ShotHitEvent?.Invoke(this, target.gameObject);
             if (Field != null && Field.Effects != null)
             {
                 Field.Effects.Spark(point, impactTint, 1f);
             }
-            if (blastRadius > 0f && Field != null)
+            if (blastRadius > 0f && IsGhost)
+            {
+                Field?.Effects?.Explosion(point, blastRadius * 0.55f, impactTint);
+            }
+            else if (blastRadius > 0f && Field != null)
             {
                 Field.Explode(new Blast
                 {
@@ -212,6 +226,23 @@ namespace Portfolio.Asteroids
                 Field.Effects.Spark(Position, impactTint, 0.8f);
             }
             ShotHitEvent?.Invoke(this, null);
+            if (IsPuppet && InPlay && Field != null && Field.Link != null)
+            {
+                // The real shot flies on in the simulator's field until it hears that this ship stopped it.
+                Field.Link.PuppetShotAbsorbed(this);
+            }
+            Exit = ExitReason.Impact;
+            Despawn();
+        }
+
+
+        /// <summary>The shot a puppet stands for stopped against something on another device: the spark shows here too.</summary>
+        internal void PlayImpact()
+        {
+            if (Field != null && Field.Effects != null)
+            {
+                Field.Effects.Spark(Position, impactTint, 0.8f);
+            }
             Despawn();
         }
 
@@ -232,6 +263,7 @@ namespace Portfolio.Asteroids
             base.OnDespawned();
             ShotHitEvent = null;
             FiredBy = null;
+            IsGhost = false;
             homingTarget = null;
             if (trail != null)
             {

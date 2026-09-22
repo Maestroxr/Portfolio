@@ -7,7 +7,8 @@ namespace Portfolio.EndlessRunner
     /// <summary>
     /// Turns a level's <see cref="TrackLayout"/> into pooled objects: spawns tiles and pieces as the runner approaches,
     /// recycles what falls behind, and keeps the lists of live pickups and obstacles the manager tests the runner
-    /// against. Endless levels are extended as the runner goes.
+    /// against. Endless levels are extended as the runner goes. In a race the pieces other runners collected are taken
+    /// off the track by their layout id (<see cref="Take"/>), which is the same on every device.
     /// </summary>
     public class TrackGenerator : MonoBehaviour
     {
@@ -20,12 +21,16 @@ namespace Portfolio.EndlessRunner
         [SerializeField] internal float keepBehind = 24f;
         [SerializeField] internal float endlessChunk = 300f;
 
+        /// <summary>How far behind the runner coins and power-ups are kept: they are out of reach once passed.</summary>
+        public const float FloatingBehind = 1.5f;
+
         private readonly Dictionary<TrackPiece, TrackPiecePool> pools = new Dictionary<TrackPiece, TrackPiecePool>();
         private readonly Dictionary<TerrainBehaviour, TerrainCache> tileCaches = new Dictionary<TerrainBehaviour, TerrainCache>();
         private readonly List<TrackPiece> active = new List<TrackPiece>();
         private readonly List<Collidable> pickups = new List<Collidable>();
         private readonly List<Obstacle> obstacles = new List<Obstacle>();
         private readonly Dictionary<int, TrackPiece> spawnedById = new Dictionary<int, TrackPiece>();
+        private readonly HashSet<int> taken = new HashSet<int>();
         private readonly List<TrackPiece> attachedScratch = new List<TrackPiece>();
         private LayoutBuilder builder;
         private TrackLayout layout;
@@ -52,6 +57,9 @@ namespace Portfolio.EndlessRunner
         public int LevelCoins => layout != null ? layout.Coins : 0;
 
         public float FinishZ => layout != null ? layout.FinishZ : float.PositiveInfinity;
+
+        /// <summary>Everything that ended before this z was recycled; see <see cref="Rewind"/>.</summary>
+        public float RecycledUntil { get; private set; } = float.NegativeInfinity;
 
         private void Awake()
         {
@@ -87,15 +95,39 @@ namespace Portfolio.EndlessRunner
             Clear();
             level = runLevel;
             builder = new LayoutBuilder(runLevel, settings, catalog, gravity, seed);
-            builder.GenerateUntil(runLevel.IsEndless ? endlessChunk : runLevel.Length + 120f);
+            builder.GenerateUntil(FirstStretch(runLevel));
             layout = builder.Layout;
             nextTile = 0;
             nextPiece = 0;
             nextHint = 0;
         }
 
-        /// <summary>Spawns the track up to <see cref="spawnAhead"/> meters ahead and recycles pieces more than <paramref name="behind"/> meters back.</summary>
-        public void UpdateTrack(float runnerZ, float behind)
+        /// <summary>
+        /// Coin value of the track of a campaign level, counted from its layout without spawning anything; 0 for an
+        /// endless level, which has no end to count to.
+        /// </summary>
+        public int CoinsOf(RunnerLevel runLevel, RunnerSettings settings, int seed, float gravity)
+        {
+            if (runLevel == null || runLevel.IsEndless || settings == null || catalog == null)
+            {
+                return 0;
+            }
+            var measure = new LayoutBuilder(runLevel, settings, catalog, gravity, seed);
+            measure.GenerateUntil(FirstStretch(runLevel));
+            return measure.Layout.Coins;
+        }
+
+        private float FirstStretch(RunnerLevel runLevel)
+        {
+            return runLevel.IsEndless ? endlessChunk : runLevel.Length + 120f;
+        }
+
+        /// <summary>
+        /// Spawns the track up to <see cref="spawnAhead"/> meters ahead and recycles pieces more than <paramref name="behind"/>
+        /// meters back; coins and power-ups go <paramref name="floatingBehind"/> meters back, which a race stretches while
+        /// a ghost that could still collect them runs there.
+        /// </summary>
+        public void UpdateTrack(float runnerZ, float behind, float floatingBehind = FloatingBehind)
         {
             if (layout == null)
             {
@@ -116,7 +148,8 @@ namespace Portfolio.EndlessRunner
                 SpawnPiece(layout.Pieces[nextPiece++]);
             }
             float cutoff = runnerZ - behind;
-            float passed = runnerZ - 1.5f;
+            float passed = runnerZ - floatingBehind;
+            RecycledUntil = Mathf.Max(RecycledUntil, cutoff);
             foreach (TrackPiece piece in active)
             {
                 if (!piece.Live)
@@ -206,6 +239,82 @@ namespace Portfolio.EndlessRunner
             dirty = true;
         }
 
+        /// <summary>
+        /// A number for the layout up to <paramref name="untilZ"/> (ids, prefabs and positions to the millimeter): the
+        /// devices of a race log it, to see that they run the same track.
+        /// </summary>
+        internal int LayoutHash(float untilZ)
+        {
+            int hash = 17;
+            if (layout == null)
+            {
+                return hash;
+            }
+            foreach (PiecePlacement piece in layout.Pieces)
+            {
+                if (piece.Position.z >= untilZ)
+                {
+                    continue;
+                }
+                unchecked
+                {
+                    hash = hash * 31 + piece.Id;
+                    foreach (char letter in piece.Prefab.name)
+                    {
+                        hash = hash * 31 + letter;
+                    }
+                    hash = hash * 31 + Mathf.RoundToInt(piece.Position.x * 1000f);
+                    hash = hash * 31 + Mathf.RoundToInt(piece.Position.y * 1000f);
+                    hash = hash * 31 + Mathf.RoundToInt(piece.Position.z * 1000f);
+                }
+            }
+            return hash;
+        }
+
+        /// <summary>The piece spawned for a layout entry, while it is out on the track.</summary>
+        public bool TryGetPiece(int placementId, out TrackPiece piece)
+        {
+            return spawnedById.TryGetValue(placementId, out piece) && piece != null && piece.Live;
+        }
+
+        /// <summary>
+        /// Takes the piece of a layout entry off the track for the rest of the run, whether it is out there yet or not:
+        /// another runner of the race collected it. A piece that is not spawned yet never will be.
+        /// </summary>
+        public void Take(int placementId)
+        {
+            taken.Add(placementId);
+            if (spawnedById.TryGetValue(placementId, out TrackPiece piece))
+            {
+                Recycle(piece);
+            }
+        }
+
+        /// <summary>
+        /// Lays the track out again around <paramref name="z"/>, behind what was recycled already: for watching a runner
+        /// who is back there. What was taken stays gone. An endless run can only go back as far as its layout is kept.
+        /// </summary>
+        public void Rewind(float z)
+        {
+            if (layout == null)
+            {
+                return;
+            }
+            foreach (TrackPiece piece in active)
+            {
+                RecycleInternal(piece);
+            }
+            dirty = true;
+            Compact();
+            spawnedById.Clear();
+            float from = z - keepBehind;
+            int tile = layout.Tiles.FindIndex(placement => placement.Z + LayoutBuilder.TileLength >= from);
+            int firstPiece = layout.Pieces.FindIndex(placement => placement.Position.z >= from);
+            nextTile = tile >= 0 ? tile : layout.Tiles.Count;
+            nextPiece = firstPiece >= 0 ? firstPiece : layout.Pieces.Count;
+            RecycledUntil = from;
+        }
+
         /// <summary>Recycles every piece on the track.</summary>
         public void Clear()
         {
@@ -216,6 +325,8 @@ namespace Portfolio.EndlessRunner
             dirty = true;
             Compact();
             spawnedById.Clear();
+            taken.Clear();
+            RecycledUntil = float.NegativeInfinity;
             layout = null;
             builder = null;
         }
@@ -236,7 +347,7 @@ namespace Portfolio.EndlessRunner
 
         private void SpawnPiece(PiecePlacement placement)
         {
-            if (placement.Prefab == null || !pools.TryGetValue(placement.Prefab, out TrackPiecePool pool))
+            if (placement.Prefab == null || taken.Contains(placement.Id) || !pools.TryGetValue(placement.Prefab, out TrackPiecePool pool))
             {
                 return;
             }

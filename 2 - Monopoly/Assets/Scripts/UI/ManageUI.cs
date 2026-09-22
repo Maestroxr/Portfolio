@@ -23,7 +23,7 @@ namespace Portfolio.Monopoly
 
         private readonly List<PropertyRow> rows = new List<PropertyRow>();
         private MonopolyMatch match;
-        private MonopolyController controller;
+        private IMonopolyCommands controller;
 
         public int Seat { get; private set; } = -1;
 
@@ -39,7 +39,7 @@ namespace Portfolio.Monopoly
             }
         }
 
-        public void Show(MonopolyMatch value, int seat, MonopolyController owner)
+        public void Show(MonopolyMatch value, int seat, IMonopolyCommands owner)
         {
             match = value;
             Seat = seat;

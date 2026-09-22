@@ -44,7 +44,7 @@ namespace Portfolio.Asteroids
             {
                 Field.Sounds.PodOpen();
             }
-            if (Field.Spawner != null && Loot != null)
+            if (Field.Spawner != null && Loot != null && !IsPuppet)
             {
                 Reward drop = Loot.Pick();
                 if (drop != null)

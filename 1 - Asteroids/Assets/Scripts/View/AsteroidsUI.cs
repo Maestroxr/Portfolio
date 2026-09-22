@@ -25,6 +25,16 @@ namespace Portfolio.Asteroids
             public Image fill;
         }
 
+        /// <summary>A line of the pilots list of a shared mission.</summary>
+        [Serializable]
+        internal class PilotSlot
+        {
+            public GameObject root;
+            public Image chip;
+            public TMP_Text nameText;
+            public TMP_Text scoreText;
+        }
+
         [Serializable]
         internal class WarningMarker
         {
@@ -61,6 +71,7 @@ namespace Portfolio.Asteroids
         [SerializeField] internal Button hangarButton;
         [SerializeField] internal Button titleSettingsButton;
         [SerializeField] internal Button titleExitButton;
+        [SerializeField] internal Button onlineButton;
         [SerializeField] internal Button resetProgressButton;
         [SerializeField] internal TMP_Text resetProgressLabel;
 
@@ -103,6 +114,9 @@ namespace Portfolio.Asteroids
         [SerializeField] internal TMP_Text briefingObjective;
         [SerializeField] internal Image damageFlash;
         [SerializeField] internal WarningMarker[] warnings = new WarningMarker[0];
+        [Tooltip("The pilots of a mission flown with others: a line each, hidden otherwise.")]
+        [SerializeField] internal GameObject pilotsPanel;
+        [SerializeField] internal PilotSlot[] pilotSlots = new PilotSlot[0];
 
         [Header("Touch")]
         [Tooltip("The on-screen stick and buttons, shown when the game is played by touch.")]
@@ -119,6 +133,7 @@ namespace Portfolio.Asteroids
         [SerializeField] internal TMP_Text nextLabel;
         [SerializeField] internal Button retryButton;
         [SerializeField] internal Button missionsButton;
+        [SerializeField] internal TMP_Text missionsLabel;
 
         [Header("Sprites")]
         [SerializeField] internal Sprite starFull;
@@ -162,6 +177,7 @@ namespace Portfolio.Asteroids
             Listen(hangarBackButton, HideHangar);
             Listen(titleSettingsButton, ShowSettings);
             Listen(titleExitButton, () => Asteroids?.QuitToLauncher());
+            Listen(onlineButton, () => Asteroids?.OpenOnline());
             Listen(resetProgressButton, OnResetProgress);
             Listen(pauseButton, OnPauseClicked);
             Listen(nextButton, () => Asteroids?.PlayNextMission());
@@ -200,11 +216,18 @@ namespace Portfolio.Asteroids
             {
                 SetWarningVisible(marker, false);
             }
+            ShowPilots(null);
         }
 
 
         private void Update()
         {
+            if (Asteroids != null && (Asteroids.IsLobbyOpen || Asteroids.InSession))
+            {
+                // The keys below restart, save, load and launch single player missions.
+                Animate(Time.unscaledDeltaTime);
+                return;
+            }
             if (Input.GetKeyDown(KeyCode.F1) && StartNewGame != null && StartNewGame.interactable)
             {
                 StartNewGame.onClick.Invoke();
@@ -748,6 +771,60 @@ namespace Portfolio.Asteroids
         }
 
 
+        /// <summary>
+        /// The pilots of a mission flown with others, by seat: who they are, what they scored and whether they still fly.
+        /// Null hides the list.
+        /// </summary>
+        internal void ShowPilots(List<AsteroidsGameManager.PilotStatus> pilots)
+        {
+            bool show = pilots != null && pilots.Count > 0;
+            if (pilotsPanel != null && pilotsPanel.activeSelf != show)
+            {
+                pilotsPanel.SetActive(show);
+            }
+            if (show && pilotsPanel != null && pilotSlots.Length > 0 && pilotSlots[0] != null && pilotSlots[0].root != null)
+            {
+                // The panel is as high as the lines it shows.
+                var panelRect = (RectTransform)pilotsPanel.transform;
+                float rowHeight = ((RectTransform)pilotSlots[0].root.transform).sizeDelta.y;
+                panelRect.sizeDelta = new Vector2(panelRect.sizeDelta.x, 24f + rowHeight * Mathf.Min(pilots.Count, pilotSlots.Length));
+            }
+            for (int i = 0; i < pilotSlots.Length; i++)
+            {
+                PilotSlot slot = pilotSlots[i];
+                if (slot == null || slot.root == null)
+                {
+                    continue;
+                }
+                bool used = show && i < pilots.Count;
+                if (slot.root.activeSelf != used)
+                {
+                    slot.root.SetActive(used);
+                }
+                if (!used)
+                {
+                    continue;
+                }
+                AsteroidsGameManager.PilotStatus pilot = pilots[i];
+                Color color = CoopRules.SeatColor(pilot.Seat);
+                if (slot.chip != null)
+                {
+                    slot.chip.color = pilot.Flying ? color : new Color(color.r, color.g, color.b, 0.25f);
+                }
+                if (slot.nameText != null)
+                {
+                    slot.nameText.text = pilot.Local ? $"{pilot.Name} (you)" : pilot.Name;
+                    slot.nameText.color = pilot.Flying ? Color.white : new Color(1f, 1f, 1f, 0.45f);
+                }
+                if (slot.scoreText != null)
+                {
+                    slot.scoreText.text = pilot.Flying ? pilot.Score.ToString("N0") : $"{pilot.Score:N0}  LOST";
+                    slot.scoreText.color = pilot.Flying ? color : new Color(1f, 0.45f, 0.4f, 0.9f);
+                }
+            }
+        }
+
+
         /// <summary>A comet will enter at <paramref name="from"/> heading along <paramref name="direction"/>: shows where and its lane.</summary>
         public void ShowCometWarning(Vector2 from, Vector2 direction, float delay)
         {
@@ -794,6 +871,12 @@ namespace Portfolio.Asteroids
 
         public void ShowResults(MissionResult result)
         {
+            // A shared mission goes back to its room, where the host starts the next one.
+            SetLabel(missionsLabel, result.Coop ? "Room" : "Missions");
+            if (retryButton != null)
+            {
+                retryButton.gameObject.SetActive(!result.Coop);
+            }
             SetLabel(resultTitle, result.Endless ? "RUN OVER" : result.Victory ? "MISSION COMPLETE" : "MISSION FAILED");
             if (resultTitle != null)
             {
@@ -813,7 +896,11 @@ namespace Portfolio.Asteroids
                 stats += $"\nWave reached  <b>{result.Wave}</b>     Record  <b>wave {result.BestWave}</b>";
             }
             SetLabel(resultStats, stats);
-            if (result.Endless)
+            if (result.Coop)
+            {
+                ShowStandings(result.Standings);
+            }
+            else if (result.Endless)
             {
                 SetLabel(resultGoals, "Endless runs keep your best score and wave.");
             }
@@ -833,7 +920,7 @@ namespace Portfolio.Asteroids
                 {
                     star.sprite = starEmpty;
                     star.transform.localScale = Vector3.one;
-                    star.gameObject.SetActive(!result.Endless);
+                    star.gameObject.SetActive(!result.Endless && !result.Coop);
                 }
             }
             if (nextButton != null)
@@ -847,6 +934,13 @@ namespace Portfolio.Asteroids
                 SetLabel(resultGoals, (resultGoals != null ? resultGoals.text : string.Empty) + $"\n<color=#FFB24D>{result.NextLockReason}</color>");
             }
             flash = 0f;
+        }
+
+
+        /// <summary>The pilots of a shared mission by place, where a single player mission lists its goals.</summary>
+        public void ShowStandings(string standings)
+        {
+            SetLabel(resultGoals, standings);
         }
 
 

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Gamebox;
 using Gamebox.Editor;
+using Portfolio.Monopoly.Server;
 using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -15,17 +16,22 @@ namespace Portfolio.Monopoly.EditorTools
     /// <summary>
     /// Builds Scenes/Monopoly.unity: the lighting, the camera rig and post processing, the wooden table, the board
     /// (surface, printed names and icons, owner tags, mortgage stamps, highlights, the logo and the card decks), the
-    /// house and hotel pools, the dice, the four tokens, the audio, the manager and controller, and (through
-    /// <see cref="MonopolyInterfaceBuilder"/>) the whole interface. The scene file is replaced, its GUID kept.
+    /// house and hotel pools, the dice, the four tokens, the audio, the manager and controller, (through
+    /// <see cref="MonopolyInterfaceBuilder"/>) the whole interface, and online play (the server client, the online
+    /// controller and the shared lobby, through <see cref="OnlineInstaller"/>). The scene file is replaced, its GUID kept.
     /// </summary>
     internal static class MonopolySceneBuilder
     {
         public const string ScenePath = "Scenes/Monopoly.unity";
+        /// <summary>The name the module of Server/ is published under (spacetime.json of the game's project).</summary>
+        public const string Database = "skinnerboxes-monopoly";
         public const string VolumePath = "Config/MonopolyVolume.asset";
         public const string HousePrefabPath = "Prefabs/House.prefab";
         public const string HotelPrefabPath = "Prefabs/Hotel.prefab";
 
         private const float Surface = 0.3f;
+        /// <summary>Where the clock of an online match sits, from the top centre of the screen.</summary>
+        private static readonly Vector2 TurnClockOffset = new Vector2(0f, -18f);
         private static readonly Color Background = MonopolyStyle.Hex(0x10151D);
 
         public static void Build()
@@ -74,6 +80,20 @@ namespace Portfolio.Monopoly.EditorTools
             MonopolyAssets.Set(manager, "GameIdentifier", p => p.intValue = (int)GameType.Monopoly);
             MonopolyAssets.SetObject(controller, "UI", ui);
             MonopolyAssets.SetObject(controller, "BaseManager", manager);
+
+            // Online play. The clock of the lobby (who the table waits for, and for how long) hangs into the middle of
+            // the board under the far row of spaces, where no popup of a decision reaches.
+            Component online = OnlineInstaller.Install(scene, typeof(GameServerClient), typeof(MonopolyOnlineController), manager, ui, Database,
+                new OnlineInstaller.LobbyStyle
+                {
+                    Title = "PLAY ONLINE",
+                    Font = MonopolyArtBuilder.Body,
+                    Accent = MonopolyStyle.Red,
+                    Window = MonopolyStyle.Ink,
+                    Row = MonopolyStyle.Hex(0x2B3648),
+                    TurnBannerOffset = TurnClockOffset
+                });
+            MonopolyAssets.SetObject(manager, "online", online);
 
             new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
 

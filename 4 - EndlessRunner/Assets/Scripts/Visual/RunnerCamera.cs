@@ -4,7 +4,8 @@ namespace Portfolio.EndlessRunner
 {
     /// <summary>
     /// Camera of the runner: looks at the character from the front in the menu, swings behind it for the run and
-    /// follows it with a little lag, widens the view with speed, circles it at the finish and shakes on crashes.
+    /// follows it with a little lag, widens the view with speed, circles it at the finish and shakes on crashes. When
+    /// the local runner is done with a race it can watch the ghost of another runner instead (<see cref="Watch"/>).
     /// </summary>
     public class RunnerCamera : MonoBehaviour
     {
@@ -37,8 +38,26 @@ namespace Portfolio.EndlessRunner
         private bool snap = true;
         private float shake;
         private float orbit;
+        private RunnerGhost watched;
 
         public Mode CurrentMode => mode;
+
+        /// <summary>The ghost the camera watches instead of its target, or null.</summary>
+        public RunnerGhost Watched => watched != null ? watched : null;
+
+        /// <summary>
+        /// Chases <paramref name="ghost"/> instead of the target, swinging over from where the camera is; null returns to
+        /// the target. A ghost that goes away (its player left) does the same.
+        /// </summary>
+        public void Watch(RunnerGhost ghost)
+        {
+            if (ghost == watched)
+            {
+                return;
+            }
+            watched = ghost;
+            SetMode(ghost != null ? Mode.Chase : mode);
+        }
 
         public void SetMode(Mode newMode, bool instant = false)
         {
@@ -68,7 +87,8 @@ namespace Portfolio.EndlessRunner
                 return;
             }
             float deltaTime = Time.deltaTime;
-            Vector3 player = target.transform.position;
+            IRunnerMotion subject = watched != null ? watched : (IRunnerMotion)target;
+            Vector3 player = watched != null ? watched.transform.position : target.transform.position;
             if (snap)
             {
                 followX = player.x;
@@ -132,7 +152,7 @@ namespace Portfolio.EndlessRunner
 
             if (view != null)
             {
-                float speedFactor = Mathf.InverseLerp(10f, 22f, target.Speed);
+                float speedFactor = Mathf.InverseLerp(10f, 22f, subject.Speed);
                 float fov = mode == Mode.Menu ? fieldOfView - 8f : Mathf.Lerp(fieldOfView, fastFieldOfView, speedFactor);
                 view.fieldOfView = Mathf.Lerp(view.fieldOfView, fov, 1f - Mathf.Exp(-3f * Mathf.Max(deltaTime, 0f)));
             }

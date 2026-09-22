@@ -305,7 +305,7 @@ namespace Portfolio.Asteroids.EditorTools
             ui.sectorGates = gates.ToArray();
 
             // Buttons
-            RectTransform buttons = Rect(root, "Buttons", new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-60f, 34f), new Vector2(1100f, 84f));
+            RectTransform buttons = Rect(root, "Buttons", new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-60f, 34f), new Vector2(1210f, 84f));
             var row = buttons.gameObject.AddComponent<HorizontalLayoutGroup>();
             row.spacing = 18f;
             row.childAlignment = TextAnchor.MiddleRight;
@@ -313,15 +313,18 @@ namespace Portfolio.Asteroids.EditorTools
             row.childControlHeight = false;
             row.childForceExpandWidth = false;
             row.childForceExpandHeight = false;
-            ui.continueButton = Button(buttons, "Continue", "Continue", AsteroidsArtBuilder.Icon("Retry"), Green, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(250f, 80f), 30f, out _);
-            ui.hangarButton = Button(buttons, "Hangar", "Hangar", AsteroidsArtBuilder.Icon("Hangar"), Blue, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(250f, 80f), 30f, out _);
-            ui.titleSettingsButton = Button(buttons, "Settings", "Settings", AsteroidsArtBuilder.Icon("Settings"), Blue, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(250f, 80f), 30f, out _);
-            ui.titleExitButton = Button(buttons, "Quit", "Quit", AsteroidsArtBuilder.Icon("Exit"), Red, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(220f, 80f), 30f, out _);
+            ui.continueButton = Button(buttons, "Continue", "Continue", AsteroidsArtBuilder.Icon("Retry"), Green, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(230f, 80f), 28f, out _);
+            // Missions flown together with other pilots: opens the lobby of the game's server.
+            ui.onlineButton = Button(buttons, "Multiplayer", "Multiplayer", AsteroidsArtBuilder.Icon("Ship"), Orange, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(290f, 80f), 28f, out _);
+            ui.hangarButton = Button(buttons, "Hangar", "Hangar", AsteroidsArtBuilder.Icon("Hangar"), Blue, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(215f, 80f), 28f, out _);
+            ui.titleSettingsButton = Button(buttons, "Settings", "Settings", AsteroidsArtBuilder.Icon("Settings"), Blue, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(225f, 80f), 28f, out _);
+            ui.titleExitButton = Button(buttons, "Quit", "Quit", AsteroidsArtBuilder.Icon("Exit"), Red, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(175f, 80f), 28f, out _);
+            // The hints keep clear of the button row, which reaches this far left when there is a mission to continue.
             TextMeshProUGUI keys = Text(root, "Controls", "W A S D / ARROWS fly    SPACE fire    SHIFT dash    B nova bomb    ESC pause", 21f, Dim, TextAlignmentOptions.Left,
-                new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(60f, 40f), new Vector2(760f, 70f), null, false);
+                new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(60f, 40f), new Vector2(570f, 70f), null, false);
             UIBuildUtils.ShowOnly(keys.gameObject, TouchLayout.Visibility.WithoutTouch);
             TextMeshProUGUI thumbs = Text(root, "TouchControls", "LEFT THUMB steer and thrust    HOLD FIRE to shoot    DASH    NOVA bomb    BACK pause", 21f, Dim,
-                TextAlignmentOptions.Left, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(60f, 40f), new Vector2(760f, 70f), null, false);
+                TextAlignmentOptions.Left, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(60f, 40f), new Vector2(570f, 70f), null, false);
             UIBuildUtils.ShowOnly(thumbs.gameObject, TouchLayout.Visibility.TouchOnly);
         }
 
@@ -499,6 +502,8 @@ namespace Portfolio.Asteroids.EditorTools
             combo.raycastTarget = false;
             combo.fillAmount = 0f;
             ui.comboFill = combo;
+
+            BuildPilots(root, ui);
 
             // Objective
             ui.missionText = Text(root, "Mission", "FIRST LIGHT", 22f, Cyan, TextAlignmentOptions.Center, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -18f), new Vector2(900f, 32f), hudFont);
@@ -682,6 +687,42 @@ namespace Portfolio.Asteroids.EditorTools
         }
 
         /// <summary>
+        /// The pilots of a mission flown with others, under the score: a line each with the colour of the seat, the name and
+        /// the score (dimmed once the pilot is out of ships). Hidden in the single player game.
+        /// </summary>
+        private static void BuildPilots(Transform root, AsteroidsUI ui)
+        {
+            const float rowHeight = 36f;
+            RectTransform pilots = Panel(root, "Pilots", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(28f, -154f),
+                new Vector2(360f, 24f + rowHeight * CoopRules.MaxPilots), new Color(0.35f, 0.75f, 1f, 0.7f));
+            // With touch the hull and shield panel sits under the score: the pilots go below it.
+            UIBuildUtils.MoveForTouch(pilots, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(28f, -284f));
+            var slots = new List<AsteroidsUI.PilotSlot>();
+            for (int i = 0; i < CoopRules.MaxPilots; i++)
+            {
+                RectTransform row = Rect(pilots, $"Pilot{i + 1}", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, -12f - i * rowHeight), new Vector2(360f, rowHeight));
+                Image chip = Image(row, "Chip", AsteroidsArtBuilder.Interface("Bar"), CoopRules.SeatColor(i), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(20f, 0f), new Vector2(10f, 24f), true);
+                chip.raycastTarget = false;
+                TextMeshProUGUI pilotName = Text(row, "Name", $"Pilot {i + 1}", 21f, Color.white, TextAlignmentOptions.Left, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
+                    new Vector2(40f, 0f), new Vector2(190f, rowHeight), hudFont);
+                pilotName.textWrappingMode = TextWrappingModes.NoWrap;
+                pilotName.enableAutoSizing = true;
+                pilotName.fontSizeMin = 13f;
+                pilotName.fontSizeMax = 21f;
+                TextMeshProUGUI pilotScore = Text(row, "Score", "0", 21f, CoopRules.SeatColor(i), TextAlignmentOptions.Right, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
+                    new Vector2(-18f, 0f), new Vector2(130f, rowHeight), hudFont);
+                pilotScore.textWrappingMode = TextWrappingModes.NoWrap;
+                pilotScore.enableAutoSizing = true;
+                pilotScore.fontSizeMin = 13f;
+                pilotScore.fontSizeMax = 21f;
+                slots.Add(new AsteroidsUI.PilotSlot { root = row.gameObject, chip = chip, nameText = pilotName, scoreText = pilotScore });
+            }
+            ui.pilotsPanel = pilots.gameObject;
+            ui.pilotSlots = slots.ToArray();
+            pilots.gameObject.SetActive(false);
+        }
+
+        /// <summary>
         /// The controls of touch play: a floating stick anywhere on the lower left for the left thumb, and a big fire
         /// button with dash and nova bomb buttons around it for the right thumb. Shown only when the game is played by touch.
         /// </summary>
@@ -772,7 +813,8 @@ namespace Portfolio.Asteroids.EditorTools
             row.childControlHeight = false;
             row.childForceExpandWidth = false;
             row.childForceExpandHeight = false;
-            ui.missionsButton = Button(buttons, "Missions", "Missions", AsteroidsArtBuilder.Icon("Levels"), Blue, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(270f, 92f), 32f, out _);
+            ui.missionsButton = Button(buttons, "Missions", "Missions", AsteroidsArtBuilder.Icon("Levels"), Blue, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(270f, 92f), 32f, out TextMeshProUGUI missionsLabel);
+            ui.missionsLabel = missionsLabel;
             ui.retryButton = Button(buttons, "Retry", "Retry", AsteroidsArtBuilder.Icon("Retry"), Orange, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(270f, 92f), 32f, out _);
             ui.nextButton = Button(buttons, "Next", "Next", AsteroidsArtBuilder.Icon("Play"), Green, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(270f, 92f), 32f, out TextMeshProUGUI nextLabel);
             ui.nextLabel = nextLabel;

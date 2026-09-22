@@ -110,6 +110,28 @@ namespace Portfolio.Asteroids
 
         public bool HasEntered => state != State.Entering;
 
+        /// <summary>What shows of the boss's state, for the puppets that stand for it in a shared mission.</summary>
+        internal BodyFlags StateFlags
+        {
+            get
+            {
+                BodyFlags flags = BodyFlags.None;
+                if (state == State.Entering)
+                {
+                    flags |= BodyFlags.Entering;
+                }
+                if (state == State.Dying)
+                {
+                    flags |= BodyFlags.Dying;
+                }
+                if (invulnerable && state != State.Dying)
+                {
+                    flags |= BodyFlags.Shielded;
+                }
+                return BodyCodec.WithPhase(flags, Phase);
+            }
+        }
+
         /// <summary>The boss moved into a new phase (1 or 2).</summary>
         public event Action<Boss, int> PhaseChanged;
 
@@ -153,6 +175,16 @@ namespace Portfolio.Asteroids
                     spinner.localRotation = Quaternion.Euler(0f, 0f, spinSpeed * (1f + Phase * 0.5f) * deltaTime) * spinner.localRotation;
                 }
             }
+            if (IsPuppet)
+            {
+                // A puppet goes where the simulator's boss goes; only its death throes are played here.
+                if (state == State.Dying)
+                {
+                    Dying(deltaTime);
+                }
+                base.Tick(deltaTime);
+                return;
+            }
             switch (state)
             {
                 case State.Entering:
@@ -194,8 +226,8 @@ namespace Portfolio.Asteroids
             }
             if (facesShip && state != State.Dying)
             {
-                AsteroidsPlayer ship = Field != null ? Field.Player : null;
-                Vector2 look = ship != null && ship.IsAlive ? ship.Position - Position : Vector2.down;
+                AsteroidsPlayer ship = Field != null ? Field.NearestShip(Position) : null;
+                Vector2 look = ship != null ? ship.Position - Position : Vector2.down;
                 float angle = Mathf.Atan2(look.y, look.x) * Mathf.Rad2Deg - 90f;
                 transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.Euler(0f, 0f, angle), 70f * deltaTime);
             }
@@ -393,8 +425,8 @@ namespace Portfolio.Asteroids
 
         private Vector2 AimAtShip(float errorDegrees)
         {
-            AsteroidsPlayer ship = Field != null ? Field.Player : null;
-            Vector2 direction = ship != null && ship.IsAlive ? (ship.Position - Position).normalized : Vector2.down;
+            AsteroidsPlayer ship = Field != null ? Field.NearestShip(Position) : null;
+            Vector2 direction = ship != null ? (ship.Position - Position).normalized : Vector2.down;
             return Quaternion.Euler(0f, 0f, Random.Range(-errorDegrees, errorDegrees)) * direction;
         }
 
@@ -417,7 +449,7 @@ namespace Portfolio.Asteroids
                 return false;
             }
             bool destroyed = base.TakeHit(hit);
-            if (destroyed || phaseThresholds == null || Phase >= phaseThresholds.Length)
+            if (destroyed || IsPuppet || phaseThresholds == null || Phase >= phaseThresholds.Length)
             {
                 return destroyed;
             }
@@ -449,6 +481,8 @@ namespace Portfolio.Asteroids
             {
                 return;
             }
+            Exit = ExitReason.Destroyed;
+            ExitSeat = hit.ByPlayer ? hit.Seat : null;
             state = State.Dying;
             stateTime = 0f;
             nextBlast = 0f;
@@ -456,6 +490,50 @@ namespace Portfolio.Asteroids
             SetShield(false);
             Field?.NotifyDestroyed(this, hit);
             Field?.Sounds?.BossRoar(1.2f);
+        }
+
+
+        /// <summary>The simulator reports the state of the boss a puppet stands for: its entrance, shield, phase and death.</summary>
+        internal void ShowState(BodyFlags flags)
+        {
+            bool dying = BodyCodec.Has(flags, BodyFlags.Dying);
+            if (dying && state != State.Dying)
+            {
+                state = State.Dying;
+                stateTime = 0f;
+                nextBlast = 0f;
+                Field?.Sounds?.BossRoar(1.2f);
+            }
+            else if (!dying)
+            {
+                state = BodyCodec.Has(flags, BodyFlags.Entering) ? State.Entering : State.Fighting;
+            }
+            bool shielded = BodyCodec.Has(flags, BodyFlags.Shielded) && !dying;
+            invulnerable = shielded || dying;
+            SetShield(shielded);
+            int phase = BodyCodec.Phase(flags);
+            if (phase > Phase)
+            {
+                Phase = phase;
+                Field?.Sounds?.BossRoar(1f);
+                Field?.CameraRig?.Shake(0.6f);
+                Field?.Effects?.Shockwave(Position, radius * 3f, explosionTint);
+                PhaseChanged?.Invoke(this, Phase);
+            }
+        }
+
+
+        /// <summary>The boss a puppet stands for went up: the last explosion plays here too, and the kill counts for whoever made it.</summary>
+        internal override void PlayDestroyed(DamageInfo hit)
+        {
+            if (!InPlay)
+            {
+                return;
+            }
+            FinalBlast();
+            Field?.NotifyDestroyed(this, hit);
+            Defeated?.Invoke(this);
+            Despawn();
         }
 
 
@@ -475,12 +553,9 @@ namespace Portfolio.Asteroids
             {
                 visual.localPosition = Random.insideUnitSphere * 0.15f;
             }
-            if (stateTime >= 2.2f)
+            if (stateTime >= 2.2f && !IsPuppet)
             {
-                Field?.Effects?.Explosion(Position, radius * 1.6f, explosionTint);
-                Field?.Effects?.Shockwave(Position, radius * 6f, explosionTint);
-                Field?.Sounds?.Explosion(1.5f);
-                Field?.CameraRig?.Shake(1f);
+                FinalBlast();
                 SpawnService spawner = Field != null ? Field.Spawner : null;
                 if (spawner != null)
                 {
@@ -492,6 +567,15 @@ namespace Portfolio.Asteroids
                 Defeated?.Invoke(this);
                 Despawn();
             }
+        }
+
+
+        private void FinalBlast()
+        {
+            Field?.Effects?.Explosion(Position, radius * 1.6f, explosionTint);
+            Field?.Effects?.Shockwave(Position, radius * 6f, explosionTint);
+            Field?.Sounds?.Explosion(1.5f);
+            Field?.CameraRig?.Shake(1f);
         }
 
 

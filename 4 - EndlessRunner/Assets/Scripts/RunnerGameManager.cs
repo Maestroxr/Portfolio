@@ -39,15 +39,23 @@ namespace Portfolio.EndlessRunner
         public bool NewBest;
         public float BestDistance;
         public bool HasNextLevel;
+
+        /// <summary>The run was a race against the runners of a room: the results are the standings.</summary>
+        public bool Online;
+        /// <summary>The place of the local runner in the race, from 1.</summary>
+        public int Place;
+        public int Runners;
+        /// <summary>The runners of the race by place, a line each.</summary>
+        public string Standings;
     }
 
 
     /// <summary>
     /// Endless Runner game module. Runs the level select, the countdown, the run itself (track, pickups, power-ups,
     /// hearts), the finish and the results, and keeps the campaign progress. The menu, pause and state flow come from
-    /// <see cref="BaseGameManager"/>.
+    /// <see cref="BaseGameManager"/>. Races against the runners of an online room are in RunnerGameManager.Online.cs.
     /// </summary>
-    public class RunnerGameManager : BaseGameManager
+    public partial class RunnerGameManager : BaseGameManager
     {
         private enum RunPhase
         {
@@ -55,7 +63,9 @@ namespace Portfolio.EndlessRunner
             Countdown,
             Running,
             Finishing,
-            Dying
+            Dying,
+            /// <summary>The local run of a race is over; the player watches the runners who are still out there.</summary>
+            Watching
         }
 
         #region Field Members
@@ -119,7 +129,11 @@ namespace Portfolio.EndlessRunner
 
         protected override bool UsesTimer => false;
 
-        public RunnerSettings RunnerSettings => Settings as RunnerSettings ?? runnerSettings;
+        /// <summary>
+        /// The settings of the run: the player's choice (the level's own, or the custom ones), and always the level's own in
+        /// a session, where everybody has to run the same track at the same pace.
+        /// </summary>
+        public RunnerSettings RunnerSettings => InSession ? runnerSettings : Settings as RunnerSettings ?? runnerSettings;
 
         public RunnerPlayer Player => runner;
 
@@ -202,7 +216,6 @@ namespace Portfolio.EndlessRunner
             }
             float deltaTime = Time.deltaTime;
             phaseTime += deltaTime;
-            float runnerZ = runner.transform.position.z;
             switch (phase)
             {
                 case RunPhase.Countdown:
@@ -212,7 +225,7 @@ namespace Portfolio.EndlessRunner
                     UpdateRun(deltaTime);
                     break;
                 case RunPhase.Finishing:
-                    track.UpdateTrack(runnerZ, track.keepBehind);
+                    UpdateTrackAround(runner.transform.position.z);
                     UpdateFinish();
                     break;
                 case RunPhase.Dying:
@@ -221,8 +234,12 @@ namespace Portfolio.EndlessRunner
                         EndRun(false);
                     }
                     break;
+                case RunPhase.Watching:
+                    UpdateWatching();
+                    break;
             }
-            track.Tick(deltaTime, runnerZ);
+            UpdateRace();
+            track.Tick(deltaTime, FocusZ());
         }
 
 
@@ -434,13 +451,15 @@ namespace Portfolio.EndlessRunner
                 return;
             }
             ApplySettings();
-            if (!trackReady || trackLevel != LevelIndex || level.IsEndless)
+            // The track of the level select may be laid out with the player's custom settings; a session runs the level's own.
+            if (InSession || !trackReady || trackLevel != LevelIndex || level.IsEndless)
             {
                 BuildTrack();
             }
             trackReady = false;
             ResetRun();
-            runner.ResetToStart(StartPosition);
+            int slot = LocalSlot;
+            runner.ResetToStart(StartPositionOf(slot), StartLane(slot));
             runnerCamera.SetMode(RunnerCamera.Mode.Chase);
             phase = RunPhase.Countdown;
             phaseTime = 0f;
@@ -452,6 +471,10 @@ namespace Portfolio.EndlessRunner
             }
             ui?.BeginRun(level.Title, LevelIndex, level.IsEndless, maxHearts, level.IsEndless ? progress.EndlessBestDistance : level.Length);
             RefreshHud();
+            if (race != null)
+            {
+                BeginRace();
+            }
         }
 
 
@@ -484,11 +507,11 @@ namespace Portfolio.EndlessRunner
             {
                 return;
             }
-            int seed = level.IsEndless ? Random.Range(1, int.MaxValue) : level.Seed;
-            track.Build(level, RunnerSettings, seed, runner.Gravity);
+            track.Build(level, RunnerSettings, TrackSeed(level), runner.Gravity);
             track.UpdateTrack(0f, 110f);
             themes?.Apply(level.ThemeAt(0f), true);
-            coinGoal = level.IsEndless ? 0 : Mathf.Max(1, Mathf.CeilToInt(track.LevelCoins * level.CoinGoal));
+            // The coins of a race are shared, so there is no goal of one's own to reach.
+            coinGoal = level.IsEndless || race != null ? 0 : Mathf.Max(1, Mathf.CeilToInt(track.LevelCoins * level.CoinGoal));
             trackReady = true;
             trackLevel = LevelIndex;
         }
@@ -536,7 +559,7 @@ namespace Portfolio.EndlessRunner
             float z = runner.transform.position.z;
             distance = Mathf.Max(distance, z);
             runner.SetTargetSpeed(RunnerSettings.SpeedAtDistance(z));
-            track.UpdateTrack(z, track.keepBehind);
+            UpdateTrackAround(z);
             track.CheckHints(z);
             UpdatePickups(deltaTime);
             UpdateMovingObstacles();
@@ -739,6 +762,11 @@ namespace Portfolio.EndlessRunner
 
         private void EndRun(bool victory)
         {
+            if (race != null)
+            {
+                EndRaceRun(victory);
+                return;
+            }
             RunnerLevel level = RunnerLevel;
             int score = Mathf.FloorToInt(PlayerScore);
             var result = new RunResult
@@ -778,6 +806,11 @@ namespace Portfolio.EndlessRunner
 
         internal void CollectCoin(Coin coin)
         {
+            if (race != null)
+            {
+                ClaimCoin(coin);
+                return;
+            }
             int multiplier = IsPowerUpActive(PowerUpType.Multiplier) ? 2 : 1;
             coins += coin.Value * multiplier;
             coinPoints += coin.Value * pointsPerCoin * multiplier;

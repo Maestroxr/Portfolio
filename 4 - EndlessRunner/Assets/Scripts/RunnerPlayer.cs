@@ -6,11 +6,12 @@ namespace Portfolio.EndlessRunner
     /// <summary>
     /// The runner. Runs down three lanes on a <see cref="CharacterController"/>: switches lanes, jumps, slides under
     /// barriers and walks up ramps onto wagons. Crashes, side bumps and falls are reported to the
-    /// <see cref="RunnerGameManager"/>, which decides what they cost.
+    /// <see cref="RunnerGameManager"/>, which decides what they cost. In a race the other runners see it as a
+    /// <see cref="RunnerGhost"/>, which shows the same <see cref="IRunnerMotion"/> from the poses this runner sends.
     /// </summary>
     [DefaultExecutionOrder(-10)]
     [RequireComponent(typeof(CharacterController))]
-    public class RunnerPlayer : PlayerBase
+    public class RunnerPlayer : PlayerBase, IRunnerMotion
     {
         /// <summary>The runner lives on the Ignore Raycast layer so its own queries can skip it.</summary>
         public const int Layer = 2;
@@ -55,6 +56,9 @@ namespace Portfolio.EndlessRunner
         public bool IsRunning { get; private set; }
         public float VerticalSpeed { get; private set; }
         public bool SuperJump { get; set; }
+
+        /// <summary>Thrown into the air by a bounce pad, until the runner lands.</summary>
+        public bool IsLaunched { get; private set; }
         public float JumpHeight { get; private set; } = 1.8f;
         public float SideSpeed { get; private set; } = 14f;
         public float Gravity => gravity;
@@ -88,16 +92,17 @@ namespace Portfolio.EndlessRunner
             SideSpeed = settings.SideSpeed;
         }
 
-        /// <summary>Puts the runner on the start line, standing still.</summary>
-        public void ResetToStart(Vector3 position)
+        /// <summary>Puts the runner on the start line, standing still, in the middle lane unless a race starts it in another.</summary>
+        public void ResetToStart(Vector3 position, int lane = 0)
         {
             IsRunning = false;
             Speed = 0f;
             targetSpeed = 0f;
-            Lane = 0;
-            previousLane = 0;
+            Lane = Mathf.Clamp(lane, -1, 1);
+            previousLane = Lane;
             VerticalSpeed = 0f;
             IsSliding = false;
+            IsLaunched = false;
             slideQueued = false;
             SetHeight(standHeight);
             invulnerableUntil = 0f;
@@ -150,6 +155,7 @@ namespace Portfolio.EndlessRunner
             EndSlide();
             VerticalSpeed = Mathf.Sqrt(2f * gravity * height);
             IsGrounded = false;
+            IsLaunched = true;
             lastGroundedTime = -10f;
             jumpRequestTime = -10f;
             slideQueued = false;
@@ -179,6 +185,7 @@ namespace Portfolio.EndlessRunner
             Teleport(position);
             VerticalSpeed = 0f;
             IsGrounded = true;
+            IsLaunched = false;
             EndSlide();
             previousLane = Lane;
         }
@@ -411,6 +418,7 @@ namespace Portfolio.EndlessRunner
 
         private void Landed(float impactSpeed)
         {
+            IsLaunched = false;
             if (animator != null)
             {
                 animator.OnLand(impactSpeed);

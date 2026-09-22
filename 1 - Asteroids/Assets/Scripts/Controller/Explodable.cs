@@ -19,6 +19,7 @@ namespace Portfolio.Asteroids
         [SerializeField] internal Color blastTint = new Color(0.5f, 0.8f, 1f);
 
         private bool detonated;
+        private int? blastSeat;
 
         /// <summary>Kept from the original: the blast radius in meters.</summary>
         public float BlastRadius
@@ -37,13 +38,14 @@ namespace Portfolio.Asteroids
         {
             base.OnSpawned();
             detonated = false;
+            blastSeat = null;
         }
 
 
         /// <summary>Blows up now. <paramref name="byPlayer"/> decides whether what the blast destroys scores.</summary>
         public virtual void Detonate(bool byPlayer)
         {
-            if (detonated || !InPlay)
+            if (detonated || !InPlay || IsPuppet)
             {
                 return;
             }
@@ -52,6 +54,7 @@ namespace Portfolio.Asteroids
             {
                 // Destroyed by its own fuse: tell the field so the kill is counted (without points), then blow.
                 Health = 0f;
+                Exit = ExitReason.Destroyed;
                 if (Field != null)
                 {
                     Field.NotifyDestroyed(this, new DamageInfo(0f, Vector2.zero, Position, DamageSource.Hazard, false));
@@ -64,11 +67,13 @@ namespace Portfolio.Asteroids
 
         protected override void OnDestroyed(DamageInfo hit)
         {
-            if (detonated)
+            if (detonated || IsPuppet)
             {
+                // The blast of a puppet comes from the simulator, like everything it sets off.
                 return;
             }
             detonated = true;
+            blastSeat = hit.ByPlayer ? hit.Seat : null;
             Blow(hit.ByPlayer);
         }
 
@@ -94,6 +99,7 @@ namespace Portfolio.Asteroids
                 PlayerDamage = playerBlastDamage,
                 Push = blastPush,
                 ByPlayer = byPlayer,
+                Seat = byPlayer ? blastSeat : null,
                 Source = this,
                 Tint = blastTint
             });

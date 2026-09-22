@@ -37,6 +37,15 @@ namespace Portfolio.EndlessRunner
             OnTouched(manager, player);
         }
 
+        /// <summary>
+        /// Another runner of a race took the piece: nobody here can touch it any more. It stays in sight until the ghost of
+        /// that runner gets to it.
+        /// </summary>
+        internal void MarkTaken()
+        {
+            Collected = true;
+        }
+
         protected virtual bool CanTouch(RunnerPlayer player)
         {
             return true;

@@ -18,12 +18,32 @@ namespace Portfolio.Asteroids
         [field: SerializeField, Tooltip("Extra room beyond the visible edge before something wraps around.")]
         public Vector3 Margin { get; private set; } = new Vector3(0.2f, 0.2f, 0f);
 
+        private Vector2? fixedHalfSize;
+
         public float Aspect => view != null && view.aspect > 0.1f ? view.aspect : 16f / 9f;
 
         public float HalfHeight => halfHeight;
 
-        /// <summary>Half the width and height of the visible playfield.</summary>
-        public Vector2 HalfSize => new Vector2(halfHeight * Aspect, halfHeight);
+        /// <summary>
+        /// Half the width and height of the playfield: what the camera shows, or the size it was fixed to for a mission
+        /// shared with other pilots, whose screens differ.
+        /// </summary>
+        public Vector2 HalfSize => fixedHalfSize ?? new Vector2(halfHeight * Aspect, halfHeight);
+
+        /// <summary>Whether the playfield has a size of its own instead of the camera's (see <see cref="Fix"/>).</summary>
+        public bool IsFixed => fixedHalfSize.HasValue;
+
+        /// <summary>Gives the playfield a size that does not depend on the screen; the camera has to fit it into view.</summary>
+        public void Fix(Vector2 halfSize)
+        {
+            fixedHalfSize = new Vector2(Mathf.Max(1f, halfSize.x), Mathf.Max(1f, halfSize.y));
+        }
+
+        /// <summary>The playfield is as wide as the camera shows again.</summary>
+        public void Release()
+        {
+            fixedHalfSize = null;
+        }
 
         /// <summary>Full size of the visible playfield (kept from the original, where it came from a mesh).</summary>
         public Vector3 Size => HalfSize * 2f;
@@ -105,6 +125,15 @@ namespace Portfolio.Asteroids
         }
 
         /// <summary>
+        /// How far something of <paramref name="radius"/> travels before it is back where it was: it wraps once it has
+        /// fully left, so bigger things go further around. Two positions of the same body are compared with this.
+        /// </summary>
+        public Vector2 WrapPeriod(float radius)
+        {
+            return (HalfSize + (Vector2)Margin + Vector2.one * radius) * 2f;
+        }
+
+        /// <summary>
         /// A point just outside a random edge for something of <paramref name="radius"/> to enter from, and the direction
         /// into the playfield from there (aimed loosely at the middle).
         /// </summary>
@@ -134,13 +163,22 @@ namespace Portfolio.Asteroids
         /// <summary>A random point on screen at least <paramref name="minDistance"/> from <paramref name="avoid"/>.</summary>
         public Vector2 RandomPointAwayFrom(Vector2 avoid, float minDistance, float inset = 1f)
         {
+            return RandomPointAwayFrom(candidate => Delta(avoid, candidate).magnitude, minDistance, inset);
+        }
+
+        /// <summary>
+        /// A random point on screen that <paramref name="clearance"/> puts at least <paramref name="minDistance"/> away
+        /// from what has to be avoided (several ships, for one); the best of a dozen tries otherwise.
+        /// </summary>
+        public Vector2 RandomPointAwayFrom(System.Func<Vector2, float> clearance, float minDistance, float inset = 1f)
+        {
             Vector2 half = HalfSize - Vector2.one * inset;
             Vector2 best = (Vector2)Middle;
             float bestDistance = -1f;
             for (int i = 0; i < 12; i++)
             {
                 var candidate = new Vector2(Random.Range(-half.x, half.x), Random.Range(-half.y, half.y)) + (Vector2)Middle;
-                float distance = Delta(avoid, candidate).magnitude;
+                float distance = clearance(candidate);
                 if (distance >= minDistance)
                 {
                     return candidate;

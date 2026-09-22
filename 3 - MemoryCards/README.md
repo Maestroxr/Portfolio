@@ -13,6 +13,11 @@ offers an endless run and free play with your own rules.
   game, settings, level select).
 - Every campaign level has three stars: clear the board, stay under the level's mistake count, and reach its third
   goal (time, moves, combo or score). Worlds open with stars; progress, best scores and records are saved automatically.
+- **Versus.** Two to four players share a board and take turns. A set scores for whoever found it (sets in a row
+  build the combo) and lets them go again; a mistake shows for a moment and passes the turn, a bomb costs points and
+  the turn, and so does running out of time: every turn has a clock. The most points win when the board is cleared.
+  The **players** button of the level select steps from one player to a versus game for up to four at this device,
+  on any level but the endless run; **online** opens the lobby to play against people elsewhere.
 
 | Twist | What it does |
 | --- | --- |
@@ -72,6 +77,7 @@ The game is built on the base classes of the BaseGame package (`com.skinnerboxes
 | `Campaign` | `MemoryCardsCampaign` (worlds, star gates, the endless run and free play) |
 | `CampaignProgress` | `MemoryCardsProgress` (endless records, lifetime counters, the last world shown) |
 | `PrefabPool<T>` | `FlippableCache` (the cards) |
+| `OnlineGameController` (assembly `Gamebox.Online`) | `MemoryCardsOnlineController` |
 
 `MemoryCardsCampaign` overrides the unlock rule, the star count and the maximum stars of the base campaign: a level
 opens once the campaign level before it is completed and the campaign holds the stars its world asks for, only
@@ -92,10 +98,14 @@ scene, so the Quit button closes a build of the game on its own; in the editor i
 | `Scripts/Model/Dealer.cs`, `RoundRules.cs` | Deals a board (sets, special cards, frozen cards, parade order) and validates the rules |
 | `Scripts/Model/StarGoals.cs`, `EndlessRules.cs` | The three stars of a level; the boards of the endless run |
 | `Scripts/MemoryCardsGameManager.cs` | Level select, dealing, memorize, clicks through the rules engine, animations, results, progress, save and load |
+| `Scripts/Model/VersusMatch.cs` | The rules of several players at one board: turns, scores per player, the clock of a turn, the standings |
+| `Scripts/MemoryCardsGameManager.Versus.cs`, `Scripts/UI/VersusHud.cs` | Versus games at one device and online: the seats, the turn clock, the flips the server judged, the scoreboard, the results |
+| `Scripts/MemoryCardsOnlineController.cs` | The online game: rooms and levels for the lobby, the board of the room, flip events, turns and scores from the server |
 | `Scripts/Flippable.cs`, `Scripts/View/*` | The card (flip, deal, shuffle, match, mistake, ice, explosion), board layout, UI particles, backdrop, audio |
 | `Scripts/UI/*` | Level select (world tabs, level cards, details), HUD, results, pause menu, settings panel |
 | `Scripts/MemoryCardsAutopilot.cs` | Plays a level by itself; add it to any object in play mode to test a level end to end |
-| `Scripts/MemoryCardsTour.cs` | Development builds only: `-memorycards-tour <folder>` plays through the game and saves screenshots |
+| `Scripts/MemoryCardsTour.cs` | Development builds only: `-memorycards-tour <folder>` plays through the game and saves screenshots; `-memorycards-versus <folder>` plays only the versus game for three |
+| `Scripts/MemoryCardsOnlineTour.cs` | Development builds only: `-memorycards-online host <folder>` and `-memorycards-online join <folder>` (or `idle`, `quitter`) play an online game between two running players |
 
 The rules engine knows nothing of Unity objects, so it is covered by edit mode tests (`Tests/Editor`, assembly
 `Skinnerboxes.MemoryCards.Tests`) together with the dealer, the settings, the campaign unlocks and the progress.
@@ -116,6 +126,26 @@ Everything the game shows is built by the editor code in `Assets/Editor` (menu *
 The generators write to fixed paths, update existing assets in place (GUIDs and references are kept) and do not
 rewrite files whose content did not change. Run them in one editor at a time: an editor that imports the files while
 the other one writes them can hold a lock on a file and make the save fail.
+
+## Multiplayer
+
+A versus game is any board of the campaign or free play without what limits a single player: the clock, the hearts and
+the move limit go (the turn timer and the other players take that place), and so do the parade and the shuffle, which
+need one player's run of play; clock cards are dealt as peek cards (`VersusMatch.RulesFor`). The board, the sets,
+triplets, memorize, ice, wild cards, bombs and peek cards stay. `VersusMatch` keeps the seats, their scores and the
+clock of the turn; it is plain C# and covered by edit mode tests.
+
+- **At one device** the round of the manager judges every flip as it does for one player, the versus game books the
+  result for the player whose turn it is, and the players pass the device around. A click during a mistake only turns
+  the cards back, because the next card belongs to the next player. A turn lasts 20 seconds.
+- **Online** the server deals the board and judges every flip, so nobody can look at a card they have not turned. The
+  host picks a level and the seconds a turn lasts in the lobby (the shared lobby of BaseGame); the host's client writes
+  the board of the level into the options of the room (`MemoryCardsOnlineController.ComposeOptions`), because the server
+  does not know the game's level assets. On every client the round only mirrors the board: a click asks the server for a
+  flip (`FlipCard`), and what the server answers comes back as an event that is played with the same animations as a
+  local flip. Turns, the turn timer, the scores and the places are the base server's. A player who leaves is skipped,
+  and a game with one player left is over. Online games do not pause (the pause button opens the match menu), are not
+  saved, and the next game of a room starts from the lobby.
 
 ## Phones and tablets
 
@@ -140,7 +170,18 @@ The game's [SpacetimeDB](https://spacetimedb.com) module is the folder `Server` 
 it; open `Server/StdbModule.csproj` in the IDE). It is the Gamebox base server of the BaseGame repository (`BaseServer`:
 users and login, connecting and disconnecting, the player profile) plus `Server/Lib.cs`, which declares the same
 `public static partial class Module` to add the tables and reducers of this game and implements the base server's
-partial methods (`OnUserCreated`, `OnUserConnected`, ...) to react to its events. For now it adds nothing.
+partial methods to react to its events. It holds the online versus game:
+
+| In `Server/Lib.cs` | What |
+| --- | --- |
+| `CardDeck` (private) | The faces of a room's board. A client learns a face when the card turns. |
+| `BoardCard` (public) | One row per card: state, ice, and the face only while the card is face up. |
+| `MemoryBoard` (public) | The shape of the board, the sets found, the combo of the player whose turn it is. |
+| `FlipEvent` (public event table) | What a flip did (revealed, a set, a mistake, a bomb, a peek, cards turning back, time up, the board shown for memorizing), with the faces it is about. Sent, never stored. |
+| `MismatchTimer`, `PlayTimer` (scheduled) | Turn a mistake back after a moment; begin the first turn once the clients dealt the board. |
+| `MemoryStats` (public) | Games, wins, sets and the best score of a player. |
+| `FlipCard(index)` | The player whose turn it is flips a card; the same rules as `MemoryRound`. |
+| `ConfigureRoom`, `OnRoomStarted`, `OnTurnTimedOut`, `OnMemberLeft`, `OnRoomFinished`, `OnRoomCleared`, `OnUserDeleted` | The base server's extension points: check the board of a room, deal it, take the cards back from a player who ran out of time or left, keep the stats, clean up. |
 
 - `Packages/manifest.json` references the SpacetimeDB SDK and the base server package
   (`com.skinnerboxes.baseserver`, `file:../../../BaseGame/BaseServer`); `Server/StdbModule.csproj` imports
@@ -149,8 +190,11 @@ partial methods (`OnUserCreated`, `OnUserConnected`, ...) to react to its events
   `Assets/Scripts/Server/Bindings`, namespace `Portfolio.MemoryCards.Server`.
 - After a change to `Server/Lib.cs`: `Gamebox > Server > Publish Module` and `Generate Client Bindings` in the editor,
   or `spacetime publish` and `spacetime generate` in this folder. Generating also writes this game's
-  `GameServerClient`, the component that connects, logs the player in and keeps the profiles; until the game has
-  tables of its own, BaseGame's `Gamebox.Server.GameServerClient` does the same against this game's database.
+  `GameServerClient` (`Assets/Scripts/Server`), the component that connects, logs the player in and keeps the profiles,
+  the rooms and the turns. The scene builder puts it into the scene together with the online controller and the lobby
+  (`OnlineInstaller`, object "Online"); it connects to `http://127.0.0.1:3000` (`spacetime start`) when the lobby opens.
+- Several players on one machine: start every instance of a build with its own `-gamebox-identity <slot>`;
+  `-gamebox-server <address>` and `-gamebox-database <name>` point a build at another server or database.
 
 The BaseGame README ("Online play") describes the shared client, `BaseServer/README.md` the server side.
 

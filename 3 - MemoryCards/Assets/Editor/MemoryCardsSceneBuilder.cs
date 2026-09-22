@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Gamebox;
 using Gamebox.Editor;
 using Gamebox.UI;
+using Portfolio.MemoryCards.Server;
 using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -16,11 +17,14 @@ namespace Portfolio.MemoryCards.EditorTools
     /// <summary>
     /// Builds the card prefab and Scenes/MemoryCards.unity: the backdrop, the board with its card pool, the level
     /// select, the HUD, the results screen, the pause menu and the free play settings panel (wired to the base
-    /// <see cref="GameUI"/> and <see cref="SettingsUI"/> fields), particles, popups and audio.
+    /// <see cref="GameUI"/> and <see cref="SettingsUI"/> fields), particles, popups and audio, and online play (the
+    /// server client, the online controller and the shared lobby, through <see cref="OnlineInstaller"/>).
     /// </summary>
     internal static class MemoryCardsSceneBuilder
     {
         public const string ScenePath = "Scenes/MemoryCards.unity";
+        /// <summary>The name the module of Server/ is published under (spacetime.json of the game's project).</summary>
+        public const string Database = "skinnerboxes-memorycards";
         public const string CardPrefabPath = "Prefabs/Card.prefab";
 
         private static readonly Vector2 Reference = new Vector2(1920f, 1080f);
@@ -120,6 +124,18 @@ namespace Portfolio.MemoryCards.EditorTools
                 MemoryCardsArtBuilder.Card("Wild"), MemoryCardsArtBuilder.Card("Bomb"), MemoryCardsArtBuilder.Card("Clock"), MemoryCardsArtBuilder.Card("Peek")
             };
             backdrop.Apply(farm, true);
+
+            // Online play: the scoreboard of the HUD shows whose turn it is, so the lobby's own banner stays off.
+            manager.online = (MemoryCardsOnlineController)OnlineInstaller.Install(scene, typeof(GameServerClient), typeof(MemoryCardsOnlineController),
+                manager, ui, Database, new OnlineInstaller.LobbyStyle
+                {
+                    Title = "PLAY ONLINE",
+                    Font = font,
+                    Accent = Shapes.Hex("#3D8BFF"),
+                    Window = Shapes.Hex("#2B2D42"),
+                    Row = Shapes.Hex("#3B3E5C"),
+                    HideTurnBanner = true
+                });
 
             GameMenuInstaller.EnsureUrpCameras();
             EditorSceneManager.MarkSceneDirty(scene);
@@ -364,6 +380,13 @@ namespace Portfolio.MemoryCards.EditorTools
 
             ui.continueButton = Button(root, "Continue", MemoryCardsArtBuilder.Kenney("ButtonYellow"), "CONTINUE", MemoryCardsArtBuilder.Icon("Play"), new Vector2(1f, 0f),
                 new Vector2(0.5f, 0f), new Vector2(-640f, 14f), new Vector2(330f, 94f), 34f, Ink, out _);
+            // Several players: at this device (the button steps from one to four), or online.
+            ui.playersButton = Button(root, "Players", MemoryCardsArtBuilder.Kenney("ButtonBlue"), "1 PLAYER", null, new Vector2(1f, 0f),
+                new Vector2(0.5f, 0f), new Vector2(-1112f, 14f), new Vector2(200f, 94f), 28f, Color.white, out TextMeshProUGUI playersLabel);
+            ui.playersLabel = playersLabel;
+            playersLabel.textWrappingMode = TextWrappingModes.NoWrap;
+            ui.onlineButton = Button(root, "Online", MemoryCardsArtBuilder.Kenney("ButtonGreen"), "ONLINE", null, new Vector2(1f, 0f),
+                new Vector2(0.5f, 0f), new Vector2(-908f, 14f), new Vector2(190f, 94f), 28f, Color.white, out _);
             ui.titleSettingsButton = RoundButton(root, "Settings", MemoryCardsArtBuilder.Kenney("RoundBlue"), MemoryCardsArtBuilder.Icon("Settings"), Color.white,
                 new Vector2(1f, 0f), new Vector2(-190f, 70f), 104f);
             ui.titleExitButton = RoundButton(root, "Exit", MemoryCardsArtBuilder.Kenney("RoundRed"), MemoryCardsArtBuilder.Icon("Power"), Color.white,
@@ -537,7 +560,7 @@ namespace Portfolio.MemoryCards.EditorTools
             ui.modeText = Text(level, "Mode", "CLASSIC", 22f, SoftInk, TextAlignmentOptions.Left, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(104f, -16f), new Vector2(430f, 34f));
 
             // Score, combo and sets or parade, top centre.
-            Text(root, "ScoreLabel", "SCORE", 24f, Color.white, TextAlignmentOptions.Center, new Vector2(0.5f, 1f), Center, new Vector2(0f, -30f), new Vector2(300f, 36f), outline);
+            TextMeshProUGUI scoreLabel = Text(root, "ScoreLabel", "SCORE", 24f, Color.white, TextAlignmentOptions.Center, new Vector2(0.5f, 1f), Center, new Vector2(0f, -30f), new Vector2(300f, 36f), outline);
             ui.scoreText = Text(root, "Score", "0", 64f, Color.white, TextAlignmentOptions.Center, new Vector2(0.5f, 1f), Center, new Vector2(0f, -84f), new Vector2(420f, 80f), title);
             ui.comboBadge = Rect(root, "Combo", new Vector2(0.5f, 1f), Center, new Vector2(214f, -80f), new Vector2(118f, 62f));
             Image comboPill = Image(ui.comboBadge, "Pill", MemoryCardsArtBuilder.Ui("Pill"), Gold, Vector2.zero, Center, Vector2.zero, Vector2.zero, true);
@@ -596,6 +619,47 @@ namespace Portfolio.MemoryCards.EditorTools
             ui.movesText = Text(moves, "Text", "20", 38f, Color.white, TextAlignmentOptions.Center, Center, Center, new Vector2(26f, 1f), new Vector2(150f, 60f), outline);
             Text(moves, "Label", "moves", 18f, new Color(1f, 1f, 1f, 0.8f), TextAlignmentOptions.Center, new Vector2(0.5f, 0f), Center, new Vector2(26f, -10f), new Vector2(150f, 24f), outline);
             ui.movesRoot = moves.gameObject;
+
+            ui.soloWidgets = new[] { scoreLabel.gameObject, ui.scoreText.gameObject, timer.gameObject };
+            ui.versusHud = BuildVersusHud(root);
+        }
+
+        /// <summary>The scoreboard of a versus game: a chip per player, between the level panel and the pause button.</summary>
+        private static VersusHud BuildVersusHud(Transform root)
+        {
+            RectTransform strip = Rect(root, "Versus", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(150f, -18f), new Vector2(900f, 128f));
+            var versus = strip.gameObject.AddComponent<VersusHud>();
+            var chips = new List<VersusHud.Chip>();
+            for (int i = 0; i < VersusMatch.MaxPlayers; i++)
+            {
+                RectTransform chip = Rect(strip, $"Seat {i + 1}", Center, Center, new Vector2((i - 1.5f) * 224f, 0f), new Vector2(210f, 122f));
+                Image frame = Image(chip, "Frame", MemoryCardsArtBuilder.Ui("PanelDepth"), new Color(1f, 1f, 1f, 0f), Vector2.zero, Center, Vector2.zero, Vector2.zero, true);
+                StretchRect(frame.rectTransform, -7f, -7f, -7f, -7f);
+                Image panel = Image(chip, "Panel", MemoryCardsArtBuilder.Ui("PanelDepth"), new Color(1f, 1f, 1f, 0.94f), Vector2.zero, Center, Vector2.zero, Vector2.zero, true);
+                StretchRect(panel.rectTransform);
+                TextMeshProUGUI name = Text(chip, "Name", $"Player {i + 1}", 22f, Ink, TextAlignmentOptions.Center, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -8f), new Vector2(194f, 30f));
+                name.textWrappingMode = TextWrappingModes.NoWrap;
+                name.enableAutoSizing = true;
+                name.fontSizeMin = 13f;
+                name.fontSizeMax = 22f;
+                TextMeshProUGUI score = Text(chip, "Score", "0", 40f, Ink, TextAlignmentOptions.Center, Center, Center, new Vector2(0f, 2f), new Vector2(194f, 46f));
+                TextMeshProUGUI sets = Text(chip, "Sets", "0 sets", 18f, SoftInk, TextAlignmentOptions.Center, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 22f), new Vector2(194f, 24f));
+                Image track = Image(chip, "Clock", MemoryCardsArtBuilder.Ui("Pill"), new Color(0.1f, 0.1f, 0.22f, 0.25f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 10f), new Vector2(176f, 10f), true);
+                Image fill = Image(track.transform, "Fill", MemoryCardsArtBuilder.Ui("Pill"), Color.white, Vector2.zero, Center, Vector2.zero, Vector2.zero);
+                StretchRect(fill.rectTransform);
+                fill.type = UnityEngine.UI.Image.Type.Filled;
+                fill.fillMethod = UnityEngine.UI.Image.FillMethod.Horizontal;
+                fill.fillOrigin = 0;
+                chips.Add(new VersusHud.Chip
+                {
+                    root = chip, panel = panel, frame = frame, nameText = name, scoreText = score, setsText = sets, clockTrack = track, clockFill = fill
+                });
+            }
+            versus.chips = chips.ToArray();
+            versus.chipWidth = 210f;
+            versus.chipGap = 14f;
+            strip.gameObject.SetActive(false);
+            return versus;
         }
 
         private static void BuildOverlays(Transform root, MemoryCardsUI ui)

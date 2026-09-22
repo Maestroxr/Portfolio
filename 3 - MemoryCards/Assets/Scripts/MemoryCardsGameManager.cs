@@ -13,9 +13,10 @@ namespace Portfolio.MemoryCards
     /// Memory Cards game module. Runs the level select, deals the board, shows it for the memorize phase, passes every
     /// card click to the <see cref="MemoryRound"/> rules engine and animates what it answers (matches, mistakes, special
     /// cards, shuffles), chains the boards of the endless run, keeps the campaign progress and saves a game in progress.
-    /// Menu, pause and settings come from <see cref="BaseGameManager"/>.
+    /// Menu, pause and settings come from <see cref="BaseGameManager"/>. Games for several players, at one device or
+    /// online, are in MemoryCardsGameManager.Versus.cs.
     /// </summary>
-    public class MemoryCardsGameManager : BaseGameManager
+    public partial class MemoryCardsGameManager : BaseGameManager
     {
         private enum Phase
         {
@@ -205,6 +206,7 @@ namespace Portfolio.MemoryCards
                     Finish();
                 }
             }
+            UpdateVersus(deltaTime);
             RefreshHud();
         }
 
@@ -216,6 +218,7 @@ namespace Portfolio.MemoryCards
             StopFlow();
             phase = Phase.Menu;
             ClearBoard();
+            ClearVersus();
             particles?.Clear();
             round = null;
             unflipTimer = -1f;
@@ -439,6 +442,7 @@ namespace Portfolio.MemoryCards
             }
             gameUI.ShowLevelSelect(worlds, selectedWorld, levels, selectedLevel, campaign.TotalStars(progress), campaign.MaxStars,
                 progress.SetsFound, DoesSaveGameExist());
+            RefreshPlayers();
         }
 
 
@@ -562,8 +566,10 @@ namespace Portfolio.MemoryCards
                 UI?.UpdateError("The Memory Cards campaign has no level to play.");
                 return;
             }
+            SetUpVersus(level);
             if (!PrepareRules(level, out string error))
             {
+                ClearVersus();
                 UI?.UpdateError($"Cannot start the game: {error}");
                 return;
             }
@@ -581,7 +587,7 @@ namespace Portfolio.MemoryCards
             gameUI?.Curtain(world != null ? world.skyTop : Color.white);
             TransitionState(BaseGameState.Running);
             sounds?.PlayMusic(sounds.playMusic);
-            BeginBoard(DealBoard(), 0, 0);
+            BeginBoard(IsOnlineVersus ? MirrorDeal() : DealBoard(), 0, 0);
         }
 
 
@@ -630,6 +636,16 @@ namespace Portfolio.MemoryCards
                 rules = level.Settings.ToRules();
                 animalPool = campaign.AnimalPool(level);
             }
+            if (versus != null)
+            {
+                rules = VersusRules(rules);
+            }
+            if (IsOnlineVersus)
+            {
+                // The server dealt the board already; its rules are the ones that count.
+                error = "OK";
+                return true;
+            }
             return rules.IsValid(animalPool.Count, out error);
         }
 
@@ -647,7 +663,7 @@ namespace Portfolio.MemoryCards
             lastTick = -1;
             SpawnViews(deal);
             MemoryCardsLevel level = CardsLevel;
-            gameUI?.BeginRound(new RoundHud
+            var setup = new RoundHud
             {
                 Title = level.IsCampaign ? $"{CampaignNumber(LevelIndex)}. {level.Title}" : level.Title,
                 Mode = level.IsFreePlay ? LevelMode.FreePlay : MemoryCardsLevel.ModeOf(level.Kind, rules),
@@ -660,7 +676,12 @@ namespace Portfolio.MemoryCards
                 Endless = level.IsEndless,
                 Board = endlessBoard,
                 Accent = world != null ? world.accent : Color.white
-            });
+            };
+            gameUI?.BeginRound(versus != null ? VersusHudSetup(setup) : setup);
+            if (versus != null)
+            {
+                gameUI?.ShowVersus(versus.Seats, localSeat);
+            }
             RefreshHud();
             RefreshParade();
             StartFlow(DealRoutine(level));
@@ -707,6 +728,11 @@ namespace Portfolio.MemoryCards
         {
             if (card.Kind == CardKind.Animal)
             {
+                // An online board is dealt by the server: a face is unknown until its card turns.
+                if (card.Animal < 0 || card.Animal >= deal.Animals.Count)
+                {
+                    return null;
+                }
                 int pool = deal.Animals[card.Animal];
                 return pool >= 0 && pool < animalPool.Count ? animalPool[pool] : null;
             }
@@ -759,6 +785,14 @@ namespace Portfolio.MemoryCards
                 // The banner shows before the cards turn, so it never hides a card that is face up.
                 gameUI?.ShowBanner("MEMORIZE!", "Remember where the animals are", Color.white, 1f);
                 yield return new WaitForSeconds(0.9f);
+                if (onlineBoard != null && onlineBoard.Preview != null)
+                {
+                    // The server shows the board to everybody once, for this.
+                    foreach (OnlineCard face in onlineBoard.Preview)
+                    {
+                        Learn(face);
+                    }
+                }
                 sounds?.Play(sounds.fan, 0.8f);
                 for (int i = 0; i < views.Count; i++)
                 {
@@ -784,7 +818,12 @@ namespace Portfolio.MemoryCards
             string sub = level.IsEndless ? null : level.IsCampaign && !string.IsNullOrEmpty(level.Introduces) ? $"New: {level.Introduces}" : null;
             gameUI?.ShowBanner(title, sub, world != null ? Color.Lerp(world.accent, Color.white, 0.2f) : Color.white, 1f);
             sounds?.Play(sounds.go, 0.8f);
-            if (level.IsCampaign && !string.IsNullOrEmpty(level.Tip) && progress.Stars(LevelIndex) == 0)
+            if (versus != null)
+            {
+                gameUI?.ShowTip(IsOnlineVersus ? "A set scores and lets you go again. A mistake passes the turn."
+                    : "Take turns: a set scores and lets you go again, a mistake passes the turn.");
+            }
+            else if (level.IsCampaign && !string.IsNullOrEmpty(level.Tip) && progress.Stars(LevelIndex) == 0)
             {
                 gameUI?.ShowTip(level.Tip);
             }
@@ -794,6 +833,14 @@ namespace Portfolio.MemoryCards
             }
             phase = Phase.Playing;
             SetCardsInteractable(true);
+            if (IsOnlineVersus)
+            {
+                RefreshVersusInput();
+            }
+            else if (versus != null)
+            {
+                After(1f, AnnounceTurn);
+            }
         }
 
 
@@ -803,19 +850,37 @@ namespace Portfolio.MemoryCards
             {
                 return;
             }
-            MemoryCard card = round.Cards[view.Index];
-            if (round.MismatchShowing && (card.State == CardState.Revealed || pendingShuffle))
+            if (IsOnlineVersus)
             {
-                // Clicking during a mistake flips it back at once (and runs a pending shuffle first).
+                RequestOnlineFlip(view);
+                return;
+            }
+            MemoryCard card = round.Cards[view.Index];
+            if (round.MismatchShowing && (versus != null || card.State == CardState.Revealed || pendingShuffle))
+            {
+                // Clicking during a mistake flips it back at once (and runs a pending shuffle first). In a versus game
+                // that is all the click does: the next card belongs to the next player.
                 HideMismatch();
                 return;
             }
+            actingSeat = versus != null ? versus.Current : -1;
             FlipResult result = round.Flip(card);
             if (result.Ignored)
             {
                 return;
             }
-            player?.RegisterFlip();
+            PlayFlip(view, result, versus != null ? BookLocalFlip(result).Points : result.Points);
+        }
+
+
+        /// <summary>
+        /// Plays what a flip did. <paramref name="points"/> is what the flip was worth to the player who made it, which
+        /// in a versus game is not always what the board counted (a bomb takes no more than the player has).
+        /// </summary>
+        private void PlayFlip(Flippable view, FlipResult result, int points)
+        {
+            result.Points = points;
+            Acting?.RegisterFlip();
             if (result.FlippedBack.Count > 0)
             {
                 unflipTimer = -1f;
@@ -911,7 +976,7 @@ namespace Portfolio.MemoryCards
                         }
                     }
                 }
-                gameUI?.ShowPopup(view.transform.position, $"+{result.Points}", gold, combo >= 2 ? 54f : 46f);
+                gameUI?.ShowPopup(view.transform.position, $"+{result.Points}", PointsColor, combo >= 2 ? 54f : 46f);
                 if (result.TimeChange > 0f)
                 {
                     gameUI?.ShowPopup(view.transform.position + Vector3.down * 46f, $"+{result.TimeChange:0.#}s", goodColor, 34f);
@@ -926,7 +991,7 @@ namespace Portfolio.MemoryCards
                 string label = $"COMBO x{Mathf.Min(combo, MemoryRound.MaxComboMultiplier)}!";
                 After(delay + 0.15f, () => gameUI?.ShowPopup(view.transform.position + Vector3.down * 92f, label, new Color(1f, 0.55f, 0.85f), 36f));
             }
-            player?.RegisterMatch();
+            Acting?.RegisterMatch();
             runSets++;
             runBestCombo = Mathf.Max(runBestCombo, round.BestCombo);
         }
@@ -965,7 +1030,8 @@ namespace Portfolio.MemoryCards
             }
             bool wrongOrder = result.Outcome == FlipOutcome.WrongOrder;
             After(flipTime * 0.8f, () => sounds?.Play(wrongOrder ? sounds.wrongOrder : sounds.mismatch, 0.8f));
-            unflipTimer = flipTime + Mathf.Max(0.2f, rules.UnflipDelay);
+            // Online the server turns a mistake back, for everybody at the same moment.
+            unflipTimer = IsOnlineVersus ? -1f : flipTime + Mathf.Max(0.2f, rules.UnflipDelay);
             pendingShuffle = result.Shuffle && !round.IsOver;
             if (wrongOrder)
             {
@@ -977,7 +1043,7 @@ namespace Portfolio.MemoryCards
                 gameUI?.HeartLost();
                 After(flipTime, () => sounds?.Play(sounds.heart, 0.8f));
             }
-            player?.RegisterMistake();
+            Acting?.RegisterMistake();
         }
 
 
@@ -1007,7 +1073,7 @@ namespace Portfolio.MemoryCards
                     sounds?.Play(sounds.heart, 0.8f);
                 }
             });
-            gameUI?.ShowBanner("BOOM!", result.HeartLost ? "A bomb cost you a heart" : "Watch out for bombs", badColor, 1.1f);
+            gameUI?.ShowBanner("BOOM!", result.HeartLost ? "A bomb cost you a heart" : versus != null ? "The turn is over" : "Watch out for bombs", badColor, 1.1f);
         }
 
 
@@ -1075,6 +1141,7 @@ namespace Portfolio.MemoryCards
             {
                 ViewOf(card)?.FlipDown();
             }
+            MismatchHidden();
             if (pendingShuffle && !round.IsOver)
             {
                 pendingShuffle = false;
@@ -1118,6 +1185,11 @@ namespace Portfolio.MemoryCards
 
         private IEnumerator FinishRoutine()
         {
+            if (versus != null)
+            {
+                yield return VersusFinishRoutine();
+                yield break;
+            }
             MemoryCardsLevel level = CardsLevel;
             yield return new WaitForSeconds(flipTime + 0.45f);
             runTime += round.Elapsed;
@@ -1275,7 +1347,10 @@ namespace Portfolio.MemoryCards
             {
                 return;
             }
-            PlayerScore = round.Score;
+            if (versus == null)
+            {
+                PlayerScore = round.Score;
+            }
             gameUI?.UpdateHud(round.Score, round.Combo, round.Clock, round.HeartsLeft, round.MovesLeft, round.MatchedSets, round.Sets);
         }
 
@@ -1419,6 +1494,11 @@ namespace Portfolio.MemoryCards
             if (round == null || round.IsOver || phase == Phase.Finished)
             {
                 UI?.UpdateError("There is no game in progress to save.");
+                return;
+            }
+            if (versus != null)
+            {
+                UI?.UpdateError("A game for several players cannot be saved.");
                 return;
             }
             var animals = new StringBuilder();

@@ -5,7 +5,8 @@ namespace Portfolio.EndlessRunner
     /// <summary>
     /// Procedural animation of the runner's jointed model. Blends a run cycle, a jump tuck, a slide, an idle with a
     /// wave, a victory dance and a fall from the runner's state, adds leaning, flips and stumbles on top, and blinks
-    /// the model while the runner is invulnerable.
+    /// the model while the runner is invulnerable. The state comes from an <see cref="IRunnerMotion"/>: the player of the
+    /// prefab, or whoever else is given with <see cref="Follow"/> (the ghost of a runner played on another device).
     /// </summary>
     public class RunnerAnimator : MonoBehaviour
     {
@@ -62,6 +63,7 @@ namespace Portfolio.EndlessRunner
         [SerializeField] internal float strideLength = 3.2f;
         [SerializeField] internal float flipDuration = 0.95f;
 
+        private IRunnerMotion motion;
         private Renderer[] renderers;
         private Vector3 hipsRest;
         private Mood mood = Mood.Idle;
@@ -89,6 +91,16 @@ namespace Portfolio.EndlessRunner
             {
                 hipsRest = hips.localPosition;
             }
+            if (motion == null && player != null)
+            {
+                motion = player;
+            }
+        }
+
+        /// <summary>Animates <paramref name="runner"/> from now on, instead of the player the prefab is wired to.</summary>
+        internal void Follow(IRunnerMotion runner)
+        {
+            motion = runner;
         }
 
         public void ResetPose()
@@ -156,7 +168,7 @@ namespace Portfolio.EndlessRunner
 
         private void LateUpdate()
         {
-            if (player == null || hips == null)
+            if (motion == null || hips == null)
             {
                 return;
             }
@@ -164,19 +176,19 @@ namespace Portfolio.EndlessRunner
             moodTime += deltaTime;
             if (mood != Mood.Celebrate && mood != Mood.Dead)
             {
-                mood = player.IsRunning ? Mood.Run : Mood.Idle;
+                mood = motion.IsRunning ? Mood.Run : Mood.Idle;
             }
 
             bool running = mood == Mood.Run;
             float blend = 1f - Mathf.Exp(-12f * deltaTime);
             runWeight = Mathf.Lerp(runWeight, running ? 1f : 0f, blend);
-            airWeight = Mathf.Lerp(airWeight, running && !player.IsGrounded ? 1f : 0f, 1f - Mathf.Exp(-16f * deltaTime));
-            slideWeight = Mathf.Lerp(slideWeight, running && player.IsSliding ? 1f : 0f, 1f - Mathf.Exp(-20f * deltaTime));
-            phase += player.Speed * deltaTime / Mathf.Max(0.5f, strideLength) * Mathf.PI * 2f;
+            airWeight = Mathf.Lerp(airWeight, running && !motion.IsGrounded ? 1f : 0f, 1f - Mathf.Exp(-16f * deltaTime));
+            slideWeight = Mathf.Lerp(slideWeight, running && motion.IsSliding ? 1f : 0f, 1f - Mathf.Exp(-20f * deltaTime));
+            phase += motion.Speed * deltaTime / Mathf.Max(0.5f, strideLength) * Mathf.PI * 2f;
 
             Pose pose = IdlePose(moodTime);
             pose = Pose.Lerp(pose, RunPose(phase), runWeight);
-            pose = Pose.Lerp(pose, AirPose(player.VerticalSpeed), airWeight);
+            pose = Pose.Lerp(pose, AirPose(motion.VerticalSpeed), airWeight);
             pose = Pose.Lerp(pose, SlidePose(), slideWeight);
             if (mood == Mood.Celebrate)
             {
@@ -337,9 +349,9 @@ namespace Portfolio.EndlessRunner
         /// <summary>Leaning, facing, flips, slides and falls rotate the whole model around a pivot at the hips.</summary>
         private void ApplyBody(float deltaTime)
         {
-            float leanTarget = mood == Mood.Run ? -player.LaneChangeDirection * 14f : 0f;
+            float leanTarget = mood == Mood.Run ? -motion.LaneChangeDirection * 14f : 0f;
             lean = Mathf.Lerp(lean, leanTarget, 1f - Mathf.Exp(-10f * deltaTime));
-            float yawTarget = mood == Mood.Run ? player.LaneChangeDirection * 12f : 0f;
+            float yawTarget = mood == Mood.Run ? motion.LaneChangeDirection * 12f : 0f;
             if (mood == Mood.Celebrate)
             {
                 yawTarget = 180f;
@@ -374,7 +386,7 @@ namespace Portfolio.EndlessRunner
 
         private void UpdateBlink()
         {
-            bool show = !player.IsInvulnerable || mood != Mood.Run || Mathf.Repeat(Time.time, 0.16f) < 0.1f;
+            bool show = !motion.IsInvulnerable || mood != Mood.Run || Mathf.Repeat(Time.time, 0.16f) < 0.1f;
             if (show != visible)
             {
                 SetVisible(show);

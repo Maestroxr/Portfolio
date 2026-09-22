@@ -35,6 +35,7 @@ namespace Portfolio.Monopoly
         private int targetCash;
         private Coroutine rolling;
         private bool isTurn;
+        private bool isLocal;
         private int seat = -1;
 
         public int Seat => seat;
@@ -44,6 +45,7 @@ namespace Portfolio.Monopoly
         public void Bind(PlayerState player, Sprite token)
         {
             seat = player.index;
+            isLocal = false;
             gameObject.SetActive(true);
             Color color = MonopolyStyle.PlayerColor(player.color);
             if (accent != null)
@@ -67,14 +69,7 @@ namespace Portfolio.Monopoly
             {
                 nameText.text = player.name;
             }
-            if (cpuTag != null)
-            {
-                cpuTag.SetActive(player.bot);
-            }
-            if (cpuText != null)
-            {
-                cpuText.text = player.bot ? player.level.ToString().ToUpperInvariant() : "";
-            }
+            PaintComputerTag(player);
             shownCash = targetCash = player.cash;
             WriteCash(shownCash);
             SetTurn(false);
@@ -89,6 +84,24 @@ namespace Portfolio.Monopoly
             transform.localScale = Vector3.one;
         }
 
+        /// <summary>Marks the panel of the player at this device, in an online match where the others sit elsewhere.</summary>
+        public void MarkAsLocal()
+        {
+            isLocal = true;
+        }
+
+        private void PaintComputerTag(PlayerState player)
+        {
+            if (cpuTag != null)
+            {
+                cpuTag.SetActive(player.bot);
+            }
+            if (cpuText != null)
+            {
+                cpuText.text = player.bot ? player.level.ToString().ToUpperInvariant() : "";
+            }
+        }
+
         /// <summary>Updates everything but the cash (which follows the money events) from the match.</summary>
         public void Refresh(MonopolyMatch match)
         {
@@ -97,9 +110,12 @@ namespace Portfolio.Monopoly
                 return;
             }
             PlayerState player = match.players[seat];
+            // The computer takes over the seat of a player who leaves an online match.
+            PaintComputerTag(player);
             if (worthText != null)
             {
-                worthText.text = player.bankrupt ? "Out of the game" : $"Net worth {MonopolyStyle.Money(match.NetWorth(seat))}";
+                string worth = player.bankrupt ? "Out of the game" : $"Net worth {MonopolyStyle.Money(match.NetWorth(seat))}";
+                worthText.text = isLocal ? $"<b>You</b>  •  {worth}" : worth;
             }
             if (jailTag != null)
             {

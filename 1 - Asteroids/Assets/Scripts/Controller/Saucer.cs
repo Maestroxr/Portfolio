@@ -48,9 +48,12 @@ namespace Portfolio.Asteroids
 
         public override void Tick(float deltaTime)
         {
-            float t = Age * weaveFrequency * Mathf.PI * 2f + phase;
-            float targetY = baseY + Mathf.Sin(t) * weaveAmplitude;
-            Velocity = new Vector2(direction * speed, (targetY - Position.y) * 2.5f);
+            if (!IsPuppet)
+            {
+                float t = Age * weaveFrequency * Mathf.PI * 2f + phase;
+                float targetY = baseY + Mathf.Sin(t) * weaveAmplitude;
+                Velocity = new Vector2(direction * speed, (targetY - Position.y) * 2.5f);
+            }
             base.Tick(deltaTime);
             if (!InPlay)
             {
@@ -60,7 +63,7 @@ namespace Portfolio.Asteroids
             {
                 rotor.localRotation = Quaternion.Euler(0f, 0f, 160f * deltaTime) * rotor.localRotation;
             }
-            if (ReadyToFire(deltaTime) && Field.Playground != null && Field.Playground.IsInside(Position, 0.5f))
+            if (!IsPuppet && ReadyToFire(deltaTime) && Field.Playground != null && Field.Playground.IsInside(Position, 0.5f))
             {
                 Fire(aims ? AimAtShip(aimError) : Random.insideUnitCircle.normalized);
             }

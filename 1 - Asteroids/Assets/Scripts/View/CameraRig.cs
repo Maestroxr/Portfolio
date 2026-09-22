@@ -29,6 +29,7 @@ namespace Portfolio.Asteroids
         private float baseAberration;
         private float baseVignette;
         private Color baseVignetteColor;
+        private float placedAspect;
 
         public Camera View => view;
 
@@ -57,7 +58,10 @@ namespace Portfolio.Asteroids
         }
 
 
-        /// <summary>Puts the camera at the distance where the playfield fills its height.</summary>
+        /// <summary>
+        /// Puts the camera at the distance where the playfield fills its height. A playfield with a size of its own (a
+        /// mission shared with other pilots) has to fit as a whole, so on a narrow screen the camera backs off further.
+        /// </summary>
         public void Place()
         {
             if (view == null)
@@ -65,6 +69,12 @@ namespace Portfolio.Asteroids
                 return;
             }
             float half = playground != null ? playground.HalfHeight : 10f;
+            if (playground != null && playground.IsFixed)
+            {
+                Vector2 size = playground.HalfSize;
+                half = Mathf.Max(size.y, size.x / Mathf.Max(0.1f, view.aspect));
+            }
+            placedAspect = view.aspect;
             view.orthographic = false;
             view.fieldOfView = fieldOfView;
             float distance = half / Mathf.Tan(fieldOfView * 0.5f * Mathf.Deg2Rad);
@@ -97,6 +107,11 @@ namespace Portfolio.Asteroids
 
         private void LateUpdate()
         {
+            if (view != null && playground != null && playground.IsFixed && !Mathf.Approximately(view.aspect, placedAspect))
+            {
+                // The window changed shape while the playfield cannot.
+                Place();
+            }
             float deltaTime = Time.unscaledDeltaTime;
             float time = Time.unscaledTime * 22f;
             float shake = trauma * trauma;

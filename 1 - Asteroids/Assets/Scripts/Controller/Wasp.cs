@@ -38,19 +38,10 @@ namespace Portfolio.Asteroids
 
         public override void Tick(float deltaTime)
         {
-            AsteroidsPlayer target = Target;
-            Vector2 desired;
-            if (target != null && Field != null && Field.Playground != null)
+            if (!IsPuppet)
             {
-                Vector2 toShip = Field.Playground.Delta(Position, target.Position);
-                Vector2 side = new Vector2(-toShip.y, toShip.x).normalized;
-                desired = toShip.normalized * speed + side * Mathf.Sin(Age * 2.3f + wobblePhase) * wobble;
+                Hunt(deltaTime);
             }
-            else
-            {
-                desired = Velocity.sqrMagnitude > 0.01f ? Velocity.normalized * speed * 0.6f : Random.insideUnitCircle * speed;
-            }
-            Velocity = Vector2.MoveTowards(Velocity, desired, acceleration * deltaTime);
             base.Tick(deltaTime);
             if (!InPlay)
             {
@@ -70,9 +61,27 @@ namespace Portfolio.Asteroids
         }
 
 
+        private void Hunt(float deltaTime)
+        {
+            AsteroidsPlayer target = Target;
+            Vector2 desired;
+            if (target != null && Field != null && Field.Playground != null)
+            {
+                Vector2 toShip = Field.Playground.Delta(Position, target.Position);
+                Vector2 side = new Vector2(-toShip.y, toShip.x).normalized;
+                desired = toShip.normalized * speed + side * Mathf.Sin(Age * 2.3f + wobblePhase) * wobble;
+            }
+            else
+            {
+                desired = Velocity.sqrMagnitude > 0.01f ? Velocity.normalized * speed * 0.6f : Random.insideUnitCircle * speed;
+            }
+            Velocity = Vector2.MoveTowards(Velocity, desired, acceleration * deltaTime);
+        }
+
+
         public override void OnRammed(AsteroidsPlayer player, Vector2 direction, bool dashing)
         {
-            TakeHit(new DamageInfo(maxHealth, direction, Position, DamageSource.Collision, true));
+            TakeHit(new DamageInfo(maxHealth, direction, Position, DamageSource.Collision, true) { Seat = SeatOf(player) });
         }
     }
 }

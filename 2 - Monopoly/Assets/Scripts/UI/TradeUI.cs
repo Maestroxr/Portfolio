@@ -10,7 +10,8 @@ namespace Portfolio.Monopoly
     /// <summary>
     /// Puts a trade together: pick another player, tick the properties going each way, add cash and Get Out of Jail
     /// Free cards, and propose. The rules (no buildings on a traded set, enough cash for the mortgage interest) are
-    /// checked as the offer changes; a computer player answers at once, a human one is asked on the same screen.
+    /// checked as the offer changes; a computer player answers at once, a human one is asked on the same screen (in an
+    /// online match on their own).
     /// </summary>
     public class TradeUI : Popup
     {
@@ -47,10 +48,11 @@ namespace Portfolio.Monopoly
         private readonly List<TradeItem> getItems = new List<TradeItem>();
         private readonly List<int> partnerSeats = new List<int>();
         private MonopolyMatch match;
-        private MonopolyController controller;
+        private IMonopolyCommands controller;
         private Func<int, Sprite> tokens;
         private int seat;
         private int partner = -1;
+        private bool online;
         private int giveCash;
         private int getCash;
 
@@ -93,12 +95,14 @@ namespace Portfolio.Monopoly
             }
         }
 
-        public void Show(MonopolyMatch value, int proposer, MonopolyController owner, Func<int, Sprite> tokenSprites)
+        /// <summary>Opens the window for <paramref name="proposer"/>; <paramref name="remote"/> when the other people play on devices of their own.</summary>
+        public void Show(MonopolyMatch value, int proposer, IMonopolyCommands owner, Func<int, Sprite> tokenSprites, bool remote = false)
         {
             match = value;
             seat = proposer;
             controller = owner;
             tokens = tokenSprites;
+            online = remote;
             partnerSeats.Clear();
             partnerSeats.AddRange(match.players.Where(p => !p.bankrupt && p.index != seat).Select(p => p.index));
             for (int i = 0; i < partners.Length; i++)
@@ -221,7 +225,8 @@ namespace Portfolio.Monopoly
             }
             if (status != null)
             {
-                status.text = ok ? (match.players[partner].bot ? $"{match.players[partner].name} weighs every deal by the sets it makes." : "Hand the device over for an answer.") : reason;
+                status.text = ok ? (match.players[partner].bot ? $"{match.players[partner].name} weighs every deal by the sets it makes."
+                    : online ? $"{match.players[partner].name} answers on their own device." : "Hand the device over for an answer.") : reason;
                 status.color = ok ? MonopolyStyle.Muted : MonopolyStyle.Red;
             }
         }

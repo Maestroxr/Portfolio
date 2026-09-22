@@ -93,6 +93,11 @@ namespace Portfolio.Asteroids
             {
                 return false;
             }
+            if (IsPuppet)
+            {
+                HitPuppet(hit);
+                return false;
+            }
             Health -= hit.Amount;
             OnHit(hit);
             if (Field != null)
@@ -108,6 +113,59 @@ namespace Portfolio.Asteroids
             flash = 1f;
             punch = 1f;
             return false;
+        }
+
+
+        /// <summary>
+        /// A hit on a puppet. What the local ship did to it goes to the simulator, which decides what comes of it; here it
+        /// only shows, and the hull is counted down ahead of the answer, so a puppet that should be gone stops taking
+        /// shots. The simulator's next report of the body puts a wrong guess right.
+        /// </summary>
+        private void HitPuppet(DamageInfo hit)
+        {
+            if (!hit.ByPlayer || hit.Seat.HasValue || Field == null || Field.Link == null)
+            {
+                return;
+            }
+            Field.Link.PuppetHit(this, hit);
+            Health -= hit.Amount;
+            flash = 1f;
+            punch = 1f;
+        }
+
+
+        /// <summary>The simulator reports the hull of a puppet: it flashes when that went down.</summary>
+        internal void ShowHealth(float health)
+        {
+            if (health < Health - 0.001f && health > 0f)
+            {
+                flash = 1f;
+                punch = 1f;
+            }
+            Health = Mathf.Min(maxHealth, health);
+        }
+
+
+        /// <summary>
+        /// The simulator destroyed the body a puppet stands for: it goes the way the real one went, breaking up or
+        /// exploding (without spawning anything), and the kill is scored here when <paramref name="hit"/> says it was
+        /// the local ship's.
+        /// </summary>
+        internal virtual void PlayDestroyed(DamageInfo hit)
+        {
+            if (!InPlay)
+            {
+                return;
+            }
+            Health = 0f;
+            if (Field != null)
+            {
+                Field.NotifyDestroyed(this, hit);
+            }
+            Destroyed?.Invoke(this, hit);
+            OnShotEvent?.Invoke(this, hit.Shot);
+            OnDestroyed(hit);
+            Despawn();
         }
 
 
@@ -129,6 +187,8 @@ namespace Portfolio.Asteroids
 
         protected virtual void Die(DamageInfo hit)
         {
+            Exit = ExitReason.Destroyed;
+            ExitSeat = hit.ByPlayer ? hit.Seat : null;
             if (Field != null)
             {
                 Field.NotifyDestroyed(this, hit);
@@ -156,7 +216,14 @@ namespace Portfolio.Asteroids
                 return;
             }
             ramCooldown = 0.3f;
-            TakeHit(new DamageInfo(dashing ? 3f : 2f, direction, Position - direction * radius, DamageSource.Collision, true));
+            TakeHit(new DamageInfo(dashing ? 3f : 2f, direction, Position - direction * radius, DamageSource.Collision, true) { Seat = SeatOf(player) });
+        }
+
+
+        /// <summary>The seat a hit by <paramref name="player"/> counts for: set for the stand-in of a pilot on another device.</summary>
+        protected static int? SeatOf(AsteroidsPlayer player)
+        {
+            return player != null && player.IsRemote ? player.Seat : (int?)null;
         }
 
 

@@ -24,9 +24,15 @@ namespace Portfolio.Asteroids
         /// <summary>Speed multiplier of the mission, passed on to the fragments.</summary>
         public float SpeedMultiplier { get; private set; } = 1f;
 
+        /// <summary>Which of the shape variants the asteroid has.</summary>
+        public int Shape { get; private set; }
 
-        /// <summary>Sets the size and everything that comes with it. Call before the asteroid is added to the field.</summary>
-        public void Configure(AsteroidSize size, float speedMultiplier)
+
+        /// <summary>
+        /// Sets the size and everything that comes with it. Call before the asteroid is added to the field. A
+        /// <paramref name="shape"/> below zero picks one at random; a puppet gets the shape of the rock it stands for.
+        /// </summary>
+        public void Configure(AsteroidSize size, float speedMultiplier, int shape = -1)
         {
             Size = size;
             SpeedMultiplier = speedMultiplier;
@@ -37,7 +43,8 @@ namespace Portfolio.Asteroids
             randomSpin = size == AsteroidSize.Large ? 28f : size == AsteroidSize.Medium ? 50f : 90f;
             if (meshFilter != null && meshes != null && meshes.Length > 0)
             {
-                meshFilter.sharedMesh = meshes[Random.Range(0, meshes.Length)];
+                Shape = shape >= 0 ? shape % meshes.Length : Random.Range(0, meshes.Length);
+                meshFilter.sharedMesh = meshes[Shape];
             }
             if (visual != null)
             {
@@ -68,8 +75,9 @@ namespace Portfolio.Asteroids
                 Field.Sounds.RockBreak(kind, Size);
             }
             SpawnService spawner = Field != null ? Field.Spawner : null;
-            if (spawner == null)
+            if (spawner == null || IsPuppet)
             {
+                // What a puppet breaks into comes from the simulator.
                 return;
             }
             int fragments = AsteroidRules.SplitCount(kind, Size, Random.value);
@@ -98,6 +106,7 @@ namespace Portfolio.Asteroids
                     PlayerDamage = 28f * scale,
                     Push = 5f,
                     ByPlayer = hit.ByPlayer,
+                    Seat = hit.Seat,
                     Source = this,
                     Tint = AsteroidRules.Tint(kind)
                 });

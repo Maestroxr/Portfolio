@@ -43,7 +43,7 @@ namespace Portfolio.Asteroids
         public override void Tick(float deltaTime)
         {
             base.Tick(deltaTime);
-            if (!InPlay || Field == null)
+            if (!InPlay || Field == null || IsPuppet)
             {
                 return;
             }

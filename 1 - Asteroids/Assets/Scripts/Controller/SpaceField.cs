@@ -15,6 +15,8 @@ namespace Portfolio.Asteroids
         public float PlayerDamage;
         public float Push;
         public bool ByPlayer;
+        /// <summary>In a shared mission: the seat of the pilot on another device who set it off; null for the local ship or nobody.</summary>
+        public int? Seat;
         public SpaceBody Source;
         public Color Tint;
     }
@@ -27,6 +29,11 @@ namespace Portfolio.Asteroids
     /// everything it can fly into and every pickup it can grab. Explosions are queued and resolved in order, so chain
     /// reactions ripple outward without recursion. Bodies added or removed while the field is busy take effect when
     /// it is done, so a rock's fragments are never hit by the shot that broke it.
+    ///
+    /// In a mission shared with other pilots the field has a <see cref="Link"/>. Every client flies its own ship against
+    /// its own copy of the world and decides what hurts that ship; one client simulates the world, and on the others
+    /// the bodies are puppets (<see cref="IsReplica"/>). The ships of the other pilots are stand-ins that take no damage
+    /// here, but enemies, mines and pickups go for the closest ship of them all (<see cref="NearestShip"/>).
     /// </summary>
     public class SpaceField : MonoBehaviour
     {
@@ -48,6 +55,7 @@ namespace Portfolio.Asteroids
         private readonly List<GravityWell> wells = new List<GravityWell>();
         private readonly List<Comet> comets = new List<Comet>();
         private readonly Queue<Blast> blasts = new Queue<Blast>();
+        private readonly List<AsteroidsPlayer> ships = new List<AsteroidsPlayer>();
         private int busy;
 
         public Playground Playground => playground;
@@ -58,6 +66,15 @@ namespace Portfolio.Asteroids
 
         /// <summary>The ship; null while there is none.</summary>
         public AsteroidsPlayer Player { get; set; }
+
+        /// <summary>The stand-ins of the other pilots' ships in a shared mission; empty otherwise.</summary>
+        public IReadOnlyList<AsteroidsPlayer> RemoteShips => ships;
+
+        /// <summary>Keeps the copies of a shared playfield in step; null in the single player game.</summary>
+        public IFieldLink Link { get; set; }
+
+        /// <summary>The bodies of this field are puppets of a world another pilot's client simulates.</summary>
+        public bool IsReplica => Link != null && !Link.Simulates;
 
         /// <summary>Speed of time for everything but the ship and its shots (below 1 under a chrono field).</summary>
         public float WorldTimeScale { get; set; } = 1f;
@@ -111,6 +128,7 @@ namespace Portfolio.Asteroids
             {
                 Register(body);
             }
+            Link?.BodyAdded(body);
         }
 
 
@@ -122,6 +140,7 @@ namespace Portfolio.Asteroids
                 return;
             }
             body.InPlay = false;
+            Link?.BodyRemoved(body);
             if (IsBusy)
             {
                 removed.Add(body);
@@ -276,7 +295,8 @@ namespace Portfolio.Asteroids
                         continue;
                     }
                     body.Velocity += well.Pull(body.Position) * worldDelta;
-                    if (well.Swallows(body))
+                    // What a black hole swallows is for the simulator to say.
+                    if (!IsReplica && well.Swallows(body))
                     {
                         well.Consume(body);
                     }
@@ -312,7 +332,7 @@ namespace Portfolio.Asteroids
                     {
                         continue;
                     }
-                    bool first = shot.HitCount == 0;
+                    bool first = shot.HitCount == 0 && !shot.IsGhost;
                     shot.Hit(target);
                     if (first)
                     {
@@ -377,7 +397,11 @@ namespace Portfolio.Asteroids
                 bool dashing = Player.IsDashing;
                 bool hurt = !dashing && Player.TakeDamage(new DamageInfo(target.ContactDamage, away, target.Position + away * target.Radius,
                     DamageSource.Collision, false));
-                if (hurt || dashing)
+                if ((hurt || dashing) && target.IsPuppet)
+                {
+                    Link?.PuppetRammed(target, -away, dashing);
+                }
+                else if (hurt || dashing)
                 {
                     target.OnRammed(Player, -away, dashing);
                 }
@@ -434,9 +458,31 @@ namespace Portfolio.Asteroids
                 {
                     continue;
                 }
+                if (Link != null)
+                {
+                    // Several ships may reach for it: the server gives it to the first, see GrantReward.
+                    if (!reward.Claimed)
+                    {
+                        reward.Claimed = true;
+                        Link.RewardTouched(reward);
+                    }
+                    continue;
+                }
                 reward.Collect(Player);
                 RewardCollected?.Invoke(reward);
             }
+        }
+
+
+        /// <summary>The server gave a pickup of a shared mission to the local ship.</summary>
+        public void GrantReward(Reward reward)
+        {
+            if (reward == null || !reward.InPlay || Player == null)
+            {
+                return;
+            }
+            reward.Collect(Player);
+            RewardCollected?.Invoke(reward);
         }
 
 
@@ -462,6 +508,10 @@ namespace Portfolio.Asteroids
             {
                 Blast blast = blasts.Dequeue();
                 Exploded?.Invoke(blast);
+                if (Link != null && Link.Simulates)
+                {
+                    Link.BlastSetOff(blast);
+                }
                 for (int t = 0; t < targets.Count; t++)
                 {
                     Shootable target = targets[t];
@@ -480,23 +530,9 @@ namespace Portfolio.Asteroids
                     Vector2 direction = distance > 0.001f ? delta / distance : UnityEngine.Random.insideUnitCircle.normalized;
                     target.Velocity += direction * blast.Push * falloff / Mathf.Max(0.6f, target.Radius);
                     target.TakeHit(new DamageInfo(blast.Damage * falloff, direction, target.Position - direction * target.Radius,
-                        DamageSource.Explosion, blast.ByPlayer));
+                        DamageSource.Explosion, blast.ByPlayer) { Seat = blast.Seat });
                 }
-                if (blast.PlayerDamage > 0f && PlayerAlive)
-                {
-                    Vector2 delta = Player.Position - blast.Center;
-                    float reach = blast.Radius + Player.Radius;
-                    if (delta.sqrMagnitude <= reach * reach)
-                    {
-                        float distance = delta.magnitude;
-                        float falloff = 1f - 0.5f * Mathf.Clamp01(distance / reach);
-                        Vector2 direction = distance > 0.001f ? delta / distance : Vector2.up;
-                        if (Player.TakeDamage(new DamageInfo(blast.PlayerDamage * falloff, direction, blast.Center, DamageSource.Explosion, false)))
-                        {
-                            Player.Push(direction * blast.Push * falloff);
-                        }
-                    }
-                }
+                HurtPlayer(blast);
             }
             if (blasts.Count > 0 && processed >= maxBlastsPerFrame)
             {
@@ -505,12 +541,71 @@ namespace Portfolio.Asteroids
         }
 
 
+        /// <summary>The part of a blast that is about the ship at this device.</summary>
+        private void HurtPlayer(Blast blast)
+        {
+            if (blast.PlayerDamage <= 0f || !PlayerAlive)
+            {
+                return;
+            }
+            Vector2 delta = Player.Position - blast.Center;
+            float reach = blast.Radius + Player.Radius;
+            if (delta.sqrMagnitude > reach * reach)
+            {
+                return;
+            }
+            float distance = delta.magnitude;
+            float falloff = 1f - 0.5f * Mathf.Clamp01(distance / reach);
+            Vector2 direction = distance > 0.001f ? delta / distance : Vector2.up;
+            if (Player.TakeDamage(new DamageInfo(blast.PlayerDamage * falloff, direction, blast.Center, DamageSource.Explosion, false)))
+            {
+                Player.Push(direction * blast.Push * falloff);
+            }
+        }
+
+
+        /// <summary>
+        /// A blast of the simulator's field arrives at a replica: it shows and hurts the ship here. What it did to the
+        /// world comes with the bodies.
+        /// </summary>
+        public void ShowBlast(Blast blast)
+        {
+            Exploded?.Invoke(blast);
+            HurtPlayer(blast);
+        }
+
+
+        /// <summary>
+        /// A new ship at <paramref name="center"/> gets a little room: a harmless shockwave pushes what is around it away.
+        /// On a replica the simulator is asked to do it.
+        /// </summary>
+        public void MakeRoom(Vector2 center, int? seat = null)
+        {
+            if (IsReplica)
+            {
+                Link.RoomWanted(center);
+                return;
+            }
+            Explode(new Blast { Center = center, Radius = 3.5f, Damage = 0f, PlayerDamage = 0f, Push = 5f, Seat = seat, Tint = new Color(0.4f, 0.8f, 1f) });
+        }
+
+
         /// <summary>
         /// The ship's nova bomb: a shockwave over the whole playfield that damages everything shootable, wipes out enemy
-        /// fire and pushes the rocks away from <paramref name="center"/>.
+        /// fire and pushes the rocks away from <paramref name="center"/>. In a shared mission the other clients hear of
+        /// the local ship's nova, and the simulator's field takes the damage: there <paramref name="seat"/> names the pilot
+        /// on another device who set it off.
         /// </summary>
-        public void Nova(Vector2 center, float damage, float bossDamage)
+        public void Nova(Vector2 center, float damage, float bossDamage, int? seat = null)
         {
+            if (!seat.HasValue)
+            {
+                Link?.NovaFired(center, damage, bossDamage);
+            }
+            if (IsReplica)
+            {
+                return;
+            }
             Enter();
             for (int i = 0; i < enemyShots.Count; i++)
             {
@@ -530,9 +625,71 @@ namespace Portfolio.Asteroids
                 Vector2 direction = delta.sqrMagnitude > 0.001f ? delta.normalized : Vector2.up;
                 target.Velocity += direction * 4f / Mathf.Max(0.6f, target.Radius);
                 float amount = target is Boss ? bossDamage : damage;
-                target.TakeHit(new DamageInfo(amount, direction, target.Position, DamageSource.Nova, true));
+                target.TakeHit(new DamageInfo(amount, direction, target.Position, DamageSource.Nova, true) { Seat = seat });
             }
             Exit();
+        }
+
+
+        // ------------------------------------------------------------------ ships
+
+        /// <summary>Adds the stand-in of another pilot's ship (a shared mission).</summary>
+        public void AddShip(AsteroidsPlayer remote)
+        {
+            if (remote != null && remote != Player && !ships.Contains(remote))
+            {
+                ships.Add(remote);
+            }
+        }
+
+
+        public void RemoveShip(AsteroidsPlayer remote)
+        {
+            ships.Remove(remote);
+        }
+
+
+        /// <summary>
+        /// The living ship closest to <paramref name="from"/> across the wrapping edges: the one enemies hunt, mines arm for
+        /// and pickups drift to. Null when no ship is alive.
+        /// </summary>
+        public AsteroidsPlayer NearestShip(Vector2 from)
+        {
+            AsteroidsPlayer best = PlayerAlive ? Player : null;
+            if (ships.Count == 0)
+            {
+                return best;
+            }
+            float bestDistance = best != null ? ShipDistance(from, best) : float.MaxValue;
+            for (int i = 0; i < ships.Count; i++)
+            {
+                AsteroidsPlayer candidate = ships[i];
+                if (candidate == null || !candidate.IsAlive)
+                {
+                    continue;
+                }
+                float distance = ShipDistance(from, candidate);
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    best = candidate;
+                }
+            }
+            return best;
+        }
+
+
+        /// <summary>Distance from <paramref name="point"/> to the closest living ship; very far when there is none.</summary>
+        public float ShipClearance(Vector2 point)
+        {
+            AsteroidsPlayer nearest = NearestShip(point);
+            return nearest != null ? Mathf.Sqrt(ShipDistance(point, nearest)) : float.MaxValue;
+        }
+
+
+        private float ShipDistance(Vector2 from, AsteroidsPlayer ship)
+        {
+            return (playground != null ? playground.Delta(from, ship.Position) : ship.Position - from).sqrMagnitude;
         }
 
 

@@ -189,6 +189,16 @@ namespace Portfolio.MemoryCards
         }
 
         /// <summary>Changes the card's size and slot without animation (the board was laid out again).</summary>
+        /// <summary>Gives the card its face later than <see cref="Setup"/>: an online game learns a face when the card turns.</summary>
+        public void SetFace(Sprite faceSprite)
+        {
+            if (face != null)
+            {
+                face.sprite = faceSprite;
+                face.preserveAspect = true;
+            }
+        }
+
         public void Place(Vector2 size, Vector2 slotPosition)
         {
             Rect.sizeDelta = size;

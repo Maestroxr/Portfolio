@@ -18,15 +18,8 @@ namespace Portfolio.Asteroids
 
         protected float fireTimer;
 
-        /// <summary>The ship, while it is alive.</summary>
-        protected AsteroidsPlayer Target
-        {
-            get
-            {
-                AsteroidsPlayer player = Field != null ? Field.Player : null;
-                return player != null && player.IsAlive ? player : null;
-            }
-        }
+        /// <summary>The closest ship that is alive (there are several in a shared mission), or null.</summary>
+        protected AsteroidsPlayer Target => Field != null ? Field.NearestShip(Position) : null;
 
 
         public override void OnSpawned()

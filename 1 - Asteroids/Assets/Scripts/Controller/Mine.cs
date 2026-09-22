@@ -49,12 +49,13 @@ namespace Portfolio.Asteroids
             {
                 return;
             }
-            AsteroidsPlayer player = Field != null ? Field.Player : null;
+            // The closest ship trips the mine. A puppet is armed when the simulator says so, and only ticks along.
+            AsteroidsPlayer player = Field != null && !IsPuppet ? Field.NearestShip(Position) : null;
             if (!IsArmed)
             {
                 float pulse = 0.55f + 0.45f * Mathf.Sin(Age * 3f);
                 SetBeacon(idleColor * pulse);
-                if (player != null && player.IsAlive && Field.Playground != null &&
+                if (player != null && Field.Playground != null &&
                     Field.Playground.Delta(Position, player.Position).sqrMagnitude < triggerRange * triggerRange)
                 {
                     Arm();
@@ -62,7 +63,7 @@ namespace Portfolio.Asteroids
                 return;
             }
             fuse -= deltaTime;
-            if (player != null && player.IsAlive && Field.Playground != null)
+            if (player != null && Field.Playground != null)
             {
                 Vector2 toShip = Field.Playground.Delta(Position, player.Position);
                 Velocity = Vector2.MoveTowards(Velocity, toShip.normalized * creepSpeed, deltaTime * 4f);
@@ -84,7 +85,7 @@ namespace Portfolio.Asteroids
                 float size = BlastRadius * 2f;
                 rangeRing.localScale = new Vector3(size, size, 1f) * (1f + 0.04f * Mathf.Sin(Age * 30f));
             }
-            if (fuse <= 0f)
+            if (fuse <= 0f && !IsPuppet)
             {
                 Detonate(false);
             }

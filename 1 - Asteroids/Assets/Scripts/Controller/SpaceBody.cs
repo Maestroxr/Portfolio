@@ -25,6 +25,25 @@ namespace Portfolio.Asteroids
         public Vector3 Spin;
 
         private bool entered;
+        private Vector2 drift;
+
+        /// <summary>
+        /// A puppet shows a body that another pilot's client simulates (a shared mission): it flies on along its
+        /// velocity, but never decides anything. It does not expire, think, spawn or drop; hits on it are passed on.
+        /// </summary>
+        public bool IsPuppet { get; internal set; }
+
+        /// <summary>Why the body is leaving the field, set just before it despawns; tells the other pilots' clients what to play.</summary>
+        internal ExitReason Exit { get; set; }
+
+        /// <summary>The seat of the pilot on another device who destroyed or collected the body; null for the local ship or nobody.</summary>
+        internal int? ExitSeat { get; set; }
+
+        /// <summary>What the spawner knows about the body that the body cannot tell itself: its pool among several of a kind.</summary>
+        internal int NetVariant { get; set; }
+
+        /// <summary>The body warped in, so the other pilots' clients play the entrance too.</summary>
+        internal bool WarpedIn { get; set; }
 
         public float Radius
         {
@@ -69,6 +88,9 @@ namespace Portfolio.Asteroids
         {
             Age = 0f;
             entered = false;
+            drift = Vector2.zero;
+            Exit = ExitReason.Expired;
+            ExitSeat = null;
             if (randomSpin > 0f)
             {
                 Spin = Random.onUnitSphere * Random.Range(randomSpin * 0.35f, randomSpin);
@@ -85,7 +107,14 @@ namespace Portfolio.Asteroids
             {
                 visual.localRotation = Quaternion.Euler(Spin * deltaTime) * visual.localRotation;
             }
-            if (lifetime > 0f && Age >= lifetime)
+            if (IsPuppet)
+            {
+                // Eases into the place the simulator reported. When a puppet goes is for the simulator to say.
+                Vector2 step = drift * Mathf.Min(1f, deltaTime * 8f);
+                Position += step;
+                drift -= step;
+            }
+            else if (lifetime > 0f && Age >= lifetime)
             {
                 Expire();
                 return;
@@ -100,6 +129,10 @@ namespace Portfolio.Asteroids
                 Position = playground.Wrap(Position, radius);
                 return;
             }
+            if (IsPuppet)
+            {
+                return;
+            }
             entered |= playground.IsInside(Position, -radius);
             if (playground.IsOutside(Position, radius, 1.5f))
             {
@@ -109,6 +142,27 @@ namespace Portfolio.Asteroids
                     LeftPlayfield();
                 }
             }
+        }
+
+
+        /// <summary>
+        /// The simulator says where a puppet is and how it moves now. A small difference is eased out over the next
+        /// frames; a big one (the puppet was pushed or wrapped differently) is closed at once.
+        /// </summary>
+        internal void Correct(Vector2 position, Vector2 velocity, float snapDistance = 3f)
+        {
+            Velocity = velocity;
+            Playground playground = Field != null ? Field.Playground : null;
+            Vector2 error = playground != null && wraps
+                ? FieldMath.Delta(Position, position, playground.WrapPeriod(radius))
+                : position - Position;
+            if (error.sqrMagnitude > snapDistance * snapDistance)
+            {
+                Position = position;
+                drift = Vector2.zero;
+                return;
+            }
+            drift = error;
         }
 
 
@@ -142,6 +196,9 @@ namespace Portfolio.Asteroids
         {
             InPlay = false;
             OnDespawned();
+            IsPuppet = false;
+            WarpedIn = false;
+            NetVariant = 0;
             if (Pool != null)
             {
                 Pool.Release(this);

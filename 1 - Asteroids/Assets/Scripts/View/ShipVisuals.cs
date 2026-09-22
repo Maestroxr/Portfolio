@@ -9,6 +9,20 @@ namespace Portfolio.Asteroids
     /// </summary>
     public class ShipVisuals : MonoBehaviour
     {
+        /// <summary>What the visuals show of a ship in one frame: read from the ship itself, or from what a pilot on another device reports.</summary>
+        public struct Look
+        {
+            public float Thrust;
+            public float Turn;
+            public bool Dashing;
+            /// <summary>Invulnerable after a respawn: the hull blinks and the shield glows.</summary>
+            public bool Blinking;
+            /// <summary>Shield charge, 0 to 1.</summary>
+            public float Shield;
+            /// <summary>Hull points left, 0 to 1.</summary>
+            public float Hull;
+        }
+
         [SerializeField] internal Transform bank;
         [SerializeField] internal Transform modelRoot;
         [SerializeField] internal MeshFilter modelFilter;
@@ -118,12 +132,27 @@ namespace Portfolio.Asteroids
 
         public void Animate(AsteroidsPlayer ship, float thrust, float turn, float deltaTime)
         {
-            bankAngle = Mathf.Lerp(bankAngle, -turn * maxBank, 1f - Mathf.Exp(-8f * deltaTime));
+            Animate(new Look
+            {
+                Thrust = thrust,
+                Turn = turn,
+                Dashing = ship.IsDashing,
+                Blinking = ship.InvulnerableTime > 0f && !ship.IsDashing,
+                Shield = ship.MaxShield > 0f ? ship.Shield / ship.MaxShield : 0f,
+                Hull = ship.MaxHealth > 0f ? ship.Health / ship.MaxHealth : 1f
+            }, deltaTime);
+        }
+
+
+        public void Animate(Look ship, float deltaTime)
+        {
+            float thrust = ship.Thrust;
+            bankAngle = Mathf.Lerp(bankAngle, -ship.Turn * maxBank, 1f - Mathf.Exp(-8f * deltaTime));
             if (bank != null)
             {
                 bank.localRotation = Quaternion.AngleAxis(bankAngle, Vector3.up);
             }
-            float target = ship.IsDashing ? 1.6f : Mathf.Max(0.22f, thrust);
+            float target = ship.Dashing ? 1.6f : Mathf.Max(0.22f, thrust);
             throttle = Mathf.Lerp(throttle, target, 1f - Mathf.Exp(-12f * deltaTime));
             float flicker = 1f + (Mathf.PerlinNoise(Time.time * 30f, 0.3f) - 0.5f) * 0.35f;
             foreach (Transform flame in flames)
@@ -140,13 +169,12 @@ namespace Portfolio.Asteroids
                     continue;
                 }
                 ParticleSystem.EmissionModule emission = exhaust.emission;
-                emission.rateOverTime = thrust > 0.05f || ship.IsDashing ? 45f * Mathf.Max(0.4f, throttle) : 4f;
+                emission.rateOverTime = thrust > 0.05f || ship.Dashing ? 45f * Mathf.Max(0.4f, throttle) : 4f;
             }
 
             if (modelRenderer != null)
             {
-                bool blink = ship.InvulnerableTime > 0f && !ship.IsDashing;
-                modelRenderer.enabled = !blink || Mathf.Repeat(Time.time * 12f, 1f) < 0.6f;
+                modelRenderer.enabled = !ship.Blinking || Mathf.Repeat(Time.time * 12f, 1f) < 0.6f;
             }
 
             UpdateShield(ship, deltaTime);
@@ -166,7 +194,7 @@ namespace Portfolio.Asteroids
 
             if (damageSmoke != null)
             {
-                bool smoking = ship.MaxHealth > 0f && ship.Health / ship.MaxHealth < 0.35f;
+                bool smoking = ship.Hull < 0.35f;
                 if (smoking && !damageSmoke.isEmitting)
                 {
                     damageSmoke.Play(true);
@@ -179,17 +207,17 @@ namespace Portfolio.Asteroids
         }
 
 
-        private void UpdateShield(AsteroidsPlayer ship, float deltaTime)
+        private void UpdateShield(Look ship, float deltaTime)
         {
             if (shieldBubble == null)
             {
                 return;
             }
             shieldFlash = Mathf.Max(0f, shieldFlash - deltaTime * 3f);
-            float charge = ship.MaxShield > 0f ? ship.Shield / ship.MaxShield : 0f;
+            float charge = ship.Shield;
             float strength = charge > 0.001f ? 0.12f + 0.3f * charge : 0f;
             strength += shieldFlash;
-            if (ship.InvulnerableTime > 0f && !ship.IsDashing)
+            if (ship.Blinking)
             {
                 strength = Mathf.Max(strength, 0.6f + 0.3f * Mathf.Sin(Time.time * 10f));
             }

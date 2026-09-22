@@ -11,6 +11,10 @@ namespace Portfolio.Asteroids
     /// recharges half-way after a few quiet seconds. Pickups repair it, charge the shield, upgrade the gun, add bombs
     /// and switch on timed power-ups. Its <see cref="AsteroidsGameManager"/> steps it while a mission runs and decides
     /// what happens when it is destroyed.
+    ///
+    /// In a shared mission the ships of the other pilots are instances of the same prefab that stand in for them
+    /// (<see cref="PlayerBase.IsRemote"/>, moved by a <see cref="RemoteShip"/>): they are never simulated and take no
+    /// damage here, and only mirror what their owner reports (<see cref="Mirror"/>).
     /// </summary>
     public class AsteroidsPlayer : PlayerBase, ILocalTransformAdapter
     {
@@ -352,7 +356,8 @@ namespace Portfolio.Asteroids
         /// </summary>
         public bool TakeDamage(DamageInfo hit, bool continuous = false)
         {
-            if (!IsAlive || IsInvulnerable || (!continuous && hurtCooldown > 0f) || hit.Amount <= 0f)
+            // What hurts the ship of another pilot is decided on their device.
+            if (!IsAlive || IsRemote || IsInvulnerable || (!continuous && hurtCooldown > 0f) || hit.Amount <= 0f)
             {
                 return false;
             }
@@ -413,6 +418,35 @@ namespace Portfolio.Asteroids
         public void Push(Vector2 impulse)
         {
             Simulation.Push(impulse);
+        }
+
+
+        /// <summary>
+        /// A stand-in takes over what the pilot's own device reports about the ship: whether it flies, its hull and shield
+        /// (which show), the tractor magnet (pickups drift to the ship that has it) and the wing drones.
+        /// </summary>
+        internal void Mirror(ShipPose pose, float maxHealth)
+        {
+            MaxHealth = Mathf.Max(1f, maxHealth);
+            destroyed = !pose.Alive;
+            health = pose.Alive ? Mathf.Max(0.01f, pose.Health * MaxHealth) : 0f;
+            shield = Mathf.Clamp(pose.Shield * MaxShield, 0f, MaxShield);
+            powerUps[(int)PowerUpType.Magnet] = pose.Magnet ? 1f : 0f;
+            powerUps[(int)PowerUpType.Drones] = pose.Drones ? 1f : 0f;
+            SetDrones(pose.Drones && pose.Alive);
+        }
+
+
+        /// <summary>The drones of a stand-in circle it (they fire on their owner's device).</summary>
+        internal void TickDrones(float deltaTime)
+        {
+            foreach (Drone drone in drones)
+            {
+                if (drone != null && drone.isActiveAndEnabled)
+                {
+                    drone.Tick(this, deltaTime);
+                }
+            }
         }
 
 

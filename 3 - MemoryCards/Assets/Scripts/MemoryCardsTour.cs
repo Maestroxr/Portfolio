@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.IO;
 using Gamebox;
+using Gamebox.Online;
 using UnityEngine;
 
 namespace Portfolio.MemoryCards
@@ -9,12 +10,14 @@ namespace Portfolio.MemoryCards
     /// <summary>
     /// Started with <c>-memorycards-tour &lt;folder&gt;</c>, it walks through the game with the
     /// <see cref="MemoryCardsAutopilot"/> (level select, memorize, a win, bombs, the parade, triplets, ice, the pause
-    /// menu and settings, the wild card, the endless run and a loss) and saves a screenshot of every step into the
-    /// folder, then quits. The player's saved progress is cleared at the end. Without the argument it does nothing.
+    /// menu and settings, the wild card, the endless run, a loss and a versus game for three at one device) and saves a
+    /// screenshot of every step into the folder, then quits. <c>-memorycards-versus &lt;folder&gt;</c> plays only the
+    /// versus game. The player's saved progress is cleared at the end. Without an argument it does nothing.
     /// </summary>
     public class MemoryCardsTour : MonoBehaviour
     {
         private string folder;
+        private bool versusOnly;
         private MemoryCardsGameManager manager;
         private MemoryCardsAutopilot pilot;
         private StreamWriter log;
@@ -25,11 +28,13 @@ namespace Portfolio.MemoryCards
             string[] args = Environment.GetCommandLineArgs();
             for (int i = 0; i < args.Length - 1; i++)
             {
-                if (args[i] == "-memorycards-tour")
+                if (args[i] == "-memorycards-tour" || args[i] == "-memorycards-versus")
                 {
                     var host = new GameObject("Memory Cards Tour");
                     DontDestroyOnLoad(host);
-                    host.AddComponent<MemoryCardsTour>().folder = args[i + 1];
+                    var tour = host.AddComponent<MemoryCardsTour>();
+                    tour.folder = args[i + 1];
+                    tour.versusOnly = args[i] == "-memorycards-versus";
                     return;
                 }
             }
@@ -51,6 +56,13 @@ namespace Portfolio.MemoryCards
             manager.Progress.ResetAll(levels);
             manager.ReturnToLevelSelect();
             yield return new WaitForSeconds(1.5f);
+            if (versusOnly)
+            {
+                manager.Progress.RecordLevel(0, 3, 1000);
+                yield return Versus();
+                yield return Finish(levels);
+                yield break;
+            }
             yield return Shot("01_title");
 
             int[] stars = { 3, 3, 2, 3, 1, 3, 2, 3, 1 };
@@ -145,9 +157,77 @@ namespace Portfolio.MemoryCards
             yield return new WaitForSeconds(2f);
             yield return Shot("16_results_lost");
 
+            yield return Versus();
+            yield return Finish(levels);
+        }
+
+        /// <summary>A versus game for three at one device: the scoreboard, a turn nobody uses, the results.</summary>
+        private IEnumerator Versus()
+        {
+            pilot.enabled = false;
+            if (!manager.State.Is(BaseGameState.Initialization))
+            {
+                manager.ReturnToLevelSelect();
+                yield return new WaitForSeconds(0.5f);
+            }
+            manager.SelectWorld(0);
+            manager.SelectLevel(1);
+            manager.CyclePlayers();
+            manager.CyclePlayers();
+            yield return new WaitForSeconds(0.8f);
+            yield return Shot("17_versus_select");
+            manager.PlaySelectedLevel();
+            pilot.mistakeRate = 0.35f;
+            pilot.interval = 0.5f;
+            pilot.enabled = true;
+            Write("playing a versus game for three");
+            yield return WaitFor(() => manager.IsVersus && manager.IsPlaying, 15f);
+            yield return WaitFor(() => !manager.IsVersus || manager.Versus.TurnNumber >= 3, 60f);
+            yield return new WaitForSeconds(0.7f);
+            yield return Shot("18_versus_playing");
+
+            // Nobody moves: the clock of the turn runs out and the next player is up.
+            pilot.enabled = false;
+            int turn = manager.IsVersus ? manager.Versus.TurnNumber : 0;
+            yield return WaitFor(() => !manager.IsVersus || manager.Versus.TurnNumber > turn, VersusMatch.DefaultTurnSeconds + 8f);
+            yield return new WaitForSeconds(0.4f);
+            yield return Shot("19_versus_time_up");
+            Write(manager.IsVersus ? $"turn {turn} ran out, now turn {manager.Versus.TurnNumber} of seat {manager.Versus.Current}" : "the versus game is gone");
+
+            pilot.mistakeRate = 0.1f;
+            pilot.interval = 0.3f;
+            pilot.enabled = true;
+            yield return WaitFor(() => !manager.IsGameRunning, 180f);
+            yield return new WaitForSeconds(2.4f);
+            yield return Shot("20_versus_results");
+            if (manager.IsVersus)
+            {
+                foreach (VersusSeat seat in manager.Versus.Standings())
+                {
+                    Write($"{seat.Name}: {seat.Score} points, {seat.Sets} sets, {seat.Mistakes} mistakes");
+                }
+            }
+
+            // One player again, for whoever plays next.
+            pilot.enabled = false;
+            manager.ReturnToLevelSelect();
+            yield return new WaitForSeconds(0.5f);
+            manager.CyclePlayers();
+            manager.CyclePlayers();
+        }
+
+        private IEnumerator Finish(int levels)
+        {
             pilot.enabled = false;
             manager.Progress.ResetAll(levels);
+            // Everything the tour saved goes, except who the player is online: the token is the only key to that user.
+            string server = manager.online != null && manager.online.ServerClient != null ? manager.online.ServerClient.ServerUri : null;
+            string token = server != null ? IdentityTokens.Load(server) : null;
             PlayerPrefs.DeleteAll();
+            if (!string.IsNullOrEmpty(token))
+            {
+                IdentityTokens.Save(server, token);
+            }
             PlayerPrefs.Save();
             Write("tour finished");
             log.Dispose();

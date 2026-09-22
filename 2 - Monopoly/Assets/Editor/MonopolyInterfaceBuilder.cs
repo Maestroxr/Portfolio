@@ -105,6 +105,7 @@ namespace Portfolio.Monopoly.EditorTools
             MonopolyAssets.SetObject(ui, "titleLogo", parts.logo);
             MonopolyAssets.SetObject(ui, "menuTitle", parts.pauseTitle);
             MonopolyAssets.SetObject(ui, "mainMenuButton", parts.mainMenu);
+            MonopolyAssets.SetObject(ui, "onlineButton", parts.online);
             MonopolyAssets.SetObject(ui, "startLabel", LabelOf(parts.start));
             MonopolyAssets.SetObject(ui, "loadLabel", LabelOf(parts.load));
             MonopolyAssets.SetObject(ui, "footer", parts.footer);
@@ -190,8 +191,9 @@ namespace Portfolio.Monopoly.EditorTools
             token.preserveAspect = true;
 
             TextMeshProUGUI name = Text(rect, "Name", "Player", 27f, Ink, Bold, TextAlignmentOptions.MidlineLeft);
-            Place(name.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(138f, -10f), new Vector2(150f, 44f));
-            FitOneLine(name, 16f);
+            // Up to where a tag begins, which on the right hand panels is a little earlier; the names of online players are long.
+            Place(name.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(138f, -10f), new Vector2(leftSide ? 150f : 136f, 44f));
+            FitOneLine(name, 12f);
             TextMeshProUGUI cash = Text(rect, "Cash", "$1,500", 42f, Ink, Heavy, TextAlignmentOptions.MidlineLeft);
             Place(cash.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(138f, -48f), new Vector2(250f, 52f));
             TextMeshProUGUI worth = Text(rect, "Worth", "Net worth $1,500", 17f, Muted, Body, TextAlignmentOptions.MidlineLeft);
@@ -1106,6 +1108,8 @@ namespace Portfolio.Monopoly.EditorTools
             MonopolyAssets.SetObject(results, "starsCaption", caption);
             MonopolyAssets.SetObject(results, "againButton", again);
             MonopolyAssets.SetObject(results, "menuButton", menu);
+            MonopolyAssets.SetObject(results, "againLabel", LabelOf(again));
+            MonopolyAssets.SetObject(results, "menuLabel", LabelOf(menu));
             return results;
         }
 
@@ -1118,6 +1122,7 @@ namespace Portfolio.Monopoly.EditorTools
             public TextMeshProUGUI pauseTitle;
             public RectTransform buttons;
             public Button start;
+            public Button online;
             public Button resume;
             public Button load;
             public Button save;
@@ -1162,6 +1167,8 @@ namespace Portfolio.Monopoly.EditorTools
             Place(parts.buttons, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -410f), new Vector2(440f, 620f));
             parts.resume = Button(column.transform, "ReturnToGame", "RESUME", Icons.Play, MonopolyStyle.Green, new Vector2(440f, 74f), 30f);
             parts.start = Button(column.transform, "StartNewGame", "PLAY", Icons.Dice, MonopolyStyle.Red, new Vector2(440f, 74f), 30f);
+            // Opens the lobby of the game's server; on the title screen only.
+            parts.online = Button(column.transform, "PlayOnline", "PLAY ONLINE", Icons.Globe, MonopolyStyle.Blue, new Vector2(440f, 74f), 30f);
             parts.load = Button(column.transform, "LoadGame", "CONTINUE", Icons.Folder, White, new Vector2(440f, 74f), 28f);
             parts.save = Button(column.transform, "SaveGame", "SAVE GAME", Icons.Save, White, new Vector2(440f, 74f), 28f);
             parts.houseRules = Button(column.transform, "Game Settings", "HOUSE RULES", Icons.Gear, White, new Vector2(440f, 74f), 28f);
@@ -1169,7 +1176,7 @@ namespace Portfolio.Monopoly.EditorTools
             parts.exit = Button(column.transform, "ExitGame", "EXIT", Icons.Exit, White, new Vector2(440f, 74f), 28f);
             parts.load.interactable = false;
 
-            parts.footer = Text(menu, "Footer", "Up to 4 players on one screen  •  computer opponents  •  6 ways to play", 20f, new Color(1f, 1f, 1f, 0.8f), Bold);
+            parts.footer = Text(menu, "Footer", "Up to 4 players on one screen or online  •  computer opponents  •  6 ways to play", 20f, new Color(1f, 1f, 1f, 0.8f), Bold);
             Place(parts.footer.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 26f), new Vector2(1400f, 34f));
             parts.footer.fontSharedMaterial = MonopolyArtBuilder.TextShadow;
 

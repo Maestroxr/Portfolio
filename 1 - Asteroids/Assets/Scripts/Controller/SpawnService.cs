@@ -10,6 +10,10 @@ namespace Portfolio.Asteroids
     /// Takes bodies out of their pools, places them and puts them into the <see cref="SpaceField"/>: the asteroids of a
     /// wave and their fragments, the hazards (each with its own entrance), the ship's and the enemies' projectiles,
     /// pickups, a boss's minions and the boss itself. Comets are announced before they arrive.
+    ///
+    /// In a shared mission the simulator's spawner works as ever (placing things away from every ship), and the other
+    /// clients use it to show what the simulator announces: <see cref="SpawnPuppet"/> takes the same prefab from the same
+    /// pool, and <see cref="FireGhostShot"/> shows the shots of the other pilots.
     /// </summary>
     public class SpawnService : MonoBehaviour, IWaveSpawner
     {
@@ -69,9 +73,45 @@ namespace Portfolio.Asteroids
         /// <summary>A hazard or enemy entered the field.</summary>
         public event Action<HazardKind, SpaceBody> HazardSpawned;
 
+        /// <summary>
+        /// Every boss of the campaign, in an order all clients share: a boss is announced to the other pilots of a shared
+        /// mission by its place in this list. Set by the manager.
+        /// </summary>
+        public IReadOnlyList<Boss> BossCatalog { get; set; } = new Boss[0];
+
         private Playground Playground => field != null ? field.Playground : null;
 
-        private Vector2 ShipPosition => field != null && field.Player != null ? field.Player.Position : Vector2.zero;
+        /// <summary>The playfield is shared with other pilots, whose clients have to be able to show what is spawned.</summary>
+        private bool IsShared => field != null && field.Link != null;
+
+        /// <summary>Where a ship is, for aiming things at it: one of the living ships, picked at random when there are several.</summary>
+        private Vector2 ShipPosition
+        {
+            get
+            {
+                if (field == null)
+                {
+                    return Vector2.zero;
+                }
+                var living = new List<AsteroidsPlayer>();
+                if (field.Player != null && field.Player.IsAlive)
+                {
+                    living.Add(field.Player);
+                }
+                foreach (AsteroidsPlayer remote in field.RemoteShips)
+                {
+                    if (remote != null && remote.IsAlive)
+                    {
+                        living.Add(remote);
+                    }
+                }
+                if (living.Count == 0)
+                {
+                    return field.Player != null ? field.Player.Position : Vector2.zero;
+                }
+                return living[Random.Range(0, living.Count)].Position;
+            }
+        }
 
         public int WaveTargetsAlive => field != null ? field.WaveTargetsAlive : 0;
 
@@ -181,6 +221,7 @@ namespace Portfolio.Asteroids
             if (asteroid != null)
             {
                 field.Effects?.WarpIn(position, radius * 1.4f, AsteroidRules.Tint(kind));
+                asteroid.WarpedIn = true;
             }
             return asteroid;
         }
@@ -241,6 +282,7 @@ namespace Portfolio.Asteroids
             shot.BlastRadius = WeaponRules.BlastRadius(type);
             shot.FiredBy = shooter;
             field.Add(shot);
+            field.Link?.ShotFired(shot, (byte)type, level);
             return shot;
         }
 
@@ -261,6 +303,33 @@ namespace Portfolio.Asteroids
             shot.BlastRadius = 0f;
             shot.FiredBy = owner;
             field.Add(shot);
+            field.Link?.ShotFired(shot, BodyCodec.DroneShot, 1);
+            return shot;
+        }
+
+
+        /// <summary>
+        /// The shot of a pilot on another device, as their client reported it: <paramref name="kind"/> is the weapon, or
+        /// <see cref="BodyCodec.DroneShot"/>. It looks and flies like the real one and hurts nothing.
+        /// </summary>
+        public Shot FireGhostShot(byte kind, int level, Vector2 position, Vector2 velocity, float lifetime)
+        {
+            bool drone = kind == BodyCodec.DroneShot;
+            ShotPool pool = drone ? droneShotPool : kind < playerShotPools.Length ? playerShotPools[kind] : null;
+            var shot = Deploy(pool) as Shot;
+            if (shot == null)
+            {
+                return null;
+            }
+            var type = drone ? WeaponType.Blaster : (WeaponType)kind;
+            shot.Position = position;
+            shot.Velocity = velocity;
+            shot.Lifetime = Mathf.Max(0.05f, lifetime);
+            shot.Damage = 0f;
+            shot.Pierce = drone ? 1 : WeaponRules.Pierce(type, level);
+            shot.BlastRadius = drone ? 0f : WeaponRules.BlastRadius(type);
+            shot.IsGhost = true;
+            field.Add(shot);
             return shot;
         }
 
@@ -275,6 +344,7 @@ namespace Portfolio.Asteroids
             }
             shot.Position = position;
             shot.Velocity = velocity;
+            shot.NetVariant = (int)kind;
             field.Add(shot);
             return shot;
         }
@@ -305,6 +375,10 @@ namespace Portfolio.Asteroids
             {
                 IndexRewards();
             }
+            if (IsShared)
+            {
+                prefab = SharedSubstitute(prefab);
+            }
             if (!rewardLookup.TryGetValue(prefab, out RewardPool pool))
             {
                 Debug.LogWarning($"{name}: no pool for the reward {prefab.name}.", this);
@@ -318,8 +392,30 @@ namespace Portfolio.Asteroids
             reward.Position = position;
             reward.Velocity = velocity;
             reward.transform.rotation = Quaternion.identity;
+            reward.NetVariant = Array.IndexOf(rewardPools, pool);
             field.Add(reward);
             return reward;
+        }
+
+
+        /// <summary>
+        /// A chrono field slows the whole world for one ship, which a world shared with other pilots cannot do: there its
+        /// crate holds an overdrive instead.
+        /// </summary>
+        private Reward SharedSubstitute(Reward prefab)
+        {
+            if (!(prefab is PowerUpReward powerUp) || powerUp.PowerUp != PowerUpType.Chrono)
+            {
+                return prefab;
+            }
+            foreach (Reward candidate in rewardLookup.Keys)
+            {
+                if (candidate is PowerUpReward other && other.PowerUp == PowerUpType.Overdrive)
+                {
+                    return candidate;
+                }
+            }
+            return prefab;
         }
 
 
@@ -365,6 +461,7 @@ namespace Portfolio.Asteroids
                         field.Add(bomb);
                         field.Effects?.WarpIn(position, 1.6f, new Color(1f, 0.5f, 0.2f));
                         field.Sounds?.WarpIn();
+                        bomb.WarpedIn = true;
                         body = bomb;
                     }
                     break;
@@ -441,6 +538,7 @@ namespace Portfolio.Asteroids
             mine.Velocity = velocity;
             field.Add(mine);
             field.Effects?.WarpIn(position, 1.3f, new Color(0.3f, 0.8f, 1f));
+            mine.WarpedIn = true;
             return mine;
         }
 
@@ -502,6 +600,7 @@ namespace Portfolio.Asteroids
             }
             Boss boss = Instantiate(prefab, bossParent != null ? bossParent : transform);
             boss.name = prefab.name;
+            boss.NetVariant = CatalogIndex(prefab);
             field.Add(boss);
             boss.CountsForWave = true;
             boss.Loot = PodLoot;
@@ -528,9 +627,222 @@ namespace Portfolio.Asteroids
                     if (asteroid != null)
                     {
                         field.Effects?.WarpIn(asteroid.Position, asteroid.Radius * 1.4f, AsteroidRules.Tint(asteroidKind));
+                        asteroid.WarpedIn = true;
                     }
                     return asteroid;
                 }
+            }
+        }
+
+
+        // ------------------------------------------------------------------ shared missions
+
+        /// <summary>
+        /// What the other clients of a shared mission need to know to show <paramref name="body"/>: its kind, and the
+        /// variant that picks the pool or prefab and its looks. False for what is not announced: the ships' own shots
+        /// (their pilots report them) and anything the clients could not rebuild.
+        /// </summary>
+        public bool Describe(SpaceBody body, out BodyKind kind, out int variant)
+        {
+            kind = BodyKind.Asteroid;
+            variant = 0;
+            switch (body)
+            {
+                case Asteroid asteroid:
+                    variant = BodyCodec.PackAsteroid(asteroid.Kind, asteroid.Size, asteroid.Shape);
+                    return true;
+                case Mine _:
+                    kind = BodyKind.Mine;
+                    return true;
+                case ClusterBomb _:
+                    kind = BodyKind.ClusterBomb;
+                    return true;
+                case Lootable _:
+                    kind = BodyKind.SupplyPod;
+                    return true;
+                case Saucer saucer:
+                    kind = saucer.aims ? BodyKind.Scout : BodyKind.Saucer;
+                    return true;
+                case Wasp _:
+                    kind = BodyKind.Wasp;
+                    return true;
+                case Boss boss:
+                    kind = BodyKind.Boss;
+                    variant = boss.NetVariant;
+                    return variant >= 0;
+                case Comet _:
+                    kind = BodyKind.Comet;
+                    return true;
+                case GravityWell _:
+                    kind = BodyKind.GravityWell;
+                    return true;
+                case Shot shot:
+                    kind = BodyKind.EnemyShot;
+                    variant = shot.NetVariant;
+                    return shot.IsEnemy;
+                case Reward reward:
+                    kind = BodyKind.Reward;
+                    variant = reward.NetVariant;
+                    return variant >= 0;
+                default:
+                    return false;
+            }
+        }
+
+
+        /// <summary>
+        /// Shows a body the simulator of a shared mission announced: the same prefab from the same pool, in play as a
+        /// puppet. The caller places it (some bodies pick a place of their own when they enter the field).
+        /// </summary>
+        public SpaceBody SpawnPuppet(BodyKind kind, int variant, float lifetime)
+        {
+            SpaceBody body;
+            switch (kind)
+            {
+                case BodyKind.Asteroid:
+                {
+                    BodyCodec.UnpackAsteroid(variant, out AsteroidKind asteroidKind, out AsteroidSize size, out int shape);
+                    AsteroidPool pool = (int)asteroidKind < asteroidPools.Length ? asteroidPools[(int)asteroidKind] : null;
+                    var asteroid = Deploy(pool) as Asteroid;
+                    if (asteroid != null)
+                    {
+                        asteroid.transform.rotation = Quaternion.identity;
+                        asteroid.Configure(size, SpeedMultiplier, shape);
+                    }
+                    body = asteroid;
+                    break;
+                }
+                case BodyKind.Mine:
+                    body = Deploy(minePool);
+                    break;
+                case BodyKind.ClusterBomb:
+                    body = Deploy(bombPool);
+                    break;
+                case BodyKind.SupplyPod:
+                    body = Deploy(podPool);
+                    break;
+                case BodyKind.Saucer:
+                    body = Deploy(saucerPool);
+                    break;
+                case BodyKind.Scout:
+                    body = Deploy(scoutPool);
+                    break;
+                case BodyKind.Wasp:
+                    body = Deploy(waspPool);
+                    break;
+                case BodyKind.Comet:
+                    body = Deploy(cometPool);
+                    break;
+                case BodyKind.GravityWell:
+                    body = Deploy(wellPool);
+                    break;
+                case BodyKind.EnemyShot:
+                    body = Deploy(variant >= 0 && variant < enemyShotPools.Length ? enemyShotPools[variant] : null);
+                    break;
+                case BodyKind.Reward:
+                    body = Deploy(variant >= 0 && variant < rewardPools.Length ? rewardPools[variant] : null);
+                    break;
+                case BodyKind.Boss:
+                {
+                    Boss prefab = variant >= 0 && variant < BossCatalog.Count ? BossCatalog[variant] : null;
+                    Boss boss = prefab != null ? Instantiate(prefab, bossParent != null ? bossParent : transform) : null;
+                    if (boss != null)
+                    {
+                        boss.name = prefab.name;
+                    }
+                    body = boss;
+                    break;
+                }
+                default:
+                    body = null;
+                    break;
+            }
+            if (body == null)
+            {
+                return null;
+            }
+            body.IsPuppet = true;
+            body.NetVariant = variant;
+            field.Add(body);
+            if (body is GravityWell && lifetime > 0f)
+            {
+                // A black hole closes as its time runs out, which shows.
+                body.Lifetime = lifetime;
+            }
+            HazardKind? hazard = HazardOf(kind);
+            if (hazard.HasValue)
+            {
+                HazardSpawned?.Invoke(hazard.Value, body);
+            }
+            return body;
+        }
+
+
+        /// <summary>The entrance of a puppet whose body warped in, and the sound of the ones that announce themselves.</summary>
+        public void PlayEntrance(SpaceBody puppet, BodyKind kind, bool warpedIn)
+        {
+            if (warpedIn)
+            {
+                switch (puppet)
+                {
+                    case Asteroid asteroid:
+                        field.Effects?.WarpIn(puppet.Position, puppet.Radius * 1.4f, AsteroidRules.Tint(asteroid.Kind));
+                        break;
+                    case ClusterBomb _:
+                        field.Effects?.WarpIn(puppet.Position, 1.6f, new Color(1f, 0.5f, 0.2f));
+                        field.Sounds?.WarpIn();
+                        break;
+                    default:
+                        field.Effects?.WarpIn(puppet.Position, 1.3f, new Color(0.3f, 0.8f, 1f));
+                        break;
+                }
+            }
+            switch (kind)
+            {
+                case BodyKind.Comet:
+                    field.Sounds?.CometPass();
+                    break;
+                case BodyKind.GravityWell:
+                    field.Sounds?.WellOpen();
+                    break;
+            }
+        }
+
+
+        /// <summary>The simulator of a shared mission announced a comet: the warning shows here too.</summary>
+        public void ShowCometWarning(Vector2 from, Vector2 direction, float delay)
+        {
+            CometIncoming?.Invoke(from, direction, delay);
+            field.Sounds?.Warning();
+        }
+
+
+        private int CatalogIndex(Boss prefab)
+        {
+            for (int i = 0; i < BossCatalog.Count; i++)
+            {
+                if (BossCatalog[i] == prefab)
+                {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+
+        private static HazardKind? HazardOf(BodyKind kind)
+        {
+            switch (kind)
+            {
+                case BodyKind.Mine: return HazardKind.Mine;
+                case BodyKind.ClusterBomb: return HazardKind.ClusterBomb;
+                case BodyKind.SupplyPod: return HazardKind.SupplyPod;
+                case BodyKind.Saucer:
+                case BodyKind.Scout: return HazardKind.Saucer;
+                case BodyKind.Wasp: return HazardKind.Wasp;
+                case BodyKind.Comet: return HazardKind.Comet;
+                case BodyKind.GravityWell: return HazardKind.GravityWell;
+                default: return null;
             }
         }
 
@@ -557,7 +869,6 @@ namespace Portfolio.Asteroids
                 return Random.insideUnitCircle * 8f;
             }
             Vector2 half = Playground.HalfSize - Vector2.one * (radius + 0.3f);
-            Vector2 ship = ShipPosition;
             Vector2 best = Vector2.zero;
             float bestDistance = -1f;
             for (int i = 0; i < 16; i++)
@@ -571,7 +882,7 @@ namespace Portfolio.Asteroids
                 {
                     candidate = new Vector2((Random.value < 0.5f ? -1f : 1f) * Random.Range(half.x * 0.6f, half.x), Random.Range(-half.y, half.y));
                 }
-                float distance = Playground.Delta(ship, candidate).magnitude;
+                float distance = field.ShipClearance(candidate);
                 if (distance >= minDistance)
                 {
                     return candidate;
@@ -586,10 +897,10 @@ namespace Portfolio.Asteroids
         }
 
 
-        /// <summary>A point inside the playfield, <paramref name="inset"/> from the edges and away from the ship.</summary>
+        /// <summary>A point inside the playfield, <paramref name="inset"/> from the edges and away from every ship.</summary>
         private Vector2 InnerPoint(float inset, float minDistance)
         {
-            return Playground != null ? Playground.RandomPointAwayFrom(ShipPosition, minDistance, inset) : Random.insideUnitCircle * 6f;
+            return Playground != null ? Playground.RandomPointAwayFrom(field.ShipClearance, minDistance, inset) : Random.insideUnitCircle * 6f;
         }
 
 

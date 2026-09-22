@@ -156,6 +156,20 @@ namespace Portfolio.Monopoly
             start?.Invoke(setup.Clone(), mode);
         }
 
+        /// <summary>
+        /// The token of the first person at the table that was set up last, or -1 when none was: the token the player
+        /// likes to move, which an online match asks for as well.
+        /// </summary>
+        public static int PreferredToken()
+        {
+            if (!PlayerPrefs.HasKey(SetupKey))
+            {
+                return -1;
+            }
+            SeatSetup seat = LoadSetup().seats.FirstOrDefault(s => s.kind == SeatKind.Human);
+            return seat != null ? seat.token : -1;
+        }
+
         private static MatchSetup LoadSetup()
         {
             string json = PlayerPrefs.GetString(SetupKey, "");

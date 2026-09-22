@@ -78,7 +78,7 @@ namespace Portfolio.Asteroids
             {
                 countdown.transform.rotation = Quaternion.identity;
             }
-            if (fuse <= 0f)
+            if (fuse <= 0f && !IsPuppet)
             {
                 Detonate(false);
             }

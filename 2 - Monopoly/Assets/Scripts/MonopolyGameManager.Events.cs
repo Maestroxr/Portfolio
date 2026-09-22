@@ -61,11 +61,17 @@ namespace Portfolio.Monopoly
                     cameraRig?.ClearFocus();
                     if (!player.bot)
                     {
-                        sound?.Play(Sfx.Turn);
+                        // Online the turn of somebody elsewhere is announced, but only the player here is called to the table.
+                        bool here = PlayedHere(player);
+                        if (here)
+                        {
+                            sound?.Play(Sfx.Turn);
+                        }
                         SaveMatch(true);
                         if (HumanCount > 1)
                         {
-                            ui.Banner($"{MonopolyStyle.Possessive(player).ToUpperInvariant()} TURN", PlayerColor(e.player), 0.7f);
+                            string whose = IsOnlineMatch && here ? "YOUR" : MonopolyStyle.Possessive(player).ToUpperInvariant();
+                            ui.Banner($"{whose} TURN", PlayerColor(e.player), 0.7f);
                         }
                     }
                     yield return new WaitForSeconds(Beat(0.2f));
@@ -122,7 +128,7 @@ namespace Portfolio.Monopoly
                     yield return new WaitForSeconds(Beat(0.12f));
                     break;
                 case MatchEventKind.BuyOffered:
-                    if (Match.players[e.player].bot)
+                    if (!PlayedHere(Match.players[e.player]))
                     {
                         ui.Deed.ShowInfo(Match, e.space);
                         yield return new WaitForSeconds(Beat(0.5f));
@@ -169,7 +175,7 @@ namespace Portfolio.Monopoly
                         ui.Deed.Close();
                     }
                     sound?.Play(Sfx.Card);
-                    yield return ui.Cards.Reveal(e.deck, e.text, player, !player.bot, Beat(2.3f));
+                    yield return ui.Cards.Reveal(e.deck, e.text, player, PlayedHere(player), Beat(2.3f));
                     break;
                 }
                 case MatchEventKind.LeftJail:
@@ -587,13 +593,19 @@ namespace Portfolio.Monopoly
 
         public override void SaveGame()
         {
+            if (IsOnlineMatch)
+            {
+                UI?.UpdateError("An online match cannot be saved.");
+                return;
+            }
             SaveMatch(false);
         }
 
         private void SaveMatch(bool silent)
         {
             IStorageStrategy disk = Disk;
-            if (disk == null || Match == null || Match.IsOver)
+            // An online match lives on the server and in the devices of the others: there is nothing to continue alone.
+            if (disk == null || Match == null || Match.IsOver || IsOnlineMatch)
             {
                 return;
             }

@@ -12,8 +12,9 @@ namespace Portfolio.Asteroids
     /// ship, the waves, hazards and bosses, scoring and combos, pickups and lives), the victory or defeat, the results
     /// and the campaign progress. The menu, pause, settings and level flow come from <see cref="BaseGameManager"/>;
     /// the campaign is an <see cref="AsteroidsCampaign"/> and the progress an <see cref="AsteroidsProgress"/>.
+    /// Missions flown together with other pilots online are in AsteroidsGameManager.Coop.cs.
     /// </summary>
-    public class AsteroidsGameManager : BaseGameManager
+    public partial class AsteroidsGameManager : BaseGameManager
     {
         private enum MissionPhase
         {
@@ -21,6 +22,8 @@ namespace Portfolio.Asteroids
             Briefing,
             Playing,
             Respawning,
+            /// <summary>Out of ships in a shared mission: the others fly on, and this pilot watches.</summary>
+            Watching,
             Victory,
             Defeat,
             Results
@@ -119,7 +122,7 @@ namespace Portfolio.Asteroids
         public int Lives => lives;
 
         /// <summary>Whether a mission is being flown (after the countdown, before the results).</summary>
-        public bool IsMissionActive => IsGameRunning && (phase == MissionPhase.Playing || phase == MissionPhase.Respawning);
+        public bool IsMissionActive => IsGameRunning && (phase == MissionPhase.Playing || phase == MissionPhase.Respawning || phase == MissionPhase.Watching);
 
         /// <summary>Kept from the original: where pickups were parented. Pickups now live in the playfield.</summary>
         public Transform RewardParent => field != null ? field.transform : transform;
@@ -257,6 +260,7 @@ namespace Portfolio.Asteroids
                     break;
                 case MissionPhase.Playing:
                 case MissionPhase.Respawning:
+                case MissionPhase.Watching:
                     UpdateMission(deltaTime);
                     break;
                 case MissionPhase.Victory:
@@ -402,7 +406,7 @@ namespace Portfolio.Asteroids
         /// <summary>Starts the mission selected in the mission select.</summary>
         public void LaunchSelectedMission()
         {
-            if (phase != MissionPhase.Menu)
+            if (phase != MissionPhase.Menu || IsLobbyOpen)
             {
                 return;
             }
@@ -728,12 +732,19 @@ namespace Portfolio.Asteroids
             director?.Stop();
             field.Clear();
             field.WorldTimeScale = 1f;
+            FitPlayfield();
             spawner.Configure(settings, mission);
             backdrop?.Apply(mission.ThemeForWave(1), false);
 
             ApplySelectedHull();
             ship.ResetForMission(settings != null ? settings.HullStrength : 100f);
             lives = settings != null ? Mathf.Clamp(settings.Lives, 1, AsteroidSettings.LivesLimit) : 3;
+            if (IsCoop)
+            {
+                // Every pilot starts at a place of their own, with the ships the room gives them.
+                ship.Position = FieldMath.StartPoint(coop.Slot, coop.Pilots, CoopRules.StartRadius);
+                lives = Mathf.Clamp(coop.Lives, 1, AsteroidSettings.LivesLimit);
+            }
             livesLost = 0;
             score.Reset();
             ResetScore();
@@ -789,18 +800,25 @@ namespace Portfolio.Asteroids
             sounds?.Go();
             phase = MissionPhase.Playing;
             phaseTime = 0f;
-            director.Begin(1, true);
+            if (Simulates)
+            {
+                director.Begin(1, true);
+            }
         }
 
 
         private void UpdateMission(float deltaTime)
         {
             missionTime += deltaTime;
-            float chrono = ship.IsPowerUpActive(PowerUpType.Chrono) ? chronoTimeScale : 1f;
+            // A world shared with other pilots keeps its pace: no chrono field there.
+            float chrono = !IsCoop && ship.IsPowerUpActive(PowerUpType.Chrono) ? chronoTimeScale : 1f;
             field.WorldTimeScale = Mathf.MoveTowards(field.WorldTimeScale, chrono, deltaTime * 2f);
             ship.Simulate(deltaTime);
-            spawner.Tick(deltaTime * field.WorldTimeScale);
-            director.Tick(deltaTime * field.WorldTimeScale);
+            if (Simulates)
+            {
+                spawner.Tick(deltaTime * field.WorldTimeScale);
+                director.Tick(deltaTime * field.WorldTimeScale);
+            }
             field.Tick(deltaTime);
             score.Tick(deltaTime);
             if (score.Multiplier < lastMultiplier)
@@ -817,7 +835,8 @@ namespace Portfolio.Asteroids
             {
                 RespawnShip();
             }
-            if (phase == MissionPhase.Playing && objective.IsComplete)
+            // In a shared mission the objective is the simulator's to judge, also while its own pilot only watches.
+            if ((phase == MissionPhase.Playing || phase == MissionPhase.Watching) && objective.IsComplete && Simulates)
             {
                 Win();
             }
@@ -859,8 +878,8 @@ namespace Portfolio.Asteroids
                 Score = score.Score,
                 Multiplier = score.Multiplier,
                 ComboTime = score.Combo > 0 ? score.ComboTime / ScoreKeeper.ComboWindow : 0f,
-                Objective = objective.Status(director != null ? director.WaveNumber : 1),
-                ObjectiveProgress = objective.Progress,
+                Objective = FollowsSimulator ? coopStatus : objective.Status(director != null ? director.WaveNumber : 1),
+                ObjectiveProgress = FollowsSimulator ? coopProgress : objective.Progress,
                 Hull = ship.MaxHealth > 0f ? Mathf.Clamp01(ship.Health / ship.MaxHealth) : 0f,
                 Shield = ship.MaxShield > 0f ? Mathf.Clamp01(ship.Shield / ship.MaxShield) : 0f,
                 Lives = lives,
@@ -897,11 +916,20 @@ namespace Portfolio.Asteroids
             sounds?.Victory();
             cameraRig?.Pulse(0.6f);
             ClearFieldWithFlair();
+            if (IsCoop)
+            {
+                CoopWon();
+            }
         }
 
 
         private void Lose()
         {
+            if (IsCoop)
+            {
+                WatchOthers();
+                return;
+            }
             phase = MissionPhase.Defeat;
             phaseTime = 0f;
             director?.Stop();
@@ -938,6 +966,11 @@ namespace Portfolio.Asteroids
 
         private void ShowResults(bool victory)
         {
+            if (IsCoop)
+            {
+                ShowCoopResults(victory);
+                return;
+            }
             phase = MissionPhase.Results;
             AsteroidsLevel mission = Mission;
             bool endless = mission != null && mission.IsEndless;
@@ -1082,6 +1115,20 @@ namespace Portfolio.Asteroids
             {
                 return;
             }
+            // The kill of a pilot on another device scores on their device; what it drops is the same for everybody.
+            if (!hit.Seat.HasValue)
+            {
+                ScoreKill(target);
+            }
+            if (target.Loot != null && target.LootChance > 0f && !(target is Lootable))
+            {
+                spawner?.DropLoot(target.Loot, target.LootChance, target.Position);
+            }
+        }
+
+
+        private void ScoreKill(Shootable target)
+        {
             int points = score.AddKill(target.Score);
             SyncScore();
             Color color = score.Multiplier >= 4 ? new Color(1f, 0.45f, 0.9f) : score.Multiplier >= 2 ? new Color(1f, 0.85f, 0.3f) : Color.white;
@@ -1092,14 +1139,10 @@ namespace Portfolio.Asteroids
                 ui?.Toast($"COMBO x{score.Multiplier}", color);
                 sounds?.Combo(score.Multiplier);
             }
-            if (target.Loot != null && target.LootChance > 0f && !(target is Lootable))
-            {
-                spawner?.DropLoot(target.Loot, target.LootChance, target.Position);
-            }
         }
 
 
-        private bool IsMissionActiveOrEnding => IsGameRunning && (phase == MissionPhase.Playing || phase == MissionPhase.Respawning);
+        private bool IsMissionActiveOrEnding => IsMissionActive;
 
 
         private void OnExploded(Blast blast)
@@ -1205,7 +1248,7 @@ namespace Portfolio.Asteroids
             phase = MissionPhase.Playing;
             phaseTime = 0f;
             // Give the new ship a little room.
-            field.Explode(new Blast { Center = position, Radius = 3.5f, Damage = 0f, PlayerDamage = 0f, Push = 5f, Tint = new Color(0.4f, 0.8f, 1f) });
+            field.MakeRoom(position);
         }
 
 
@@ -1306,6 +1349,11 @@ namespace Portfolio.Asteroids
         public override void SaveGame()
         {
             IStorageStrategy disk = Disk;
+            if (InSession)
+            {
+                UI?.UpdateError("A mission flown with other pilots cannot be saved.");
+                return;
+            }
             if (disk == null || !(State.Is(BaseGameState.Running) || State.Is(BaseGameState.Paused)) ||
                 !(phase == MissionPhase.Playing || phase == MissionPhase.Respawning) || director == null)
             {

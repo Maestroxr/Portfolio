@@ -19,6 +19,9 @@ namespace Portfolio.Asteroids
 
         private bool visible = true;
 
+        /// <summary>The local ship touched the pickup in a shared mission and asked the server for it.</summary>
+        internal bool Claimed { get; set; }
+
         /// <summary>Kept from the original: the shot that caused the drop, if any.</summary>
         public Shot Cause;
 
@@ -33,6 +36,7 @@ namespace Portfolio.Asteroids
         public override void OnSpawned()
         {
             base.OnSpawned();
+            Claimed = false;
             SetVisible(true);
             if (visual != null)
             {
@@ -63,8 +67,9 @@ namespace Portfolio.Asteroids
 
         private void Attract(float deltaTime)
         {
-            AsteroidsPlayer ship = Field != null ? Field.Player : null;
-            if (ship == null || !ship.IsAlive || Field.Playground == null)
+            // A puppet only drifts to a halt by itself; where the real pickup is drawn to comes from the simulator.
+            AsteroidsPlayer ship = Field != null && !IsPuppet ? Field.NearestShip(Position) : null;
+            if (ship == null || Field.Playground == null)
             {
                 Velocity *= Mathf.Clamp01(1f - deltaTime * 0.8f);
                 return;
@@ -91,6 +96,21 @@ namespace Portfolio.Asteroids
                 Field.Effects?.Pickup(Position, color);
                 Field.Sounds?.Pickup(this);
             }
+            Exit = ExitReason.Collected;
+            Despawn();
+        }
+
+
+        /// <summary>A pilot on another device collected the pickup (<paramref name="seat"/>): it goes without giving anything here.</summary>
+        internal void CollectedElsewhere(int seat)
+        {
+            if (!InPlay)
+            {
+                return;
+            }
+            Field?.Effects?.Pickup(Position, color);
+            Exit = ExitReason.Collected;
+            ExitSeat = seat;
             Despawn();
         }
 

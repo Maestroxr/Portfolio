@@ -8,9 +8,10 @@ namespace Portfolio.Monopoly
     /// The local controller of the Monopoly module: it takes the commands of the human players from the interface
     /// (roll, buy, bid, build, trade...), checks that the player may give them now and passes them to the rules engine
     /// of the running match. Starting a game goes through the base <see cref="OfflineGameController"/> flow into
-    /// <see cref="MonopolyGameManager.StartGame"/>.
+    /// <see cref="MonopolyGameManager.StartGame"/>. In an online match the commands go to the server instead, through
+    /// <see cref="MonopolyOnlineController"/>.
     /// </summary>
-    public class MonopolyController : OfflineGameController
+    public class MonopolyController : OfflineGameController, IMonopolyCommands
     {
         public MonopolyGameManager Monopoly => BaseManager as MonopolyGameManager;
 

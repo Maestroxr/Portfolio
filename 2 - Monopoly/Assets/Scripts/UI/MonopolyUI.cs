@@ -9,7 +9,7 @@ namespace Portfolio.Monopoly
 {
     /// <summary>
     /// The interface of the game on top of the shared <see cref="GameUI"/> menu fields. One menu panel serves as the
-    /// title screen (Play, Continue, House Rules, Exit) and as the pause menu (Resume, Save, Load, New Game, Main Menu);
+    /// title screen (Play, Play Online, Continue, House Rules, Exit) and as the pause menu (Resume, Save, Load, New Game, Main Menu);
     /// in play the HUD shows the four player panels, the action panel in the middle of the board, the news feed and
     /// the match info, and the popups (title deeds, cards, auctions, the property manager, trades, results).
     /// </summary>
@@ -22,6 +22,8 @@ namespace Portfolio.Monopoly
         [SerializeField] private GameObject titleLogo;
         [SerializeField] private TMP_Text menuTitle;
         [SerializeField] private Button mainMenuButton;
+        [Tooltip("Opens the lobby of the game's server, from the title screen.")]
+        [SerializeField] private Button onlineButton;
         [SerializeField] private TMP_Text startLabel;
         [SerializeField] private TMP_Text loadLabel;
         [SerializeField] private TMP_Text footer;
@@ -94,6 +96,10 @@ namespace Portfolio.Monopoly
             {
                 mainMenuButton.onClick.AddListener(() => Monopoly?.ReturnToTitle());
             }
+            if (onlineButton != null)
+            {
+                onlineButton.onClick.AddListener(() => Monopoly?.OpenOnline());
+            }
             if (soundButton != null)
             {
                 soundButton.onClick.AddListener(ToggleSound);
@@ -161,6 +167,7 @@ namespace Portfolio.Monopoly
             {
                 mainMenuButton.gameObject.SetActive(paused);
             }
+            SetButtonVisible(onlineButton, title);
             if (startLabel != null)
             {
                 startLabel.text = title ? "PLAY" : "NEW GAME";

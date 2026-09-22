@@ -7,7 +7,10 @@ using UnityEngine.UI;
 
 namespace Portfolio.Monopoly
 {
-    /// <summary>The end of a match: the winner, the standings with net worth and properties, and the stars earned.</summary>
+    /// <summary>
+    /// The end of a match: the winner, the standings with net worth and properties, and the stars earned. After an online
+    /// match, which earns no stars, the buttons lead back to the room and out of it.
+    /// </summary>
     public class ResultsUI : Popup
     {
         [Serializable]
@@ -31,9 +34,13 @@ namespace Portfolio.Monopoly
         [SerializeField] private TMP_Text starsCaption;
         [SerializeField] private Button againButton;
         [SerializeField] private Button menuButton;
+        [SerializeField] private TMP_Text againLabel;
+        [SerializeField] private TMP_Text menuLabel;
 
         private Action again;
         private Action menu;
+        private string againText;
+        private string menuText;
 
         private void Awake()
         {
@@ -41,10 +48,22 @@ namespace Portfolio.Monopoly
             menuButton.onClick.AddListener(() => menu?.Invoke());
         }
 
-        public void Show(MonopolyMatch match, string modeName, int earned, bool newBest, Func<int, Sprite> tokens, Action onAgain, Action onMenu)
+        public void Show(MonopolyMatch match, string modeName, int earned, bool newBest, Func<int, Sprite> tokens, Action onAgain, Action onMenu,
+            bool online = false)
         {
             again = onAgain;
             menu = onMenu;
+            // The labels of the scene are the ones of a game at this device.
+            againText ??= againLabel != null ? againLabel.text : "";
+            menuText ??= menuLabel != null ? menuLabel.text : "";
+            if (againLabel != null)
+            {
+                againLabel.text = online ? "BACK TO ROOM" : againText;
+            }
+            if (menuLabel != null)
+            {
+                menuLabel.text = online ? "LEAVE ROOM" : menuText;
+            }
             List<PlayerState> standings = match.Standings();
             PlayerState winner = match.winner >= 0 ? match.players[match.winner] : standings.FirstOrDefault();
             if (winner != null)
@@ -79,12 +98,13 @@ namespace Portfolio.Monopoly
             }
             for (int i = 0; i < stars.Length; i++)
             {
+                stars[i].gameObject.SetActive(!online);
                 stars[i].color = i < earned ? MonopolyStyle.Gold : MonopolyStyle.WithAlpha(Color.white, 0.25f);
             }
             if (starsCaption != null)
             {
-                starsCaption.text = earned > 0
-                    ? $"{earned} {(earned == 1 ? "star" : "stars")} earned" + (newBest ? "  •  new best!" : "")
+                starsCaption.text = online ? "Online match  •  back in the room the host starts the next game"
+                    : earned > 0 ? $"{earned} {(earned == 1 ? "star" : "stars")} earned" + (newBest ? "  •  new best!" : "")
                     : winner != null && winner.bot ? "The computer won this time. Try again!" : "Beat computer players to earn stars.";
             }
             Open();

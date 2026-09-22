@@ -112,6 +112,11 @@ namespace Portfolio.Asteroids
         public Shot Shot;
         /// <summary>Whether the kill counts for the player (their shots, their nova, chains they set off).</summary>
         public bool ByPlayer;
+        /// <summary>
+        /// In a shared mission: the seat of the pilot on another device the hit counts for; null when it counts for the
+        /// ship at this device.
+        /// </summary>
+        public int? Seat;
 
         public DamageInfo(float amount, Vector2 direction, Vector2 point, DamageSource source, bool byPlayer, Shot shot = null)
         {
@@ -121,6 +126,7 @@ namespace Portfolio.Asteroids
             Source = source;
             ByPlayer = byPlayer;
             Shot = shot;
+            Seat = null;
         }
     }
 

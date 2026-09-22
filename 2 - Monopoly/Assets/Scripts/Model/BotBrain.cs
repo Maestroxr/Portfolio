@@ -5,11 +5,13 @@ using System.Linq;
 namespace Portfolio.Monopoly
 {
     /// <summary>
-    /// The computer players. <see cref="Act"/> makes exactly one move for the player the match waits for (build a house,
-    /// roll, bid...), so the view can animate every step. Trades are judged by <see cref="TradeGain"/>: cash and
-    /// properties at their price, plus what the sets the trade completes are worth to either side. <see cref="WouldAccept"/>
-    /// answers offers made to a computer player and <see cref="ProposeTrade"/> looks for a deal that completes one of its
-    /// sets. The three levels differ in the cash they keep back, how hard they bid and build, and how shrewdly they trade.
+    /// The computer players. <see cref="Decide"/> picks exactly one move for the player the match waits for (build a
+    /// house, roll, bid...) as a <see cref="MatchCommand"/> and <see cref="Act"/> makes it, so the view can animate every
+    /// step and an online match can send the move through the server first. Trades are judged by
+    /// <see cref="TradeGain"/>: cash and properties at their price, plus what the sets the trade completes are worth to
+    /// either side. <see cref="WouldAccept"/> answers offers made to a computer player and <see cref="ProposeTrade"/>
+    /// looks for a deal that completes one of its sets. The three levels differ in the cash they keep back, how hard
+    /// they bid and build, and how shrewdly they trade.
     /// </summary>
     public sealed class BotBrain
     {
@@ -61,22 +63,32 @@ namespace Portfolio.Monopoly
         /// <summary>Makes one move for the player the match waits for. Returns false when that player is not a computer player.</summary>
         public bool Act(MonopolyMatch match)
         {
+            MatchCommand command = Decide(match);
+            return command != null && command.Apply(match);
+        }
+
+        /// <summary>
+        /// The one move the computer player the match waits for makes now, without making it. Null when the match does
+        /// not wait for a computer player.
+        /// </summary>
+        public MatchCommand Decide(MonopolyMatch match)
+        {
             int seat = match.Decider;
             if (seat < 0 || !match.players[seat].bot)
             {
-                return false;
+                return null;
             }
             Profile profile = ProfileOf(match.players[seat].level);
             switch (match.phase)
             {
                 case MatchPhase.Roll:
-                    return Manage(match, seat, profile) || match.Roll();
+                    return Manage(match, seat, profile) ?? MatchCommand.Of(CommandKind.Roll, seat);
                 case MatchPhase.JailChoice:
                     return DecideJail(match, seat, profile);
                 case MatchPhase.BusChoice:
-                    return match.ChooseBus(BestBusOption(match, seat));
+                    return MatchCommand.Of(CommandKind.ChooseBus, seat, BestBusOption(match, seat));
                 case MatchPhase.MoveAnywhere:
-                    return match.ChooseDestination(BestDestination(match, seat));
+                    return MatchCommand.Of(CommandKind.ChooseDestination, seat, BestDestination(match, seat));
                 case MatchPhase.BuyChoice:
                     return DecideBuy(match, seat, profile);
                 case MatchPhase.Auction:
@@ -84,15 +96,15 @@ namespace Portfolio.Monopoly
                 case MatchPhase.RaiseFunds:
                     return RaiseFunds(match, seat);
                 case MatchPhase.EndTurn:
-                    return Manage(match, seat, profile) || match.EndTurn();
+                    return Manage(match, seat, profile) ?? MatchCommand.Of(CommandKind.EndTurn, seat);
                 default:
-                    return false;
+                    return null;
             }
         }
 
         // ------------------------------------------------------------------ decisions
 
-        private bool DecideJail(MonopolyMatch match, int seat, Profile profile)
+        private MatchCommand DecideJail(MonopolyMatch match, int seat, Profile profile)
         {
             PlayerState me = match.players[seat];
             // Early on it pays to get out and buy; once the board is built up, jail is a safe place to wait.
@@ -101,14 +113,14 @@ namespace Portfolio.Monopoly
             {
                 if (me.jailCards.Count > 0)
                 {
-                    return match.UseJailCard();
+                    return MatchCommand.Of(CommandKind.UseJailCard, seat);
                 }
                 if (me.cash >= match.rules.jailFine + profile.reserve)
                 {
-                    return match.PayJailFine();
+                    return MatchCommand.Of(CommandKind.PayJailFine, seat);
                 }
             }
-            return match.Roll();
+            return MatchCommand.Of(CommandKind.Roll, seat);
         }
 
         /// <summary>Whether opponents have enough houses that roaming the board is costly.</summary>
@@ -126,7 +138,7 @@ namespace Portfolio.Monopoly
             return threat >= 3;
         }
 
-        private bool DecideBuy(MonopolyMatch match, int seat, Profile profile)
+        private MatchCommand DecideBuy(MonopolyMatch match, int seat, Profile profile)
         {
             int space = match.pendingPurchase;
             PlayerState me = match.players[seat];
@@ -139,18 +151,19 @@ namespace Portfolio.Monopoly
             {
                 if (me.cash >= data.price)
                 {
-                    return match.Buy();
+                    return MatchCommand.Of(CommandKind.Buy, seat);
                 }
                 // Worth mortgaging a loose property to complete a set.
-                if (completes && RaiseCash(match, seat, data.price - me.cash, keepGroups: true))
+                MatchCommand raise = completes ? RaiseCash(match, seat, data.price - me.cash, keepGroups: true) : null;
+                if (raise != null)
                 {
-                    return true;
+                    return raise;
                 }
             }
-            return match.DeclineBuy();
+            return MatchCommand.Of(CommandKind.DeclineBuy, seat);
         }
 
-        private bool DecideBid(MonopolyMatch match, int seat, Profile profile)
+        private MatchCommand DecideBid(MonopolyMatch match, int seat, Profile profile)
         {
             AuctionState auction = match.auction;
             PlayerState me = match.players[seat];
@@ -163,75 +176,73 @@ namespace Portfolio.Monopoly
             {
                 // Jump ahead when far below the limit, to keep auctions short.
                 int step = limit - bid > 150 ? 50 : limit - bid > 60 ? 20 : 0;
-                return match.PlaceBid(seat, Math.Min(limit, bid + step));
+                return MatchCommand.Of(CommandKind.Bid, seat, Math.Min(limit, bid + step));
             }
-            return match.PassBid(seat);
+            return MatchCommand.Of(CommandKind.PassBid, seat);
         }
 
-        private bool RaiseFunds(MonopolyMatch match, int seat)
+        private MatchCommand RaiseFunds(MonopolyMatch match, int seat)
         {
             Debt debt = match.CurrentDebt;
             if (debt == null)
             {
-                return false;
+                return null;
             }
             PlayerState me = match.players[seat];
             if (me.cash >= debt.amount)
             {
-                return match.PayDebt();
+                return MatchCommand.Of(CommandKind.PayDebt, seat);
             }
             if (match.LiquidValue(seat) < debt.amount)
             {
-                return match.DeclareBankruptcy();
+                return MatchCommand.Of(CommandKind.DeclareBankruptcy, seat);
             }
-            if (RaiseCash(match, seat, debt.amount - me.cash, keepGroups: true) || RaiseCash(match, seat, debt.amount - me.cash, keepGroups: false))
-            {
-                return true;
-            }
-            return match.DeclareBankruptcy();
+            return RaiseCash(match, seat, debt.amount - me.cash, keepGroups: true)
+                ?? RaiseCash(match, seat, debt.amount - me.cash, keepGroups: false)
+                ?? MatchCommand.Of(CommandKind.DeclareBankruptcy, seat);
         }
 
         /// <summary>
         /// One step towards <paramref name="needed"/> cash: mortgage a property outside the sets, then (unless the sets
-        /// are to be kept) sell a building or mortgage anything. Returns false when nothing could be done.
+        /// are to be kept) sell a building or mortgage anything. Returns null when nothing can be done.
         /// </summary>
-        private static bool RaiseCash(MonopolyMatch match, int seat, int needed, bool keepGroups)
+        private static MatchCommand RaiseCash(MonopolyMatch match, int seat, int needed, bool keepGroups)
         {
             if (needed <= 0)
             {
-                return false;
+                return null;
             }
             List<int> owned = match.PropertiesOf(seat).ToList();
             foreach (int space in owned.Where(s => !IsInOwnedGroup(match, seat, s)).OrderBy(s => match.Board[s].MortgageValue))
             {
                 if (match.CanMortgage(seat, space, out _))
                 {
-                    return match.Mortgage(seat, space);
+                    return MatchCommand.Of(CommandKind.Mortgage, seat, space);
                 }
             }
             if (keepGroups)
             {
-                return false;
+                return null;
             }
             foreach (int space in owned.OrderByDescending(s => match.deeds[s].houses))
             {
                 if (match.CanSellBuilding(seat, space, out _))
                 {
-                    return match.SellBuilding(seat, space);
+                    return MatchCommand.Of(CommandKind.Sell, seat, space);
                 }
             }
             foreach (int space in owned.OrderBy(s => match.Board[s].MortgageValue))
             {
                 if (match.CanMortgage(seat, space, out _))
                 {
-                    return match.Mortgage(seat, space);
+                    return MatchCommand.Of(CommandKind.Mortgage, seat, space);
                 }
             }
-            return false;
+            return null;
         }
 
-        /// <summary>Builds and lifts mortgages on the player's own turn. Returns true when it did something.</summary>
-        private bool Manage(MonopolyMatch match, int seat, Profile profile)
+        /// <summary>Building or lifting a mortgage on the player's own turn, or null when there is nothing to do.</summary>
+        private MatchCommand Manage(MonopolyMatch match, int seat, Profile profile)
         {
             PlayerState me = match.players[seat];
             int reserve = profile.reserve + Math.Min(ExpectedDanger(match, seat), 800) / 3;
@@ -242,7 +253,7 @@ namespace Portfolio.Monopoly
             {
                 if (me.cash - match.Board[space].UnmortgageCost >= reserve * 2 && match.CanUnmortgage(seat, space, out _))
                 {
-                    return match.Unmortgage(seat, space);
+                    return MatchCommand.Of(CommandKind.Unmortgage, seat, space);
                 }
             }
 
@@ -273,9 +284,9 @@ namespace Portfolio.Monopoly
             }
             if (bestSpace >= 0 && random.Value() < 0.9f + profile.buildFactor * 0.1f)
             {
-                return match.Build(seat, bestSpace);
+                return MatchCommand.Of(CommandKind.Build, seat, bestSpace);
             }
-            return false;
+            return null;
         }
 
         // ------------------------------------------------------------------ trading

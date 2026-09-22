@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Gamebox;
 using Gamebox.Editor;
+using Portfolio.Asteroids.Server;
 using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -16,11 +17,14 @@ namespace Portfolio.Asteroids.EditorTools
     /// <summary>
     /// Builds Scenes/Asteroids.unity from the generated assets: the camera rig with post-processing, the star's light,
     /// the space backdrop, the game object with the manager, the playfield, spawner, effects, audio and every pool, the
-    /// ship, the shared menu (as the pause menu) and the game's own interface.
+    /// ship, the shared menu (as the pause menu), the game's own interface, and online play (the server client, the
+    /// online controller and the shared lobby, through <see cref="OnlineInstaller"/>).
     /// </summary>
     internal static class AsteroidsSceneBuilder
     {
         public const string ScenePath = "Scenes/Asteroids.unity";
+        /// <summary>The name the module of Server/ is published under (spacetime.json of the game's project).</summary>
+        public const string Database = "skinnerboxes-asteroids";
         public const float HalfHeight = 10f;
 
         private static Material titleFont;
@@ -133,6 +137,19 @@ namespace Portfolio.Asteroids.EditorTools
             {
                 backdrop.Apply(first.Theme, true);
             }
+
+            // Online play: missions have no turns, so the lobby's turn banner stays off.
+            var online = (AsteroidsOnlineController)OnlineInstaller.Install(scene, typeof(GameServerClient), typeof(AsteroidsOnlineController),
+                manager, ui, Database, new OnlineInstaller.LobbyStyle
+                {
+                    Title = "MULTIPLAYER",
+                    Accent = new Color(0.2f, 0.62f, 1f),
+                    Window = new Color(0.04f, 0.08f, 0.16f, 0.98f),
+                    Row = new Color(0.09f, 0.17f, 0.3f, 1f),
+                    HideTurnBanner = true
+                });
+            online.shipPrefab = shipPrefab.GetComponent<AsteroidsPlayer>();
+            manager.online = online;
 
             GameMenuInstaller.EnsureUrpCameras();
             string path = AsteroidsAssets.Path(ScenePath);

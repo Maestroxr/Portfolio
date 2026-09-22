@@ -59,6 +59,10 @@ namespace Portfolio.MemoryCards
         public bool Endless;
         public int Board;
         public Color Accent;
+        /// <summary>Several players: the scoreboard shows in place of the score and the clock.</summary>
+        public bool Versus;
+        /// <summary>What the HUD says under the title of a versus game ("VERSUS - 3 PLAYERS").</summary>
+        public string VersusLabel;
     }
 
 
@@ -84,5 +88,11 @@ namespace Portfolio.MemoryCards
         public int Best;
         public bool HasNext;
         public Color Accent;
+        /// <summary>A versus game: the title and the standings below take the place of the stars and the goals.</summary>
+        public bool Versus;
+        /// <summary>An online game: the next one starts from the room, not from the results.</summary>
+        public bool Online;
+        public string VersusTitle;
+        public string VersusStandings;
     }
 }
