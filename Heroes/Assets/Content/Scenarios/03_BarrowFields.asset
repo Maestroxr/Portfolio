@@ -1,0 +1,78 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2889f78791f059b499b1411c0a8eb318, type: 3}
+  m_Name: 03_BarrowFields
+  m_EditorClassIdentifier: Skinnerboxes.Heroes::Portfolio.Heroes.HeroesLevel
+  <Index>k__BackingField: 2
+  <Title>k__BackingField: The Barrow Fields
+  <Map>k__BackingField:
+    name: The Barrow Fields
+    columns: 40
+    rows: 44
+    seed: 303
+    players:
+    - faction: 0
+      human: 1
+      aiLevel: 1
+      team: 0
+      hero: -1
+      buildings: 
+      name: You
+    - faction: 1
+      human: 0
+      aiLevel: 1
+      team: 1
+      hero: -1
+      buildings: 
+      name: Barrow Wardens
+    - faction: 2
+      human: 0
+      aiLevel: 1
+      team: 2
+      hero: -1
+      buildings: 
+      name: Grave Diggers
+    zonesPerPlayer: 1
+    neutralTowns: 2
+    treasure: 3
+    monsters: 2
+    water: 1
+    theme: 6
+    themeTerrain: 0
+    rules:
+      victory: 4
+      victoryValue: 23
+      victoryTag: 
+      loss: 0
+      lossValue: 0
+      dayLimit: 0
+    specials:
+    - kind: 1
+      x: 800
+      y: 500
+      creature: -1
+      count: 0
+      artifact: 23
+      faction: 3
+      building: 3
+      resource: 0
+      tag: crown
+      guard: 13
+      guardCount: 6
+    startingGold: 10000
+  <Intro>k__BackingField: The old kings were buried with their crowns. One of them is worth more than the rest, and you are not the only one digging.
+  <Outro>k__BackingField: The Crown of Dragons is yours. It is heavier than it looks.
+  <Goal>k__BackingField: Find the Crown of Dragons in the barrows.
+  <ThreeStarDays>k__BackingField: 40
+  <TwoStarDays>k__BackingField: 60
+  <IsSkirmish>k__BackingField: 0
+  <MapPosition>k__BackingField: {x: 560, y: 500}

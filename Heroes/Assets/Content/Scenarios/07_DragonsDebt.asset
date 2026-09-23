@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2889f78791f059b499b1411c0a8eb318, type: 3}
+  m_Name: 07_DragonsDebt
+  m_EditorClassIdentifier: Skinnerboxes.Heroes::Portfolio.Heroes.HeroesLevel
+  <Index>k__BackingField: 6
+  <Title>k__BackingField: The Dragon's Debt
+  <Map>k__BackingField:
+    name: The Dragon's Debt
+    columns: 46
+    rows: 50
+    seed: 707
+    players:
+    - faction: 0
+      human: 1
+      aiLevel: 1
+      team: 0
+      hero: -1
+      buildings: 
+      name: You
+    - faction: 2
+      human: 0
+      aiLevel: 2
+      team: 1
+      hero: -1
+      buildings: 
+      name: Dragon Cliffs
+    zonesPerPlayer: 1
+    neutralTowns: 1
+    treasure: 3
+    monsters: 3
+    water: 1
+    theme: 5
+    themeTerrain: 0
+    rules:
+      victory: 2
+      victoryValue: 0
+      victoryTag: wyrm
+      loss: 0
+      lossValue: 0
+      dayLimit: 0
+    specials:
+    - kind: 0
+      x: 850
+      y: 150
+      creature: 20
+      count: 14
+      artifact: -1
+      faction: 3
+      building: 3
+      resource: 0
+      tag: wyrm
+      guard: -1
+      guardCount: 0
+    startingGold: 10000
+  <Intro>k__BackingField: The clans keep a wyrm, and the wyrm keeps the cliffs. Both debts come due today.
+  <Outro>k__BackingField: The wyrm is dead. Its hoard pays for the last march.
+  <Goal>k__BackingField: Slay the red wyrm of the cliffs.
+  <ThreeStarDays>k__BackingField: 52
+  <TwoStarDays>k__BackingField: 75
+  <IsSkirmish>k__BackingField: 0
+  <MapPosition>k__BackingField: {x: 1080, y: 500}

@@ -1,0 +1,66 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2889f78791f059b499b1411c0a8eb318, type: 3}
+  m_Name: 05_HundredIsles
+  m_EditorClassIdentifier: Skinnerboxes.Heroes::Portfolio.Heroes.HeroesLevel
+  <Index>k__BackingField: 4
+  <Title>k__BackingField: The Hundred Isles
+  <Map>k__BackingField:
+    name: The Hundred Isles
+    columns: 44
+    rows: 46
+    seed: 505
+    players:
+    - faction: 0
+      human: 1
+      aiLevel: 1
+      team: 0
+      hero: -1
+      buildings: 
+      name: You
+    - faction: 1
+      human: 0
+      aiLevel: 2
+      team: 1
+      hero: -1
+      buildings: 
+      name: The Drowned
+    - faction: 2
+      human: 0
+      aiLevel: 1
+      team: 2
+      hero: -1
+      buildings: 
+      name: Reavers
+    zonesPerPlayer: 1
+    neutralTowns: 2
+    treasure: 3
+    monsters: 3
+    water: 3
+    theme: 2
+    themeTerrain: 0
+    rules:
+      victory: 0
+      victoryValue: 0
+      victoryTag: 
+      loss: 0
+      lossValue: 0
+      dayLimit: 0
+    specials: []
+    startingGold: 10000
+  <Intro>k__BackingField: Two fleets and one narrow sea. Whoever holds the isles holds the road to the capital.
+  <Outro>k__BackingField: The isles are quiet. The road to the capital lies open.
+  <Goal>k__BackingField: Clear the isles of both claimants.
+  <ThreeStarDays>k__BackingField: 48
+  <TwoStarDays>k__BackingField: 70
+  <IsSkirmish>k__BackingField: 0
+  <MapPosition>k__BackingField: {x: 840, y: 480}

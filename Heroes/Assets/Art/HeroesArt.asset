@@ -1,0 +1,1030 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 633908f376097034cbea15199047b323, type: 3}
+  m_Name: HeroesArt
+  m_EditorClassIdentifier: Skinnerboxes.Heroes::Portfolio.Heroes.HeroesArt
+  units:
+  - creature: 0
+    prefab: {fileID: 4217318361713602665, guid: e37f429f4bcd2dc49b0fec9fb6a5043b, type: 3}
+    height: 1.35
+    idle: CharacterArmature|Idle
+    walk: CharacterArmature|Walk
+    attack: CharacterArmature|Attack
+    shoot: 
+    hit: CharacterArmature|RecieveHit
+    death: CharacterArmature|Death
+    cast: 
+    projectile: 0
+    flies: 0
+  - creature: 1
+    prefab: {fileID: 2978870849798721111, guid: 4e09b7947d328e040944bf15e79e656e, type: 3}
+    height: 1.5
+    idle: CharacterArmature|Idle
+    walk: CharacterArmature|Walk
+    attack: CharacterArmature|Punch
+    shoot: CharacterArmature|Bow_Attack_Shoot
+    hit: CharacterArmature|RecieveHit
+    death: CharacterArmature|Death
+    cast: 
+    projectile: 1
+    flies: 0
+  - creature: 2
+    prefab: {fileID: 4032547352380958986, guid: ee8e40ba7c900dc4892f2ca42b737056, type: 3}
+    height: 1.6
+    idle: Idle
+    walk: Walking_A
+    attack: 1H_Melee_Attack_Chop
+    shoot: 
+    hit: Hit_A
+    death: Death_A
+    cast: Spellcast_Shoot
+    projectile: 0
+    flies: 0
+  - creature: 3
+    prefab: {fileID: 3495329283177267884, guid: b2cbefd504468d24eb2207a3b91f5ed0, type: 3}
+    height: 1.6
+    idle: CharacterArmature|Idle
+    walk: CharacterArmature|Walk
+    attack: CharacterArmature|Punch
+    shoot: CharacterArmature|Spell1
+    hit: CharacterArmature|RecieveHit
+    death: CharacterArmature|Death
+    cast: CharacterArmature|Spell1
+    projectile: 3
+    flies: 0
+  - creature: 4
+    prefab: {fileID: 2873413189826723868, guid: f06714005aab86e4398c1f637cce31ba, type: 3}
+    height: 1.75
+    idle: CharacterArmature|Idle
+    walk: CharacterArmature|Walk
+    attack: CharacterArmature|Sword_Attack
+    shoot: 
+    hit: CharacterArmature|RecieveHit
+    death: CharacterArmature|Death
+    cast: 
+    projectile: 0
+    flies: 0
+  - creature: 5
+    prefab: {fileID: 6219568557270337096, guid: 2bde944e6372eb94ba651763fb4000a4, type: 3}
+    height: 1.9
+    idle: AnimalArmature|Idle
+    walk: AnimalArmature|Gallop
+    attack: AnimalArmature|Attack_Kick
+    shoot: 
+    hit: AnimalArmature|Idle_HitReact_Left
+    death: AnimalArmature|Death
+    cast: 
+    projectile: 0
+    flies: 0
+  - creature: 6
+    prefab: {fileID: 4280978202172251184, guid: d31dbd967a0c71748b49363ff584d50b, type: 3}
+    height: 2.9899998
+    idle: DragonArmature|Dragon_Flying
+    walk: DragonArmature|Dragon_Flying
+    attack: DragonArmature|Dragon_Attack
+    shoot: 
+    hit: DragonArmature|Dragon_Hit
+    death: DragonArmature|Dragon_Death
+    cast: 
+    projectile: 0
+    flies: 1
+  - creature: 7
+    prefab: {fileID: 8400953335178354907, guid: e9316a77fda1e214286c27e73b5cd7fb, type: 3}
+    height: 1.35
+    idle: Idle
+    walk: Walking_A
+    attack: 1H_Melee_Attack_Chop
+    shoot: 
+    hit: Hit_A
+    death: Death_A
+    cast: Spellcast_Shoot
+    projectile: 0
+    flies: 0
+  - creature: 8
+    prefab: {fileID: 7074413786860167400, guid: d2da99ba6cfb2184f8583144bbeee261, type: 3}
+    height: 1.5
+    idle: Zombie|ZombieIdle
+    walk: Zombie|ZombieWalk
+    attack: Zombie|ZombieBite
+    shoot: 
+    hit: 
+    death: 
+    cast: 
+    projectile: 0
+    flies: 0
+  - creature: 9
+    prefab: {fileID: 5822158214947257629, guid: c5dcec7e6c28f6642b6a80190531b27d, type: 3}
+    height: 1.6
+    idle: Idle
+    walk: Walking_A
+    attack: 2H_Melee_Attack_Chop
+    shoot: 
+    hit: Hit_A
+    death: Death_A
+    cast: Spellcast_Shoot
+    projectile: 0
+    flies: 0
+  - creature: 10
+    prefab: {fileID: 1988966488093163035, guid: 1a4493afa7119ba4eba7d95638723747, type: 3}
+    height: 1.6
+    idle: Idle
+    walk: Walking_A
+    attack: 1H_Melee_Attack_Chop
+    shoot: 1H_Ranged_Shoot
+    hit: Hit_A
+    death: Death_A
+    cast: Spellcast_Shoot
+    projectile: 1
+    flies: 0
+  - creature: 11
+    prefab: {fileID: 5248874967863682677, guid: 95afbebd3211c9c43b4f76db5f57a75b, type: 3}
+    height: 2.0125
+    idle: BatArmature|Bat_Flying
+    walk: BatArmature|Bat_Flying
+    attack: BatArmature|Bat_Attack
+    shoot: 
+    hit: BatArmature|Bat_Hit
+    death: BatArmature|Bat_Death
+    cast: 
+    projectile: 0
+    flies: 1
+  - creature: 12
+    prefab: {fileID: 1252622184841735716, guid: 0fd10ca7ea3350048b24b6851248dd9e, type: 3}
+    height: 1.9
+    idle: Idle
+    walk: Walking_A
+    attack: Spellcast_Shoot
+    shoot: Spellcast_Shoot
+    hit: Hit_A
+    death: Death_A
+    cast: Spellcast_Shoot
+    projectile: 4
+    flies: 0
+  - creature: 13
+    prefab: {fileID: 3916759139884856645, guid: 260317ecf00bd8b40930b0824ab211de, type: 3}
+    height: 2.9899998
+    idle: DragonArmature|Dragon_Flying
+    walk: DragonArmature|Dragon_Flying
+    attack: DragonArmature|Dragon_Attack
+    shoot: 
+    hit: DragonArmature|Dragon_Hit
+    death: DragonArmature|Dragon_Death
+    cast: 
+    projectile: 0
+    flies: 1
+  - creature: 14
+    prefab: {fileID: 570357205235835303, guid: bacded73be578c24d87d8baeeb5455c0, type: 3}
+    height: 1.35
+    idle: AnimalArmature|Idle
+    walk: AnimalArmature|Walk
+    attack: AnimalArmature|Attack
+    shoot: 
+    hit: AnimalArmature|Idle_HitReact_Left
+    death: AnimalArmature|Death
+    cast: 
+    projectile: 0
+    flies: 0
+  - creature: 15
+    prefab: {fileID: 8246108072338391569, guid: 7890a16e9185dd648af8027cdbc7525c, type: 3}
+    height: 1.5
+    idle: Idle
+    walk: Walking_A
+    attack: 1H_Melee_Attack_Chop
+    shoot: 
+    hit: Hit_A
+    death: Death_A
+    cast: Spellcast_Shoot
+    projectile: 0
+    flies: 0
+  - creature: 16
+    prefab: {fileID: 1838929160417162646, guid: 8cc539901675efe459f9c1ca91797aa8, type: 3}
+    height: 1.6
+    idle: Idle
+    walk: Walking_A
+    attack: 1H_Melee_Attack_Chop
+    shoot: 1H_Ranged_Shoot
+    hit: Hit_A
+    death: Death_A
+    cast: Spellcast_Shoot
+    projectile: 1
+    flies: 0
+  - creature: 17
+    prefab: {fileID: 9181545673882087079, guid: a6d0ead829a458140a2cef98416b04cb, type: 3}
+    height: 1.6
+    idle: CharacterArmature|Idle
+    walk: CharacterArmature|Walk
+    attack: CharacterArmature|Punch
+    shoot: CharacterArmature|Spell1
+    hit: CharacterArmature|RecieveHit
+    death: CharacterArmature|Death
+    cast: CharacterArmature|Spell1
+    projectile: 5
+    flies: 0
+  - creature: 18
+    prefab: {fileID: 9092557443253968536, guid: c689581c449af904a822791058cb0a20, type: 3}
+    height: 1.75
+    idle: Idle
+    walk: Walking_A
+    attack: 2H_Melee_Attack_Chop
+    shoot: 
+    hit: Hit_A
+    death: Death_A
+    cast: Spellcast_Shoot
+    projectile: 0
+    flies: 0
+  - creature: 19
+    prefab: {fileID: 4697058319865159955, guid: b1cb494e0661e234abf51736d1329692, type: 3}
+    height: 1.9
+    idle: AnimalArmature|Idle
+    walk: AnimalArmature|Walk
+    attack: AnimalArmature|Attack_Headbutt
+    shoot: 
+    hit: AnimalArmature|Idle_HitReact_Left
+    death: AnimalArmature|Death
+    cast: 
+    projectile: 0
+    flies: 0
+  - creature: 20
+    prefab: {fileID: 5588361326408766952, guid: b38a728a17eda9b4b9ec3229d8ec906e, type: 3}
+    height: 2.9899998
+    idle: DragonArmature|Dragon_Flying
+    walk: DragonArmature|Dragon_Flying
+    attack: DragonArmature|Dragon_Attack
+    shoot: 
+    hit: DragonArmature|Dragon_Hit
+    death: DragonArmature|Dragon_Death
+    cast: 
+    projectile: 0
+    flies: 1
+  - creature: 21
+    prefab: {fileID: 1500266825191633970, guid: e428bd294668e8847a081b70010de176, type: 3}
+    height: 1.35
+    idle: Armature|Slime_Idle
+    walk: Armature|Slime_Walk
+    attack: Armature|Slime_Attack
+    shoot: 
+    hit: 
+    death: Armature|Slime_Death
+    cast: 
+    projectile: 0
+    flies: 0
+  - creature: 22
+    prefab: {fileID: 5520784722927161514, guid: af3ef4d459e202a4093c20a0f1b2fc97, type: 3}
+    height: 1.5
+    idle: CharacterArmature|Idle
+    walk: CharacterArmature|Walk
+    attack: CharacterArmature|Dagger_Attack
+    shoot: 
+    hit: CharacterArmature|RecieveHit
+    death: CharacterArmature|Death
+    cast: 
+    projectile: 0
+    flies: 0
+  - creature: 23
+    prefab: {fileID: 2924864008680194654, guid: 8b97f233092c6d748b0c42860939289b, type: 3}
+    height: 1.6
+    idle: AnimalArmature|Idle
+    walk: AnimalArmature|Walk
+    attack: AnimalArmature|Attack
+    shoot: 
+    hit: AnimalArmature|Idle_HitReact_Left
+    death: AnimalArmature|Death
+    cast: 
+    projectile: 0
+    flies: 0
+  - creature: 24
+    prefab: {fileID: 8616065174029104774, guid: 9646917194123ff4c8f32c4273edd85d, type: 3}
+    height: 1.6
+    idle: AnimalArmature|Idle
+    walk: AnimalArmature|Walk
+    attack: AnimalArmature|Attack
+    shoot: 
+    hit: AnimalArmature|Idle_HitReact_Left
+    death: AnimalArmature|Death
+    cast: 
+    projectile: 0
+    flies: 0
+  - creature: 25
+    prefab: {fileID: 5880698495370366150, guid: 8d5cf7872eb2eb44fa16b9a28ef1bd68, type: 3}
+    height: 1.6
+    idle: Idle
+    walk: Walking_A
+    attack: Spellcast_Shoot
+    shoot: Spellcast_Shoot
+    hit: Hit_A
+    death: Death_A
+    cast: Spellcast_Shoot
+    projectile: 6
+    flies: 0
+  - creature: 26
+    prefab: {fileID: 8009395561493040586, guid: 4d027ee7d47b8b141a44e7def5746b7f, type: 3}
+    height: 1.75
+    idle: AnimalArmature|Idle
+    walk: AnimalArmature|Walk
+    attack: AnimalArmature|Attack_Headbutt
+    shoot: 
+    hit: AnimalArmature|Idle_HitReact_Left
+    death: AnimalArmature|Death
+    cast: 
+    projectile: 0
+    flies: 0
+  - creature: 27
+    prefab: {fileID: 1051523579947116575, guid: 588219b3e34904c46aab9fd1d7049cef, type: 3}
+    height: 2.9899998
+    idle: DragonArmature|Dragon_Flying
+    walk: DragonArmature|Dragon_Flying
+    attack: DragonArmature|Dragon_Attack
+    shoot: 
+    hit: DragonArmature|Dragon_Hit
+    death: DragonArmature|Dragon_Death
+    cast: 
+    projectile: 0
+    flies: 1
+  - creature: 28
+    prefab: {fileID: 6614815571029061146, guid: b4da1edd8f644c44e877cd23295a6ad1, type: 3}
+    height: 3.2
+    idle: 
+    walk: 
+    attack: 
+    shoot: 
+    hit: 
+    death: 
+    cast: 
+    projectile: 2
+    flies: 0
+  heroes:
+  - heroClass: 0
+    rider: {fileID: 7185989385131202857, guid: c01cae35423eb8a409b40aca64365de1, type: 3}
+    mount: {fileID: 6125165479025548474, guid: 859ead6c440088e468cd659f0e3fdf17, type: 3}
+    riderPose: Sit_Chair_Pose
+    riderCast: 
+    mountIdle: AnimalArmature|Idle
+    mountWalk: AnimalArmature|Walk
+    seat: {x: 0, y: 1.25, z: -0.05}
+  - heroClass: 1
+    rider: {fileID: 7079980357996893317, guid: faf434c22de6c4843a4aa0c090b4affe, type: 3}
+    mount: {fileID: 6397786942575525193, guid: bf764ae05638f344c9a0f1275081305c, type: 3}
+    riderPose: 
+    riderCast: CharacterArmature|Spell1
+    mountIdle: AnimalArmature|Idle
+    mountWalk: AnimalArmature|Walk
+    seat: {x: 0, y: 1.25, z: -0.05}
+  - heroClass: 2
+    rider: {fileID: 589177798621952018, guid: 78066c13989ef8d438dedfc4a83f5ddc, type: 3}
+    mount: {fileID: 1611164796877801568, guid: 9cc1a6961d585964fbc134d86b2b1273, type: 3}
+    riderPose: Sit_Chair_Pose
+    riderCast: 
+    mountIdle: AnimalArmature|Idle
+    mountWalk: AnimalArmature|Walk
+    seat: {x: 0, y: 1.25, z: -0.05}
+  - heroClass: 3
+    rider: {fileID: 1942135432987625364, guid: b416176bf4fbf384eaa9f3fa881ebf43, type: 3}
+    mount: {fileID: 6619066166259661333, guid: 04ed5b4176682e14280385d1a42ed507, type: 3}
+    riderPose: Sit_Chair_Pose
+    riderCast: Spellcast_Shoot
+    mountIdle: AnimalArmature|Idle
+    mountWalk: AnimalArmature|Walk
+    seat: {x: 0, y: 1.25, z: -0.05}
+  - heroClass: 4
+    rider: {fileID: 7891075294266216917, guid: 423dd6cc40c7c5e40a449a3d60fb42a0, type: 3}
+    mount: {fileID: 402039964768891731, guid: 1e1b7e2594739094d9dbe1adb7e75822, type: 3}
+    riderPose: Sit_Chair_Pose
+    riderCast: 
+    mountIdle: AnimalArmature|Idle
+    mountWalk: AnimalArmature|Walk
+    seat: {x: 0, y: 1.25, z: -0.05}
+  - heroClass: 5
+    rider: {fileID: 2914211965126988716, guid: d35f735bee1080b419a3c02f688ec653, type: 3}
+    mount: {fileID: 3189010490107203518, guid: 08aaca04ac6d0484ab6debb3873b6ff8, type: 3}
+    riderPose: 
+    riderCast: CharacterArmature|Spell1
+    mountIdle: AnimalArmature|Idle
+    mountWalk: AnimalArmature|Walk
+    seat: {x: 0, y: 1.25, z: -0.05}
+  objects:
+  - kind: 1
+    subtype: 0
+    prefab: {fileID: 524430483381157032, guid: 0c588632a96674342bd90458c73ca91e, type: 3}
+  - kind: 1
+    subtype: 1
+    prefab: {fileID: 7648758076791072312, guid: 8d9ae0ad668a986478b33614d141b6ed, type: 3}
+  - kind: 1
+    subtype: 2
+    prefab: {fileID: 8556007972263778086, guid: 067ae186effd3a745ae282e9a4194a8e, type: 3}
+  - kind: 1
+    subtype: 3
+    prefab: {fileID: 2699982706003961823, guid: cb8947e14b425b74692de4bcaa09c9cf, type: 3}
+  - kind: 1
+    subtype: 4
+    prefab: {fileID: 114364222211999187, guid: fed0b55b1a18c264b8632f8af953c916, type: 3}
+  - kind: 1
+    subtype: 5
+    prefab: {fileID: 6492446660109600434, guid: f05685938a856db4894fe79af1ecb21a, type: 3}
+  - kind: 1
+    subtype: 6
+    prefab: {fileID: 2820961628021046396, guid: c4b695d5426e4bc4c8faf73ce3461fab, type: 3}
+  - kind: 2
+    subtype: 0
+    prefab: {fileID: 4345738776015924824, guid: bdcfc552ccda7e94fa361fb41044bee4, type: 3}
+  - kind: 2
+    subtype: 1
+    prefab: {fileID: 8415159284689434359, guid: 0e1f5aa07625c554f855c765f51d44a3, type: 3}
+  - kind: 2
+    subtype: 2
+    prefab: {fileID: 2797217069757475258, guid: d49c70090091a3f448adf9823173e45d, type: 3}
+  - kind: 2
+    subtype: 3
+    prefab: {fileID: 4561406389091463543, guid: 147c77674ea045d459873c8eacef834c, type: 3}
+  - kind: 2
+    subtype: 4
+    prefab: {fileID: 969040655927095704, guid: 1b3817e3778e6bf4a86db6a0069bf7ed, type: 3}
+  - kind: 2
+    subtype: 5
+    prefab: {fileID: 1987618344834468692, guid: 6ef38137fb0641a4986fdba3afcd9784, type: 3}
+  - kind: 2
+    subtype: 6
+    prefab: {fileID: 4939174099100858306, guid: 01db76767823a924086147d0cf62820a, type: 3}
+  - kind: 3
+    subtype: -1
+    prefab: {fileID: 3205359307858516004, guid: 4e415f3dbd8c8724a8c1b77e45ec27c5, type: 3}
+  - kind: 4
+    subtype: -1
+    prefab: {fileID: 7295065123262734241, guid: 1c29da8571ba2464984220d2363c818e, type: 3}
+  - kind: 23
+    subtype: -1
+    prefab: {fileID: 7768010182890770037, guid: 894b4ca55566ce944acd42fec40d2f57, type: 3}
+  - kind: 8
+    subtype: -1
+    prefab: {fileID: 4833061087020111237, guid: 6c5f9dfa4236d4c47a46f0dcbc9ad208, type: 3}
+  - kind: 9
+    subtype: -1
+    prefab: {fileID: 3987291468516594143, guid: 6748d11c00a7fbc49ad919a6657093b7, type: 3}
+  - kind: 10
+    subtype: -1
+    prefab: {fileID: 4375757201703058916, guid: f603f8918d6528b40ba7048916e327a6, type: 3}
+  - kind: 11
+    subtype: -1
+    prefab: {fileID: 8350655591855816796, guid: 61a0b0a9f20a15942a26d74f0c67a940, type: 3}
+  - kind: 12
+    subtype: -1
+    prefab: {fileID: 8244883063320927488, guid: 29b9b7fa3be0a6b4ebd277a425a60821, type: 3}
+  - kind: 13
+    subtype: -1
+    prefab: {fileID: 625874001256164302, guid: adead38ae00004a45a4a02bf93422efa, type: 3}
+  - kind: 14
+    subtype: -1
+    prefab: {fileID: 7625867509786817815, guid: a74b6065adf4b30478319a8777781ff1, type: 3}
+  - kind: 15
+    subtype: -1
+    prefab: {fileID: 3415490393033882759, guid: eda80f3d455341f4d9801dc7521b7333, type: 3}
+  - kind: 16
+    subtype: -1
+    prefab: {fileID: 2908945781111257934, guid: 3e19c0bf959e8364d8c50cc4f2cc39b1, type: 3}
+  - kind: 17
+    subtype: -1
+    prefab: {fileID: 5304868698671208645, guid: 0ce86287d80b9d342ba78eaeba10c42f, type: 3}
+  - kind: 18
+    subtype: -1
+    prefab: {fileID: 7665788222599774967, guid: e170cc9e78cc2fb46a2e1747126f0499, type: 3}
+  - kind: 19
+    subtype: -1
+    prefab: {fileID: 3522432520533823333, guid: c37862eb6278e2f4eae841afb56497f1, type: 3}
+  - kind: 20
+    subtype: -1
+    prefab: {fileID: 4558486808459167238, guid: f660e7ef644b00845b2de4a8c543705c, type: 3}
+  - kind: 21
+    subtype: -1
+    prefab: {fileID: 7451749122281692675, guid: a94a514796b3c1f4b891c22465360230, type: 3}
+  - kind: 22
+    subtype: -1
+    prefab: {fileID: 6256167887695447685, guid: 7f00be78da8ff6643bae64b41bb19027, type: 3}
+  - kind: 7
+    subtype: -1
+    prefab: {fileID: 8095032272043950144, guid: 3802ac08d4b64f1408b793530b94bfa0, type: 3}
+  - kind: 7
+    subtype: 0
+    prefab: {fileID: 1218198152876810160, guid: 300548ccb2eedfd47b05032441319efe, type: 3}
+  - kind: 7
+    subtype: 1
+    prefab: {fileID: 1218198152876810160, guid: 300548ccb2eedfd47b05032441319efe, type: 3}
+  - kind: 7
+    subtype: 2
+    prefab: {fileID: 1218198152876810160, guid: 300548ccb2eedfd47b05032441319efe, type: 3}
+  - kind: 7
+    subtype: 3
+    prefab: {fileID: 1218198152876810160, guid: 300548ccb2eedfd47b05032441319efe, type: 3}
+  - kind: 7
+    subtype: 4
+    prefab: {fileID: 1218198152876810160, guid: 300548ccb2eedfd47b05032441319efe, type: 3}
+  - kind: 7
+    subtype: 5
+    prefab: {fileID: 1218198152876810160, guid: 300548ccb2eedfd47b05032441319efe, type: 3}
+  - kind: 7
+    subtype: 6
+    prefab: {fileID: 1218198152876810160, guid: 300548ccb2eedfd47b05032441319efe, type: 3}
+  - kind: 7
+    subtype: 7
+    prefab: {fileID: 5288017450466444008, guid: bb02fb36dcde8da4e86e99fcb1c484ad, type: 3}
+  - kind: 7
+    subtype: 8
+    prefab: {fileID: 5288017450466444008, guid: bb02fb36dcde8da4e86e99fcb1c484ad, type: 3}
+  - kind: 7
+    subtype: 9
+    prefab: {fileID: 5288017450466444008, guid: bb02fb36dcde8da4e86e99fcb1c484ad, type: 3}
+  - kind: 7
+    subtype: 10
+    prefab: {fileID: 5288017450466444008, guid: bb02fb36dcde8da4e86e99fcb1c484ad, type: 3}
+  - kind: 7
+    subtype: 11
+    prefab: {fileID: 5288017450466444008, guid: bb02fb36dcde8da4e86e99fcb1c484ad, type: 3}
+  - kind: 7
+    subtype: 12
+    prefab: {fileID: 5288017450466444008, guid: bb02fb36dcde8da4e86e99fcb1c484ad, type: 3}
+  - kind: 7
+    subtype: 13
+    prefab: {fileID: 5288017450466444008, guid: bb02fb36dcde8da4e86e99fcb1c484ad, type: 3}
+  - kind: 7
+    subtype: 14
+    prefab: {fileID: 5234184822772549667, guid: 012549dbf6dfb304b82b481f42f0a6a2, type: 3}
+  - kind: 7
+    subtype: 15
+    prefab: {fileID: 5234184822772549667, guid: 012549dbf6dfb304b82b481f42f0a6a2, type: 3}
+  - kind: 7
+    subtype: 16
+    prefab: {fileID: 5234184822772549667, guid: 012549dbf6dfb304b82b481f42f0a6a2, type: 3}
+  - kind: 7
+    subtype: 17
+    prefab: {fileID: 5234184822772549667, guid: 012549dbf6dfb304b82b481f42f0a6a2, type: 3}
+  - kind: 7
+    subtype: 18
+    prefab: {fileID: 5234184822772549667, guid: 012549dbf6dfb304b82b481f42f0a6a2, type: 3}
+  - kind: 7
+    subtype: 19
+    prefab: {fileID: 5234184822772549667, guid: 012549dbf6dfb304b82b481f42f0a6a2, type: 3}
+  - kind: 7
+    subtype: 20
+    prefab: {fileID: 5234184822772549667, guid: 012549dbf6dfb304b82b481f42f0a6a2, type: 3}
+  - kind: 5
+    subtype: 0
+    prefab: {fileID: 8856954968887935448, guid: 9f53493199b4cbf4a85f2b5505a16cf3, type: 3}
+  - kind: 5
+    subtype: 1
+    prefab: {fileID: 7346976467438862305, guid: d4d602163ca61e741ad183e3c79b246d, type: 3}
+  - kind: 5
+    subtype: 2
+    prefab: {fileID: 1377144840511857392, guid: a9f4780a7eb33c94996123f5707ee9af, type: 3}
+  - kind: 5
+    subtype: 3
+    prefab: {fileID: 1952083932357099807, guid: 258eb69ed08964e41b588bd1e2a2f2b5, type: 3}
+  - kind: 5
+    subtype: 4
+    prefab: {fileID: 8532811214691373705, guid: b24697b4917d9d1489d45fb81b05a405, type: 3}
+  - kind: 5
+    subtype: 5
+    prefab: {fileID: 2845478752679380232, guid: a6ae3e7776222cf4c905daa5500a3534, type: 3}
+  - kind: 5
+    subtype: 6
+    prefab: {fileID: 1423639465955942500, guid: f1d52b74d99114c429ea6047191013a7, type: 3}
+  - kind: 5
+    subtype: 7
+    prefab: {fileID: 7694185342459370936, guid: b87a03486cabca342b264016d59dae81, type: 3}
+  - kind: 5
+    subtype: 8
+    prefab: {fileID: 8659662946524076446, guid: 29ebe902541507e4286bbfdeed77b684, type: 3}
+  - kind: 5
+    subtype: 9
+    prefab: {fileID: 8532811214691373705, guid: b24697b4917d9d1489d45fb81b05a405, type: 3}
+  - kind: 5
+    subtype: 10
+    prefab: {fileID: 2845478752679380232, guid: a6ae3e7776222cf4c905daa5500a3534, type: 3}
+  - kind: 5
+    subtype: 11
+    prefab: {fileID: 6314033846341537332, guid: a72649d15be90744db4b626945f0eebb, type: 3}
+  - kind: 5
+    subtype: 12
+    prefab: {fileID: 3923899265104713512, guid: 690a77fda198d5c4f9194976cb0bb581, type: 3}
+  - kind: 5
+    subtype: 13
+    prefab: {fileID: 5441341345116813456, guid: 0b93c5de398d0864d93a4bac7c8802a1, type: 3}
+  - kind: 5
+    subtype: 14
+    prefab: {fileID: 4293300568357346478, guid: 7a92183afb390094980da93219ca506b, type: 3}
+  - kind: 5
+    subtype: 15
+    prefab: {fileID: 8437576588908928352, guid: 78b2383dd92a5f74e83f65de02f0c671, type: 3}
+  - kind: 5
+    subtype: 16
+    prefab: {fileID: 3034988149243990447, guid: ac119cc31ede4ba49bd84629d20c9a23, type: 3}
+  - kind: 5
+    subtype: 17
+    prefab: {fileID: 1765427644474879546, guid: e594f09e67a110d4889d2c83cdcc4fe4, type: 3}
+  - kind: 5
+    subtype: 18
+    prefab: {fileID: 5002204512470438474, guid: 1de4168e488c5b649bea849d413c6a91, type: 3}
+  - kind: 5
+    subtype: 19
+    prefab: {fileID: 7772304488388987992, guid: a91081978a5ec0a4b908c5dabac06aaa, type: 3}
+  - kind: 5
+    subtype: 20
+    prefab: {fileID: 5706107555964331620, guid: 66207b4157adbfd4c964d704de39abae, type: 3}
+  - kind: 5
+    subtype: 21
+    prefab: {fileID: 7387938319287826784, guid: 8e8680a24c8a0084ca3c882a78fb062c, type: 3}
+  - kind: 5
+    subtype: 22
+    prefab: {fileID: 4421704811980664231, guid: d0e14718d9b276948bf817911423d4df, type: 3}
+  - kind: 5
+    subtype: 23
+    prefab: {fileID: 1954902485065749962, guid: 1ae3bd724b9a1df438332002d273a4e5, type: 3}
+  - kind: 5
+    subtype: -1
+    prefab: {fileID: 7387938319287826784, guid: 8e8680a24c8a0084ca3c882a78fb062c, type: 3}
+  towns:
+  - faction: 0
+    byColor:
+    - {fileID: 1553499969915674461, guid: 04a13ca8536b3f54c9519b1fe5a88e6b, type: 3}
+    - {fileID: 3195070696810013810, guid: 38829a37089734e4f830808b01efa9ee, type: 3}
+    - {fileID: 6999906140799295377, guid: 1372e6c8146f4b544b2ff46590580ce9, type: 3}
+    - {fileID: 2552014437747552117, guid: 384b007559bf3d4448532da21c0fe4ab, type: 3}
+    - {fileID: 5297301615394293193, guid: 125cdaf96eb93434d97e777c6b49fdf8, type: 3}
+  - faction: 1
+    byColor:
+    - {fileID: 2662438901501097048, guid: 49276f39c17929d47b1b349ca5a08b6f, type: 3}
+    - {fileID: 2443177651518513427, guid: 0cd0940d67672d34a9ff1cb53b010261, type: 3}
+    - {fileID: 172864171929351329, guid: d7a3452e51981724f8bd3d0a6e12e608, type: 3}
+    - {fileID: 2253106007185527374, guid: 531aa7c71c4fbfd4fa441b77ebfcd50b, type: 3}
+    - {fileID: 3381485682369078514, guid: d276bbaa1b47cd94abb931386eb60fcc, type: 3}
+  - faction: 2
+    byColor:
+    - {fileID: 167971284260694362, guid: 49c8f1ff0d956604aaabf4ce2ab73f51, type: 3}
+    - {fileID: 8151219331210687250, guid: 811b16ab8a1d26d44954557b9ac0ec9d, type: 3}
+    - {fileID: 931321147208238096, guid: a1625d316080c0144bf6fc1c62f86fd4, type: 3}
+    - {fileID: 2674978364559025194, guid: 4ffd68c3a26ded94ba334b06d6eb1919, type: 3}
+    - {fileID: 5155502207296877806, guid: e94f0639f39aabb44b0b725176a28c48, type: 3}
+  flags:
+  - {fileID: 2000074774737158290, guid: 2acca9c9f26d6354e8af227c5420e976, type: 3}
+  - {fileID: 8972715249808039322, guid: 0e4a3e891b6612d4c9d0ba942020cedf, type: 3}
+  - {fileID: 2635069753735991317, guid: c8c5c864ad01b734da31cff74ffabbb6, type: 3}
+  - {fileID: 7349162406971868150, guid: fcf84898cc3685c468ddfb3e8c7da00f, type: 3}
+  - {fileID: 5549132977549609091, guid: 22cb7664a021fe54899127d895433fda, type: 3}
+  towers:
+  - {fileID: 7938971170935660918, guid: 5ee6e4fa734b04a41913d9ba82b17ca3, type: 3}
+  - {fileID: 4454232123546030793, guid: 7344954f466a0a94f9bbe1c1e4a28c80, type: 3}
+  - {fileID: 8691261928802302843, guid: f5eb49b9b59e6db4b97f900bb779db37, type: 3}
+  - {fileID: 2847436450488436232, guid: 3293483d694a28b4eae799dde63e4dbe, type: 3}
+  - {fileID: 4216241405725090923, guid: 59230b1464fd81842acad9fd65321e1e, type: 3}
+  forestTrees:
+  - {fileID: 7784920892319769565, guid: ae13ebb0d31a496478d95cb2ad13be1a, type: 3}
+  - {fileID: 3750810192666415599, guid: 95a04199658e4b94e87fa1f2daf845a9, type: 3}
+  - {fileID: 3343034597253489639, guid: f4c7e1ee36c60cd43a59e1c89be3074a, type: 3}
+  - {fileID: 4529657470511054361, guid: b5556921cb82c32479fea08f2f139ea1, type: 3}
+  - {fileID: 246328234892624852, guid: 026196dfd132a4941b117ce4b2fbf5c7, type: 3}
+  - {fileID: 5707677642489984806, guid: e6c6616e3d11bd444a4b54375ba2a6e3, type: 3}
+  pineTrees:
+  - {fileID: 8100086105277432163, guid: 6a6e65508f7cd39499d6d1b511c1fe10, type: 3}
+  - {fileID: 451575489106818390, guid: 5a75ce715cafa954d8bc59a03b12f02d, type: 3}
+  - {fileID: 2062729221959707870, guid: 54f214b209a7d02439353d9527896ddf, type: 3}
+  - {fileID: 2707022857980417647, guid: 030235d5daf4f0546acf3f85ca08007c, type: 3}
+  deadTrees:
+  - {fileID: 1871806545841436963, guid: 63d72161b4a069940a8a315ae1d40165, type: 3}
+  - {fileID: 2120197698632053954, guid: 305c7c6639f07e946a3ac3af80f41a51, type: 3}
+  - {fileID: 6992593980606152178, guid: 91e14df853803a04c83a97fb82c3f55c, type: 3}
+  mountains:
+  - {fileID: 3627671917489331561, guid: 37c0691d0cce2394989af55724f4632f, type: 3}
+  - {fileID: 8332135961138343863, guid: a5b7671ac1869ce489a7863d2f94d872, type: 3}
+  - {fileID: 6649213555477893348, guid: 0c170cf7dc4da0645967d3de36b8d891, type: 3}
+  rocks:
+  - {fileID: 490197716432112676, guid: 4c32cb5958150fd45ae5091217b991bb, type: 3}
+  - {fileID: 2968984694355617070, guid: cebdeaf27c16ede47be9bd410d051f6e, type: 3}
+  - {fileID: 3500538230454556020, guid: 69199c29d22606a47ad1a06937a4ee88, type: 3}
+  - {fileID: 3311074407583733092, guid: 62bea3b6ec692b149a3cccb7adc30b1a, type: 3}
+  - {fileID: 4737433535830507155, guid: 5b45becf8038d044c9f34620a3137a49, type: 3}
+  waterPlants:
+  - {fileID: 3869814556116799102, guid: bab2ae2f73993434facb06bc90284e2e, type: 3}
+  - {fileID: 8061903709449300506, guid: a8e6ff6742769f844b0babc8a27c2a9f, type: 3}
+  - {fileID: 3649434958946112557, guid: 09b444ea3033a7844ae3ee07bc7c886f, type: 3}
+  - {fileID: 9023613156409333477, guid: 429f9069218afa043be207d7d50f5611, type: 3}
+  - {fileID: 4515957068521112033, guid: 6e8b8b710faeed849ba9b3c0bc8f2ee2, type: 3}
+  layers:
+  - {fileID: 8574412962073106934, guid: f39baea71444e9f4fb12e6e413c7a854, type: 2}
+  - {fileID: 8574412962073106934, guid: dc1ec2eb2b986864681e0897a9891678, type: 2}
+  - {fileID: 8574412962073106934, guid: 03d203bb5e9d879468d2b3e663fcba75, type: 2}
+  - {fileID: 8574412962073106934, guid: 3166a26ad7593e94891dc8685e17160d, type: 2}
+  - {fileID: 8574412962073106934, guid: 3a113d51a59ec8e43b8da26d983a97f9, type: 2}
+  - {fileID: 8574412962073106934, guid: eceb75e39266c2747816849b53dcf549, type: 2}
+  - {fileID: 8574412962073106934, guid: 2921145a2249f25488161c4269246629, type: 2}
+  - {fileID: 8574412962073106934, guid: b89a2ea20c769c043b6c76bd10062fbd, type: 2}
+  - {fileID: 8574412962073106934, guid: 91a271e51e9d88c40b8e97d8dd301f7b, type: 2}
+  - {fileID: 8574412962073106934, guid: 1c72e3a24f50bd34fa3b76b35941066c, type: 2}
+  ground: {fileID: 2100000, guid: e31e65a354b4488498f1456856bd6c66, type: 2}
+  water: {fileID: 2100000, guid: a6b7d2f480f971944a0a879c872d577b, type: 2}
+  fog: {fileID: 2100000, guid: 18d46064c144bf240a98784d3052a881, type: 2}
+  marker: {fileID: 2100000, guid: 5c521866d4982c84ead67e75d7015e79, type: 2}
+  ring: {fileID: 2100000, guid: e8cb7aa0f2aaf2d4da32659c7cd9bce6, type: 2}
+  arrow: {fileID: 3672316543905953058, guid: f79053369bd7eaf4a99e5534930d7f1f, type: 3}
+  bolt: {fileID: 9213585457298056066, guid: be46ba08991cdeb4b8aa24fafb0ae317, type: 3}
+  titleFont: {fileID: 11400000, guid: 93826eed20d40714482a7216b0472240, type: 2}
+  bodyFont: {fileID: 11400000, guid: bc5e36c3e29424c45b10ea02aec06869, type: 2}
+  frame: {fileID: 21300000, guid: 709765947a92ea14fbb0e4a32dafc038, type: 3}
+  panel: {fileID: 21300000, guid: 5670255104ced6f4fa0c237cb8efdaa3, type: 3}
+  parchment: {fileID: 21300000, guid: dd6226347529ccd46a945c33776301d0, type: 3}
+  button: {fileID: 21300000, guid: b16bb5c5b38605747b1bcdd9c7e6785f, type: 3}
+  buttonHover: {fileID: 21300000, guid: 225c8afcc0a422b45b046d0c0807a32f, type: 3}
+  buttonPressed: {fileID: 21300000, guid: c6bd2b2365c77854eb6a8fc068668151, type: 3}
+  slot: {fileID: 21300000, guid: 7420fd0cd72874d478d28969cb729cc8, type: 3}
+  bar: {fileID: 21300000, guid: 177850a1aaa112b468189c73364ba91e, type: 3}
+  round: {fileID: 21300000, guid: 92f4c0a528e3782429c4055971e30bdb, type: 3}
+  glow: {fileID: 21300000, guid: ddf392820885fa844bf57ea628f980f5, type: 3}
+  star: {fileID: 21300000, guid: 213e99832d092d0459e6ad94952d17aa, type: 3}
+  starEmpty: {fileID: 21300000, guid: bbe44a733ec4b37439b09754dda450e1, type: 3}
+  banner: {fileID: 21300000, guid: 0e8425e69f3c4f54aa8b125ced92ef1d, type: 3}
+  titleArt: {fileID: 0}
+  resourceIcons:
+  - {fileID: 21300000, guid: 2473e4a8ed9d1304daf03425c78ed1f7, type: 3}
+  - {fileID: 21300000, guid: 6eed70f1d91e6844bba64e21c362d380, type: 3}
+  - {fileID: 21300000, guid: 4c9426a51daf0b0498db7c69e50f38a8, type: 3}
+  - {fileID: 21300000, guid: b5d9c0a95616e4546bb4d251c9e6401e, type: 3}
+  - {fileID: 21300000, guid: 163d9d39b5e3be541b77a5a01ad5da9f, type: 3}
+  - {fileID: 21300000, guid: 4daa82a1b85b2f043a14b51cb393cfa0, type: 3}
+  - {fileID: 21300000, guid: 0ec5ec32591d2054384070b0c503d1f2, type: 3}
+  statIcons:
+  - {fileID: 21300000, guid: 4cde00d454f7160409ec40b5e1302a52, type: 3}
+  - {fileID: 21300000, guid: 26b991852ed7306478df1e38810a24ca, type: 3}
+  - {fileID: 21300000, guid: 62288ec0768244f45aa935eca594a1ef, type: 3}
+  - {fileID: 21300000, guid: 3ed859a371611e94da245b5b6cb72017, type: 3}
+  skillIcons:
+  - {fileID: 21300000, guid: a8280e5997b845f49b581b0ae5faf649, type: 3}
+  - {fileID: 21300000, guid: a9492e2e4936cc34890b9d346b7adb4a, type: 3}
+  - {fileID: 21300000, guid: 884996ecd7ee25b43976c2fcb4b9599a, type: 3}
+  - {fileID: 21300000, guid: ee366d06d3a8352438e11976db9436ae, type: 3}
+  - {fileID: 21300000, guid: c86e4376937cb4b4faeffde07c256c13, type: 3}
+  - {fileID: 21300000, guid: 11cc909d01c0da4408f5adeddba8225e, type: 3}
+  - {fileID: 21300000, guid: f1e6e8754a3595c4d861e808348ad30f, type: 3}
+  - {fileID: 21300000, guid: b88890668f663e545bd0356cd5cd5d82, type: 3}
+  - {fileID: 21300000, guid: 15a8b094e3197f44bad753086db71c86, type: 3}
+  - {fileID: 21300000, guid: 22ae71a4047b6724e83bc9c8f6b69dcc, type: 3}
+  - {fileID: 21300000, guid: 79e58cb6943a09546941f872456cab9d, type: 3}
+  - {fileID: 21300000, guid: 24a31a902acc5a149840fb3324c0cdb0, type: 3}
+  - {fileID: 21300000, guid: 23ca4a679e583034c8d6355cebbd3b9c, type: 3}
+  spellIcons:
+  - {fileID: 21300000, guid: 83e07ade4c0e31b4897306002a7bb689, type: 3}
+  - {fileID: 21300000, guid: 5b1dea55c9436864da77160b29ac325f, type: 3}
+  - {fileID: 21300000, guid: e1a7df10eb8dc06449a64efc878db9f1, type: 3}
+  - {fileID: 21300000, guid: 8ec764d47b0be1b4ba032fe2f11b6dc6, type: 3}
+  - {fileID: 21300000, guid: f2ff92359c0db3a4e9086496adaba744, type: 3}
+  - {fileID: 21300000, guid: 5dfd765220adc244f993a5de0fe1e3ed, type: 3}
+  - {fileID: 21300000, guid: dc04178c2bee29945b804492663d6537, type: 3}
+  - {fileID: 21300000, guid: d7bba02607d8c3644843552e9cbf1028, type: 3}
+  - {fileID: 21300000, guid: ad6e0e24aed233f48878430e9e364da3, type: 3}
+  - {fileID: 21300000, guid: dad4a2ccdb13b4b448835edca97b764f, type: 3}
+  - {fileID: 21300000, guid: 56a450c2b7734554aa0d8525cd9eefaa, type: 3}
+  - {fileID: 21300000, guid: c8206d9ef52d52940aae68e02c4160ac, type: 3}
+  - {fileID: 21300000, guid: 27a88853fb320254398fc161ddff2217, type: 3}
+  - {fileID: 21300000, guid: 95470e47be2bdcf4e913b08a9b0d4a0e, type: 3}
+  - {fileID: 21300000, guid: 3e48f51f29e98344392d2d62ecee5bf8, type: 3}
+  - {fileID: 21300000, guid: 23b1552a74168d04ca82766e873bad27, type: 3}
+  - {fileID: 21300000, guid: d69c63b43d86dae42845b9d58626ef2f, type: 3}
+  artifactIcons:
+  - {fileID: 21300000, guid: af42fa954c6ac544f97d843ea23280f7, type: 3}
+  - {fileID: 21300000, guid: 88d342763f08436429489c33a7c97281, type: 3}
+  - {fileID: 0}
+  - {fileID: 21300000, guid: 2a5ac907b3ba88b4e81d6e0382f9b6e9, type: 3}
+  - {fileID: 21300000, guid: 51f77ffd6e1bbdc48ab524c038a2b169, type: 3}
+  - {fileID: 21300000, guid: 2bc98b0bbb78e084eb25b8877125e488, type: 3}
+  - {fileID: 21300000, guid: b68f7c4f4e84a79478d5521a8a921335, type: 3}
+  - {fileID: 21300000, guid: 5078cdb0ef5096749a419247453de4ef, type: 3}
+  - {fileID: 21300000, guid: fe9c27ac40981b64e82d5ccae6f1d655, type: 3}
+  - {fileID: 21300000, guid: 51f77ffd6e1bbdc48ab524c038a2b169, type: 3}
+  - {fileID: 21300000, guid: 2bc98b0bbb78e084eb25b8877125e488, type: 3}
+  - {fileID: 21300000, guid: 1f545495501fe6f48a46a2fbc58ef181, type: 3}
+  - {fileID: 21300000, guid: f42dc0c1299996146856715e7eff45c2, type: 3}
+  - {fileID: 21300000, guid: df790a61d67cf564fa7896e100929eee, type: 3}
+  - {fileID: 21300000, guid: b7f52bbc717535a41bd8c716a705e07c, type: 3}
+  - {fileID: 21300000, guid: 72797374f06af0947a5c50bab467d7d0, type: 3}
+  - {fileID: 21300000, guid: 1cbbba1515b055642b0125a5039a3542, type: 3}
+  - {fileID: 21300000, guid: 4eb41018ed2c5254281efd99fdd67b26, type: 3}
+  - {fileID: 21300000, guid: 2cd7b14fe199f464a9f0b229599603e1, type: 3}
+  - {fileID: 21300000, guid: ec35dc6f889194848a9aeae90c442e4b, type: 3}
+  - {fileID: 21300000, guid: 61345add7a0902b47b80055b7db10bf1, type: 3}
+  - {fileID: 21300000, guid: 7ab9eaf6fcb6eb1459437aba9909921d, type: 3}
+  - {fileID: 21300000, guid: 7378ff6179c38b141aecb22ec45071a6, type: 3}
+  - {fileID: 21300000, guid: 01b5e41a1f6e9364db1acc5b284848e2, type: 3}
+  icons:
+  - {fileID: 21300000, guid: 1e7aeb0feaa077a45b992a7a09eacf9c, type: 3}
+  - {fileID: 21300000, guid: a59c12ae39d739f428fd1dffced77083, type: 3}
+  - {fileID: 21300000, guid: a4f0e22525643af4ea21885f524c09ff, type: 3}
+  - {fileID: 21300000, guid: 5f893d0e97b42a449b5c6b701e5b08a1, type: 3}
+  - {fileID: 21300000, guid: 9c3a1ce449bef284ab197538f42c7a4f, type: 3}
+  - {fileID: 21300000, guid: 8ee397d5360070740bb8ff6285e63980, type: 3}
+  - {fileID: 21300000, guid: 4daa82a1b85b2f043a14b51cb393cfa0, type: 3}
+  - {fileID: 21300000, guid: 3a9c2a023e44cf348abea2d5c3776edc, type: 3}
+  - {fileID: 21300000, guid: 4a01cffce8c13984dbf7d9297691116a, type: 3}
+  - {fileID: 21300000, guid: f51d08acc0d70c94bbedc36afaa165c2, type: 3}
+  - {fileID: 21300000, guid: 831d771923d65e342ac4da89bde4b05f, type: 3}
+  - {fileID: 21300000, guid: 2d7de48b16eb122469c60c56f46a3f95, type: 3}
+  - {fileID: 21300000, guid: 3d235f3537f7d9e47b1c204dfb72b2ed, type: 3}
+  - {fileID: 21300000, guid: c6a47502409247043a97d05dc6694bac, type: 3}
+  - {fileID: 21300000, guid: 0ec5ec32591d2054384070b0c503d1f2, type: 3}
+  - {fileID: 21300000, guid: 2473e4a8ed9d1304daf03425c78ed1f7, type: 3}
+  - {fileID: 21300000, guid: f016dfdafae761842b58a9cec7527456, type: 3}
+  - {fileID: 21300000, guid: f588f9b6543e2a84788a89321a961005, type: 3}
+  - {fileID: 21300000, guid: 937acd58bf3318d409f0ee4c368c0e6e, type: 3}
+  - {fileID: 21300000, guid: 2333e5ef15ebc6141bcd33cb91b1aac4, type: 3}
+  - {fileID: 21300000, guid: bae42fe2eaedce0468705c483bc888d5, type: 3}
+  - {fileID: 21300000, guid: 928cbd1773fdd5747aaa49db7815490c, type: 3}
+  - {fileID: 21300000, guid: 2294e31c6c589414485f035facf8d276, type: 3}
+  - {fileID: 21300000, guid: cc7606c75e4ffdc47b723e2a80bae840, type: 3}
+  - {fileID: 21300000, guid: a8e4dc8a220bc184fac7963261422e44, type: 3}
+  - {fileID: 21300000, guid: de1c0892ab692f641aa6ad950423ac51, type: 3}
+  - {fileID: 21300000, guid: 28ed7cbbfe1efd0499b63329783b3099, type: 3}
+  - {fileID: 21300000, guid: a3f01afdd3c96114eb6344062dbf6465, type: 3}
+  - {fileID: 21300000, guid: b5d9c0a95616e4546bb4d251c9e6401e, type: 3}
+  - {fileID: 21300000, guid: c063f7c12fb9c8548afab0016d3c72ef, type: 3}
+  - {fileID: 21300000, guid: 860970e85cead2a4aa03520d6699b62a, type: 3}
+  - {fileID: 21300000, guid: 7e8980fea113c2447b50243aadccb83d, type: 3}
+  - {fileID: 21300000, guid: 6f6915e798a3e8a4ba26b46516d0b6dd, type: 3}
+  - {fileID: 21300000, guid: 697867033ae3b7e4080e90a318b74436, type: 3}
+  - {fileID: 21300000, guid: 4c9426a51daf0b0498db7c69e50f38a8, type: 3}
+  - {fileID: 21300000, guid: 1ea2c87803d24a44ebb0375e6703ebae, type: 3}
+  - {fileID: 21300000, guid: 6379e24cf31157148909373144cb3762, type: 3}
+  - {fileID: 21300000, guid: 2d19a6f5920fda043a9c4f5009f741c9, type: 3}
+  - {fileID: 21300000, guid: 6140e81e119f74249b802a50791d3987, type: 3}
+  - {fileID: 21300000, guid: 884996ecd7ee25b43976c2fcb4b9599a, type: 3}
+  - {fileID: 21300000, guid: a9492e2e4936cc34890b9d346b7adb4a, type: 3}
+  - {fileID: 21300000, guid: 24a31a902acc5a149840fb3324c0cdb0, type: 3}
+  - {fileID: 21300000, guid: 22ae71a4047b6724e83bc9c8f6b69dcc, type: 3}
+  - {fileID: 21300000, guid: ee366d06d3a8352438e11976db9436ae, type: 3}
+  - {fileID: 21300000, guid: 79e58cb6943a09546941f872456cab9d, type: 3}
+  - {fileID: 21300000, guid: 15a8b094e3197f44bad753086db71c86, type: 3}
+  - {fileID: 21300000, guid: 23ca4a679e583034c8d6355cebbd3b9c, type: 3}
+  - {fileID: 21300000, guid: a8280e5997b845f49b581b0ae5faf649, type: 3}
+  - {fileID: 21300000, guid: c86e4376937cb4b4faeffde07c256c13, type: 3}
+  - {fileID: 21300000, guid: 11cc909d01c0da4408f5adeddba8225e, type: 3}
+  - {fileID: 21300000, guid: b88890668f663e545bd0356cd5cd5d82, type: 3}
+  - {fileID: 21300000, guid: f1e6e8754a3595c4d861e808348ad30f, type: 3}
+  - {fileID: 21300000, guid: 5c219f4ee3ab8374ead6a1fd46fb4a78, type: 3}
+  - {fileID: 21300000, guid: e26363a7e1c19f8429c8a59215b79d9c, type: 3}
+  - {fileID: 21300000, guid: 27a88853fb320254398fc161ddff2217, type: 3}
+  - {fileID: 21300000, guid: 5b1dea55c9436864da77160b29ac325f, type: 3}
+  - {fileID: 21300000, guid: d7bba02607d8c3644843552e9cbf1028, type: 3}
+  - {fileID: 21300000, guid: e1a7df10eb8dc06449a64efc878db9f1, type: 3}
+  - {fileID: 21300000, guid: ad6e0e24aed233f48878430e9e364da3, type: 3}
+  - {fileID: 21300000, guid: c8206d9ef52d52940aae68e02c4160ac, type: 3}
+  - {fileID: 21300000, guid: 8ec764d47b0be1b4ba032fe2f11b6dc6, type: 3}
+  - {fileID: 21300000, guid: 56a450c2b7734554aa0d8525cd9eefaa, type: 3}
+  - {fileID: 21300000, guid: d69c63b43d86dae42845b9d58626ef2f, type: 3}
+  - {fileID: 21300000, guid: dc04178c2bee29945b804492663d6537, type: 3}
+  - {fileID: 21300000, guid: 83e07ade4c0e31b4897306002a7bb689, type: 3}
+  - {fileID: 21300000, guid: 3e48f51f29e98344392d2d62ecee5bf8, type: 3}
+  - {fileID: 21300000, guid: 95470e47be2bdcf4e913b08a9b0d4a0e, type: 3}
+  - {fileID: 21300000, guid: 23b1552a74168d04ca82766e873bad27, type: 3}
+  - {fileID: 21300000, guid: f2ff92359c0db3a4e9086496adaba744, type: 3}
+  - {fileID: 21300000, guid: 5dfd765220adc244f993a5de0fe1e3ed, type: 3}
+  - {fileID: 21300000, guid: dad4a2ccdb13b4b448835edca97b764f, type: 3}
+  - {fileID: 21300000, guid: 66c2797557c9de14488d4a98e1d4cc25, type: 3}
+  - {fileID: 21300000, guid: 4cde00d454f7160409ec40b5e1302a52, type: 3}
+  - {fileID: 21300000, guid: 26b991852ed7306478df1e38810a24ca, type: 3}
+  - {fileID: 21300000, guid: 3ed859a371611e94da245b5b6cb72017, type: 3}
+  - {fileID: 21300000, guid: 62288ec0768244f45aa935eca594a1ef, type: 3}
+  - {fileID: 21300000, guid: 163d9d39b5e3be541b77a5a01ad5da9f, type: 3}
+  - {fileID: 21300000, guid: efdfaffcd2b1b154bbfccd5dab855004, type: 3}
+  - {fileID: 21300000, guid: 56a10ee29e68ba743a680deb27711e01, type: 3}
+  - {fileID: 21300000, guid: b40b6be772e823d459f70a26bade0b9b, type: 3}
+  - {fileID: 21300000, guid: 6eed70f1d91e6844bba64e21c362d380, type: 3}
+  iconNames:
+  - attack
+  - auto
+  - battle
+  - build
+  - chest
+  - close
+  - crystal
+  - damage
+  - death
+  - defend
+  - end_turn
+  - exit
+  - experience
+  - flag
+  - gems
+  - gold
+  - hand
+  - health
+  - hero
+  - hire
+  - info
+  - kingdom
+  - load
+  - luck
+  - mana
+  - map
+  - market
+  - menu
+  - mercury
+  - monster
+  - morale
+  - move
+  - movement
+  - next_hero
+  - ore
+  - quest
+  - retreat
+  - save
+  - shoot
+  - skill_archery
+  - skill_armorer
+  - skill_estates
+  - skill_leadership
+  - skill_logistics
+  - skill_luck
+  - skill_mysticism
+  - skill_necromancy
+  - skill_offense
+  - skill_pathfinding
+  - skill_scouting
+  - skill_sorcery
+  - skill_wisdom
+  - sleep
+  - speed
+  - spell_animate_dead
+  - spell_bless
+  - spell_bloodlust
+  - spell_cure
+  - spell_curse
+  - spell_fireball
+  - spell_haste
+  - spell_ice_bolt
+  - spell_implosion
+  - spell_lightning_bolt
+  - spell_magic_arrow
+  - spell_meteor_shower
+  - spell_prayer
+  - spell_resurrection
+  - spell_slow
+  - spell_stone_skin
+  - spell_weakness
+  - spellbook
+  - stat_attack
+  - stat_defense
+  - stat_knowledge
+  - stat_power
+  - sulfur
+  - swap
+  - trophy
+  - wait
+  - wood
+  cursors: []
+  menuMusic: {fileID: 8300000, guid: dc0de3fb0517b774c8b10c20db4a2e54, type: 3}
+  adventureMusic:
+  - {fileID: 8300000, guid: 8a7c6d2e30474c14a93b9b16a24034ff, type: 3}
+  - {fileID: 8300000, guid: 76ccec5a3dbdd2347aa402cbc772ba27, type: 3}
+  - {fileID: 8300000, guid: dbc4dac5b0dbf4447b6cd6019bbf2376, type: 3}
+  battleMusic:
+  - {fileID: 8300000, guid: ca8b18f9be044354e9f248d2d22277bd, type: 3}
+  - {fileID: 8300000, guid: 848d052c2a46ffb49b8cfd38e5106a18, type: 3}
+  townMusic:
+  - {fileID: 8300000, guid: bc48ff142c5c1364e8c94a5de6558e3d, type: 3}
+  - {fileID: 8300000, guid: 65a88139fcbf76c429eafb7a2865eb3d, type: 3}
+  - {fileID: 8300000, guid: 848d052c2a46ffb49b8cfd38e5106a18, type: 3}
+  victoryMusic: {fileID: 8300000, guid: dc0de3fb0517b774c8b10c20db4a2e54, type: 3}
+  defeatMusic: {fileID: 8300000, guid: 65a88139fcbf76c429eafb7a2865eb3d, type: 3}
+  sounds:
+  - {fileID: 8300000, guid: c9cdad0d53754a14b9983101cafc6fc1, type: 3}
+  - {fileID: 8300000, guid: 9121958a686657c4aa1bc41007c7ba0a, type: 3}
+  - {fileID: 8300000, guid: 9af59512d6267c242a64f993ec3b81e0, type: 3}
+  - {fileID: 8300000, guid: bdc914dc678b3eb49b010bd5f331ac1b, type: 3}
+  - {fileID: 8300000, guid: a784d2f9cdde8d34b9454f98d004987d, type: 3}
+  - {fileID: 8300000, guid: 3a50bc4de09310e4ab7bdc9fde2c1e8a, type: 3}
+  - {fileID: 8300000, guid: b01398efa6a478d459c347e19466cbcb, type: 3}
+  - {fileID: 8300000, guid: f8eb166d8083a3a4a9ec8a02c4300e20, type: 3}
+  - {fileID: 8300000, guid: b4348a6e826e61a459d714ee88c9c535, type: 3}
+  - {fileID: 8300000, guid: 53854ba541a30b942afc05d103d94d80, type: 3}
+  - {fileID: 8300000, guid: 86154a69a278c28458cda7fa3e7dbe70, type: 3}
+  - {fileID: 8300000, guid: 38aa9f6889e33ad4d83613c55769db62, type: 3}
+  - {fileID: 8300000, guid: 53d5ee1b5c5628448b68110cecf8a296, type: 3}
+  - {fileID: 8300000, guid: 8696c6f8853c11840bc52a2cd623a3f1, type: 3}
+  - {fileID: 8300000, guid: 4cdab708ba95ff74283f9079d57c1306, type: 3}
+  - {fileID: 8300000, guid: 8473024d576f0744dad5b0223c4143b9, type: 3}
+  - {fileID: 8300000, guid: 96a3be610d754a6408a7afd56769d578, type: 3}
+  - {fileID: 8300000, guid: 6735b03ddacc797418e16ee6ca06fe0c, type: 3}
+  - {fileID: 8300000, guid: fd23bda2cddaa6a4a97873cbdfcf137d, type: 3}
+  - {fileID: 8300000, guid: 49845f414c11f814b99629523b99d52a, type: 3}
+  - {fileID: 8300000, guid: 815d876a8cc3b5d4ab0608a19b816b81, type: 3}
+  - {fileID: 8300000, guid: 44366a540be7cec4a81b4390de5f0e2d, type: 3}
+  - {fileID: 8300000, guid: 7bf4b31b4282c1b42828abae93e563b7, type: 3}
+  - {fileID: 8300000, guid: 8549ad33ec5acad47a6987d73bf96077, type: 3}
+  - {fileID: 8300000, guid: 5c9a66621e670c641b699ed262c13a5f, type: 3}
+  - {fileID: 8300000, guid: 9390b19ba2cf8a04b8e8df0085184770, type: 3}
+  - {fileID: 8300000, guid: 50d2798b21ab16240b8be484e77ffd83, type: 3}
+  - {fileID: 8300000, guid: d4247c48260de0742ab6605946221406, type: 3}
+  - {fileID: 8300000, guid: 5701e8bfd01c46b4bbe168c7b552013d, type: 3}
+  - {fileID: 8300000, guid: a0607d80d01e1414fa713ea75b6aa7e5, type: 3}
