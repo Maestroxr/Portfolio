@@ -20,6 +20,28 @@ namespace Portfolio.Heroes.EditorTools
         [MenuItem("Heroes/Contact Sheets", false, 40)]
         public static void All()
         {
+            // The sheets are laid out in scenes of their own, so the open scene is saved first if the user wants, and
+            // opened again afterwards.
+            if (!Application.isBatchMode && !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+            {
+                return;
+            }
+            string open = UnityEngine.SceneManagement.SceneManager.GetActiveScene().path;
+            try
+            {
+                Sheets();
+            }
+            finally
+            {
+                if (!string.IsNullOrEmpty(open))
+                {
+                    EditorSceneManager.OpenScene(open, OpenSceneMode.Single);
+                }
+            }
+        }
+
+        private static void Sheets()
+        {
             HeroesArt art = HeroesAssets.Require<HeroesArt>("Art/HeroesArt.asset");
             Sheet("units", art.units.Select(unit => (unit.prefab, unit.creature.ToString())).ToList(), 3.2f, 8);
             Sheet("heroes", art.heroes.SelectMany(hero => new[]

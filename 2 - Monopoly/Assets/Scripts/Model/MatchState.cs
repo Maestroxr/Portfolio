@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Gamebox.Lockstep;
 
 namespace Portfolio.Monopoly
 {
@@ -208,16 +209,6 @@ namespace Portfolio.Monopoly
         {
             return HasSpeed ? $"{a}+{b}+{speed}" : $"{a}+{b}";
         }
-    }
-
-    /// <summary>The random numbers of a match, replaceable by scripted ones in tests and tours.</summary>
-    public interface IRandom
-    {
-        /// <summary>A number from <paramref name="min"/> (inclusive) to <paramref name="max"/> (exclusive).</summary>
-        int Range(int min, int max);
-
-        /// <summary>A number from 0 (inclusive) to 1 (exclusive).</summary>
-        double Value();
     }
 
     public sealed class SystemRandom : IRandom

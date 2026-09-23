@@ -24,7 +24,11 @@ namespace Portfolio.Heroes
 
         public Transform Body => body;
 
-        public void Setup(Transform model, string idleClip, string walkClip)
+        /// <summary>
+        /// Takes charge of a model and starts it idling. A <paramref name="still"/> model (a building) does not breathe
+        /// when it has no idle clip of its own.
+        /// </summary>
+        public void Setup(Transform model, string idleClip, string walkClip, bool still = false)
         {
             body = model;
             bodyPosition = model.localPosition;
@@ -41,9 +45,25 @@ namespace Portfolio.Heroes
                     state.wrapMode = state.name == idle || state.name == walk ? WrapMode.Loop : WrapMode.Once;
                 }
             }
-            procedural = !Has(idle);
+            procedural = !Has(idle) && !still;
             bob = Random.value * 10f;
             Idle();
+        }
+
+        /// <summary>
+        /// Takes the pose of the clip it plays at once (a model shows it only from the next frame on): for measuring the
+        /// body as it stands rather than spread out as it was modelled.
+        /// </summary>
+        public void Pose()
+        {
+            if (animations == null || !Has(current))
+            {
+                return;
+            }
+            AnimationState state = animations[current];
+            state.enabled = true;
+            state.weight = 1f;
+            animations.Sample();
         }
 
         public bool Has(string clip)
@@ -130,6 +150,12 @@ namespace Portfolio.Heroes
             float length = Play(clip);
             dead = true;
             StopAllCoroutines();
+            if (body != null)
+            {
+                // A flinch or a lunge cut short would leave the body squashed or out of place.
+                body.localScale = bodyScale;
+                body.localPosition = bodyPosition;
+            }
             if (!Has(clip))
             {
                 StartCoroutine(Sink());

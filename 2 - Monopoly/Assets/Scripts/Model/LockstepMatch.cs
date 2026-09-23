@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Gamebox.Lockstep;
 
 namespace Portfolio.Monopoly
 {
@@ -10,19 +11,19 @@ namespace Portfolio.Monopoly
     ///
     /// Next to the rules engine it keeps what only a table of several devices needs: the trade offer waiting for the
     /// answer of its recipient (while it waits nothing else is accepted), the move made when the server calls time, and
-    /// a checksum to compare the devices by.
+    /// a checksum to compare the devices by. How the entries of the log are taken is the shared
+    /// <see cref="LockstepTable{TCommand}"/>.
     /// </summary>
-    public sealed class LockstepMatch
+    public sealed class LockstepMatch : LockstepTable<MatchCommand>
     {
-        private readonly SeededRandom random;
-
-        public LockstepMatch(BoardLayout board, RuleSet rules, uint seed)
+        public LockstepMatch(BoardLayout board, RuleSet rules, uint seed) : base(seed)
         {
-            random = new SeededRandom(seed);
-            Match = new MonopolyMatch(board, rules, random);
+            Match = new MonopolyMatch(board, rules, Random);
         }
 
         public MonopolyMatch Match { get; }
+
+        public override bool IsOver => Match.IsOver;
 
         /// <summary>The offer on the table, or null.</summary>
         public TradeOffer PendingOffer { get; private set; }
@@ -31,9 +32,6 @@ namespace Portfolio.Monopoly
         public TradeOffer AnsweredOffer { get; private set; }
 
         public bool AnswerAccepted { get; private set; }
-
-        /// <summary>Entries of the log taken so far, whether the match accepted them or not.</summary>
-        public int Applied { get; private set; }
 
         /// <summary>The seat the table waits for: the recipient of the offer on the table, else the one the match waits for; -1 for nobody.</summary>
         public int Waiting => Match.IsOver ? -1 : PendingOffer != null ? PendingOffer.to : Match.Decider;
@@ -45,18 +43,15 @@ namespace Portfolio.Monopoly
         }
 
         /// <summary>
-        /// Takes an action of the log: <paramref name="command"/> (null for one that could not be read) with the number
-        /// the server stamped on it. Returns whether the match accepted it; a refused action changes nothing.
+        /// Gives a command of the log to the match: the table itself keeps the offers and their answers, the rules engine
+        /// takes the rest. A refused command changes nothing.
         /// </summary>
-        public bool Apply(MatchCommand command, uint stamp)
+        protected override bool Accept(MatchCommand command)
         {
-            Applied++;
-            AnsweredOffer = null;
-            if (command == null || Match.IsOver || command.seat < 0 || command.seat >= Match.players.Count)
+            if (Match.IsOver || command.seat < 0 || command.seat >= Match.players.Count)
             {
                 return false;
             }
-            random.Reseed(stamp);
             switch (command.kind)
             {
                 case CommandKind.SeatToComputer:
@@ -89,23 +84,15 @@ namespace Portfolio.Monopoly
         /// <summary>
         /// The server called time: the offer on the table is declined, else the default move is made for the player the
         /// match waits for. A player who ran out of time over a debt has it raised in one go, because the table waited
-        /// long enough. Returns the commands that were made.
+        /// long enough.
         /// </summary>
-        public List<MatchCommand> Timeout(uint stamp)
+        protected override void DefaultMoves(List<MatchCommand> made)
         {
-            Applied++;
-            AnsweredOffer = null;
-            var made = new List<MatchCommand>();
-            if (Match.IsOver)
-            {
-                return made;
-            }
-            random.Reseed(stamp);
             if (PendingOffer != null)
             {
                 made.Add(MatchCommand.Answer(PendingOffer.to, false));
                 Answer(false);
-                return made;
+                return;
             }
             int seat = Match.Decider;
             bool inDebt = Match.phase == MatchPhase.RaiseFunds;
@@ -119,7 +106,18 @@ namespace Portfolio.Monopoly
                 made.Add(command);
             }
             while (inDebt && made.Count < 64 && Match.phase == MatchPhase.RaiseFunds && Match.Decider == seat);
-            return made;
+        }
+
+        /// <summary>The computer plays the seat of a player who left, at the level of the seat.</summary>
+        protected override bool SeatToComputer(int seat, int level)
+        {
+            return Accept(MatchCommand.Of(CommandKind.SeatToComputer, seat, level));
+        }
+
+        /// <summary>The answer of the last entry is told once: every entry of the log starts without one.</summary>
+        protected override void BeforeEntry()
+        {
+            AnsweredOffer = null;
         }
 
         private void Answer(bool accept)
@@ -134,10 +132,10 @@ namespace Portfolio.Monopoly
         /// A number that is the same on two devices exactly when their matches are: everything the rules look at, folded
         /// into 32 bits.
         /// </summary>
-        public uint Checksum()
+        public override uint Checksum()
         {
             MonopolyMatch m = Match;
-            var sum = new Fold();
+            var sum = new StateChecksum();
             sum.Add((int)m.phase).Add(m.current).Add(m.round).Add(m.turn).Add(m.housesLeft).Add(m.hotelsLeft).Add(m.pot);
             sum.Add(m.lastRoll.a).Add(m.lastRoll.b).Add((int)m.lastRoll.speed).Add(m.pendingPurchase).Add(m.pendingMove);
             sum.Add(m.extraRoll).Add(m.mrMonopolyPending).Add(m.debtAnnounced).Add(m.bankruptcies).Add(m.winner);
@@ -169,38 +167,6 @@ namespace Portfolio.Monopoly
                 sum.Add(PendingOffer.giveJailCards).Add(PendingOffer.getJailCards).Add(PendingOffer.giveSpaces).Add(PendingOffer.getSpaces);
             }
             return sum.Value;
-        }
-
-        /// <summary>FNV-1a over the numbers it is given.</summary>
-        private sealed class Fold
-        {
-            public uint Value { get; private set; } = 2166136261u;
-
-            public Fold Add(int number)
-            {
-                uint bits = (uint)number;
-                for (int i = 0; i < 4; i++)
-                {
-                    Value = (Value ^ (bits & 0xFFu)) * 16777619u;
-                    bits >>= 8;
-                }
-                return this;
-            }
-
-            public Fold Add(bool flag)
-            {
-                return Add(flag ? 1 : 0);
-            }
-
-            public Fold Add(List<int> numbers)
-            {
-                Add(numbers.Count);
-                foreach (int number in numbers)
-                {
-                    Add(number);
-                }
-                return this;
-            }
         }
     }
 }

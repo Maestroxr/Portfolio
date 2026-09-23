@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Gamebox;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -31,6 +32,8 @@ namespace Portfolio.Heroes
         private float pinchDistance;
         private bool gliding;
         private float glideSpeed = 4f;
+        private float tilt;
+        private float goalTilt;
 
         public Camera View => view;
 
@@ -46,6 +49,27 @@ namespace Portfolio.Heroes
         public Vector3 Target => target;
 
         public float Distance => distance;
+
+        /// <summary>Where the camera is going (or is), and how far back: enough to come back to it later.</summary>
+        public Vector3 Goal => goal;
+
+        public float GoalDistance => goalDistance;
+
+        /// <summary>
+        /// Glides to where every one of <paramref name="points"/> shows inside <paramref name="viewport"/> (a part of the
+        /// screen, in viewport units): a battlefield above the battle bar. <paramref name="steeper"/> tips the camera that
+        /// many degrees further down meanwhile, to look over the hills around a battle into it; <see cref="Focus"/> tips it
+        /// back.
+        /// </summary>
+        public void Frame(IList<Vector3> points, Rect viewport, float groundY, float steeper = 0f)
+        {
+            goalTilt = Mathf.Clamp(steeper, 0f, 85f - pitch);
+            Framing.Fit(view, Quaternion.Euler(pitch + goalTilt, yaw, 0f), points, viewport, groundY, out Vector3 point, out float away);
+            goal = point;
+            goalDistance = Mathf.Clamp(away, minDistance, maxDistance * 1.2f);
+            glideSpeed = 3f;
+            gliding = true;
+        }
 
         private void Awake()
         {
@@ -69,6 +93,7 @@ namespace Portfolio.Heroes
         /// <summary>Glides to <paramref name="point"/> (and to <paramref name="zoom"/> meters away, when given).</summary>
         public void Focus(Vector3 point, float zoom = -1f, float speed = 4f)
         {
+            goalTilt = 0f;
             goal = Clamp(point);
             if (zoom > 0f)
             {
@@ -86,6 +111,7 @@ namespace Portfolio.Heroes
             {
                 distance = goalDistance = Mathf.Clamp(zoom, minDistance, maxDistance * 1.2f);
             }
+            tilt = goalTilt = 0f;
             gliding = false;
             Place();
         }
@@ -124,6 +150,7 @@ namespace Portfolio.Heroes
             {
                 HandleInput(dt);
             }
+            tilt = Mathf.Lerp(tilt, goalTilt, 1f - Mathf.Exp(-3f * dt));
             if (gliding)
             {
                 float t = 1f - Mathf.Exp(-glideSpeed * dt);
@@ -233,7 +260,7 @@ namespace Portfolio.Heroes
 
         private void Place()
         {
-            Quaternion rotation = Quaternion.Euler(pitch, yaw, 0f);
+            Quaternion rotation = Quaternion.Euler(pitch + tilt, yaw, 0f);
             transform.SetPositionAndRotation(target + rotation * new Vector3(0f, 0f, -distance), rotation);
         }
 

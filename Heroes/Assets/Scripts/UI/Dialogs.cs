@@ -1,18 +1,45 @@
+using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace Portfolio.Heroes.UI
 {
-    /// <summary>A window that darkens the map behind it and holds a title, a body and a row of answers.</summary>
+    /// <summary>
+    /// A window over the map: the map darkens behind it, the window grows in, its title is written on a crimson ribbon
+    /// across its top edge, its body is the leather inside the frame and its answers are a row of buttons along the
+    /// bottom.
+    /// </summary>
     public class Dialog : MonoBehaviour
     {
+        /// <summary>The height the row of answers takes at the bottom of a window.</summary>
+        protected const float ButtonRow = 58f;
+
+        /// <summary>How far the ribbon of the title rises above the top edge of its window.</summary>
+        protected const float RibbonRise = 30f;
+
+        /// <summary>
+        /// The tallest a window kept under the bar along the top can be (<see cref="KeepUnderTopBar"/>): the height of the
+        /// layout, less the bar, the ribbon over the window and a margin above and below.
+        /// </summary>
+        protected const float UnderBarHeight = 1080f - UnderBarTop - UnderBarBottom;
+
+        private const float UnderBarTop = AdventureHud.Margin + AdventureHud.TopHeight + RibbonRise + 4f;
+        private const float UnderBarBottom = 10f;
+
         protected HeroesGameManager Manager;
+        protected RectTransform Window;
         protected RectTransform Body;
         protected RectTransform Buttons;
         protected TextMeshProUGUI Heading;
-        private Image shade;
+        private RectTransform ribbon;
+        private RectTransform shade;
+        private CanvasGroup group;
+        private string titled;
+        private Coroutine opening;
+        private bool underBar;
 
         /// <summary>Builds the empty window, the size asked for, in the middle of the screen.</summary>
         protected static T Build<T>(Transform parent, HeroesGameManager manager, string name, Vector2 size, string title)
@@ -22,29 +49,39 @@ namespace Portfolio.Heroes.UI
             UIKit.Stretch(holder);
             var dialog = holder.gameObject.AddComponent<T>();
             dialog.Manager = manager;
+            dialog.group = holder.gameObject.AddComponent<CanvasGroup>();
 
-            dialog.shade = UIKit.Sprite(holder, "Shade", null, new Color(0f, 0f, 0f, 0.55f));
-            UIKit.Stretch((RectTransform)dialog.shade.transform);
-            dialog.shade.raycastTarget = true;
+            Image shade = UIKit.Shade(holder, "Shade", 0.82f);
+            shade.raycastTarget = true;
+            dialog.shade = (RectTransform)shade.transform;
+            dialog.ShadeTop(false);
 
             Image frame = UIKit.Frame(holder, "Window");
-            var window = (RectTransform)frame.transform;
-            UIKit.Pin(window, new Vector2(0.5f, 0.5f), Vector2.zero, size);
-            window.pivot = new Vector2(0.5f, 0.5f);
+            dialog.Window = (RectTransform)frame.transform;
+            UIKit.Pin(dialog.Window, new Vector2(0.5f, 0.5f), new Vector2(0f, -12f), size);
+            dialog.Window.pivot = new Vector2(0.5f, 0.5f);
+            Vector4 inset = UIKit.Inset(frame);
 
-            dialog.Heading = UIKit.Title(window, "Heading", title, 34f, UIKit.Gold);
-            UIKit.Pin((RectTransform)dialog.Heading.transform, new Vector2(0.5f, 1f), new Vector2(0f, -28f),
-                new Vector2(size.x - 90f, 42f));
+            Image band = UIKit.Ribbon(dialog.Window, "Ribbon", title, 30f);
+            dialog.ribbon = UIKit.Pin((RectTransform)band.transform, new Vector2(0.5f, 1f), new Vector2(0f, RibbonRise), new Vector2(420f, 84f));
+            dialog.ribbon.pivot = new Vector2(0.5f, 1f);
+            dialog.Heading = band.GetComponentInChildren<TextMeshProUGUI>();
+            UIKit.FitLine(dialog.Heading, 30f, 18f);
 
-            dialog.Body = UIKit.Rect(window, "Body");
-            UIKit.Stretch(dialog.Body, 42f, 96f, 42f, 82f);
+            dialog.Body = UIKit.Rect(dialog.Window, "Body");
+            UIKit.Stretch(dialog.Body, inset.x + 18f, inset.y + ButtonRow + 22f, inset.z + 18f, inset.w + 52f);
 
-            dialog.Buttons = UIKit.Rect(window, "Buttons");
-            UIKit.Pin(dialog.Buttons, new Vector2(0.5f, 0f), new Vector2(0f, 24f), new Vector2(size.x - 84f, 60f));
-            HorizontalLayoutGroup layout = UIKit.Layout<HorizontalLayoutGroup>(dialog.Buttons, 14f);
+            dialog.Buttons = UIKit.Rect(dialog.Window, "Buttons");
+            dialog.Buttons.anchorMin = new Vector2(0f, 0f);
+            dialog.Buttons.anchorMax = new Vector2(1f, 0f);
+            dialog.Buttons.pivot = new Vector2(0.5f, 0f);
+            dialog.Buttons.offsetMin = new Vector2(inset.x + 18f, inset.y + 12f);
+            dialog.Buttons.offsetMax = new Vector2(-inset.z - 18f, inset.y + 12f + ButtonRow);
+            HorizontalLayoutGroup layout = UIKit.Layout<HorizontalLayoutGroup>(dialog.Buttons, 16f);
             layout.childAlignment = TextAnchor.MiddleCenter;
-            layout.childForceExpandWidth = true;
+            layout.childForceExpandWidth = false;
 
+            dialog.SizeRibbon();
             holder.gameObject.SetActive(false);
             return dialog;
         }
@@ -56,45 +93,140 @@ namespace Portfolio.Heroes.UI
             gameObject.SetActive(false);
         }
 
+        /// <summary>
+        /// For the screens of the map as big as the screen (a town, a hero; at most <see cref="UnderBarHeight"/> tall):
+        /// the window and its ribbon keep under the bar along the top, which stays in sight and out of the shade while
+        /// the panels of the map show, so the treasury can be read while it is spent.
+        /// </summary>
+        protected void KeepUnderTopBar()
+        {
+            underBar = true;
+            // In the middle of the room left under the bar, whatever the height of the window.
+            Window.anchoredPosition = new Vector2(0f, (UnderBarBottom - UnderBarTop) * 0.5f);
+        }
+
+        /// <summary>The shade reaches past the safe area to the edges of the screen, or stops at the bar along the top.</summary>
+        private void ShadeTop(bool belowBar)
+        {
+            UIKit.Stretch(shade, -400f, -400f, -400f, belowBar ? AdventureHud.TopInset : -400f);
+        }
+
+        /// <summary>Opens the window over everything else, fading and growing in.</summary>
         protected void Open()
         {
+            bool was = gameObject.activeSelf;
             gameObject.SetActive(true);
             transform.SetAsLastSibling();
+            if (underBar)
+            {
+                AdventureHud hud = Manager.HeroesUI != null ? Manager.HeroesUI.Hud : null;
+                ShadeTop(hud != null && hud.IsShown);
+            }
+            SizeRibbon();
+            if (!was)
+            {
+                if (opening != null)
+                {
+                    StopCoroutine(opening);
+                }
+                opening = StartCoroutine(Opening());
+            }
+        }
+
+        private IEnumerator Opening()
+        {
+            float t = 0f;
+            while (t < 1f)
+            {
+                t = Mathf.MoveTowards(t, 1f, Time.unscaledDeltaTime / 0.2f);
+                float eased = 1f - (1f - t) * (1f - t) * (1f - t);
+                group.alpha = eased;
+                Window.localScale = Vector3.one * Mathf.Lerp(0.94f, 1f, eased);
+                yield return null;
+            }
+            group.alpha = 1f;
+            Window.localScale = Vector3.one;
+            opening = null;
+        }
+
+        private void OnDisable()
+        {
+            if (group != null)
+            {
+                group.alpha = 1f;
+            }
+            if (Window != null)
+            {
+                Window.localScale = Vector3.one;
+            }
+            opening = null;
+        }
+
+        /// <summary>The ribbon grows with its title, within the window.</summary>
+        private void SizeRibbon()
+        {
+            if (Heading == null || ribbon == null || titled == Heading.text)
+            {
+                return;
+            }
+            titled = Heading.text;
+            float words = Heading.GetPreferredValues(Heading.text, 2000f, 60f).x;
+            float wanted = Mathf.Clamp(words + 150f, 360f, Window.rect.width - 60f);
+            ribbon.sizeDelta = new Vector2(wanted, ribbon.sizeDelta.y);
+        }
+
+        protected virtual void LateUpdate()
+        {
+            SizeRibbon();
         }
 
         protected void ClearBody()
         {
-            for (int i = Body.childCount - 1; i >= 0; i--)
-            {
-                Destroy(Body.GetChild(i).gameObject);
-            }
+            UIKit.Clear(Body);
         }
 
         protected void ClearButtons()
         {
-            for (int i = Buttons.childCount - 1; i >= 0; i--)
-            {
-                Destroy(Buttons.GetChild(i).gameObject);
-            }
+            UIKit.Clear(Buttons);
         }
 
+        /// <summary>A button in the row of answers, as wide as its words need.</summary>
         protected Button Answer(string text, System.Action onClick)
         {
-            Button button = UIKit.Push(Buttons, text, text, onClick);
-            UIKit.Fit((RectTransform)button.transform, 0f, 56f, true);
+            Button button = UIKit.Push(Buttons, text, text, onClick, 24f);
+            TextMeshProUGUI label = button.GetComponentInChildren<TextMeshProUGUI>();
+            float width = Mathf.Clamp(label.GetPreferredValues(text, 2000f, 40f).x + 70f, 190f, 420f);
+            UIKit.Fit((RectTransform)button.transform, width, ButtonRow - 4f);
             return button;
         }
+
+        /// <summary>Whether a click may send a command now (the map has played out what happened).</summary>
+        protected bool MayCommand => Manager.HeroesUI == null || Manager.HeroesUI.CanCommand;
     }
 
     /// <summary>
-    /// The question the rules are waiting on: which skill a hero takes on a level up, or whether to take the gold or
-    /// the wisdom of a find. Nothing else in the game moves until it is answered.
+    /// The question the rules are waiting on: which skill a hero learns on a level up, whether to take the gold or the
+    /// wisdom of a chest, what the masters of the arena teach. Each answer is a card with its picture. Nothing else in
+    /// the game moves until one is picked.
     /// </summary>
     public sealed class ChoiceBox : Dialog
     {
+        private TextMeshProUGUI note;
+        private RectTransform cards;
+
         public static ChoiceBox Make(Transform parent, HeroesGameManager manager)
         {
-            return Build<ChoiceBox>(parent, manager, "Choice", new Vector2(760f, 420f), "A Choice");
+            ChoiceBox box = Build<ChoiceBox>(parent, manager, "Choice", new Vector2(860f, 530f), "A Choice");
+            box.note = UIKit.Label(box.Body, "Note", "", 25f, UIKit.Ink, TextAlignmentOptions.Top);
+            UIKit.Pin((RectTransform)box.note.transform, new Vector2(0.5f, 1f), new Vector2(0f, 0f), new Vector2(760f, 70f));
+            box.cards = UIKit.Rect(box.Body, "Cards");
+            box.cards.anchorMin = new Vector2(0f, 0f);
+            box.cards.anchorMax = new Vector2(1f, 1f);
+            box.cards.offsetMin = new Vector2(0f, 0f);
+            box.cards.offsetMax = new Vector2(0f, -78f);
+            HorizontalLayoutGroup layout = UIKit.Layout<HorizontalLayoutGroup>(box.cards, 28f);
+            layout.childAlignment = TextAnchor.MiddleCenter;
+            return box;
         }
 
         public void Show(PendingChoice pending)
@@ -104,7 +236,7 @@ namespace Portfolio.Heroes.UI
                 Close();
                 return;
             }
-            ClearBody();
+            UIKit.Clear(cards);
             ClearButtons();
             HeroState hero = Manager.Game.State.Hero(pending.hero);
             switch (pending.kind)
@@ -113,23 +245,34 @@ namespace Portfolio.Heroes.UI
                     LevelUp(pending, hero);
                     break;
                 case ChoiceKind.Treasure:
-                    Treasure(pending, hero);
+                    Treasure(pending);
                     break;
                 default:
-                    Arena(pending, hero);
+                    Arena();
                     break;
+            }
+            if (cards.childCount == 0)
+            {
+                Answer("Onward", () => Pick(0));
+            }
+            else
+            {
+                TextMeshProUGUI hint = UIKit.Label(Buttons, "Hint", "Click a card to choose.", 20f, UIKit.Dim, TextAlignmentOptions.Center);
+                hint.fontStyle = FontStyles.Italic;
+                UIKit.Fit((RectTransform)hint.transform, 600f, ButtonRow - 4f);
             }
             Open();
         }
 
         private void LevelUp(PendingChoice pending, HeroState hero)
         {
-            Heading.text = hero != null ? $"{hero.Name} reaches level {hero.level}" : "A new level";
-            string raised = pending.stat >= 0 ? $"+1 {HeroData.StatName((PrimaryStat)pending.stat)}. " : "";
-            Note($"{raised}Choose what else the hero has learned.");
+            Heading.text = hero != null ? $"{hero.Name} reaches level {hero.level}" : "A New Level";
+            string raised = pending.stat >= 0
+                ? $"{UIKit.Glyph(StatSprite((PrimaryStat)pending.stat))} <color=#8CE07E>+1 {HeroData.StatName((PrimaryStat)pending.stat)}</color>.  "
+                : "";
+            note.text = $"{raised}Choose what else the hero has learned.";
             for (int i = 0; i < pending.options.Length; i++)
             {
-                int option = i;
                 int skill = pending.options[i];
                 if (skill < 0)
                 {
@@ -137,61 +280,91 @@ namespace Portfolio.Heroes.UI
                 }
                 SkillDef def = HeroData.Skill((SkillId)skill);
                 int level = hero != null ? hero.SkillLevel((SkillId)skill) : 0;
-                string title = $"{HeroData.SkillLevelName(level + 1)} {def.Name}";
-                Button button = Answer(title, () =>
-                {
-                    Manager.Commands.Choose(option);
-                    Close();
-                });
-                Tooltip.Attach(button.gameObject, def.Description);
+                string now = level > 0 ? $"From {HeroData.SkillLevelName(level)}" : "A new skill";
+                Card(i, Manager.Art.Skill((SkillId)skill), true, $"{HeroData.SkillLevelName(level + 1)} {def.Name}", now,
+                    Mathf.Clamp(level, 0, 2) < def.Levels.Length ? def.Levels[Mathf.Clamp(level, 0, 2)] : def.Description);
             }
         }
 
-        private void Treasure(PendingChoice pending, HeroState hero)
+        private void Treasure(PendingChoice pending)
         {
             Heading.text = "A Chest of Treasure";
-            Note("Gold for the coffers, or the lessons of the road?");
-            Answer($"{pending.value} Gold", () =>
-            {
-                Manager.Commands.Choose(0);
-                Close();
-            });
-            Answer($"{pending.value / 2} Experience", () =>
-            {
-                Manager.Commands.Choose(1);
-                Close();
-            });
+            note.text = "Gold for the coffers, or the lessons of the road?";
+            // The rules pay the first option out as gold and the second as experience.
+            Card(0, Manager.Art.Resource(ResourceKind.Gold), false, $"{pending.options[0]:N0} Gold", "For the treasury", "Spent on buildings, creatures and heroes.");
+            Card(1, Manager.Art.Icon("experience"), true, $"{pending.options[1]:N0} Experience", "For the hero", "Brings the next level closer.");
         }
 
-        private void Arena(PendingChoice pending, HeroState hero)
+        private void Arena()
         {
             Heading.text = "The Arena";
-            Note("The masters of the arena offer their training.");
-            Answer("+2 Attack", () =>
-            {
-                Manager.Commands.Choose(0);
-                Close();
-            });
-            Answer("+2 Defense", () =>
-            {
-                Manager.Commands.Choose(1);
-                Close();
-            });
+            note.text = "The masters of the arena offer their training.";
+            Card(0, Manager.Art.statIcons.Length > 0 ? Manager.Art.statIcons[0] : null, false, "+2 Attack", "Strike harder", "Every creature of the hero's army hits harder.");
+            Card(1, Manager.Art.statIcons.Length > 1 ? Manager.Art.statIcons[1] : null, false, "+2 Defense", "Stand firmer", "Every creature of the hero's army takes less.");
         }
 
-        private void Note(string text)
+        private static string StatSprite(PrimaryStat stat)
         {
-            TextMeshProUGUI label = UIKit.Label(Body, "Note", text, 26f, UIKit.Ink, TextAlignmentOptions.Top);
-            UIKit.Stretch((RectTransform)label.transform);
+            switch (stat)
+            {
+                case PrimaryStat.Attack: return "attack";
+                case PrimaryStat.Defense: return "defense";
+                case PrimaryStat.Power: return "power";
+                default: return "knowledge";
+            }
+        }
+
+        /// <summary>An answer as a card: its picture in a round frame, what it is, and a line on what it does.</summary>
+        private void Card(int option, Sprite icon, bool tinted, string title, string detail, string text)
+        {
+            Button button = UIKit.CardButton(cards, title, () => Pick(option));
+            UIKit.Fit((RectTransform)button.transform, 330f, 276f);
+            RectTransform content = UIKit.Content((Image)button.targetGraphic, 10f);
+            Image picture = UIKit.PortraitFrame(content, "Icon", icon, true);
+            picture.preserveAspect = true;
+            picture.color = tinted ? UIKit.Gold : Color.white;
+            RectTransform frame = (RectTransform)picture.transform.parent.parent;
+            UIKit.Pin(frame, new Vector2(0.5f, 1f), new Vector2(0f, 0f), new Vector2(110f, 110f));
+            UIKit.Stretch((RectTransform)picture.transform, 18f, 18f, 18f, 18f);
+            TextMeshProUGUI name = UIKit.Label(content, "Name", title, 25f, UIKit.Gold, TextAlignmentOptions.Center, true);
+            UIKit.Pin((RectTransform)name.transform, new Vector2(0.5f, 1f), new Vector2(0f, -118f), new Vector2(290f, 34f));
+            UIKit.FitLine(name, 25f, 16f);
+            UIKit.Look(name, TextLook.Gold);
+            TextMeshProUGUI sub = UIKit.Label(content, "Detail", detail, 19f, UIKit.Dim, TextAlignmentOptions.Center);
+            sub.fontStyle = FontStyles.Italic;
+            UIKit.Pin((RectTransform)sub.transform, new Vector2(0.5f, 1f), new Vector2(0f, -152f), new Vector2(290f, 26f));
+            UIKit.FitLine(sub, 19f, 14f);
+            TextMeshProUGUI words = UIKit.Label(content, "Text", text, 19f, UIKit.Ink, TextAlignmentOptions.Top);
+            RectTransform wordsRect = (RectTransform)words.transform;
+            wordsRect.anchorMin = new Vector2(0f, 0f);
+            wordsRect.anchorMax = new Vector2(1f, 1f);
+            wordsRect.offsetMin = new Vector2(8f, 4f);
+            wordsRect.offsetMax = new Vector2(-8f, -186f);
+            words.enableAutoSizing = true;
+            words.fontSizeMax = 19f;
+            words.fontSizeMin = 14f;
+        }
+
+        private void Pick(int option)
+        {
+            if (!MayCommand)
+            {
+                return;
+            }
+            Manager.Commands.Choose(option);
+            Close();
         }
     }
 
-    /// <summary>What the scenario came to: won or lost, in how many days, and how many stars that is worth.</summary>
+    /// <summary>
+    /// What the scenario came to: won or lost, in how many days, and at one device how many stars of the chapter that is
+    /// worth. Online it says how the realm of the player at this device fared and leads back to the room.
+    /// </summary>
     public sealed class ResultsBox : Dialog
     {
         public static ResultsBox Make(Transform parent, HeroesGameManager manager)
         {
-            return Build<ResultsBox>(parent, manager, "Results", new Vector2(820f, 520f), "");
+            return Build<ResultsBox>(parent, manager, "Results", new Vector2(860f, 600f), "");
         }
 
         public void Show(bool won, int stars, int days)
@@ -199,70 +372,233 @@ namespace Portfolio.Heroes.UI
             ClearBody();
             ClearButtons();
             Heading.text = won ? "Victory" : "Defeat";
-            Heading.color = won ? UIKit.Gold : UIKit.Bad;
+            bool online = Manager.IsOnlineGame;
+            HeroesLevel scenario = online ? null : Manager.Scenario;
+            bool chapter = scenario != null && !scenario.IsSkirmish;
 
-            RectTransform row = UIKit.Rect(Body, "Stars");
-            UIKit.Pin(row, new Vector2(0.5f, 1f), new Vector2(0f, -10f), new Vector2(360f, 90f));
-            HorizontalLayoutGroup layout = UIKit.Layout<HorizontalLayoutGroup>(row, 16f);
-            layout.childAlignment = TextAnchor.MiddleCenter;
-            for (int i = 0; i < 3; i++)
+            TextMeshProUGUI verdict = UIKit.Heading(Body, "Verdict",
+                won ? online ? "Your realm carries the day." : "The land is yours." : "Your banners have fallen.", 34f);
+            UIKit.Pin((RectTransform)verdict.transform, new Vector2(0.5f, 1f), new Vector2(0f, -4f), new Vector2(760f, 46f));
+            UIKit.FitLine(verdict, 34f, 20f);
+
+            float y = -64f;
+            RectTransform starRow = null;
+            if (chapter)
             {
-                Image star = UIKit.Sprite(row, $"Star{i}", i < stars ? Manager.Art.star : Manager.Art.starEmpty, Color.white);
-                UIKit.Fit((RectTransform)star.transform, 84f, 84f);
+                starRow = UIKit.Stars(Body, "Stars", stars, 92f, 3, 18f);
+                UIKit.Pin(starRow, new Vector2(0.5f, 1f), new Vector2(0f, y), starRow.sizeDelta);
+                y -= 108f;
             }
 
-            HeroesLevel scenario = Manager.Scenario;
-            var text = new System.Text.StringBuilder();
-            text.Append(won ? "The land is yours." : "Your banners have fallen.").Append('\n');
-            text.Append($"Days taken: {days}").Append('\n');
-            if (scenario != null && won)
+            Image plate = UIKit.Card(Body, "Record");
+            var plateRect = UIKit.Pin((RectTransform)plate.transform, new Vector2(0.5f, 1f), new Vector2(0f, y), new Vector2(560f, 150f));
+            RectTransform lines = UIKit.Content(plate, 10f);
+            UIKit.Layout<VerticalLayoutGroup>(lines, 4f).childForceExpandWidth = true;
+            PlayerState me = Manager.ViewerState;
+            Line(lines, "Days taken", days.ToString());
+            if (me != null)
             {
-                text.Append($"Three stars in {scenario.ThreeStarDays} days, two in {scenario.TwoStarDays}.");
+                Line(lines, "Creatures slain", me.creaturesKilled.ToString("N0"));
+                Line(lines, "Battles won", me.battlesWon.ToString());
+                Line(lines, "Towns held", me.towns.Count.ToString());
             }
-            TextMeshProUGUI note = UIKit.Label(Body, "Note", text.ToString(), 26f, UIKit.Ink, TextAlignmentOptions.Top);
-            UIKit.Stretch((RectTransform)note.transform, 0f, 0f, 0f, 110f);
+            plateRect.sizeDelta = new Vector2(560f, 24f + lines.childCount * 30f);
+            y -= plateRect.sizeDelta.y + 14f;
 
-            Answer("Back to the Map", () =>
+            if (chapter)
             {
-                Close();
+                TextMeshProUGUI record = UIKit.Label(Body, "Thresholds",
+                    $"{UIKit.StarText(3)} in {scenario.ThreeStarDays} days   {UIKit.StarText(2)} in {scenario.TwoStarDays} days",
+                    21f, UIKit.Dim, TextAlignmentOptions.Center);
+                UIKit.Pin((RectTransform)record.transform, new Vector2(0.5f, 1f), new Vector2(0f, y), new Vector2(760f, 30f));
+                y -= 34f;
+            }
+            // The window is as tall as what it says, around the middle of the screen.
+            Window.sizeDelta = new Vector2(Window.sizeDelta.x, Mathf.Max(400f, 70f - y + 24f + ButtonRow + 40f));
+
+            Button leave = Answer(online ? "Back to the Room" : "Back to the Title", Leave);
+            UIKit.Fit((RectTransform)leave.transform, 300f, ButtonRow - 4f);
+            Open();
+            if (starRow != null)
+            {
+                // Only once the window is open: a coroutine cannot start on an object that is off.
+                StartCoroutine(PopStars(starRow));
+            }
+        }
+
+        /// <summary>The way out of a finished game: to the room of an online game, else to the title screen.</summary>
+        public void Leave()
+        {
+            Close();
+            if (Manager.IsOnlineGame)
+            {
+                Manager.HeroesUI.LeaveToRoom();
+            }
+            else
+            {
                 Manager.ReturnToTitle();
-            });
+            }
+        }
+
+        private static void Line(RectTransform parent, string what, string value)
+        {
+            RectTransform row = UIKit.Rect(parent, what);
+            UIKit.Fit(row, 0f, 26f, true);
+            TextMeshProUGUI name = UIKit.Label(row, "Name", what, 21f, UIKit.Dim, TextAlignmentOptions.MidlineLeft);
+            UIKit.Stretch((RectTransform)name.transform, 8f, 0f, 0f, 0f);
+            TextMeshProUGUI amount = UIKit.Label(row, "Value", value, 21f, UIKit.Ink, TextAlignmentOptions.MidlineRight);
+            UIKit.Stretch((RectTransform)amount.transform, 0f, 0f, 8f, 0f);
+        }
+
+        /// <summary>The stars come in one after the other.</summary>
+        private IEnumerator PopStars(RectTransform row)
+        {
+            foreach (Transform star in row)
+            {
+                star.localScale = Vector3.zero;
+            }
+            yield return new WaitForSecondsRealtime(0.25f);
+            foreach (Transform star in row)
+            {
+                float t = 0f;
+                while (t < 1f && star != null)
+                {
+                    t = Mathf.MoveTowards(t, 1f, Time.unscaledDeltaTime / 0.22f);
+                    float overshoot = 1f + Mathf.Sin(t * Mathf.PI) * 0.25f;
+                    star.localScale = Vector3.one * t * overshoot;
+                    yield return null;
+                }
+                if (star != null)
+                {
+                    star.localScale = Vector3.one;
+                }
+            }
         }
     }
 
-    /// <summary>A plain message with one way out, for anything that only has to be read.</summary>
+    /// <summary>
+    /// A message with one way out, for anything that only has to be read, however long: its words scroll. The credits
+    /// of the game are shown in it, their headings in gold.
+    /// </summary>
     public sealed class MessageBox : Dialog
     {
-        private TextMeshProUGUI note;
+        private RectTransform lines;
+        private ScrollRect scroll;
+        private System.Action closed;
 
         public static MessageBox Make(Transform parent, HeroesGameManager manager)
         {
-            MessageBox box = Build<MessageBox>(parent, manager, "Message", new Vector2(720f, 380f), "");
-            box.note = UIKit.Label(box.Body, "Note", "", 26f, UIKit.Ink, TextAlignmentOptions.Top);
-            UIKit.Stretch((RectTransform)box.note.transform);
+            MessageBox box = Build<MessageBox>(parent, manager, "Message", new Vector2(980f, 800f), "");
+            Image page = UIKit.Parchment(box.Body, "Page");
+            UIKit.Stretch((RectTransform)page.transform);
+            Vector4 inset = UIKit.Inset(page);
+            box.lines = UIKit.Scroll(page.transform, "Lines", out box.scroll);
+            UIKit.Stretch((RectTransform)box.scroll.transform, inset.x + 8f, inset.y + 4f, inset.z + 8f, inset.w + 4f);
+            VerticalLayoutGroup layout = UIKit.Layout<VerticalLayoutGroup>(box.lines, 6f, new RectOffset(4, 12, 6, 12));
+            layout.childForceExpandWidth = true;
             return box;
         }
 
         public void Show(string title, string text, string button = "Very Well", System.Action onClose = null)
         {
+            UIKit.Clear(lines);
             ClearButtons();
             Heading.text = title;
-            note.text = text;
-            Answer(button, () =>
-            {
-                Close();
-                onClose?.Invoke();
-            });
+            Paragraph(text);
+            closed = onClose;
+            Answer(button, Close);
             Open();
+            scroll.verticalNormalizedPosition = 1f;
+        }
+
+        /// <summary>The credits: a line in capitals is a heading, the lines after it until an empty one a paragraph.</summary>
+        public void ShowCredits(string credits)
+        {
+            UIKit.Clear(lines);
+            ClearButtons();
+            Heading.text = "Credits";
+            var paragraph = new StringBuilder();
+            foreach (string raw in (credits ?? "").Replace("\r", "").Split('\n'))
+            {
+                string line = raw.Trim();
+                bool heading = line.Length > 0 && line == line.ToUpperInvariant() && HasLetters(line);
+                if (line.Length == 0 || heading)
+                {
+                    Flush(paragraph);
+                }
+                if (heading)
+                {
+                    TextMeshProUGUI title = UIKit.Title(lines, "Heading", line, 25f, new Color(0.45f, 0.1f, 0.06f), TextAlignmentOptions.Bottom);
+                    UIKit.Fit((RectTransform)title.transform, 0f, lines.childCount > 0 ? 56f : 40f, true);
+                    RectTransform rule = UIKit.Divider(lines, "Rule", 14f);
+                    UIKit.Fit(rule, 0f, 14f, true);
+                }
+                else if (line.Length > 0)
+                {
+                    paragraph.Append(paragraph.Length > 0 ? " " : "").Append(line);
+                }
+            }
+            Flush(paragraph);
+            closed = null;
+            Answer("Close", Close);
+            Open();
+            StartCoroutine(Top());
+        }
+
+        private static bool HasLetters(string line)
+        {
+            foreach (char c in line)
+            {
+                if (char.IsLetter(c))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private void Flush(StringBuilder paragraph)
+        {
+            if (paragraph.Length == 0)
+            {
+                return;
+            }
+            Paragraph(paragraph.ToString());
+            paragraph.Length = 0;
+        }
+
+        private void Paragraph(string text)
+        {
+            TextMeshProUGUI words = UIKit.Label(lines, "Text", text, 22f, UIKit.InkOnParchment, TextAlignmentOptions.TopLeft);
+            words.textWrappingMode = TextWrappingModes.Normal;
+        }
+
+        private IEnumerator Top()
+        {
+            yield return null;
+            scroll.verticalNormalizedPosition = 1f;
+        }
+
+        public override void Close()
+        {
+            base.Close();
+            System.Action then = closed;
+            closed = null;
+            then?.Invoke();
         }
     }
 
-    /// <summary>A row of army slots that can be picked from and moved between, shared by the town and hero screens.</summary>
+    /// <summary>
+    /// A row of the seven places of an army, shared by the town and hero screens: each creature's portrait with how many
+    /// on a small plate, a glow under the pointer and around the stack picked up. Clicking one stack and then another
+    /// place moves, swaps or joins them.
+    /// </summary>
     public sealed class ArmyRow : MonoBehaviour
     {
         private readonly List<Image> slots = new List<Image>();
+        private readonly List<Image> pictures = new List<Image>();
         private readonly List<TextMeshProUGUI> counts = new List<TextMeshProUGUI>();
-        private readonly List<Image> icons = new List<Image>();
+        private readonly List<Image> halos = new List<Image>();
         private HeroesGameManager manager;
         private int holder;
 
@@ -276,32 +612,49 @@ namespace Portfolio.Heroes.UI
             RectTransform rect = UIKit.Rect(parent, "Army");
             var row = rect.gameObject.AddComponent<ArmyRow>();
             row.manager = manager;
-            HorizontalLayoutGroup layout = UIKit.Layout<HorizontalLayoutGroup>(rect, 8f);
-            layout.childAlignment = TextAnchor.MiddleCenter;
+            HorizontalLayoutGroup layout = UIKit.Layout<HorizontalLayoutGroup>(rect, Mathf.Round(size * 0.1f));
+            layout.childAlignment = TextAnchor.MiddleLeft;
             for (int i = 0; i < HeroData.ArmySlots; i++)
             {
                 int index = i;
-                Image slot = UIKit.Slot(rect, $"Slot{i}");
-                UIKit.Fit((RectTransform)slot.transform, size, size);
+                RectTransform cell = UIKit.Rect(rect, $"Place{i}");
+                UIKit.Fit(cell, size, size);
+                Image halo = UIKit.Halo(cell, "Halo", new Color(1f, 0.85f, 0.45f, 0f));
+                UIKit.Stretch((RectTransform)halo.transform, -size * 0.22f, -size * 0.22f, -size * 0.22f, -size * 0.22f);
+                Image slot = UIKit.Slot(cell, "Slot");
+                UIKit.Stretch((RectTransform)slot.transform);
                 var button = slot.gameObject.AddComponent<Button>();
                 button.targetGraphic = slot;
-                button.colors = UIKit.Tint();
+                button.navigation = new Navigation { mode = Navigation.Mode.None };
+                if (UIKit.Art != null && UIKit.Art.slotHover != null)
+                {
+                    button.transition = Selectable.Transition.SpriteSwap;
+                    button.spriteState = new SpriteState { highlightedSprite = UIKit.Art.slotHover, pressedSprite = UIKit.Art.slotSelected };
+                }
+                else
+                {
+                    button.colors = UIKit.Tint();
+                }
                 button.onClick.AddListener(() => row.Clicked(index));
                 slot.gameObject.AddComponent<Clicker>();
+                Gamebox.UI.PressFeedback.Attach(slot.gameObject, 1.05f, 0.95f);
 
-                Image icon = UIKit.Sprite(slot.transform, "Icon", null, Color.white);
-                UIKit.Stretch((RectTransform)icon.transform, 8f, 14f, 8f, 8f);
-                icon.preserveAspect = true;
-                icon.enabled = false;
+                Image picture = UIKit.Sprite(slot.transform, "Portrait", null, Color.white);
+                picture.preserveAspect = true;
+                UIKit.Stretch((RectTransform)picture.transform, 4f, 4f, 4f, 4f);
+                picture.enabled = false;
 
-                TextMeshProUGUI count = UIKit.Label(slot.transform, "Count", "", size * 0.24f, UIKit.Ink,
-                    TextAlignmentOptions.BottomRight);
-                UIKit.Stretch((RectTransform)count.transform, 4f, 4f, 6f, 4f);
-                count.textWrappingMode = TextWrappingModes.NoWrap;
+                Image plate = UIKit.Recess(slot.transform, "Plate");
+                float plateHeight = Mathf.Max(22f, size * 0.3f);
+                UIKit.Pin((RectTransform)plate.transform, new Vector2(1f, 0f), new Vector2(-2f, 2f), new Vector2(size * 0.62f, plateHeight));
+                TextMeshProUGUI count = UIKit.Label(plate.transform, "Count", "", plateHeight * 0.72f, UIKit.Ink, TextAlignmentOptions.Center);
+                UIKit.Stretch((RectTransform)count.transform, 3f, 0f, 3f, 0f);
+                UIKit.FitLine(count, plateHeight * 0.72f, 11f);
 
                 row.slots.Add(slot);
-                row.icons.Add(icon);
+                row.pictures.Add(picture);
                 row.counts.Add(count);
+                row.halos.Add(halo);
             }
             return row;
         }
@@ -319,58 +672,49 @@ namespace Portfolio.Heroes.UI
             {
                 ArmySlot slot = army != null ? army.slots[i] : null;
                 bool full = slot != null && !slot.IsEmpty;
-                icons[i].enabled = full;
-                counts[i].text = full ? slot.count.ToString() : "";
+                pictures[i].enabled = full;
+                counts[i].transform.parent.gameObject.SetActive(full);
+                counts[i].text = full ? slot.count.ToString("N0") : "";
                 if (full)
                 {
                     CreatureDef def = slot.Def;
-                    icons[i].sprite = manager.Art.Icon("monster");
-                    icons[i].color = Faded(def);
-                    Tooltip.Attach(slots[i].gameObject, Describe(def, slot.count));
+                    Sprite face = manager.Art.Portrait(def.Id);
+                    pictures[i].sprite = face != null ? face : manager.Art.Icon("monster");
+                    Tooltip.Attach(slots[i].gameObject, $"{slot.count} {(slot.count == 1 ? def.Name : def.Plural)}", Describe(def), face);
                 }
                 else
                 {
                     Tooltip.Attach(slots[i].gameObject, "An empty place in the ranks.");
                 }
                 bool picked = Picked.row == this && Picked.slot == i;
-                slots[i].color = picked ? new Color(1f, 0.92f, 0.6f) : Color.white;
+                if (UIKit.Art != null && UIKit.Art.slotSelected != null)
+                {
+                    slots[i].sprite = picked ? UIKit.Art.slotSelected : UIKit.Art.slot;
+                }
+                Color glow = halos[i].color;
+                glow.a = picked ? 0.85f : 0f;
+                halos[i].color = glow;
             }
         }
 
-        private static Color Faded(CreatureDef def)
+        public static string Describe(CreatureDef def)
         {
-            switch (def.Faction)
-            {
-                case Faction.Necropolis: return new Color(0.72f, 0.75f, 0.85f);
-                case Faction.Stronghold: return new Color(0.9f, 0.6f, 0.45f);
-                case Faction.Castle: return new Color(0.95f, 0.88f, 0.7f);
-                default: return new Color(0.7f, 0.85f, 0.65f);
-            }
-        }
-
-        private static string Describe(CreatureDef def, int count)
-        {
-            return $"{count} {(count == 1 ? def.Name : def.Plural)}\n" +
-                   $"Attack {def.Attack}, Defense {def.Defense}\n" +
-                   $"Damage {def.MinDamage}-{def.MaxDamage}, Health {def.Health}\n" +
-                   $"Speed {def.Speed}{(def.Shots > 0 ? $", {def.Shots} shots" : "")}";
+            return $"{UIKit.Glyph("attack")} {def.Attack}   {UIKit.Glyph("defense")} {def.Defense}   " +
+                   $"{UIKit.Glyph("damage")} {def.MinDamage}-{def.MaxDamage}\n" +
+                   $"{UIKit.Glyph("health")} {def.Health}   {UIKit.Glyph("speed")} {def.Speed}{(def.Shots > 0 ? $"   {def.Shots} shots" : "")}" +
+                   (string.IsNullOrEmpty(def.Description) ? "" : $"\n<i>{def.Description}</i>");
         }
 
         private Army ArmyOf(int which)
         {
             GameState state = manager.Game.State;
-            if (Holder_IsGarrison(which))
+            if (Portfolio.Heroes.Holder.IsGarrison(which))
             {
                 TownState town = state.Town(Portfolio.Heroes.Holder.TownOf(which));
                 return town != null ? town.garrison : null;
             }
             HeroState hero = state.Hero(which);
             return hero != null ? hero.army : null;
-        }
-
-        private static bool Holder_IsGarrison(int which)
-        {
-            return Portfolio.Heroes.Holder.IsGarrison(which);
         }
 
         /// <summary>First click picks a stack up, second puts it down (or swaps it, or joins it).</summary>
@@ -398,7 +742,10 @@ namespace Portfolio.Heroes.UI
             }
             (ArmyRow from, int fromSlot) = Picked;
             Picked = (null, -1);
-            manager.Commands.MoveArmy(from.holder, fromSlot, holder, slot, 0);
+            if (manager.HeroesUI == null || manager.HeroesUI.CanCommand)
+            {
+                manager.Commands.MoveArmy(from.holder, fromSlot, holder, slot, 0);
+            }
             from.Refresh();
             Refresh();
         }

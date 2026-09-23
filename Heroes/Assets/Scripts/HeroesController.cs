@@ -113,14 +113,14 @@ namespace Portfolio.Heroes
             Do(CommandKind.BattleMove, stackId, cell);
         }
 
-        public void BattleAttack(int stackId, int targetCell, int fromCell)
+        public void BattleAttack(int stackId, int targetStack, int fromCell)
         {
-            Do(CommandKind.BattleAttack, stackId, targetCell, fromCell);
+            Do(CommandKind.BattleAttack, stackId, targetStack, fromCell);
         }
 
-        public void BattleShoot(int stackId, int targetCell)
+        public void BattleShoot(int stackId, int targetStack)
         {
-            Do(CommandKind.BattleShoot, stackId, targetCell);
+            Do(CommandKind.BattleShoot, stackId, targetStack);
         }
 
         public void BattleWait(int stackId)

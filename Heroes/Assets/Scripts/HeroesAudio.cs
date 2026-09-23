@@ -30,6 +30,21 @@ namespace Portfolio.Heroes
             }
         }
 
+        /// <summary>
+        /// Where the settings in use come from, asked every time a volume is needed: the player's own settings once they
+        /// are switched on, the defaults otherwise. <see cref="Settings"/> when not set.
+        /// </summary>
+        public System.Func<HeroesSettings> Source { get; set; }
+
+        private HeroesSettings Active
+        {
+            get
+            {
+                HeroesSettings active = Source != null ? Source() : null;
+                return active != null ? active : settings;
+            }
+        }
+
         private void Awake()
         {
             music = gameObject.AddComponent<AudioSource>();
@@ -48,9 +63,10 @@ namespace Portfolio.Heroes
 
         public void ApplyVolume()
         {
-            if (music != null && settings != null)
+            HeroesSettings active = Active;
+            if (music != null && active != null)
             {
-                music.volume = settings.musicVolume;
+                music.volume = active.musicVolume;
             }
         }
 
@@ -134,7 +150,8 @@ namespace Portfolio.Heroes
 
         private void Update()
         {
-            float target = settings != null ? settings.musicVolume : 0.5f;
+            HeroesSettings active = Active;
+            float target = active != null ? active.musicVolume : 0.5f;
             if (next != null)
             {
                 // Fade the old piece out, then bring the new one in.
@@ -152,6 +169,11 @@ namespace Portfolio.Heroes
                     fade = 0f;
                 }
             }
+            else if (!Mathf.Approximately(music.volume, target))
+            {
+                // The setting changed: the music follows it at once.
+                music.volume = target;
+            }
         }
 
         // ------------------------------------------------------------------ sounds
@@ -166,7 +188,7 @@ namespace Portfolio.Heroes
             AudioSource source = voices[voice];
             voice = (voice + 1) % voices.Length;
             source.pitch = 1f;
-            source.PlayOneShot(clip, volume * (settings != null ? settings.effectsVolume : 0.8f));
+            source.PlayOneShot(clip, volume * (Active != null ? Active.effectsVolume : 0.8f));
         }
 
         /// <summary>A sound with a little variation in pitch, for things heard over and over.</summary>
@@ -180,7 +202,7 @@ namespace Portfolio.Heroes
             AudioSource source = voices[voice];
             voice = (voice + 1) % voices.Length;
             source.pitch = 1f + Random.Range(-spread, spread);
-            source.PlayOneShot(clip, volume * (settings != null ? settings.effectsVolume : 0.8f));
+            source.PlayOneShot(clip, volume * (Active != null ? Active.effectsVolume : 0.8f));
         }
 
         public void Bind(HeroesArt catalog, HeroesSettings options)

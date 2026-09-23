@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using NUnit.Framework;
+using Gamebox.Lockstep;
 
 namespace Portfolio.Heroes.Tests
 {
@@ -79,6 +80,99 @@ namespace Portfolio.Heroes.Tests
         }
 
         // ------------------------------------------------------------------ the map
+
+        [Test]
+        public void ASkirmishTakesTheSizeRichesAndMonstersChosen()
+        {
+            MapSpec authored = Spec(911, 36, 40);
+            MapSpec spec = authored.Clone();
+            spec.Skirmish(0, 3, 4);
+            Assert.That(spec.columns, Is.EqualTo(40));
+            Assert.That(spec.rows, Is.EqualTo(46));
+            Assert.That(spec.treasure, Is.EqualTo(3));
+            Assert.That(spec.monsters, Is.EqualTo(4));
+            Assert.That(spec.players.Count, Is.EqualTo(authored.players.Count), "the seats changed");
+            Assert.That(spec.seed, Is.EqualTo(authored.seed));
+            Assert.That(authored.columns, Is.EqualTo(36), "the scenario's own map changed");
+            Assert.That(authored.treasure, Is.EqualTo(2), "the scenario's own map changed");
+            // Out of range is the nearest setting there is.
+            spec.Skirmish(7, 0, 9);
+            Assert.That(spec.columns, Is.EqualTo(54));
+            Assert.That(spec.treasure, Is.EqualTo(1));
+            Assert.That(spec.monsters, Is.EqualTo(4));
+        }
+
+        [Test]
+        public void EverySkirmishSizeLaysOutAPlayableMap()
+        {
+            foreach (int size in new[] { 0, 1, 2 })
+            {
+                foreach (int players in new[] { 2, 4 })
+                {
+                    MapSpec spec = Spec((uint)(700 + size * 10 + players), players: players);
+                    spec.Skirmish(size, 3, 4);
+                    GameState state = MapGenerator.Generate(spec);
+                    MapSpec.SkirmishSize(size, out int columns, out int rows);
+                    string map = $"the {columns} by {rows} map for {players}";
+                    Assert.That(state.map.grid.columns, Is.EqualTo(columns), map);
+                    Assert.That(state.map.grid.rows, Is.EqualTo(rows), map);
+                    foreach (PlayerState player in state.players)
+                    {
+                        Assert.That(player.towns.Count, Is.GreaterThanOrEqualTo(1), $"{player.name} has no town on {map}");
+                        Assert.That(player.heroes.Count, Is.GreaterThanOrEqualTo(1), $"{player.name} has no hero on {map}");
+                    }
+                    // Every town can be walked to (wandering armies and towns aside, as the generator leaves them).
+                    HexGrid grid = state.map.grid;
+                    var seen = new bool[grid.Count];
+                    var queue = new Queue<int>();
+                    queue.Enqueue(state.heroes[0].cell);
+                    seen[state.heroes[0].cell] = true;
+                    while (queue.Count > 0)
+                    {
+                        foreach (int next in grid.Neighbors(queue.Dequeue()))
+                        {
+                            if (!seen[next] && state.map.Open(next))
+                            {
+                                seen[next] = true;
+                                queue.Enqueue(next);
+                            }
+                        }
+                    }
+                    foreach (TownState town in state.towns)
+                    {
+                        Assert.That(seen[town.cell], Is.True, $"no way to {town.name} on {map}");
+                    }
+                }
+            }
+        }
+
+        [Test]
+        public void DifficultyMovesTheComputerPlayersFromTheMapsOwnLevel()
+        {
+            MapSpec authored = Spec(5, players: 4);
+            authored.players[2].aiLevel = 0;
+            authored.players[3].aiLevel = 2;
+            int[] Levels(int difficulty)
+            {
+                MapSpec spec = authored.Clone();
+                spec.SetDifficulty(difficulty);
+                return spec.players.ConvertAll(p => p.aiLevel).ToArray();
+            }
+            Assert.That(Levels(1), Is.EqualTo(new[] { 1, 1, 0, 2 }), "normal changed the map's own levels");
+            Assert.That(Levels(2), Is.EqualTo(new[] { 1, 2, 1, 2 }));
+            Assert.That(Levels(0), Is.EqualTo(new[] { 1, 0, 0, 1 }));
+
+            // The computer starts with what its level gives it; the person at the device with the map's own.
+            MapSpec easy = authored.Clone();
+            easy.SetDifficulty(0);
+            MapSpec hard = authored.Clone();
+            hard.SetDifficulty(2);
+            GameState easyGame = MapGenerator.Generate(easy);
+            GameState hardGame = MapGenerator.Generate(hard);
+            Assert.That(hardGame.players[1].resources.Gold, Is.GreaterThan(easyGame.players[1].resources.Gold));
+            Assert.That(hardGame.players[0].resources.Gold, Is.EqualTo(easyGame.players[0].resources.Gold));
+            Assert.That(hardGame.players[1].aiLevel, Is.EqualTo(2));
+        }
 
         [Test]
         public void TheSameSeedLaysOutTheSameMap()

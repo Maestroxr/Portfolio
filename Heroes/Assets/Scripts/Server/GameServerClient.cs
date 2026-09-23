@@ -10,8 +10,8 @@ namespace Portfolio.Heroes.Server
     /// <summary>
     /// The server client of the bindings next to this file: the component to put in a scene. It ties the shared
     /// <see cref="ServerClient"/> to the tables and the reducers of the base server as these bindings name them
-    /// (users, rooms and their members, turns, the action log, poses), which is all that has to be written per set
-    /// of bindings.
+    /// (users, rooms and their members, turns, the action log, the seats of a table, poses), which is all that has to
+    /// be written per set of bindings.
     ///
     /// The original of this class belongs to BaseGame's bindings of the base server;
     /// <c>Gamebox &gt; Server &gt; Generate Client Bindings</c> writes it into a game, in the namespace of the game's
@@ -42,6 +42,10 @@ namespace Portfolio.Heroes.Server
 
             connection.Db.RoomAction.OnInsert += (context, row) =>
                 NotifyAction(new RoomActionInfo(row.Id, row.RoomId, row.Sender, row.Seat, row.Kind, row.Payload, row.Random));
+
+            connection.Db.RoomSeat.OnInsert += (context, row) => NotifySeatChanged(ToSeat(row));
+            connection.Db.RoomSeat.OnUpdate += (context, previous, row) => NotifySeatChanged(ToSeat(row));
+            connection.Db.RoomSeat.OnDelete += (context, row) => NotifySeatRemoved(row.Id);
 
             connection.Db.RoomPose.OnInsert += (context, row) => NotifyPoseChanged(ToPose(row));
             connection.Db.RoomPose.OnUpdate += (context, previous, row) => NotifyPoseChanged(ToPose(row));
@@ -187,6 +191,11 @@ namespace Portfolio.Heroes.Server
         private static RoomTurnInfo ToTurn(RoomTurn row)
         {
             return new RoomTurnInfo(row.RoomId, row.Seat, row.Number, row.Seconds);
+        }
+
+        private static RoomSeatInfo ToSeat(RoomSeat row)
+        {
+            return new RoomSeatInfo(row.Id, row.RoomId, row.Seat, row.Kind, row.Player, row.Name, row.Look, row.BotLevel);
         }
 
         private static RoomPoseInfo ToPose(RoomPose row)

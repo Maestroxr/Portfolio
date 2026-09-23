@@ -28,12 +28,12 @@ namespace Portfolio.Monopoly.Server
     {
         public RemoteTables(DbConnection conn)
         {
-            AddTable(MonopolySeat = new(conn));
             AddTable(MonopolyStats = new(conn));
             AddTable(Room = new(conn));
             AddTable(RoomAction = new(conn));
             AddTable(RoomMember = new(conn));
             AddTable(RoomPose = new(conn));
+            AddTable(RoomSeat = new(conn));
             AddTable(RoomTurn = new(conn));
             AddTable(User = new(conn));
         }
@@ -532,12 +532,12 @@ namespace Portfolio.Monopoly.Server
 
         internal static string[] AllTablesSqlQueries() => new string[]
         {
-            new QueryBuilder().From.MonopolySeat().ToSql(),
             new QueryBuilder().From.MonopolyStats().ToSql(),
             new QueryBuilder().From.Room().ToSql(),
             new QueryBuilder().From.RoomAction().ToSql(),
             new QueryBuilder().From.RoomMember().ToSql(),
             new QueryBuilder().From.RoomPose().ToSql(),
+            new QueryBuilder().From.RoomSeat().ToSql(),
             new QueryBuilder().From.RoomTurn().ToSql(),
             new QueryBuilder().From.User().ToSql(),
         }
@@ -546,12 +546,12 @@ namespace Portfolio.Monopoly.Server
 
     public sealed class From
     {
-        public global::SpacetimeDB.Table<MonopolySeat, MonopolySeatCols, MonopolySeatIxCols> MonopolySeat() => new("monopoly_seat", new MonopolySeatCols("monopoly_seat"), new MonopolySeatIxCols("monopoly_seat"));
         public global::SpacetimeDB.Table<MonopolyStats, MonopolyStatsCols, MonopolyStatsIxCols> MonopolyStats() => new("monopoly_stats", new MonopolyStatsCols("monopoly_stats"), new MonopolyStatsIxCols("monopoly_stats"));
         public global::SpacetimeDB.Table<Room, RoomCols, RoomIxCols> Room() => new("room", new RoomCols("room"), new RoomIxCols("room"));
         public global::SpacetimeDB.Table<RoomAction, RoomActionCols, RoomActionIxCols> RoomAction() => new("room_action", new RoomActionCols("room_action"), new RoomActionIxCols("room_action"));
         public global::SpacetimeDB.Table<RoomMember, RoomMemberCols, RoomMemberIxCols> RoomMember() => new("room_member", new RoomMemberCols("room_member"), new RoomMemberIxCols("room_member"));
         public global::SpacetimeDB.Table<RoomPose, RoomPoseCols, RoomPoseIxCols> RoomPose() => new("room_pose", new RoomPoseCols("room_pose"), new RoomPoseIxCols("room_pose"));
+        public global::SpacetimeDB.Table<RoomSeat, RoomSeatCols, RoomSeatIxCols> RoomSeat() => new("room_seat", new RoomSeatCols("room_seat"), new RoomSeatIxCols("room_seat"));
         public global::SpacetimeDB.Table<RoomTurn, RoomTurnCols, RoomTurnIxCols> RoomTurn() => new("room_turn", new RoomTurnCols("room_turn"), new RoomTurnIxCols("room_turn"));
         public global::SpacetimeDB.Table<User, UserCols, UserIxCols> User() => new("user", new UserCols("user"), new UserIxCols("user"));
     }

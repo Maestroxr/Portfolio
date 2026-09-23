@@ -14,6 +14,7 @@ namespace Portfolio.Heroes
         private HeroesArt art;
         private GameState state;
         private Transform scenery;
+        private TreeInstance[] clearedTrees;
         private Transform props;
         private readonly Dictionary<int, ObjectView> objects = new Dictionary<int, ObjectView>();
         private readonly Dictionary<int, HeroView> heroes = new Dictionary<int, HeroView>();
@@ -241,10 +242,83 @@ namespace Portfolio.Heroes
             var view = new GameObject($"Hero {hero.Name}").AddComponent<HeroView>();
             view.transform.SetParent(transform, false);
             view.transform.position = Point(hero.cell);
-            view.Setup(art, hero);
+            PlayerState owner = state.Player(hero.owner);
+            view.Setup(art, hero, owner != null ? (int)owner.color : hero.owner);
             view.Face(Facing(hero.facing));
             heroes[hero.id] = view;
         }
+
+        /// <summary>
+        /// Lifts the trees off the ground of a battle fought on the map where they would stand in front of its troops:
+        /// on the cells around every open cell of the field, and two rows toward the camera from it, so a stack beside a
+        /// wood is not hidden by it. <see cref="RestoreTrees"/> puts them back.
+        /// </summary>
+        public void ClearTrees(BattleState battle)
+        {
+            if (Terrain == null || Terrain.terrainData == null || clearedTrees != null || battle == null)
+            {
+                return;
+            }
+            HexGrid grid = state.map.grid;
+            var field = new HashSet<int>(battle.cells);
+            var clear = new HashSet<int>();
+            var around = new List<int>();
+            foreach (int cell in battle.cells)
+            {
+                if (battle.IsBlocked(cell))
+                {
+                    continue;
+                }
+                grid.Neighbors(cell, around);
+                foreach (int next in around)
+                {
+                    clear.Add(next);
+                    // The camera looks from the south: a tree two rows down still stands in front.
+                    if (grid.Row(next) < grid.Row(cell))
+                    {
+                        foreach (int further in grid.Neighbors(next))
+                        {
+                            if (grid.Row(further) < grid.Row(next))
+                            {
+                                clear.Add(further);
+                            }
+                        }
+                    }
+                }
+            }
+            clear.IntersectWith(field);
+            TerrainData data = Terrain.terrainData;
+            TreeInstance[] all = data.treeInstances;
+            var kept = new List<TreeInstance>(all.Length);
+            Vector3 size = data.size;
+            Vector3 origin = Terrain.transform.position;
+            foreach (TreeInstance tree in all)
+            {
+                if (!clear.Contains(CellAt(origin + Vector3.Scale(tree.position, size))))
+                {
+                    kept.Add(tree);
+                }
+            }
+            if (kept.Count == all.Length)
+            {
+                return;
+            }
+            clearedTrees = all;
+            data.SetTreeInstances(kept.ToArray(), false);
+        }
+
+        /// <summary>Puts back the trees <see cref="ClearTrees"/> lifted.</summary>
+        public void RestoreTrees()
+        {
+            if (clearedTrees != null && Terrain != null && Terrain.terrainData != null)
+            {
+                Terrain.terrainData.SetTreeInstances(clearedTrees, false);
+            }
+            clearedTrees = null;
+        }
+
+        /// <summary>The heroes standing on the map, as they are shown.</summary>
+        public IEnumerable<HeroView> Heroes => heroes.Values;
 
         public void Remove(int heroId)
         {
@@ -255,10 +329,11 @@ namespace Portfolio.Heroes
             }
         }
 
-        /// <summary>The direction a hero is turned toward, from the neighbour he last stepped to.</summary>
+        /// <summary>The direction a hero is turned toward, from the neighbour he last stepped to (a <see cref="HexSide"/>).</summary>
         public Vector3 Facing(int facing)
         {
-            float angle = 90f - facing * 60f;
+            // The sides go round clockwise from the east: east is +x, the north east (up a row) 60 degrees toward +z.
+            float angle = -facing * 60f;
             return new Vector3(Mathf.Cos(angle * Mathf.Deg2Rad), 0f, Mathf.Sin(angle * Mathf.Deg2Rad));
         }
 

@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using System.IO;
 using System.Linq;
 using Gamebox;
 using Gamebox.Online;
@@ -10,17 +9,18 @@ namespace Portfolio.Monopoly
 {
     /// <summary>
     /// Development players only. Started with <c>-monopoly-online &lt;role&gt; &lt;folder&gt; [name]</c>, it plays an online
-    /// match by itself and saves screenshots and a log (named after the role, or the name) into the folder, then quits.
-    /// The <c>host</c> opens a room (Tycoon Rush, which ends after twenty rounds, one computer player, a short clock)
-    /// and starts it once somebody joined and is ready; <c>join</c> joins the first room it sees. Both play their seats
-    /// with a simple autopilot, and a guest leaves its first decisions to the clock of the room. <c>joinquits</c> and
-    /// <c>hostquits</c> leave the match after a while (the latter waits for two guests first): the computer plays their
-    /// seats on, the room passes to a guest, who calls the match off a little later. Every action of the log is written
-    /// down with the checksum of the match after it, so the logs of the players show whether they stayed in step. Run
-    /// the players with <c>-gamebox-identity</c> to tell them apart, and <c>-gamebox-server</c> /
-    /// <c>-gamebox-database</c> for a test server. Without the argument it does nothing.
+    /// match by itself and saves screenshots and a log (named after the role, or the name) into the folder, then quits
+    /// (<see cref="OnlineTour"/>). The <c>host</c> opens a room (Tycoon Rush, which ends after twenty rounds, one computer
+    /// player, a short clock) and starts it once somebody joined and is ready; <c>join</c> joins the first room it sees.
+    /// Both play their seats with a simple autopilot, and a guest leaves its first decisions to the clock of the room.
+    /// <c>joinquits</c> and <c>hostquits</c> leave the match after a while (the latter waits for two guests first): the
+    /// computer plays their seats on and the match goes on; when the host left, the room passes to a guest, who calls the
+    /// match off a little later. Every action of the log is written down with the checksum of the match after it, so the
+    /// logs of the players show whether they stayed in step. Run the players with <c>-gamebox-identity</c> to tell them
+    /// apart, and <c>-gamebox-server</c> / <c>-gamebox-database</c> for a test server. Without the argument it does
+    /// nothing.
     /// </summary>
-    public class MonopolyOnlineTour : MonoBehaviour
+    public class MonopolyOnlineTour : OnlineTour
     {
         private const string Argument = "-monopoly-online";
         /// <summary>The mode the room plays: Tycoon Rush ends after twenty rounds.</summary>
@@ -31,43 +31,19 @@ namespace Portfolio.Monopoly
         private const float QuitAfter = 50f;
         private const float CallOffAfter = 70f;
 
-        private string role;
-        private string who;
-        private string folder;
-        private bool host;
-        private bool quits;
         private MonopolyGameManager manager;
-        private ServerClient server;
-        private StreamWriter log;
         private bool piloting;
         private int sleepy;
         private bool proposed;
         private bool timeoutShot;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        private static void Bootstrap()
+        private static void Launch()
         {
-            if (!Debug.isDebugBuild || Application.isEditor)
-            {
-                return;
-            }
-            string[] args = Environment.GetCommandLineArgs();
-            for (int i = 0; i < args.Length - 2; i++)
-            {
-                if (args[i] == Argument && FindAnyObjectByType<MonopolyOnlineTour>() == null)
-                {
-                    var tourObject = new GameObject("Monopoly Online Tour");
-                    DontDestroyOnLoad(tourObject);
-                    var tour = tourObject.AddComponent<MonopolyOnlineTour>();
-                    tour.role = args[i + 1];
-                    tour.folder = args[i + 2];
-                    tour.who = i + 3 < args.Length && !args[i + 3].StartsWith("-") ? args[i + 3] : tour.role;
-                    tour.host = tour.role.StartsWith("host");
-                    tour.quits = tour.role.EndsWith("quits");
-                    return;
-                }
-            }
+            Bootstrap<MonopolyOnlineTour>(Argument);
         }
+
+        private bool Quits => Role.EndsWith("quits", StringComparison.Ordinal);
 
         private MonopolyMatch Match => manager.Match;
 
@@ -75,15 +51,7 @@ namespace Portfolio.Monopoly
 
         private IEnumerator Start()
         {
-            Directory.CreateDirectory(folder);
-            log = new StreamWriter(Path.Combine(folder, $"{who}.log")) { AutoFlush = true };
-            Application.logMessageReceived += (message, stack, type) =>
-            {
-                if (type == LogType.Error || type == LogType.Exception || type == LogType.Warning)
-                {
-                    Note($"{type}: {message}");
-                }
-            };
+            OpenLog(true);
             while ((manager = FindAnyObjectByType<MonopolyGameManager>()) == null)
             {
                 yield return null;
@@ -95,47 +63,39 @@ namespace Portfolio.Monopoly
                 yield break;
             }
             yield return Shot("00_title");
-            server = manager.Online.ServerClient;
-            server.Failed += error => Note("server: " + error);
-            manager.OpenOnline();
-            yield return WaitFor(() => server.IsLoggedIn, 30f, "login");
-            if (!server.IsLoggedIn)
+            yield return LogIn(manager.Online);
+            if (!LoggedIn)
             {
                 yield return Fail("no login");
                 yield break;
             }
-            Note($"logged in as {server.LocalPlayer.Name}");
             // After the controller, so the match took an action by the time it is written down here.
-            server.ActionReceived += WriteAction;
+            LogActions(kind => ((CommandKind)kind).ToString(), () => manager.Lockstep != null
+                ? $"applied {manager.Lockstep.Applied} sum {manager.Lockstep.Checksum():X8} cash {string.Join("/", manager.Lockstep.Match.players.Select(p => p.cash))}"
+                : "no match");
+            Server.ActionReceived += ShootTimeout;
             yield return new WaitForSeconds(0.5f);
 
-            if (host)
+            if (Hosting)
             {
-                int guests = quits ? 2 : 1;
+                int guests = Quits ? 2 : 1;
                 string options = RoomOptions.Write(MonopolyOnlineController.TurnOption, 20, MonopolyOnlineController.ComputersOption, 1,
                     MonopolyOnlineController.LevelOption, 1);
-                server.CreateRoom("Tour table", Mode, options, 4, error => Note("create room: " + (error ?? "ok")));
-                yield return WaitFor(() => server.InRoom, 15f, "own room");
+                yield return HostRoom("Tour table", Mode, options, 4);
                 yield return new WaitForSeconds(0.5f);
                 yield return Shot("01_room");
-                yield return WaitFor(() => server.Members.Count > guests && server.Members.All(member => member.Ready || server.IsLocal(member)), 120f,
-                    "the guests to be ready");
+                yield return WaitForGuests(guests, 120f);
                 yield return new WaitForSeconds(0.5f);
                 yield return Shot("02_everybody_ready");
-                server.StartRoom(error => Note("start room: " + (error ?? "ok")));
+                StartRoom();
             }
             else
             {
-                yield return WaitFor(() => server.Rooms.Any(room => room.Phase != RoomPhase.Playing), 120f, "a room");
-                yield return Shot("01_rooms");
-                RoomInfo open = server.Rooms.First(room => room.Phase != RoomPhase.Playing);
-                server.JoinRoom(open.Id, error => Note("join room: " + (error ?? "ok")));
-                yield return WaitFor(() => server.InRoom, 15f, "the room");
-                server.SetReady(true, error => Note("ready: " + (error ?? "ok")));
+                yield return JoinFirstRoom(120f);
                 yield return new WaitForSeconds(0.7f);
                 yield return Shot("02_room");
                 // The first decisions are left to the clock of the room.
-                sleepy = quits ? 0 : 2;
+                sleepy = Quits ? 0 : 2;
             }
 
             yield return WaitFor(() => manager.IsOnlineMatch && manager.IsGameRunning, 60f, "the match");
@@ -147,7 +107,7 @@ namespace Portfolio.Monopoly
             Note($"playing seat {manager.LocalSeat} of {Match.players.Count}: " + string.Join(", ", Match.players.Select(p => $"{p.name}{(p.bot ? " (computer)" : "")}")));
             piloting = true;
             StartCoroutine(Pilot());
-            StartCoroutine(ShotWhen("04_the_clock_runs_down", () => WaitingForSomebodyElse && server.Turn != null && server.Turn.Remaining < 6f));
+            StartCoroutine(ShotWhen("04_the_clock_runs_down", () => WaitingForSomebodyElse && Server.Turn != null && Server.Turn.Remaining < 6f));
             StartCoroutine(ShotWhen("05_trade_offer", () => manager.MonopolyUI.Offer.IsOpen, 0.6f));
             StartCoroutine(ShotWhen("06_round_4", () => Match != null && Match.round >= 4 && manager.WaitingForHuman));
             StartCoroutine(ShotWhen("07_round_12", () => Match != null && Match.round >= 12 && !manager.WaitingForHuman));
@@ -156,14 +116,14 @@ namespace Portfolio.Monopoly
 
             float started = Time.realtimeSinceStartup;
             float inherited = -1f;
-            while (!Over && server.InRoom && Time.realtimeSinceStartup - started < Patience * 60f)
+            while (!Over && Server.InRoom && Time.realtimeSinceStartup - started < Patience * 60f)
             {
-                if (quits && Time.realtimeSinceStartup - started > QuitAfter)
+                if (Quits && Time.realtimeSinceStartup - started > QuitAfter)
                 {
                     yield return LeaveTheMatch();
                     yield break;
                 }
-                if (!host && server.IsHost)
+                if (!Hosting && Server.IsHost)
                 {
                     // The host left and the room passed on: this player moves the computer players now.
                     if (inherited < 0f)
@@ -179,10 +139,10 @@ namespace Portfolio.Monopoly
                 }
                 yield return null;
             }
-            if (!Over && server.IsHost && server.InRoom)
+            if (!Over && Server.IsHost && Server.InRoom)
             {
                 Note("calling the match off");
-                server.EndRoom(error => Note("end room: " + (error ?? "ok")));
+                Server.EndRoom(error => Note("end room: " + (error ?? "ok")));
             }
             yield return WaitFor(() => Over && manager.MonopolyUI.Results.IsOpen, 90f, "the results");
             piloting = false;
@@ -193,16 +153,16 @@ namespace Portfolio.Monopoly
                 Note($"result: {manager.State}, round {Match.round}; " + string.Join(", ", Match.Standings().Select(p => $"{p.place}. {p.name} {Match.NetWorth(p.index)}")));
                 Note($"final: applied {manager.Lockstep.Applied} sum {manager.Lockstep.Checksum():X8}");
             }
-            yield return WaitFor(() => server.CurrentRoom != null && server.CurrentRoom.Phase == RoomPhase.Finished, 60f, "the room to finish");
-            Note("places: " + string.Join(", ", server.Members.Select(member => $"{server.NameOf(member.Identity)} {member.Place}. with {member.Score}")));
+            yield return WaitFor(() => Server.CurrentRoom != null && Server.CurrentRoom.Phase == RoomPhase.Finished, 60f, "the room to finish");
+            Note("places: " + string.Join(", ", Server.Members.Select(member => $"{Server.NameOf(member.Identity)} {member.Place}. with {member.Score}")));
 
             manager.ActiveController.TransitionState(BaseGameState.Initialization);
             yield return new WaitForSeconds(1.5f);
             yield return Shot("09_back_in_the_room");
             Note($"back in the room: session {manager.InSession}, match {manager.Match != null}, state {manager.State}, lobby {manager.Online.LobbyUI.IsOpen}");
             // The guests leave first, so the host still sees the room lose its members.
-            yield return new WaitForSeconds(host ? 3f : 0.5f);
-            server.LeaveRoom();
+            yield return new WaitForSeconds(Hosting ? 3f : 0.5f);
+            Server.LeaveRoom();
             yield return new WaitForSeconds(1f);
             Note("done");
             Quit();
@@ -228,7 +188,7 @@ namespace Portfolio.Monopoly
             manager.Online.LeaveMatch();
             yield return new WaitForSeconds(1.5f);
             yield return Shot("11_left_the_match");
-            Note($"left: session {manager.InSession}, match {manager.Match != null}, state {manager.State}, in a room {server.InRoom}");
+            Note($"left: session {manager.InSession}, match {manager.Match != null}, state {manager.State}, in a room {Server.InRoom}");
             Note("done");
             Quit();
         }
@@ -339,7 +299,7 @@ namespace Portfolio.Monopoly
                 return true;
             }
             PlayerState other = Match.players.FirstOrDefault(p => !p.bot && !p.bankrupt && p.index != seat);
-            if (host && !proposed && Match.round >= 2 && other != null && Match.players[seat].cash > 300)
+            if (Hosting && !proposed && Match.round >= 2 && other != null && Match.players[seat].cash > 300)
             {
                 proposed = true;
                 var offer = new TradeOffer { from = seat, to = other.index, giveCash = 25 };
@@ -350,18 +310,10 @@ namespace Portfolio.Monopoly
             return false;
         }
 
-        /// <summary>Every action of the log with the state of the match after it: the players compare these lines.</summary>
-        private void WriteAction(RoomActionInfo action)
+        /// <summary>The first time the clock of the room runs out, the screen shows it.</summary>
+        private void ShootTimeout(RoomActionInfo action)
         {
-            LockstepMatch table = manager.Lockstep;
-            if (table == null)
-            {
-                return;
-            }
-            string what = action.IsTimeout ? "timeout" : ((CommandKind)action.Kind).ToString();
-            string cash = string.Join("/", table.Match.players.Select(p => p.cash));
-            log?.WriteLine($"action {action.Id} seat {action.Seat} {what} {action.Payload} -> applied {table.Applied} sum {table.Checksum():X8} cash {cash}");
-            if (action.IsTimeout && !timeoutShot)
+            if (action.IsTimeout && !timeoutShot && manager.Lockstep != null)
             {
                 timeoutShot = true;
                 StartCoroutine(ShotLater("04_time_is_up", 0.6f));
@@ -388,44 +340,6 @@ namespace Portfolio.Monopoly
                 yield return new WaitForSeconds(delay);
             }
             yield return Shot(shotName);
-        }
-
-        private IEnumerator WaitFor(Func<bool> condition, float timeout, string what)
-        {
-            float waited = 0f;
-            while (!condition() && waited < timeout)
-            {
-                waited += Time.unscaledDeltaTime;
-                yield return null;
-            }
-            Note(condition() ? $"got {what} after {waited:0.0}s" : $"TIMEOUT waiting for {what}");
-        }
-
-        private IEnumerator Shot(string shotName)
-        {
-            yield return new WaitForEndOfFrame();
-            ScreenCapture.CaptureScreenshot(Path.Combine(folder, $"{who}_{shotName}.png"));
-            Note($"shot {shotName}: state {manager.State}, phase {(Match != null ? Match.phase.ToString() : "none")}, round {(Match != null ? Match.round : 0)}");
-            yield return null;
-        }
-
-        private IEnumerator Fail(string reason)
-        {
-            Note("FAILED: " + reason);
-            yield return Shot("failed");
-            Quit();
-        }
-
-        private void Note(string message)
-        {
-            log?.WriteLine($"{Time.realtimeSinceStartup:0.0}s {message}");
-        }
-
-        private void Quit()
-        {
-            log?.Dispose();
-            log = null;
-            Application.Quit();
         }
     }
 }

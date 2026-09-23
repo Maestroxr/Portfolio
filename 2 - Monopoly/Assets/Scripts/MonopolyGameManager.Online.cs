@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using Gamebox;
+using Gamebox.Lockstep;
+using Gamebox.Online;
 using UnityEngine;
 
 namespace Portfolio.Monopoly
@@ -8,13 +10,14 @@ namespace Portfolio.Monopoly
     /// <summary>
     /// The online half of the manager: a match played in step with the other players of a room
     /// (<see cref="MonopolyOnlineController"/>, Server/Lib.cs). The match is a <see cref="LockstepMatch"/> that nothing
-    /// but the action log of the server changes. What arrives is applied at once, so the rules engine may run ahead of
+    /// but the action log of the server changes: the controller takes every action to it and tells the manager
+    /// (<see cref="ILockstepHost{TCommand}"/>). What arrives is applied at once, so the rules engine may run ahead of
     /// the board, which plays the events as it does in a game at one device. The director offers a decision only to the
     /// player at this device, and only once the board caught up; for everybody else it shows who the table waits for.
     /// The computer players are moved by the client of the host, through the log like everybody else. There is no
     /// saving and no pausing, and the results lead back to the room.
     /// </summary>
-    public partial class MonopolyGameManager
+    public partial class MonopolyGameManager : ILockstepHost<MatchCommand>
     {
         /// <summary>What the online controller hands over before a match of the room starts: the table as the server seated it.</summary>
         internal sealed class OnlineTable
@@ -42,7 +45,6 @@ namespace Portfolio.Monopoly
         private int onlineVersion;
         private int reportedTurn = -1;
         private int reportedWorth = -1;
-        private bool finishReported;
 
         public MonopolyOnlineController Online => online;
 
@@ -66,16 +68,7 @@ namespace Portfolio.Monopoly
             return !player.bot && (lockstep == null || player.index == localSeat);
         }
 
-        /// <summary>The online button of the title screen: opens the lobby of the game's server.</summary>
-        public void OpenOnline()
-        {
-            if (online == null)
-            {
-                UI?.UpdateError("Online play is not set up in this scene.");
-                return;
-            }
-            online.OpenLobby();
-        }
+        protected override IOnlineLobby OnlineLobby => online;
 
         // ------------------------------------------------------------------ starting and ending
 
@@ -108,7 +101,6 @@ namespace Portfolio.Monopoly
             onlineVersion = 0;
             reportedTurn = -1;
             reportedWorth = -1;
-            finishReported = false;
             BeginDirecting(lockstep.Match, fresh: true);
             ui.Panel(localSeat)?.MarkAsLocal();
             for (int i = 0; i < tokens.Count && i < Match.players.Count; i++)
@@ -147,31 +139,34 @@ namespace Portfolio.Monopoly
 
         // ------------------------------------------------------------------ what the server sends
 
+        LockstepTable<MatchCommand> ILockstepHost<MatchCommand>.Table => lockstep;
+
+        int ILockstepHost<MatchCommand>.TableSeat => localSeat;
+
+        string ILockstepHost<MatchCommand>.TurnCaption => OnlineCaption();
+
         /// <summary>
-        /// An action of the log arrived: it is applied to the match at once, in the order of the log. The board follows
-        /// through the events of the match.
+        /// An entry of the log was taken: the match has it already, in the order of the log. The board follows through the
+        /// events of the match; what they do not tell is told here.
         /// </summary>
-        internal void OnlineActionArrived(int seat, uint kind, string payload, uint stamp, bool timeout)
+        void ILockstepHost<MatchCommand>.EntryTaken(LockstepEntry<MatchCommand> entry)
         {
             if (lockstep == null || Match == null)
             {
                 return;
             }
-            if (timeout)
+            switch (entry.Kind)
             {
-                int waitedFor = lockstep.Waiting;
-                if (lockstep.Timeout(stamp).Count > 0)
-                {
-                    TimeRanOut(waitedFor);
-                }
-            }
-            else
-            {
-                MatchCommand command = MatchCommand.Parse(seat, kind, payload);
-                if (lockstep.Apply(command, stamp))
-                {
-                    CommandArrived(command);
-                }
+                case LockstepEntryKind.Timeout when entry.Made.Count > 0:
+                    // The default moves are made for the seat the table waited for.
+                    TimeRanOut(entry.Made[0].seat);
+                    break;
+                case LockstepEntryKind.SeatToComputer when entry.Accepted:
+                    SeatWentToComputer(entry.Seat);
+                    break;
+                case LockstepEntryKind.Command when entry.Accepted:
+                    CommandArrived(entry.Command);
+                    break;
             }
             if (lockstep.AnsweredOffer != null)
             {
@@ -181,26 +176,29 @@ namespace Portfolio.Monopoly
             ReportToRoom();
         }
 
-        /// <summary>What the board cannot tell from the events of the match: a player left, an offer is on the table.</summary>
+        /// <summary>A player left the table: the computer plays the seat on.</summary>
+        private void SeatWentToComputer(int seat)
+        {
+            if (seat < 0 || seat >= Match.players.Count)
+            {
+                return;
+            }
+            PlayerState player = Match.players[seat];
+            if (seat < tokens.Count)
+            {
+                tokens[seat].Assign(seat, PlayerControl.Computer, player.name);
+            }
+            ui.Toast($"{Named(seat)} left the table. The computer plays on.", MonopolyStyle.Ink, Icons.Robot);
+            ui.RefreshPlayers(Match);
+        }
+
+        /// <summary>What the board cannot tell from the events of the match: an offer is on the table.</summary>
         private void CommandArrived(MatchCommand command)
         {
-            switch (command.kind)
+            if (command.kind == CommandKind.ProposeTrade)
             {
-                case CommandKind.SeatToComputer:
-                {
-                    PlayerState player = Match.players[command.seat];
-                    if (command.seat < tokens.Count)
-                    {
-                        tokens[command.seat].Assign(command.seat, PlayerControl.Computer, player.name);
-                    }
-                    ui.Toast($"{Named(command.seat)} left the table. The computer plays on.", MonopolyStyle.Ink, Icons.Robot);
-                    ui.RefreshPlayers(Match);
-                    break;
-                }
-                case CommandKind.ProposeTrade:
-                    sound?.Play(Sfx.Trade);
-                    ui.Toast($"{Named(command.offer.from)} {Verb(command.offer.from, "offers")} {NamedObject(command.offer.to)} a trade.", MonopolyStyle.Blue, Icons.Handshake);
-                    break;
+                sound?.Play(Sfx.Trade);
+                ui.Toast($"{Named(command.offer.from)} {Verb(command.offer.from, "offers")} {NamedObject(command.offer.to)} a trade.", MonopolyStyle.Blue, Icons.Handshake);
             }
         }
 
@@ -251,17 +249,15 @@ namespace Portfolio.Monopoly
             int worth = localSeat >= 0 && localSeat < Match.players.Count ? Match.NetWorth(localSeat) : 0;
             if (Match.IsOver)
             {
-                if (!finishReported)
-                {
-                    finishReported = true;
-                    online.ReportFinished(worth);
-                }
+                // The room gives the members the places of their seats, a computer player that won before them all.
+                int place = localSeat >= 0 && localSeat < Match.players.Count ? Match.players[localSeat].place : 0;
+                online.ReportTableFinished(Match.winner, place, worth);
             }
             else if (Match.turn != reportedTurn && worth != reportedWorth)
             {
                 reportedTurn = Match.turn;
                 reportedWorth = worth;
-                online.ReportWorth(worth);
+                online.ReportScore(worth);
             }
         }
 
@@ -269,7 +265,7 @@ namespace Portfolio.Monopoly
         /// The room finished. When the match has not (too few players are left, or the host ended the game), it ends
         /// here as it does on every other client: all of them took the same actions, so they rank the players the same.
         /// </summary>
-        internal void OnlineRoomFinished()
+        void ILockstepHost<MatchCommand>.RoomFinished()
         {
             if (lockstep == null || Match == null || Match.IsOver)
             {
@@ -281,14 +277,14 @@ namespace Portfolio.Monopoly
         }
 
         /// <summary>A command of the player at this device did not reach the log: the choice is theirs again.</summary>
-        internal void OnlineCommandFailed()
+        void ILockstepHost<MatchCommand>.CommandFailed()
         {
             sound?.Play(Sfx.Error, 0.7f);
             onlineVersion++;
         }
 
         /// <summary>Who the table waits for, for the clock of the lobby.</summary>
-        internal string OnlineCaption()
+        private string OnlineCaption()
         {
             if (lockstep == null || Match == null)
             {
@@ -392,7 +388,12 @@ namespace Portfolio.Monopoly
                     else
                     {
                         ui.Actions.Show(player.name, "is considering the offer...", MonopolyStyle.PlayerColor(player.color), ui.TokenSprite(player.token), null, true);
-                        if (player.bot && host)
+                        if (player.bot && host && online.AwaitingComputer)
+                        {
+                            // The answer sent for the computer is still on its way: it is waited for, not given twice.
+                            patience = Time.unscaledTime;
+                        }
+                        else if (player.bot && host)
                         {
                             yield return new WaitForSeconds(Beat(0.9f));
                             if (!SameTable(version))
@@ -407,7 +408,13 @@ namespace Portfolio.Monopoly
                 else if (player.bot)
                 {
                     ShowBotTurn(player);
-                    if (host)
+                    if (host && online.AwaitingComputer)
+                    {
+                        // The move sent for the computer is still on its way (what arrived meanwhile was somebody
+                        // managing property): it is waited for, not worked out a second time.
+                        patience = Time.unscaledTime;
+                    }
+                    else if (host)
                     {
                         yield return new WaitForSeconds(Beat(matchSettings.BotThinkTime));
                         if (!SameTable(version))
@@ -448,7 +455,9 @@ namespace Portfolio.Monopoly
                     WaitingForHuman = true;
                 }
 
-                while (SameTable(version) && host == online.IsHost && sending == online.AwaitingEcho && Time.unscaledTime < patience)
+                // A move of the host for a computer player that is still on its way is not worked out again.
+                while (SameTable(version) && host == online.IsHost && sending == online.AwaitingEcho &&
+                       (Time.unscaledTime < patience || online.AwaitingComputer))
                 {
                     yield return null;
                 }

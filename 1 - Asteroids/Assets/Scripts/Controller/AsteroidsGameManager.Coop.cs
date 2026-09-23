@@ -66,20 +66,17 @@ namespace Portfolio.Asteroids
 
         #region Menu
 
+        protected override IOnlineLobby OnlineLobby => online;
+
         /// <summary>The multiplayer button of the mission select: opens the lobby of the game's server.</summary>
-        public void OpenOnline()
+        public override void OpenOnline()
         {
             if (phase != MissionPhase.Menu)
             {
                 return;
             }
             sounds?.Click();
-            if (online == null)
-            {
-                UI?.UpdateError("Online play is not set up in this scene.");
-                return;
-            }
-            online.OpenLobby();
+            base.OpenOnline();
         }
 
         #endregion

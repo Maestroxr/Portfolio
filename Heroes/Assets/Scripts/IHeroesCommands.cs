@@ -43,10 +43,11 @@ namespace Portfolio.Heroes
 
         void BattleMove(int stackId, int cell);
 
-        /// <summary>Strikes a stack: <paramref name="fromCell"/> is the cell to strike it from.</summary>
-        void BattleAttack(int stackId, int targetCell, int fromCell);
+        /// <summary>Strikes the stack <paramref name="targetStack"/> (its id, not its cell): <paramref name="fromCell"/> is the cell to strike it from.</summary>
+        void BattleAttack(int stackId, int targetStack, int fromCell);
 
-        void BattleShoot(int stackId, int targetCell);
+        /// <summary>Shoots at the stack <paramref name="targetStack"/> (its id, not its cell).</summary>
+        void BattleShoot(int stackId, int targetStack);
 
         void BattleWait(int stackId);
 

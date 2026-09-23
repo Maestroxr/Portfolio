@@ -7,8 +7,18 @@ namespace Portfolio.Heroes
     {
         /// <summary>
         /// Starts a battle where <paramref name="hero"/> met what stands on <paramref name="target"/>: a monster, a hero,
-        /// a town. The battlefield is the block of map cells around the target; the attacker lines up on the side it
-        /// came from, the defender on the other.
+        /// a town. In the style of the game (<see cref="ScenarioRules.battleStyle"/>) the battlefield is either the block
+        /// of map cells around the target, the attacker lining up on the side it came from and the defender on the other,
+        /// or a battlefield of its own (see HeroesGame.Battlefield), the attacker on the left and the defender on the
+        /// right. Everything after the setup (turns, reach, blows, spells, the end) is the same in both.
+        ///
+        /// The events of a battle, in both styles (cells are field cells on a battlefield of its own, map cells on the
+        /// map; see <see cref="EventKind"/> for each one's numbers): BattleStarted with a copy of the battle as it was
+        /// deployed, RoundBegan, then per turn StackTurn (or MoraleFail), the action (StackMoved, StackAttacked,
+        /// StackShot, StackWaited, StackDefended, SpellCast with EffectAdded, StackDamaged or StackHealed), LuckyStrike
+        /// before the blow it doubles, StackDied after the blow that killed, MoraleBoost and another StackTurn for good
+        /// morale; and BattleEnded (with a copy of the battle as it ended) before what the battle does to the map
+        /// (HeroDefeated, TownCaptured, HeroMoved, ObjectRemoved, CreaturesRaised by necromancy, ExperienceGained...).
         /// </summary>
         private void StartBattle(HeroState hero, int target, int prize)
         {
@@ -57,8 +67,21 @@ namespace Portfolio.Heroes
                 battle.defenderHero = defender.id;
                 battle.defenderPlayer = defender.owner;
             }
-            battle.attackerLeft = Grid.X2(hero.cell) <= Grid.X2(battle.center);
-            BuildBattlefield(battle, hero, defender, monster, town);
+            battle.mapCell = battle.center;
+            if (State.rules.battleStyle == BattleStyle.Battlefield)
+            {
+                battle.style = BattleStyle.Battlefield;
+                battle.field = new HexGrid(BattleState.FieldColumns, BattleState.FieldRows);
+                battle.center = battle.field.Index(BattleState.HalfWidth, BattleState.HalfHeight);
+                battle.attackerLeft = true;
+                BuildField(battle, town);
+            }
+            else
+            {
+                battle.terrain = (int)Map.TerrainAt(battle.mapCell);
+                battle.attackerLeft = Grid.X2(hero.cell) <= Grid.X2(battle.center);
+                BuildBattlefield(battle, hero, defender, monster, town);
+            }
             DeployArmy(battle, 0, hero.army, 0, ArmyHealthBonus(hero));
             if (defender != null && battle.defenderHero >= 0)
             {
@@ -67,21 +90,28 @@ namespace Portfolio.Heroes
             if (town != null)
             {
                 DeployArmy(battle, 1, town.garrison, 1, 0);
-                DeployTowers(battle, town);
+                if (battle.IsField)
+                {
+                    DeployFieldTowers(battle, town);
+                }
+                else
+                {
+                    DeployTowers(battle, town);
+                }
             }
             if (monster != null)
             {
                 DeployMonsters(battle, monster);
             }
             ConnectSides(battle);
+            GameEvent started = Emit(EventKind.BattleStarted, hero.owner, battle.mapCell, battle.defenderPlayer, battle.monsterObject, battle.town, (int)battle.style);
+            started.battle = battle.Clone();
             if (battle.AliveCount(1, true) == 0)
             {
                 // An empty town (or a hero without troops) gives in at once.
-                Emit(EventKind.BattleStarted, hero.owner, battle.center, battle.defenderPlayer);
                 EndBattle(BattleResult.AttackerWon);
                 return;
             }
-            Emit(EventKind.BattleStarted, hero.owner, battle.center, battle.defenderPlayer, battle.monsterObject, battle.town);
             NextRound();
             AdvanceTurn();
         }
@@ -126,92 +156,253 @@ namespace Portfolio.Heroes
         }
 
         /// <summary>
-        /// Woods and rocks of the map may cut the field in two. Troops trample a way through them (only for this battle:
-        /// the map keeps its trees) until every stack of the defender can be walked to from the attacker's side.
+        /// Woods of the map may cut the field in two. Troops trample a way through them (only for this battle: the map
+        /// keeps its trees) until every stack of the defender can be walked to from the attacker's side, and every stack
+        /// of the attacker (one may have lined up in a pocket of the woods) from the defender's: straight toward it when
+        /// only woods are in the way, else by the way that tramples least. Water, rock and buildings are never trampled;
+        /// a troop no such way reaches comes round to the nearest cell the other side can walk to. A battlefield of its
+        /// own is laid out to hang together already, so there this only guards against the odd case.
         /// </summary>
         private void ConnectSides(BattleState battle)
         {
-            for (int attempt = 0; attempt < 8; attempt++)
+            HexGrid grid = BattleGrid;
+            for (int attempt = 0; attempt < 16; attempt++)
             {
-                var reached = new HashSet<int>();
-                var queue = new Queue<int>();
-                foreach (BattleStack stack in battle.stacks)
-                {
-                    if (stack.side == 0 && reached.Add(stack.cell))
-                    {
-                        queue.Enqueue(stack.cell);
-                    }
-                }
-                while (queue.Count > 0)
-                {
-                    int cell = queue.Dequeue();
-                    Grid.Neighbors(cell, scratch);
-                    foreach (int next in scratch)
-                    {
-                        if (battle.Contains(next) && !battle.IsBlocked(next) && reached.Add(next))
-                        {
-                            queue.Enqueue(next);
-                        }
-                    }
-                }
-                BattleStack cut = null;
-                foreach (BattleStack stack in battle.stacks)
-                {
-                    if (stack.side != 1 || stack.IsTower)
-                    {
-                        continue;
-                    }
-                    bool touches = reached.Contains(stack.cell);
-                    Grid.Neighbors(stack.cell, scratch);
-                    foreach (int next in scratch)
-                    {
-                        touches |= reached.Contains(next);
-                    }
-                    if (!touches)
-                    {
-                        cut = stack;
-                        break;
-                    }
-                }
-                if (cut == null || reached.Count == 0)
+                // The defenders first, then the attackers; done when no troop of either is cut off.
+                if (!ConnectOne(battle, grid, 1) && !ConnectOne(battle, grid, 0))
                 {
                     return;
                 }
-                // From the reached cell nearest the cut off stack, straight toward it, clearing what is in the way.
-                int from = -1;
-                int nearest = int.MaxValue;
-                foreach (int cell in reached)
+            }
+        }
+
+        /// <summary>
+        /// Finds the first troop of <paramref name="side"/> that the other side cannot walk up to (towers aside, which
+        /// stand where they stand) and tramples a way to it, or brings it round. False when every troop of the side can be
+        /// reached (or none can be helped).
+        /// </summary>
+        private bool ConnectOne(BattleState battle, HexGrid grid, int side)
+        {
+            var reached = new HashSet<int>();
+            var queue = new Queue<int>();
+            foreach (BattleStack stack in battle.stacks)
+            {
+                if (stack.side != side && stack.alive && !stack.IsTower && reached.Add(stack.cell))
                 {
-                    int d = Grid.Distance2x4(cell, cut.cell);
-                    if (d < nearest || (d == nearest && cell < from))
-                    {
-                        nearest = d;
-                        from = cell;
-                    }
-                }
-                int current = from;
-                for (int guard = 0; guard < 40 && current != cut.cell && !Grid.Adjacent(current, cut.cell); guard++)
-                {
-                    Grid.Neighbors(current, scratch);
-                    int step = -1;
-                    int best = int.MaxValue;
-                    foreach (int next in scratch)
-                    {
-                        int d = Grid.Distance2x4(next, cut.cell);
-                        if (battle.Contains(next) && (d < best || (d == best && next < step)))
-                        {
-                            best = d;
-                            step = next;
-                        }
-                    }
-                    if (step < 0)
-                    {
-                        break;
-                    }
-                    battle.blocked.Remove(step);
-                    current = step;
+                    queue.Enqueue(stack.cell);
                 }
             }
+            while (queue.Count > 0)
+            {
+                int cell = queue.Dequeue();
+                grid.Neighbors(cell, scratch);
+                foreach (int next in scratch)
+                {
+                    if (battle.Passable(next, 0) && reached.Add(next))
+                    {
+                        queue.Enqueue(next);
+                    }
+                }
+            }
+            if (reached.Count == 0)
+            {
+                return false;
+            }
+            BattleStack cut = null;
+            foreach (BattleStack stack in battle.stacks)
+            {
+                if (stack.side != side || !stack.alive || stack.IsTower)
+                {
+                    continue;
+                }
+                bool touches = reached.Contains(stack.cell);
+                grid.Neighbors(stack.cell, scratch);
+                foreach (int next in scratch)
+                {
+                    touches |= reached.Contains(next);
+                }
+                if (!touches)
+                {
+                    cut = stack;
+                    break;
+                }
+            }
+            if (cut == null)
+            {
+                return false;
+            }
+            // The reached cells in order, so every device walks them alike.
+            var starts = new List<int>(reached);
+            starts.Sort();
+            List<int> way = StraightWay(battle, grid, starts, cut) ?? TrampledWay(battle, grid, starts, cut);
+            if (way == null)
+            {
+                // Nothing but water, rock and walls between: the troop comes round to where the fight is.
+                int best = -1;
+                int nearest = int.MaxValue;
+                foreach (int cell in starts)
+                {
+                    int d = grid.Distance2x4(cell, cut.cell);
+                    if (d < nearest && battle.StackAt(cell) == null && cell != battle.gate)
+                    {
+                        nearest = d;
+                        best = cell;
+                    }
+                }
+                if (best < 0)
+                {
+                    return false;
+                }
+                cut.cell = best;
+                return true;
+            }
+            foreach (int cell in way)
+            {
+                if (battle.IsField)
+                {
+                    ClearObstacle(battle, cell);
+                }
+                else
+                {
+                    battle.blocked.Remove(cell);
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// The blocked cells between the reached cell nearest the cut off stack and the stack, going straight toward it;
+        /// null when something that cannot be trampled (or passed) is on that line, or the line leaves the field.
+        /// </summary>
+        private List<int> StraightWay(BattleState battle, HexGrid grid, List<int> starts, BattleStack cut)
+        {
+            int from = -1;
+            int nearest = int.MaxValue;
+            foreach (int cell in starts)
+            {
+                int d = grid.Distance2x4(cell, cut.cell);
+                if (d < nearest)
+                {
+                    nearest = d;
+                    from = cell;
+                }
+            }
+            var way = new List<int>();
+            int current = from;
+            for (int guard = 0; guard < 40 && current != cut.cell && !grid.Adjacent(current, cut.cell); guard++)
+            {
+                grid.Neighbors(current, scratch);
+                int step = -1;
+                int best = int.MaxValue;
+                foreach (int next in scratch)
+                {
+                    int d = grid.Distance2x4(next, cut.cell);
+                    if (battle.Contains(next) && (d < best || (d == best && next < step)))
+                    {
+                        best = d;
+                        step = next;
+                    }
+                }
+                if (step < 0)
+                {
+                    return null;
+                }
+                if (!battle.Passable(step, 0))
+                {
+                    if (!battle.IsBlocked(step) || !CanTrample(battle, step))
+                    {
+                        return null;
+                    }
+                    way.Add(step);
+                }
+                current = step;
+            }
+            return current == cut.cell || grid.Adjacent(current, cut.cell) ? way : null;
+        }
+
+        /// <summary>
+        /// The way from the reached cells to the cut off stack that tramples the fewest cells (a breadth first search that
+        /// walks open cells for free), as the cells to trample; null when there is none.
+        /// </summary>
+        private List<int> TrampledWay(BattleState battle, HexGrid grid, List<int> starts, BattleStack cut)
+        {
+            var cost = new Dictionary<int, int>();
+            var from = new Dictionary<int, int>();
+            var open = new LinkedList<int>();
+            foreach (int cell in starts)
+            {
+                cost[cell] = 0;
+                from[cell] = -1;
+                open.AddLast(cell);
+            }
+            var around = new List<int>(6);
+            int end = -1;
+            while (open.Count > 0)
+            {
+                int cell = open.First.Value;
+                open.RemoveFirst();
+                if (cell == cut.cell || grid.Adjacent(cell, cut.cell))
+                {
+                    end = cell;
+                    break;
+                }
+                grid.Neighbors(cell, around);
+                foreach (int next in around)
+                {
+                    int step = battle.Passable(next, 0) ? 0 : battle.Contains(next) && CanTrample(battle, next) ? 1 : -1;
+                    if (step < 0)
+                    {
+                        continue;
+                    }
+                    int total = cost[cell] + step;
+                    if (cost.TryGetValue(next, out int known) && known <= total)
+                    {
+                        continue;
+                    }
+                    cost[next] = total;
+                    from[next] = cell;
+                    if (step == 0)
+                    {
+                        open.AddFirst(next);
+                    }
+                    else
+                    {
+                        open.AddLast(next);
+                    }
+                }
+            }
+            if (end < 0)
+            {
+                return null;
+            }
+            var way = new List<int>();
+            for (int cell = end; cell >= 0; cell = from[cell])
+            {
+                if (battle.IsBlocked(cell))
+                {
+                    way.Add(cell);
+                }
+            }
+            return way;
+        }
+
+        /// <summary>
+        /// Whether troops may trample a blocked cell of the field for the battle: woods and dead trees on the map (never
+        /// water, rock, buildings or somebody standing there), any obstacle but a wall on a battlefield of its own.
+        /// </summary>
+        private bool CanTrample(BattleState battle, int cell)
+        {
+            if (battle.IsField)
+            {
+                BattleObstacle kind = battle.ObstacleAt(cell);
+                return kind != BattleObstacle.None && kind != BattleObstacle.Wall;
+            }
+            if (!Grid.Valid(cell) || !Land.Walkable(Map.TerrainAt(cell)) || Map.occupant[cell] >= 0 || State.HeroAt(cell) != null)
+            {
+                return false;
+            }
+            Obstacle obstacle = Map.ObstacleAt(cell);
+            return obstacle == Obstacle.Forest || obstacle == Obstacle.DeadTrees;
         }
 
         /// <summary>Rows (from the center row) the stacks of an army line up on, like the columns of old: spread out, the middle last.</summary>
@@ -227,28 +418,46 @@ namespace Portfolio.Heroes
             new[] { -5, -3, -1, 0, 1, 3, 5 }
         };
 
+        /// <summary>
+        /// The free cell nearest the place a stack of <paramref name="side"/> lines up at: <paramref name="depth"/>
+        /// columns in from the side's edge of the field, <paramref name="rowOffset"/> rows from the middle one, on the
+        /// side's own half. On a battlefield of its own the edge is exactly the first (or last) column, and the defenders
+        /// of a walled town line up behind the wall. -1 when there is no room left.
+        /// </summary>
         private int FreeDeployCell(BattleState battle, int side, int rowOffset, int depth)
         {
+            HexGrid grid = BattleGrid;
             bool left = side == 0 ? battle.attackerLeft : !battle.attackerLeft;
-            int cx = Grid.X2(battle.center);
+            int cx = grid.X2(battle.center);
             int tx = cx + (left ? -1 : 1) * (BattleState.HalfWidth - depth) * 2;
-            int ty = Grid.Row(battle.center) + rowOffset;
+            int ty = grid.Row(battle.center) + rowOffset;
+            bool behindWall = false;
+            if (battle.IsField)
+            {
+                int row = Math.Max(0, Math.Min(grid.rows - 1, ty));
+                tx = grid.X2(grid.Index(left ? depth : grid.columns - 1 - depth, row));
+                behindWall = side == 1 && battle.gate >= 0;
+            }
             int best = -1;
             long bestDistance = long.MaxValue;
             foreach (int cell in battle.cells)
             {
-                if (battle.IsBlocked(cell) || battle.StackAt(cell) != null)
+                if (battle.IsBlocked(cell) || cell == battle.gate || battle.StackAt(cell) != null)
                 {
                     continue;
                 }
-                int x = Grid.X2(cell);
+                int x = grid.X2(cell);
                 // Stay on the own half of the field.
                 if (left ? x > cx - 1 : x < cx + 1)
                 {
                     continue;
                 }
+                if (behindWall && grid.Column(cell) <= Battlefields.WallColumn)
+                {
+                    continue;
+                }
                 int dx = x - tx;
-                int dy = Grid.Row(cell) - ty;
+                int dy = grid.Row(cell) - ty;
                 long d = 3L * dx * dx + 11L * dy * dy;
                 if (d < bestDistance || (d == bestDistance && cell < best))
                 {
@@ -328,6 +537,7 @@ namespace Portfolio.Heroes
             }
         }
 
+        /// <summary>The arrow towers of a town under siege on the map: on its own cells nearest the besiegers.</summary>
         private void DeployTowers(BattleState battle, TownState town)
         {
             int towers = Buildings.Towers(town);
@@ -388,8 +598,8 @@ namespace Portfolio.Heroes
             battle.round++;
             if (battle.round > 60)
             {
-                // Nobody can get at anybody any more: the defender holds the field.
-                EndBattle(BattleResult.DefenderWon);
+                // Nobody can get at anybody any more: the attacker breaks off.
+                EndBattle(BattleResult.AttackerFled, true);
                 return;
             }
             battle.attackerCast = false;
@@ -419,8 +629,9 @@ namespace Portfolio.Heroes
                         int full = stack.Def.Health + ArmyHealthBonus(State.Hero(battle.HeroOf(stack.side)));
                         if (stack.health < full)
                         {
+                            int healed = full - stack.health;
                             stack.health = full;
-                            Emit(EventKind.StackHealed, battle.PlayerOf(stack.side), stack.id, 0, stack.count);
+                            Emit(EventKind.StackHealed, battle.PlayerOf(stack.side), stack.id, healed, 0, stack.cell);
                         }
                     }
                 }
@@ -501,8 +712,9 @@ namespace Portfolio.Heroes
                     }
                     continue;
                 }
-                // Bad morale freezes a troop now and then; the undead feel nothing.
-                int morale = StackMorale(next);
+                // Bad morale freezes a troop now and then (once a turn: not again when it comes back from waiting); the
+                // undead feel nothing.
+                int morale = next.waited ? 0 : StackMorale(next);
                 if (morale < 0 && Random.Range(0, 100) < -morale * 4)
                 {
                     next.acted = true;
@@ -512,10 +724,10 @@ namespace Portfolio.Heroes
                 Emit(EventKind.StackTurn, battle.PlayerOf(next.side), next.id, next.cell);
                 return;
             }
-            // Nothing can act any more (a stalled battle): the defender holds.
+            // Nothing can act any more (a stalled battle): the attacker breaks off.
             if (battle.active)
             {
-                EndBattle(BattleResult.DefenderWon);
+                EndBattle(BattleResult.AttackerFled, true);
             }
         }
 
@@ -561,7 +773,7 @@ namespace Portfolio.Heroes
             }
             if (battle.actions > 2000)
             {
-                EndBattle(BattleResult.DefenderWon);
+                EndBattle(BattleResult.AttackerFled, true);
                 return;
             }
             AdvanceTurn();
@@ -589,11 +801,20 @@ namespace Portfolio.Heroes
 
         // ------------------------------------------------------------------ the end
 
-        private void EndBattle(BattleResult result)
+        /// <summary>
+        /// The battle is over: what is left of every army goes back to it, <see cref="EventKind.BattleEnded"/> is told
+        /// (with a copy of the battle as it ended), and then the map learns what the battle did. A hero beaten in a
+        /// fight loses his artifacts to the hero who beat him and leaves the map; a hero who retreats (or whose army
+        /// could not get at the enemy, <paramref name="stalled"/>) keeps them: the first leaves the map for a tavern, the
+        /// second stays where he stood with the troops he has left. The winner gains the experience of the creatures
+        /// killed (and of a town taken), raises the dead with necromancy and takes what the monster guarded.
+        /// </summary>
+        private void EndBattle(BattleResult result, bool stalled = false)
         {
             BattleState battle = Battle;
             battle.active = false;
             battle.result = result;
+            battle.stalled = stalled;
             battle.current = -1;
             HeroState attacker = State.Hero(battle.attackerHero);
             HeroState defender = State.Hero(battle.defenderHero);
@@ -610,15 +831,16 @@ namespace Portfolio.Heroes
             }
             if (monster != null)
             {
-                int left = 0;
+                // The survivors, and the groups that found no room on the field and never fought.
+                int left = monster.amount;
                 foreach (BattleStack stack in battle.stacks)
                 {
-                    if (stack.side == 1 && stack.alive && !stack.IsTower)
+                    if (stack.side == 1 && stack.source == 0 && !stack.IsTower)
                     {
-                        left += stack.count;
+                        left += (stack.alive ? stack.count : 0) - stack.startCount;
                     }
                 }
-                monster.amount = left;
+                monster.amount = Math.Max(0, left);
             }
 
             PlayerState attackerPlayer = State.Player(battle.attackerPlayer);
@@ -629,10 +851,41 @@ namespace Portfolio.Heroes
                 {
                     attackerPlayer.battlesWon++;
                 }
+            }
+            else if (defenderPlayer != null)
+            {
+                defenderPlayer.battlesWon++;
+            }
+            if (attackerPlayer != null)
+            {
+                attackerPlayer.creaturesKilled += Killed(battle.defenderLosses);
+            }
+            if (defenderPlayer != null)
+            {
+                defenderPlayer.creaturesKilled += Killed(battle.attackerLosses);
+            }
+            foreach (HeroState hero in new[] { attacker, defender })
+            {
+                if (hero != null)
+                {
+                    hero.luckBonus = 0;
+                    hero.moraleBonus = 0;
+                }
+            }
+            string broke = stalled && attacker != null ? $"The armies cannot get at each other: {attacker.Name} breaks off the fight." : null;
+            GameEvent ended = Emit(EventKind.BattleEnded, battle.attackerPlayer, (int)result, battle.attackerHero, battle.defenderHero, battle.monsterObject, battle.town, broke);
+            ended.battle = battle.Clone();
+
+            if (attackerWon)
+            {
                 if (defender != null && defender.alive)
                 {
-                    TakeArtifacts(attacker, defender);
-                    Emit(EventKind.HeroDefeated, defender.owner, defender.id, text: $"{defender.Name} is defeated.");
+                    if (result == BattleResult.AttackerWon)
+                    {
+                        TakeArtifacts(attacker, defender);
+                    }
+                    Emit(EventKind.HeroDefeated, defender.owner, defender.id,
+                        text: result == BattleResult.DefenderFled ? $"{defender.Name} retreats from the field." : $"{defender.Name} is defeated.");
                     RemoveHero(defender);
                 }
                 if (monster != null)
@@ -655,17 +908,14 @@ namespace Portfolio.Heroes
             }
             else
             {
-                if (defenderPlayer != null)
+                if (attacker != null && attacker.alive && !stalled)
                 {
-                    defenderPlayer.battlesWon++;
-                }
-                if (attacker != null && attacker.alive)
-                {
-                    if (defender != null)
+                    if (result == BattleResult.DefenderWon && defender != null)
                     {
                         TakeArtifacts(defender, attacker);
                     }
-                    Emit(EventKind.HeroDefeated, attacker.owner, attacker.id, text: result == BattleResult.AttackerFled ? $"{attacker.Name} retreats from the field." : $"{attacker.Name} is defeated.");
+                    Emit(EventKind.HeroDefeated, attacker.owner, attacker.id,
+                        text: result == BattleResult.AttackerFled ? $"{attacker.Name} retreats from the field." : $"{attacker.Name} is defeated.");
                     RemoveHero(attacker);
                 }
                 if (monster != null && monster.amount <= 0)
@@ -673,41 +923,17 @@ namespace Portfolio.Heroes
                     RemoveObject(monster);
                 }
             }
-            if (result == BattleResult.DefenderFled && defender != null && defender.alive)
-            {
-                RemoveHero(defender);
-            }
-            if (attackerPlayer != null)
-            {
-                attackerPlayer.creaturesKilled += Killed(battle.defenderLosses);
-            }
-            if (defenderPlayer != null)
-            {
-                defenderPlayer.creaturesKilled += Killed(battle.attackerLosses);
-            }
-
-            foreach (HeroState hero in new[] { attacker, defender })
-            {
-                if (hero != null)
-                {
-                    hero.luckBonus = 0;
-                    hero.moraleBonus = 0;
-                }
-            }
-            Emit(EventKind.BattleEnded, battle.attackerPlayer, (int)result, battle.attackerHero, battle.defenderHero, battle.monsterObject, battle.town);
 
             HeroState winner = attackerWon ? attacker : defender;
             if (winner != null && winner.alive)
             {
-                int gained = attackerWon ? battle.defenderLostHealth : battle.attackerLostHealth;
-                if (town != null && attackerWon)
-                {
-                    gained += 500;
-                }
-                RaiseDead(winner, gained);
-                GainExperience(winner, gained);
+                // Necromancy raises the fallen, not the town: the experience counts both.
+                int corpses = attackerWon ? battle.defenderLostHealth : battle.attackerLostHealth;
+                RaiseDead(winner, corpses);
+                GainExperience(winner, corpses + (town != null && attackerWon ? 500 : 0));
             }
-            if (attackerWon && battle.prize >= 0 && attacker != null && attacker.alive && State.pending.Count == 0)
+            // A level up waits for its choice, the prize does not: it is taken now, with the next choice after it.
+            if (attackerWon && battle.prize >= 0 && attacker != null && attacker.alive)
             {
                 MapObject prize = State.Object(battle.prize);
                 if (prize != null && !prize.removed)

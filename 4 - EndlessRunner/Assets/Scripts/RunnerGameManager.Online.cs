@@ -98,20 +98,17 @@ namespace Portfolio.EndlessRunner
 
         #region Menu
 
+        protected override IOnlineLobby OnlineLobby => online;
+
         /// <summary>The multiplayer button of the level select: opens the lobby of the game's server.</summary>
-        public void OpenOnline()
+        public override void OpenOnline()
         {
             if (phase != RunPhase.Menu)
             {
                 return;
             }
             sounds?.Play(sounds.click);
-            if (online == null)
-            {
-                UI?.UpdateError("Online play is not set up in this scene.");
-                return;
-            }
-            online.OpenLobby();
+            base.OpenOnline();
         }
 
 

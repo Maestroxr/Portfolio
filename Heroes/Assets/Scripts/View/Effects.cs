@@ -7,8 +7,9 @@ using UnityEngine.Rendering;
 namespace Portfolio.Heroes
 {
     /// <summary>
-    /// The small spectacles of the game: numbers that float up from a wound, arrows and bolts in flight, bursts of
-    /// sparks, flames and light for spells and treasure, all built in code from a few particle materials.
+    /// The small spectacles of the game: numbers that float up from a wound, arrows, bolts and orbs of light in flight,
+    /// bursts of sparks and puffs of smoke, flames and light for spells and treasure, all built in code from the two
+    /// particle materials of the art (an additive glow and a softly blended one).
     /// </summary>
     public sealed class Effects : MonoBehaviour
     {
@@ -16,11 +17,25 @@ namespace Portfolio.Heroes
         [SerializeField] private Material glow;
         [SerializeField] private TMP_FontAsset font;
         [SerializeField] private GameObject arrow;
+        [SerializeField] private GameObject bolt;
 
         private readonly Queue<ParticleSystem> bursts = new Queue<ParticleSystem>();
+        private readonly Queue<ParticleSystem> smokes = new Queue<ParticleSystem>();
+        private static Mesh quad;
         private Camera view;
 
+        /// <summary>How fast shots fly and spells play: the battle speed of the settings while a battle is shown.</summary>
         public float Speed { get; set; } = 1f;
+
+        /// <summary>How much bigger floating words are drawn: a battlefield of its own is seen from farther than the map.</summary>
+        public float TextScale { get; set; } = 1f;
+
+        /// <summary>The camera floating words and orbs of light turn to: the map's, or the battlefield's while one is shown.</summary>
+        public Camera View
+        {
+            get => view;
+            set => view = value;
+        }
 
         public void Setup(HeroesArt art, Camera camera)
         {
@@ -29,6 +44,10 @@ namespace Portfolio.Heroes
             {
                 font = art.bodyFont != null ? art.bodyFont : font;
                 arrow = art.arrow != null ? art.arrow : arrow;
+                bolt = art.bolt != null ? art.bolt : bolt;
+                // The effects are added to the manager when the game starts, so nothing was serialized into them.
+                particle = art.particleMaterial != null ? art.particleMaterial : particle;
+                glow = art.glowMaterial != null ? art.glowMaterial : glow;
             }
         }
 
@@ -44,14 +63,18 @@ namespace Portfolio.Heroes
                 tmp.font = font;
             }
             tmp.text = text;
-            tmp.fontSize = size;
+            tmp.fontSize = size * TextScale;
             tmp.fontStyle = FontStyles.Bold;
             tmp.color = color;
             tmp.alignment = TextAlignmentOptions.Center;
-            tmp.outlineWidth = 0.25f;
+            tmp.outlineWidth = 0.3f;
             tmp.outlineColor = new Color32(0, 0, 0, 220);
-            tmp.rectTransform.sizeDelta = new Vector2(12f, 3f);
+            tmp.rectTransform.sizeDelta = new Vector2(12f, 3f) * TextScale;
             tmp.sortingOrder = 50;
+            if (view != null)
+            {
+                go.transform.rotation = view.transform.rotation;
+            }
             StartCoroutine(FloatRoutine(go.transform, tmp, rise, duration));
         }
 
@@ -60,7 +83,7 @@ namespace Portfolio.Heroes
             Vector3 start = t.position;
             Color color = tmp.color;
             float time = 0f;
-            while (time < duration)
+            while (time < duration && t != null)
             {
                 time += Time.deltaTime;
                 float k = time / duration;
@@ -74,14 +97,17 @@ namespace Portfolio.Heroes
                 t.localScale = Vector3.one * (k < 0.15f ? Mathf.Lerp(0.6f, 1.1f, k / 0.15f) : Mathf.Lerp(1.1f, 1f, (k - 0.15f) / 0.85f));
                 yield return null;
             }
-            Destroy(t.gameObject);
+            if (t != null)
+            {
+                Destroy(t.gameObject);
+            }
         }
 
         // ------------------------------------------------------------------ particles
 
-        private ParticleSystem MakeBurst()
+        private ParticleSystem MakeBurst(Material material, string name)
         {
-            var go = new GameObject("Burst");
+            var go = new GameObject(name);
             go.transform.SetParent(transform, false);
             var system = go.AddComponent<ParticleSystem>();
             system.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
@@ -109,7 +135,7 @@ namespace Portfolio.Heroes
             size.enabled = true;
             size.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 1f, 1f, 0.2f));
             var renderer = go.GetComponent<ParticleSystemRenderer>();
-            renderer.sharedMaterial = glow != null ? glow : particle;
+            renderer.sharedMaterial = material;
             renderer.shadowCastingMode = ShadowCastingMode.Off;
             renderer.receiveShadows = false;
             return system;
@@ -118,23 +144,47 @@ namespace Portfolio.Heroes
         /// <summary>A burst of sparks: <paramref name="count"/> of them in <paramref name="color"/>, flying out from <paramref name="position"/>.</summary>
         public void Burst(Vector3 position, Color color, int count = 40, float speed = 3f, float size = 0.18f, float gravity = 0.35f, float radius = 0.25f)
         {
-            ParticleSystem system = bursts.Count > 0 && !bursts.Peek().IsAlive(true) ? bursts.Dequeue() : MakeBurst();
+            Emit(bursts, glow != null ? glow : particle, "Burst", position, color, count, speed, size, gravity, radius, false);
+        }
+
+        /// <summary>
+        /// A puff of smoke or dust: soft blended flakes that grow as they fade, so dark colors show (an additive burst
+        /// cannot darken what is behind it).
+        /// </summary>
+        public void Smoke(Vector3 position, Color color, int count = 30, float speed = 1.5f, float size = 0.6f, float gravity = -0.08f, float radius = 0.4f)
+        {
+            Emit(smokes, particle != null ? particle : glow, "Smoke", position, color, count, speed, size, gravity, radius, true);
+        }
+
+        private void Emit(Queue<ParticleSystem> pool, Material material, string name, Vector3 position, Color color, int count,
+            float speed, float size, float gravity, float radius, bool grow)
+        {
+            ParticleSystem system = pool.Count > 0 && !pool.Peek().IsAlive(true) ? pool.Dequeue() : MakeBurst(material, name);
             system.transform.position = position;
             ParticleSystem.MainModule main = system.main;
-            main.startColor = new ParticleSystem.MinMaxGradient(color, Color.Lerp(color, Color.white, 0.4f));
+            main.startColor = new ParticleSystem.MinMaxGradient(color, Color.Lerp(color, Color.white, grow ? 0.15f : 0.4f));
             main.startSpeed = new ParticleSystem.MinMaxCurve(speed * 0.4f, speed);
             main.startSize = new ParticleSystem.MinMaxCurve(size * 0.5f, size);
+            main.startLifetime = grow ? new ParticleSystem.MinMaxCurve(0.8f, 1.6f) : new ParticleSystem.MinMaxCurve(0.4f, 0.9f);
             main.gravityModifier = gravity;
+            ParticleSystem.SizeOverLifetimeModule sizes = system.sizeOverLifetime;
+            sizes.size = new ParticleSystem.MinMaxCurve(1f, grow ? AnimationCurve.Linear(0f, 0.6f, 1f, 1.6f) : AnimationCurve.Linear(0f, 1f, 1f, 0.2f));
             ParticleSystem.ShapeModule shape = system.shape;
             shape.radius = radius;
             system.Emit(count);
-            bursts.Enqueue(system);
+            pool.Enqueue(system);
         }
 
         /// <summary>Sparks rising in a column (healing, buffs, a level up).</summary>
         public void Rise(Vector3 position, Color color, int count = 30)
         {
             Burst(position, color, count, 1.2f, 0.16f, -0.35f, 0.5f);
+        }
+
+        /// <summary>The flash of a blow landing: a few bright sparks.</summary>
+        public void Spark(Vector3 position, Color color)
+        {
+            Burst(position, color, 14, 3.2f, 0.12f, 0.6f, 0.12f);
         }
 
         // ------------------------------------------------------------------ projectiles
@@ -146,41 +196,49 @@ namespace Portfolio.Heroes
             float duration = Mathf.Clamp(distance / 18f, 0.25f, 0.8f) / Mathf.Max(0.25f, Speed);
             Transform shot;
             Color color;
+            bool missile = kind == ProjectileKind.Arrow || kind == ProjectileKind.Bolt;
             switch (kind)
             {
                 case ProjectileKind.Arrow:
+                case ProjectileKind.Bolt:
                     color = new Color(1f, 0.95f, 0.8f);
-                    shot = arrow != null ? Instantiate(arrow).transform : GameObject.CreatePrimitive(PrimitiveType.Capsule).transform;
-                    if (arrow == null)
+                    GameObject prefab = kind == ProjectileKind.Bolt && bolt != null ? bolt : arrow;
+                    if (prefab != null)
                     {
+                        shot = Instantiate(prefab).transform;
+                    }
+                    else
+                    {
+                        shot = GameObject.CreatePrimitive(PrimitiveType.Capsule).transform;
                         shot.localScale = new Vector3(0.05f, 0.35f, 0.05f);
                         Destroy(shot.GetComponent<Collider>());
                     }
                     break;
                 case ProjectileKind.HolyLight:
                     color = new Color(1f, 0.92f, 0.55f);
-                    shot = Orb(color, 0.35f);
+                    shot = Orb(color, 0.9f);
                     break;
                 case ProjectileKind.DeathCloud:
                     color = new Color(0.55f, 0.95f, 0.4f);
-                    shot = Orb(color, 0.45f);
+                    shot = Orb(color, 1.1f);
                     break;
                 case ProjectileKind.Lightning:
                     color = new Color(0.6f, 0.8f, 1f);
-                    shot = Orb(color, 0.3f);
+                    shot = Orb(color, 0.8f);
                     break;
                 case ProjectileKind.Fire:
                     color = new Color(1f, 0.55f, 0.15f);
-                    shot = Orb(color, 0.4f);
+                    shot = Orb(color, 1f);
                     break;
                 default:
                     color = new Color(0.7f, 0.85f, 1f);
-                    shot = Orb(color, 0.3f);
+                    shot = Orb(color, 0.8f);
                     break;
             }
-            float arc = kind == ProjectileKind.Arrow ? Mathf.Min(3f, distance * 0.18f) : distance * 0.06f;
+            float arc = missile ? Mathf.Min(3f, distance * 0.18f) : distance * 0.06f;
             float time = 0f;
             Vector3 previous = from;
+            shot.position = from;
             while (time < duration)
             {
                 time += Time.deltaTime;
@@ -188,52 +246,113 @@ namespace Portfolio.Heroes
                 Vector3 p = Vector3.Lerp(from, to, k) + Vector3.up * (Mathf.Sin(k * Mathf.PI) * arc);
                 shot.position = p;
                 Vector3 direction = p - previous;
-                if (direction.sqrMagnitude > 1e-6f)
+                if (!missile && view != null)
+                {
+                    // A ball of light is the same from every side: it faces the camera.
+                    shot.rotation = view.transform.rotation;
+                }
+                else if (direction.sqrMagnitude > 1e-6f)
                 {
                     shot.rotation = Quaternion.LookRotation(direction);
                 }
                 previous = p;
-                if (kind != ProjectileKind.Arrow && Random.value < 0.6f)
+                if (!missile && Random.value < 0.7f)
                 {
-                    Burst(p, color, 2, 0.4f, 0.12f, 0f, 0.05f);
+                    Burst(p, color, 2, 0.4f, 0.14f, 0f, 0.08f);
                 }
                 yield return null;
             }
             Destroy(shot.gameObject);
-            if (kind != ProjectileKind.Arrow)
+            if (!missile)
             {
                 Burst(to, color, 30, 3f, 0.22f, 0.1f, 0.3f);
+                if (kind == ProjectileKind.DeathCloud)
+                {
+                    Smoke(to, new Color(0.3f, 0.45f, 0.25f, 0.7f), 14, 0.8f, 0.7f, -0.05f, 0.3f);
+                }
             }
         }
 
+        /// <summary>
+        /// A ball of light: two quads of the glow turned to the camera, a colored halo and a white hot core. (A sphere
+        /// drawn with the soft dot of the glow shows as a lopsided smear.)
+        /// </summary>
         private Transform Orb(Color color, float size)
         {
-            var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            Destroy(go.GetComponent<Collider>());
+            var root = new GameObject("Orb").transform;
+            Quad(root, color * 1.6f, size);
+            Quad(root, Color.Lerp(color, Color.white, 0.7f) * 1.4f, size * 0.45f);
+            if (view != null)
+            {
+                root.rotation = view.transform.rotation;
+            }
+            return root;
+        }
+
+        private void Quad(Transform parent, Color color, float size)
+        {
+            var go = new GameObject("Glow", typeof(MeshFilter), typeof(MeshRenderer));
+            go.transform.SetParent(parent, false);
             go.transform.localScale = Vector3.one * size;
+            go.GetComponent<MeshFilter>().sharedMesh = QuadMesh();
             var renderer = go.GetComponent<MeshRenderer>();
             renderer.shadowCastingMode = ShadowCastingMode.Off;
-            if (glow != null)
+            renderer.receiveShadows = false;
+            renderer.sharedMaterial = glow != null ? glow : particle;
+            var block = new MaterialPropertyBlock();
+            block.SetColor("_BaseColor", color);
+            renderer.SetPropertyBlock(block);
+        }
+
+        private static Mesh QuadMesh()
+        {
+            if (quad != null)
             {
-                renderer.sharedMaterial = glow;
-                var block = new MaterialPropertyBlock();
-                block.SetColor("_BaseColor", color * 2f);
-                renderer.SetPropertyBlock(block);
+                return quad;
             }
-            return go.transform;
+            quad = new Mesh { name = "Effect Quad" };
+            quad.vertices = new[] { new Vector3(-0.5f, -0.5f, 0f), new Vector3(0.5f, -0.5f, 0f), new Vector3(0.5f, 0.5f, 0f), new Vector3(-0.5f, 0.5f, 0f) };
+            quad.uv = new[] { new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(0f, 1f) };
+            quad.colors = new[] { Color.white, Color.white, Color.white, Color.white };
+            // Wound to face a camera looking along the quad's forward, as the orbs are turned.
+            quad.triangles = new[] { 0, 2, 1, 0, 3, 2 };
+            quad.RecalculateBounds();
+            return quad;
         }
 
         // ------------------------------------------------------------------ spells
 
-        public IEnumerator Lightning(Vector3 target)
+        /// <summary>One jagged line of a bolt of lightning, <paramref name="width"/> across.</summary>
+        private LineRenderer Bolt(Transform parent, float width, Color start, Color end)
         {
-            var go = new GameObject("Lightning");
+            var go = new GameObject("Bolt");
+            go.transform.SetParent(parent, false);
             var line = go.AddComponent<LineRenderer>();
             line.sharedMaterial = glow != null ? glow : particle;
             line.positionCount = 12;
-            line.widthMultiplier = 0.25f;
-            line.startColor = new Color(0.85f, 0.92f, 1f);
-            line.endColor = new Color(0.55f, 0.75f, 1f);
+            line.widthMultiplier = width;
+            line.startColor = start;
+            line.endColor = end;
+            line.shadowCastingMode = ShadowCastingMode.Off;
+            line.receiveShadows = false;
+            line.enabled = false;
+            return line;
+        }
+
+        public IEnumerator Lightning(Vector3 target)
+        {
+            var go = new GameObject("Lightning");
+            // A wide blue glow with a white hot core down the middle, and a flash that lights the ground around.
+            LineRenderer line = Bolt(go.transform, 0.55f, new Color(0.55f, 0.72f, 1f), new Color(0.4f, 0.6f, 1f));
+            LineRenderer core = Bolt(go.transform, 0.16f, Color.white, new Color(0.85f, 0.92f, 1f));
+            var lightGo = new GameObject("Bolt Light");
+            lightGo.transform.SetParent(go.transform, false);
+            lightGo.transform.position = target + Vector3.up * 3f;
+            var light = lightGo.AddComponent<Light>();
+            light.type = LightType.Point;
+            light.color = new Color(0.7f, 0.82f, 1f);
+            light.range = 14f;
+            light.intensity = 0f;
             Vector3 top = target + new Vector3(Random.Range(-2f, 2f), 18f, Random.Range(-2f, 2f));
             for (int flash = 0; flash < 3; flash++)
             {
@@ -243,16 +362,20 @@ namespace Portfolio.Heroes
                     Vector3 p = Vector3.Lerp(top, target, k);
                     if (i > 0 && i < line.positionCount - 1)
                     {
-                        p += new Vector3(Random.Range(-0.6f, 0.6f), 0f, Random.Range(-0.6f, 0.6f));
+                        p += new Vector3(Random.Range(-0.7f, 0.7f), 0f, Random.Range(-0.7f, 0.7f));
                     }
                     line.SetPosition(i, p);
+                    core.SetPosition(i, p);
                 }
-                line.enabled = true;
-                yield return new WaitForSeconds(0.06f);
-                line.enabled = flash == 2;
+                line.enabled = core.enabled = true;
+                light.intensity = 9f;
+                yield return new WaitForSeconds(0.07f);
+                line.enabled = core.enabled = flash == 2;
+                light.intensity = flash == 2 ? 5f : 0.5f;
                 yield return new WaitForSeconds(0.04f);
             }
             Burst(target, new Color(0.7f, 0.85f, 1f), 50, 5f, 0.2f, 0.2f, 0.2f);
+            Smoke(target, new Color(0.35f, 0.38f, 0.45f, 0.6f), 12, 1f, 0.6f, -0.06f, 0.3f);
             yield return new WaitForSeconds(0.15f);
             Destroy(go);
         }
@@ -260,7 +383,8 @@ namespace Portfolio.Heroes
         public IEnumerator Explosion(Vector3 center, float radius, Color color)
         {
             Burst(center + Vector3.up * 0.5f, color, 120, 7f * radius, 0.35f, 0.15f, radius * 0.6f);
-            Burst(center + Vector3.up * 0.3f, new Color(0.25f, 0.2f, 0.18f), 50, 2f, 0.5f, -0.1f, radius);
+            // Soot that darkens the air where the fire was; an additive burst could not show it.
+            Smoke(center + Vector3.up * 0.4f, new Color(0.2f, 0.17f, 0.15f, 0.75f), 36, 1.6f, radius * 0.9f, -0.12f, radius * 0.8f);
             var lightGo = new GameObject("Blast Light");
             lightGo.transform.position = center + Vector3.up * 2f;
             var light = lightGo.AddComponent<Light>();
@@ -287,6 +411,15 @@ namespace Portfolio.Heroes
             }
             yield return new WaitForSeconds(0.45f);
             yield return Explosion(center, radius, new Color(1f, 0.5f, 0.15f));
+        }
+
+        /// <summary>A troop crushed from within: dark sparks drawn in, then a burst of violet.</summary>
+        public IEnumerator Implosion(Vector3 center, float radius)
+        {
+            Smoke(center, new Color(0.25f, 0.1f, 0.3f, 0.7f), 30, 0.6f, radius * 0.8f, 0f, radius);
+            yield return new WaitForSeconds(0.25f);
+            Burst(center, new Color(0.75f, 0.35f, 1f), 90, 5f, 0.25f, 0.1f, 0.2f);
+            yield return new WaitForSeconds(0.15f);
         }
 
         public void Aura(Vector3 position, Color color)

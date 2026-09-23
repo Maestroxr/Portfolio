@@ -5,6 +5,7 @@ using System.Linq;
 using Gamebox;
 using Gamebox.UI;
 using UnityEngine;
+using Gamebox.Lockstep;
 
 namespace Portfolio.Monopoly
 {

@@ -194,7 +194,8 @@ namespace Portfolio.Heroes
         {
             BattleState battle = game.Battle;
             // Walking distance to every enemy over the field (troops aside, which move), so a troop goes around
-            // woods and water instead of getting stuck against them.
+            // woods, water and walls (through the breaches, and the gate only for the defenders) instead of getting
+            // stuck against them.
             var field = new Dictionary<int, int>();
             var queue = new Queue<int>();
             foreach (BattleStack enemy in battle.stacks)
@@ -210,10 +211,10 @@ namespace Portfolio.Heroes
             {
                 int cell = queue.Dequeue();
                 int d = field[cell];
-                game.Grid.Neighbors(cell, around);
+                game.BattleGrid.Neighbors(cell, around);
                 foreach (int next in around)
                 {
-                    if (!field.ContainsKey(next) && battle.Contains(next) && !battle.IsBlocked(next))
+                    if (!field.ContainsKey(next) && battle.Passable(next, stack.side))
                     {
                         field[next] = d + 1;
                         queue.Enqueue(next);
@@ -242,7 +243,7 @@ namespace Portfolio.Heroes
                     {
                         if (enemy.alive && enemy.side != stack.side)
                         {
-                            int d = game.Grid.Distance(cell, enemy.cell);
+                            int d = game.BattleGrid.Distance(cell, enemy.cell);
                             if (d < straight)
                             {
                                 straight = d;
@@ -329,7 +330,7 @@ namespace Portfolio.Heroes
                 long value = 0;
                 if (def.Target == SpellTarget.Area)
                 {
-                    foreach (int area in game.Grid.Disk(cell, def.Radius))
+                    foreach (int area in game.BattleGrid.Disk(cell, def.Radius))
                     {
                         BattleStack hit = battle.StackAt(area);
                         if (hit == null)

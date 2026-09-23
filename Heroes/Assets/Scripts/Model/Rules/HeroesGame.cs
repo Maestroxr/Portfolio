@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Gamebox.Lockstep;
 
 namespace Portfolio.Heroes
 {
@@ -11,7 +12,8 @@ namespace Portfolio.Heroes
     /// the action log of the server, see <see cref="LockstepGame"/>).
     ///
     /// The partial files hold the parts: turns and days (Turns), the adventure map (Map), towns and armies (Towns),
-    /// heroes, experience and choices (Heroes) and battles on the map (Battle, BattleActions).
+    /// heroes, experience and choices (Heroes) and battles (Battle, BattleActions, and Battlefield for the battlefield of
+    /// their own).
     /// </summary>
     public sealed partial class HeroesGame
     {
@@ -29,6 +31,12 @@ namespace Portfolio.Heroes
         public IRandom Random { get; set; }
 
         public HexGrid Grid => State.map.grid;
+
+        /// <summary>
+        /// The grid the cells of the battle are numbered on: the battlefield's own (<see cref="BattleState.field"/>) in
+        /// that style, else the map's. Everything a battle measures (reach, paths, distances, areas) is measured on it.
+        /// </summary>
+        public HexGrid BattleGrid => State.battle.IsField ? State.battle.field : State.map.grid;
 
         public MapData Map => State.map;
 

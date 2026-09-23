@@ -481,6 +481,15 @@ namespace Portfolio.Heroes
         TimeLimit = 2
     }
 
+    /// <summary>Where armies fight when they meet. It is fixed for a whole game and the same on every device of a table.</summary>
+    public enum BattleStyle
+    {
+        /// <summary>On the cells of the adventure map around the two armies, with what stands there in the way.</summary>
+        OnTheMap = 0,
+        /// <summary>On a battlefield of its own, fifteen hexes by eleven, as in the original game.</summary>
+        Battlefield = 1
+    }
+
     /// <summary>What a scenario asks for: how it is won and lost, and the star thresholds of a campaign.</summary>
     [Serializable]
     public sealed class ScenarioRules
@@ -493,5 +502,7 @@ namespace Portfolio.Heroes
         public int lossValue;
         /// <summary>The day by which the scenario must be won, or 0.</summary>
         public int dayLimit;
+        /// <summary>Where the battles of this game are fought: chosen when it starts (a setting, or the room's option).</summary>
+        public BattleStyle battleStyle = BattleStyle.OnTheMap;
     }
 }

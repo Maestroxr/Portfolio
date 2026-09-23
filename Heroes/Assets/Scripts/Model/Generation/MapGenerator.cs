@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Gamebox.Lockstep;
 
 namespace Portfolio.Heroes
 {

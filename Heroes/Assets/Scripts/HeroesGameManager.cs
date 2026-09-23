@@ -4,6 +4,7 @@ using Gamebox;
 using Gamebox.UI;
 using Portfolio.Heroes.UI;
 using UnityEngine;
+using Gamebox.Lockstep;
 
 namespace Portfolio.Heroes
 {
@@ -116,6 +117,12 @@ namespace Portfolio.Heroes
 
         public override void LoadLevel(int level)
         {
+            if (InSession)
+            {
+                // The level of a room, which may be a map of its own (HeroesGameManager.Online.cs).
+                LoadSessionLevel(level);
+                return;
+            }
             LevelIndex = campaign != null ? Mathf.Clamp(level, 0, Mathf.Max(0, campaign.Count - 1)) : 0;
             CurrentLevel = LevelData.Create(LevelIndex);
             UpdateLevel();
@@ -151,8 +158,11 @@ namespace Portfolio.Heroes
                 StartOnlineGame();
                 return;
             }
-            MapSpec spec = (pendingMap ?? (scenario != null ? scenario.Map.Clone() : null) ?? new MapSpec()).Clone();
+            // A map asked for as it is, or the scenario's as the settings shape it.
+            MapSpec spec = pendingMap != null ? pendingMap.Clone() : NewGameMap(scenario);
             pendingMap = null;
+            // The rules keep the style for the whole game, so a saved game goes on the way it began.
+            spec.rules.battleStyle = (BattleStyle)Mathf.Clamp(Options.battleStyle, 0, 1);
             if (spec.seed == 0)
             {
                 spec.seed = (uint)Random.Range(1, int.MaxValue);
@@ -164,10 +174,32 @@ namespace Portfolio.Heroes
             Direct(game, true);
         }
 
+        /// <summary>
+        /// The map a new game at this device is laid out from: the scenario's own, a skirmish map at the size, riches and
+        /// wandering armies of the settings (a chapter of the campaign keeps its own), with the computer players as good
+        /// as the settings' difficulty makes them. An online game takes all of this from its room instead.
+        /// </summary>
+        public MapSpec NewGameMap(HeroesLevel scenario)
+        {
+            MapSpec spec = scenario != null ? scenario.Map.Clone() : new MapSpec();
+            HeroesSettings options = Options;
+            if (options != null)
+            {
+                if (scenario != null && scenario.IsSkirmish)
+                {
+                    spec.Skirmish(options.mapSize, options.treasure, options.monsters);
+                }
+                spec.SetDifficulty(options.difficulty);
+            }
+            return spec;
+        }
+
         /// <summary>Builds the map and the interface for a game and starts playing it out.</summary>
         private void Direct(HeroesGame game, bool fresh)
         {
             StopDirecting();
+            // A battle still on the screen belongs to the game being left.
+            CloseBattleNow(false);
             Game = game;
             finishing = false;
             savedDay = -1;
@@ -175,7 +207,8 @@ namespace Portfolio.Heroes
             brain = new AdventureAI();
 
             Build();
-            Viewer = FirstHuman(game);
+            // Online the screen belongs to the seat of the player at this device, from the first frame.
+            Viewer = IsOnlineGame && localSeat >= 0 ? localSeat : FirstHuman(game);
             Map.Sync();
             Map.Fog.Show(game.State.Player(Viewer));
             ui.Bind(this);
@@ -190,6 +223,10 @@ namespace Portfolio.Heroes
                 cameraRig?.Snap(Map.Point(first.cell));
             }
             cameraRig?.SetLimits(Map.Layout.GridBounds(TerrainBuilder.MaxHeight));
+            if (cameraRig != null)
+            {
+                cameraRig.EdgeScroll = Options == null || Options.edgeScroll;
+            }
 
             TransitionState(new Gamebox.GameState(BaseGameState.Running));
             sound?.PlayAdventureMusic();
@@ -221,7 +258,7 @@ namespace Portfolio.Heroes
             Map.Build(Game.State, art, cameraRig != null ? cameraRig.View : Camera.main);
             Path = holder.AddComponent<PathView>();
             Path.Setup(Map, art);
-            Battle.Setup(Map, art, Effects, Options);
+            Battle.Setup(art, Effects, Options, sound);
         }
 
         private void StopDirecting()
@@ -237,11 +274,12 @@ namespace Portfolio.Heroes
         /// <summary>Leaves the scenario for the title screen (it stays saved and continues from there).</summary>
         public void ReturnToTitle()
         {
-            if (Game != null && !Game.IsOver)
+            if (Game != null && !Game.IsOver && !Game.InBattle)
             {
                 SaveGame();
             }
             StopDirecting();
+            CloseBattleNow(false);
             LeaveOnline();
             Game = null;
             if (Map != null)
@@ -256,12 +294,15 @@ namespace Portfolio.Heroes
 
         // ------------------------------------------------------------------ directing
 
-        private float Speed => Mathf.Max(0.25f, Options != null ? Options.heroSpeed : 1f);
+        /// <summary>How fast the map plays: the setting, and online a little faster while the rules are ahead of it.</summary>
+        private float Speed => Mathf.Max(0.25f, Options != null ? Options.heroSpeed : 1f) * OnlinePace;
 
         /// <summary>The main loop: play out what happened, then ask whoever is due for the next command.</summary>
         private IEnumerator Run()
         {
             yield return null;
+            // A game saved in the middle of a battle goes on with the battle on the screen.
+            yield return ResumeBattle();
             while (Game != null)
             {
                 if (!IsGameRunning)
@@ -314,7 +355,11 @@ namespace Portfolio.Heroes
                 // Nothing left to do, or nothing that works: end the turn rather than stall.
                 command = Fallback(who);
             }
-            yield return new WaitForSeconds((Game.InBattle ? 0.25f : 0.12f) / Speed);
+            float delay = ThinkDelay;
+            if (delay > 0f)
+            {
+                yield return new WaitForSeconds(delay);
+            }
             if (Submit(command))
             {
                 refused = 0;
@@ -344,9 +389,10 @@ namespace Portfolio.Heroes
         /// <summary>Waits for the player at this device, showing the choice, the battle or the map as it stands.</summary>
         private IEnumerator Human(int who)
         {
-            if (Viewer != who && !InSession)
+            if (Viewer != who && !InSession && !Game.InBattle)
             {
-                // A hot seat: the screen changes hands, so the fog and the panels follow the player.
+                // A hot seat: the screen changes hands, so the fog and the panels follow the player (not from stack to
+                // stack of a battle of two players here, which has a screen of its own and no fog).
                 Viewer = who;
                 Map.Fog.Show(Game.State.Player(who));
                 ui.Refresh();
@@ -404,8 +450,13 @@ namespace Portfolio.Heroes
             finishing = true;
             WaitingForHuman = false;
             GameState state = Game.State;
-            bool won = state.winner >= 0 && state.Player(state.winner) != null && state.Player(state.winner).human;
             int days = state.day;
+            if (IsOnlineGame)
+            {
+                yield return FinishOnline(state, days);
+                yield break;
+            }
+            bool won = state.winner >= 0 && state.Player(state.winner) != null && state.Player(state.winner).human;
             HeroesLevel scenario = Scenario;
             int stars = won && scenario != null ? scenario.StarsFor(days) : 0;
             ClearSave();
@@ -446,6 +497,15 @@ namespace Portfolio.Heroes
             {
                 return;
             }
+            if (Game.InBattle)
+            {
+                // A battle is fought to its end first: the day's own save, from before it, stays.
+                const string refusal = "The game cannot be saved in the middle of a battle.";
+                UI?.UpdateError(refusal);
+                ui.Log(refusal, -1);
+                sound?.Play(Sfx.Error, 0.6f);
+                return;
+            }
             Disk.SetString(SaveKey, JsonUtility.ToJson(Game.State));
             Disk.SetInt($"{SavePrefix}Level", LevelIndex);
             Disk.Persist();
@@ -473,6 +533,15 @@ namespace Portfolio.Heroes
                 ClearSave();
                 return;
             }
+            Continue(state);
+        }
+
+        /// <summary>
+        /// Goes on with a game from a copy of its state, as a saved game is taken up: in the middle of a battle it comes
+        /// back with the battle on the screen. The tours use it to take a game up from where it is.
+        /// </summary>
+        internal void Continue(GameState state)
+        {
             Direct(new HeroesGame(state, new SeededRandom(state.seed ^ (uint)state.day)), false);
         }
 
@@ -487,12 +556,17 @@ namespace Portfolio.Heroes
 
         // ------------------------------------------------------------------ what the interface asks of the manager
 
-        /// <summary>The hero the player is giving orders to, or null.</summary>
-        public HeroState Selected { get; private set; }
+        /// <summary>
+        /// The hero the player is giving orders to, or null: never one who has left the map (beaten, fled from a battle,
+        /// dismissed), whose place on the map and army are gone.
+        /// </summary>
+        public HeroState Selected => selected != null && selected.alive ? selected : null;
+
+        private HeroState selected;
 
         public void Select(HeroState hero)
         {
-            Selected = hero;
+            selected = hero;
             Path.Clear();
             if (hero != null)
             {

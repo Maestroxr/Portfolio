@@ -7,7 +7,7 @@ namespace Portfolio.Heroes
 {
     /// <summary>
     /// What a player sets up: how fast heroes walk and battles play, how long the computer's moves are shown, the
-    /// sound, and the rules of a skirmish (map size, riches, monsters).
+    /// sound, the rules of a skirmish (map size, riches, monsters) and how well the computer plays a new game.
     /// </summary>
     [CreateAssetMenu(fileName = "HeroesSettings", menuName = "Heroes/Settings", order = 1)]
     public class HeroesSettings : GameSettings
@@ -25,9 +25,12 @@ namespace Portfolio.Heroes
         [Range(0, 2)] public int mapSize = 1;
         [Range(1, 3)] public int treasure = 2;
         [Range(1, 4)] public int monsters = 2;
+        /// <summary>0 easy, 1 normal, 2 hard: how well the computer players of a new game at this device play (<see cref="MapSpec.SetDifficulty"/>).</summary>
         [Range(0, 2)] public int difficulty = 1;
+        /// <summary>Where the battles of a new game are fought: a <see cref="BattleStyle"/> (a saved game keeps its own).</summary>
+        [Range(0, 1)] public int battleStyle = (int)BattleStyle.Battlefield;
 
-        private static readonly string[] Keys = { "heroSpeed", "battleSpeed", "showEnemyMoves", "musicVolume", "effectsVolume", "edgeScroll", "autoSave", "mapSize", "treasure", "monsters", "difficulty" };
+        private static readonly string[] Keys = { "heroSpeed", "battleSpeed", "showEnemyMoves", "musicVolume", "effectsVolume", "edgeScroll", "autoSave", "mapSize", "treasure", "monsters", "difficulty", "battleStyle" };
 
         public override void SaveSettings(IStorageStrategy storage, string prefix)
         {
@@ -42,6 +45,7 @@ namespace Portfolio.Heroes
             storage.SetInt($"{prefix}.{Keys[8]}", treasure);
             storage.SetInt($"{prefix}.{Keys[9]}", monsters);
             storage.SetInt($"{prefix}.{Keys[10]}", difficulty);
+            storage.SetInt($"{prefix}.{Keys[11]}", battleStyle);
             try
             {
                 storage.Persist();
@@ -67,6 +71,7 @@ namespace Portfolio.Heroes
             treasure = I(8, treasure);
             monsters = I(9, monsters);
             difficulty = I(10, difficulty);
+            battleStyle = I(11, battleStyle);
         }
 
         public override void CopySettings(IGameSettings other)
@@ -84,6 +89,7 @@ namespace Portfolio.Heroes
                 treasure = source.treasure;
                 monsters = source.monsters;
                 difficulty = source.difficulty;
+                battleStyle = source.battleStyle;
             }
         }
 
@@ -94,7 +100,7 @@ namespace Portfolio.Heroes
                 message = "Speeds must be above zero.";
                 return false;
             }
-            if (mapSize < 0 || mapSize > 2 || treasure < 1 || treasure > 3 || monsters < 1 || monsters > 4 || difficulty < 0 || difficulty > 2)
+            if (mapSize < 0 || mapSize > 2 || treasure < 1 || treasure > 3 || monsters < 1 || monsters > 4 || difficulty < 0 || difficulty > 2 || battleStyle < 0 || battleStyle > 1)
             {
                 message = "A setting is out of range.";
                 return false;
@@ -103,15 +109,11 @@ namespace Portfolio.Heroes
             return true;
         }
 
-        /// <summary>Columns and rows of a skirmish map of the chosen size.</summary>
+        /// <summary>Columns and rows of a skirmish map of the chosen size (<see cref="MapSpec.SkirmishSize"/>).</summary>
         public static Vector2Int MapDimensions(int size)
         {
-            switch (size)
-            {
-                case 0: return new Vector2Int(40, 46);
-                case 2: return new Vector2Int(68, 78);
-                default: return new Vector2Int(54, 62);
-            }
+            MapSpec.SkirmishSize(size, out int columns, out int rows);
+            return new Vector2Int(columns, rows);
         }
 
         public static string MapSizeName(int size)

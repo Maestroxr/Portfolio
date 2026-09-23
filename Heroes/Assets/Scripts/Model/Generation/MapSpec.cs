@@ -99,9 +99,59 @@ namespace Portfolio.Heroes
                 victoryTag = rules.victoryTag,
                 loss = rules.loss,
                 lossValue = rules.lossValue,
-                dayLimit = rules.dayLimit
+                dayLimit = rules.dayLimit,
+                battleStyle = rules.battleStyle
             };
             return copy;
+        }
+
+        /// <summary>The columns and rows of a skirmish map of the size chosen for it: 0 small, 1 medium, 2 large.</summary>
+        public static void SkirmishSize(int size, out int columns, out int rows)
+        {
+            switch (size)
+            {
+                case 0:
+                    columns = 40;
+                    rows = 46;
+                    break;
+                case 2:
+                    columns = 68;
+                    rows = 78;
+                    break;
+                default:
+                    columns = 54;
+                    rows = 62;
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Makes the map a skirmish as the player set it up: <paramref name="size"/> (0 small, 1 medium, 2 large), as
+        /// rich as <paramref name="treasure"/> (1 poor to 3 rich) and as dangerous as <paramref name="monsters"/> (1 weak
+        /// to 4 deadly). Its seats, its lands and what it places on purpose (in thousandths of the map) stay as they are.
+        /// </summary>
+        public void Skirmish(int size, int treasure, int monsters)
+        {
+            SkirmishSize(size, out columns, out rows);
+            this.treasure = Math.Max(1, Math.Min(3, treasure));
+            this.monsters = Math.Max(1, Math.Min(4, monsters));
+        }
+
+        /// <summary>
+        /// How well the computer players play: <paramref name="difficulty"/> (0 easy, 1 normal, 2 hard) moves every
+        /// computer seat's level (<see cref="PlayerSpec.aiLevel"/>) that far from the one the map gives it, so normal
+        /// plays the map as it was made. The level also sets what the computer starts with and earns.
+        /// </summary>
+        public void SetDifficulty(int difficulty)
+        {
+            int shift = Math.Max(0, Math.Min(2, difficulty)) - 1;
+            foreach (PlayerSpec player in players)
+            {
+                if (!player.human)
+                {
+                    player.aiLevel = Math.Max(0, Math.Min(2, player.aiLevel + shift));
+                }
+            }
         }
     }
 }

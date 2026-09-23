@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Portfolio.Heroes
@@ -52,20 +53,61 @@ namespace Portfolio.Heroes
             {
                 yield return Turn(direction);
             }
-            puppet.Walk();
+            puppet?.Walk();
             while ((point - transform.position).sqrMagnitude > 0.0004f)
             {
                 transform.position = Vector3.MoveTowards(transform.position, point, speed * Time.deltaTime);
                 yield return null;
             }
             transform.position = point;
-            puppet.Idle();
+            puppet?.Idle();
+        }
+
+        /// <summary>
+        /// Walks along a path in one go: the walk keeps looping from the first step to the last, and the body turns into
+        /// each new step while it moves, so a path of many cells reads as one walk rather than a string of starts and stops.
+        /// </summary>
+        public IEnumerator WalkPath(IReadOnlyList<Vector3> points, float speed)
+        {
+            if (points == null || points.Count == 0)
+            {
+                yield break;
+            }
+            // A walk that starts back the way it faces turns on the spot first; the rest turns on the move.
+            Vector3 first = points[0] - transform.position;
+            first.y = 0f;
+            if (first.sqrMagnitude > 0.0001f && Vector3.Angle(transform.forward, first) > 100f)
+            {
+                yield return Turn(first, 16f);
+            }
+            puppet?.Walk();
+            foreach (Vector3 point in points)
+            {
+                while ((point - transform.position).sqrMagnitude > 0.0004f)
+                {
+                    Vector3 step = point - transform.position;
+                    step.y = 0f;
+                    if (step.sqrMagnitude > 0.0001f)
+                    {
+                        transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(step),
+                            540f * Time.deltaTime);
+                    }
+                    transform.position = Vector3.MoveTowards(transform.position, point, speed * Time.deltaTime);
+                    yield return null;
+                }
+                transform.position = point;
+            }
+            puppet?.Idle();
         }
 
         /// <summary>Plays a clip once, or a lunge toward <paramref name="at"/> when the model has no such clip.</summary>
         public IEnumerator Perform(string clip, Vector3 at)
         {
-            if (puppet.Has(clip))
+            if (puppet == null)
+            {
+                yield return new WaitForSeconds(0.3f);
+            }
+            else if (puppet.Has(clip))
             {
                 float length = puppet.Play(clip);
                 yield return new WaitForSeconds(length * 0.9f);
@@ -87,23 +129,34 @@ namespace Portfolio.Heroes
 
         public HeroesArt.UnitArt Art => art;
 
-        public override Vector3 Middle => transform.position + Vector3.up * (height * 0.55f);
+        public override Vector3 Middle => transform.position + Vector3.up * (Height * 0.55f);
 
-        /// <summary>Builds the model of a creature under this actor.</summary>
-        public void Setup(HeroesArt catalog, CreatureId creature)
+        /// <summary>
+        /// Builds the model of a creature under this actor: the creature's own, or <paramref name="look"/> in its place
+        /// (an arrow tower in the colors of the town it defends). A <paramref name="still"/> model without an idle clip
+        /// stands without breathing: a building.
+        /// </summary>
+        public void Setup(HeroesArt catalog, CreatureId creature, GameObject look = null, bool still = false)
         {
             Creature = creature;
             art = catalog.Unit(creature);
             height = art != null ? art.height : 1.6f;
-            if (art == null || art.prefab == null)
+            GameObject prefab = look != null ? look : art != null ? art.prefab : null;
+            if (prefab == null)
             {
                 return;
             }
-            GameObject model = Instantiate(art.prefab, transform);
-            model.transform.localPosition = art.flies ? Vector3.up * (height * 0.35f) : Vector3.zero;
+            GameObject model = Instantiate(prefab, transform);
+            model.transform.localPosition = art != null && art.flies ? Vector3.up * (height * 0.35f) : Vector3.zero;
             puppet = gameObject.AddComponent<Puppet>();
-            puppet.Setup(model.transform, art.idle, art.walk);
+            puppet.Setup(model.transform, art != null ? art.idle : "Idle", art != null ? art.walk : "Walk", still);
         }
+
+        /// <summary>How tall the creature stands (as big as it is shown), for what floats over it.</summary>
+        public float Height => height * transform.lossyScale.y;
+
+        /// <summary>Whether it flies (it is lifted off the ground, and crosses the field in the air).</summary>
+        public bool Flies => art != null && art.flies;
 
         public string AttackClip => art != null ? art.attack : "";
 
@@ -124,9 +177,13 @@ namespace Portfolio.Heroes
 
         public int HeroId { get; private set; } = -1;
 
-        public override Vector3 Middle => transform.position + Vector3.up * 1.6f;
+        public override Vector3 Middle => transform.position + Vector3.up * (1.6f * transform.lossyScale.y);
 
-        public void Setup(HeroesArt catalog, HeroState hero)
+        /// <summary>
+        /// Builds the rider on his mount, with a banner of <paramref name="color"/> (a player's color, as a number; the
+        /// owner's seat when none is given, which is the same on a map laid out by the generator).
+        /// </summary>
+        public void Setup(HeroesArt catalog, HeroState hero, int color = -1)
         {
             HeroId = hero.id;
             Cell = hero.cell;
@@ -151,7 +208,7 @@ namespace Portfolio.Heroes
                 // The rider holds the pose of a man in the saddle while the mount does the moving.
                 rider.Setup(model.transform, string.IsNullOrEmpty(art.riderPose) ? "Idle" : art.riderPose, "");
             }
-            if (catalog.Flag(hero.owner) is GameObject flag && flag != null)
+            if (catalog.Flag(color >= 0 ? color : hero.owner) is GameObject flag && flag != null)
             {
                 GameObject banner = Instantiate(flag, transform);
                 banner.transform.localPosition = new Vector3(0.35f, 0f, -0.55f);

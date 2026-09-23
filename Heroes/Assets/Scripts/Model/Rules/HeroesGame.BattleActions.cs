@@ -36,15 +36,19 @@ namespace Portfolio.Heroes
 
         // ------------------------------------------------------------------ reach
 
-        private bool FreeInBattle(int cell, BattleStack except)
+        /// <summary>
+        /// Whether <paramref name="mover"/> may step on (or through) <paramref name="cell"/>: a cell of the field, not
+        /// blocked, not the gate of a town for a besieger, and nobody else standing there.
+        /// </summary>
+        private bool FreeInBattle(int cell, BattleStack mover)
         {
             BattleState battle = Battle;
-            if (!battle.Contains(cell) || battle.IsBlocked(cell))
+            if (!battle.Passable(cell, mover.side))
             {
                 return false;
             }
             BattleStack there = battle.StackAt(cell);
-            return there == null || there == except;
+            return there == null || there == mover;
         }
 
         /// <summary>
@@ -67,7 +71,7 @@ namespace Portfolio.Heroes
                 {
                     if (cell != stack.cell && FreeInBattle(cell, stack))
                     {
-                        int distance = Grid.Distance(stack.cell, cell);
+                        int distance = BattleGrid.Distance(stack.cell, cell);
                         if (distance <= speed)
                         {
                             reach[cell] = distance;
@@ -86,7 +90,7 @@ namespace Portfolio.Heroes
                 {
                     continue;
                 }
-                Grid.Neighbors(cell, scratch);
+                BattleGrid.Neighbors(cell, scratch);
                 foreach (int next in scratch)
                 {
                     if (!reach.ContainsKey(next) && FreeInBattle(next, stack))
@@ -118,7 +122,7 @@ namespace Portfolio.Heroes
                 {
                     break;
                 }
-                Grid.Neighbors(cell, scratch);
+                BattleGrid.Neighbors(cell, scratch);
                 foreach (int next in scratch)
                 {
                     if (!from.ContainsKey(next) && FreeInBattle(next, stack))
@@ -142,7 +146,7 @@ namespace Portfolio.Heroes
 
         public bool EnemyAdjacent(BattleStack stack)
         {
-            Grid.Neighbors(stack.cell, scratch);
+            BattleGrid.Neighbors(stack.cell, scratch);
             foreach (int cell in scratch)
             {
                 BattleStack other = Battle.StackAt(cell);
@@ -168,7 +172,7 @@ namespace Portfolio.Heroes
                 return cells;
             }
             reach = reach ?? BattleReach(stack);
-            var around = Grid.Neighbors(target.cell);
+            var around = BattleGrid.Neighbors(target.cell);
             foreach (int cell in around)
             {
                 if (reach.ContainsKey(cell))
@@ -190,7 +194,7 @@ namespace Portfolio.Heroes
             }
             List<int> path = BattlePath(stack, cell);
             int from = stack.cell;
-            stack.facing = (int)(Grid.X2(cell) >= Grid.X2(from) ? HexSide.East : HexSide.West);
+            stack.facing = (int)(BattleGrid.X2(cell) >= BattleGrid.X2(from) ? HexSide.East : HexSide.West);
             stack.cell = cell;
             Emit(EventKind.StackMoved, Battle.PlayerOf(stack.side), stack.id, from, cell, stack.Def.IsFlying ? 1 : 0, cells: path);
         }
@@ -214,12 +218,12 @@ namespace Portfolio.Heroes
                 return false;
             }
             Dictionary<int, int> reach = BattleReach(stack);
-            if (!reach.TryGetValue(from, out int steps) || Grid.Distance(from, target.cell) != 1)
+            if (!reach.TryGetValue(from, out int steps) || BattleGrid.Distance(from, target.cell) != 1)
             {
                 return false;
             }
             Walk(stack, from);
-            stack.facing = (int)(Grid.X2(target.cell) >= Grid.X2(stack.cell) ? HexSide.East : HexSide.West);
+            stack.facing = (int)(BattleGrid.X2(target.cell) >= BattleGrid.X2(stack.cell) ? HexSide.East : HexSide.West);
             Melee(stack, target, steps);
             FinishAction(stack, true);
             return true;
@@ -260,7 +264,7 @@ namespace Portfolio.Heroes
             {
                 return false;
             }
-            stack.facing = (int)(Grid.X2(target.cell) >= Grid.X2(stack.cell) ? HexSide.East : HexSide.West);
+            stack.facing = (int)(BattleGrid.X2(target.cell) >= BattleGrid.X2(stack.cell) ? HexSide.East : HexSide.West);
             Strike(stack, target, true, 0, false);
             stack.shots--;
             if (stack.Def.Has(Ability.DoubleAttack) && stack.alive && target.alive && stack.shots > 0)
@@ -340,6 +344,15 @@ namespace Portfolio.Heroes
 
         // ------------------------------------------------------------------ damage
 
+        /// <summary>How the dice of a blow fall: rolled, or all at their lowest, their middle or their highest.</summary>
+        private enum Dice
+        {
+            Roll,
+            Lowest,
+            Average,
+            Highest
+        }
+
         /// <summary>
         /// The damage <paramref name="attacker"/> deals <paramref name="target"/>: the dice of every creature (ten at most,
         /// scaled up for a bigger stack), attack against defense (5% per point up to +300%, 2.5% down to -70%), the
@@ -349,6 +362,44 @@ namespace Portfolio.Heroes
         public int Damage(BattleStack attacker, BattleStack target, bool ranged, int steps, bool roll, out bool lucky)
         {
             lucky = false;
+            long damage = BaseDamage(attacker, target, ranged, steps, roll ? Dice.Roll : Dice.Average);
+            HeroState hero = State.Hero(Battle.HeroOf(attacker.side));
+            if (roll && hero != null)
+            {
+                int luck = Luck(hero);
+                if (luck > 0 && Random.Range(0, 100) < luck * 4)
+                {
+                    lucky = true;
+                    damage *= 2;
+                }
+            }
+            return (int)Math.Max(1, Math.Min(damage, int.MaxValue));
+        }
+
+        /// <summary>
+        /// What a blow of <paramref name="attacker"/> would do to <paramref name="target"/>, for the tooltips of a battle:
+        /// the least and the most damage its dice can come to (luck aside) and the creatures that kills. It draws no
+        /// random numbers, so the interface may ask as often as it likes.
+        /// </summary>
+        public void DamageEstimate(BattleStack attacker, BattleStack target, bool ranged, int steps, out int minDamage, out int maxDamage, out int minKills, out int maxKills)
+        {
+            minDamage = (int)Math.Max(1, Math.Min(BaseDamage(attacker, target, ranged, steps, Dice.Lowest), int.MaxValue));
+            maxDamage = (int)Math.Max(1, Math.Min(BaseDamage(attacker, target, ranged, steps, Dice.Highest), int.MaxValue));
+            minKills = Kills(target, minDamage);
+            maxKills = Kills(target, maxDamage);
+        }
+
+        /// <summary>The creatures of <paramref name="stack"/> a blow of <paramref name="damage"/> would kill.</summary>
+        public int Kills(BattleStack stack, int damage)
+        {
+            int each = stack.Def.Health + ArmyHealthBonus(State.Hero(Battle.HeroOf(stack.side)));
+            int left = Math.Max(0, TotalHealth(stack) - damage);
+            int count = left == 0 ? 0 : (left + each - 1) / each;
+            return Math.Max(0, stack.count - count);
+        }
+
+        private long BaseDamage(BattleStack attacker, BattleStack target, bool ranged, int steps, Dice fall)
+        {
             CreatureDef def = attacker.Def;
             HeroState hero = State.Hero(Battle.HeroOf(attacker.side));
             HeroState targetHero = State.Hero(Battle.HeroOf(target.side));
@@ -358,15 +409,15 @@ namespace Portfolio.Heroes
             bool cursed = attacker.HasEffect(SpellId.Curse);
             for (int i = 0; i < dice; i++)
             {
-                if (blessed)
+                if (blessed || (!cursed && fall == Dice.Highest))
                 {
                     sum += def.MaxDamage;
                 }
-                else if (cursed)
+                else if (cursed || fall == Dice.Lowest)
                 {
                     sum += def.MinDamage;
                 }
-                else if (roll)
+                else if (fall == Dice.Roll)
                 {
                     sum += Random.Range(def.MinDamage, def.MaxDamage + 1);
                 }
@@ -410,7 +461,7 @@ namespace Portfolio.Heroes
             {
                 damage = damage * (100 - 5 * targetHero.SkillLevel(SkillId.Armorer)) / 100;
             }
-            if (ranged && Grid.Distance(attacker.cell, target.cell) > 10 && !attacker.IsTower)
+            if (ranged && BattleGrid.Distance(attacker.cell, target.cell) > 10 && !attacker.IsTower)
             {
                 damage /= 2;
             }
@@ -422,16 +473,7 @@ namespace Portfolio.Heroes
             {
                 damage = damage * (100 + 5 * steps) / 100;
             }
-            if (roll && hero != null)
-            {
-                int luck = Luck(hero);
-                if (luck > 0 && Random.Range(0, 100) < luck * 4)
-                {
-                    lucky = true;
-                    damage *= 2;
-                }
-            }
-            return (int)Math.Max(1, Math.Min(damage, int.MaxValue));
+            return damage;
         }
 
         /// <summary>The total health left in a stack.</summary>
@@ -441,9 +483,17 @@ namespace Portfolio.Heroes
             return stack.count <= 0 ? 0 : (stack.count - 1) * each + stack.health;
         }
 
-        /// <summary>Takes <paramref name="damage"/> from a stack; returns the creatures killed.</summary>
-        private int Hurt(BattleStack stack, int damage)
+        /// <summary>
+        /// Takes <paramref name="damage"/> from a stack; returns the creatures killed, and whether that was the last of
+        /// them (<paramref name="died"/>: the caller tells of the blow first, then of the death, see <see cref="Fell"/>).
+        /// </summary>
+        private int Hurt(BattleStack stack, int damage, out bool died)
         {
+            died = false;
+            if (!stack.alive)
+            {
+                return 0;
+            }
             int each = stack.Def.Health + ArmyHealthBonus(State.Hero(Battle.HeroOf(stack.side)));
             int total = TotalHealth(stack);
             int left = Math.Max(0, total - damage);
@@ -471,9 +521,19 @@ namespace Portfolio.Heroes
             if (count == 0)
             {
                 stack.alive = false;
-                Emit(EventKind.StackDied, Battle.PlayerOf(stack.side), stack.id, stack.cell);
+                died = true;
+                if (stack.IsTower)
+                {
+                    TowerFell(Battle, stack.cell);
+                }
             }
             return killed;
+        }
+
+        /// <summary>Tells of a stack that fell to the blow just told of.</summary>
+        private void Fell(BattleStack stack)
+        {
+            Emit(EventKind.StackDied, Battle.PlayerOf(stack.side), stack.id, stack.cell);
         }
 
         private static void AddLoss(List<ArmySlot> losses, int creature, int count)
@@ -496,15 +556,20 @@ namespace Portfolio.Heroes
             {
                 Emit(EventKind.LuckyStrike, Battle.PlayerOf(attacker.side), attacker.id);
             }
-            int killed = Hurt(target, damage);
+            int killed = Hurt(target, damage, out bool died);
             Emit(ranged ? EventKind.StackShot : EventKind.StackAttacked, Battle.PlayerOf(attacker.side), attacker.id, target.id, damage, killed, retaliation ? 1 : 0);
+            if (died)
+            {
+                Fell(target);
+            }
             if (attacker.Def.Has(Ability.LifeDrain) && attacker.alive)
             {
                 Heal(attacker, damage, true);
             }
+            HexGrid grid = BattleGrid;
             if (ranged && attacker.Def.Has(Ability.AreaShot))
             {
-                Grid.Neighbors(target.cell, scratch);
+                grid.Neighbors(target.cell, scratch);
                 var around = new List<int>(scratch);
                 foreach (int cell in around)
                 {
@@ -512,21 +577,25 @@ namespace Portfolio.Heroes
                     if (other != null && other != attacker && !other.Def.IsUndead)
                     {
                         int splash = Damage(attacker, other, true, 0, true, out _);
-                        int dead = Hurt(other, splash);
+                        int dead = Hurt(other, splash, out bool fell);
                         Emit(EventKind.StackDamaged, Battle.PlayerOf(other.side), other.id, splash, dead, attacker.id);
+                        if (fell)
+                        {
+                            Fell(other);
+                        }
                     }
                 }
             }
             if (!ranged && attacker.Def.Has(Ability.Breath))
             {
                 // The flame goes on to whoever stands behind the target.
-                int dx = Grid.X2(target.cell) - Grid.X2(attacker.cell);
-                int dy = Grid.Row(target.cell) - Grid.Row(attacker.cell);
+                int dx = grid.X2(target.cell) - grid.X2(attacker.cell);
+                int dy = grid.Row(target.cell) - grid.Row(attacker.cell);
                 int behind = -1;
-                Grid.Neighbors(target.cell, scratch);
+                grid.Neighbors(target.cell, scratch);
                 foreach (int cell in scratch)
                 {
-                    if (Grid.X2(cell) - Grid.X2(target.cell) == dx && Grid.Row(cell) - Grid.Row(target.cell) == dy)
+                    if (grid.X2(cell) - grid.X2(target.cell) == dx && grid.Row(cell) - grid.Row(target.cell) == dy)
                     {
                         behind = cell;
                     }
@@ -535,13 +604,20 @@ namespace Portfolio.Heroes
                 if (second != null && second != attacker)
                 {
                     int flame = Damage(attacker, second, false, 0, true, out _);
-                    int dead = Hurt(second, flame);
+                    int dead = Hurt(second, flame, out bool fell);
                     Emit(EventKind.StackDamaged, Battle.PlayerOf(second.side), second.id, flame, dead, attacker.id);
+                    if (fell)
+                    {
+                        Fell(second);
+                    }
                 }
             }
         }
 
-        /// <summary>Heals a stack; with <paramref name="raise"/> the dead come back up to the stack's first size.</summary>
+        /// <summary>
+        /// Heals a stack; with <paramref name="raise"/> the dead come back up to the stack's first size, a stack that had
+        /// fallen altogether included. One <see cref="EventKind.StackHealed"/> tells of it all.
+        /// </summary>
         private int Heal(BattleStack stack, int amount, bool raise)
         {
             int each = stack.Def.Health + ArmyHealthBonus(State.Hero(Battle.HeroOf(stack.side)));
@@ -557,11 +633,12 @@ namespace Portfolio.Heroes
             int raised = count - stack.count;
             stack.count = count;
             stack.health = now - (count - 1) * each;
-            if (!stack.alive && count > 0)
+            bool returns = !stack.alive && count > 0;
+            if (returns)
             {
                 stack.alive = true;
             }
-            Emit(EventKind.StackHealed, Battle.PlayerOf(stack.side), stack.id, healed, raised);
+            Emit(EventKind.StackHealed, Battle.PlayerOf(stack.side), stack.id, healed, raised, stack.cell, returns ? 1 : 0);
             return raised;
         }
 
@@ -692,12 +769,28 @@ namespace Portfolio.Heroes
                     if (def.IsDamage)
                     {
                         int damage = SpellDamage(hero, def, target);
-                        int killed = Hurt(target, damage);
+                        int killed = Hurt(target, damage, out bool died);
                         Emit(EventKind.StackDamaged, battle.PlayerOf(target.side), target.id, damage, killed, -1);
+                        if (died)
+                        {
+                            Fell(target);
+                        }
                     }
                     else if (spell == SpellId.Cure)
                     {
-                        target.effects.RemoveAll(e => !Spells.Get((SpellId)e.spell).IsPositive);
+                        // The harmful spells on the stack are lifted, each told (the view keeps its own copy of them),
+                        // before the health comes back.
+                        for (int i = 0; i < target.effects.Count;)
+                        {
+                            int lifted = target.effects[i].spell;
+                            if (Spells.Get((SpellId)lifted).IsPositive)
+                            {
+                                i++;
+                                continue;
+                            }
+                            target.effects.RemoveAt(i);
+                            Emit(EventKind.EffectRemoved, battle.PlayerOf(target.side), target.id, lifted);
+                        }
                         Heal(target, def.Base + def.PerPower * SpellPower(hero), false);
                     }
                     else
@@ -709,7 +802,7 @@ namespace Portfolio.Heroes
                 case SpellTarget.Area:
                 {
                     var hit = new List<BattleStack>();
-                    foreach (int area in Grid.Disk(cell, def.Radius))
+                    foreach (int area in BattleGrid.Disk(cell, def.Radius))
                     {
                         BattleStack target = battle.StackAt(area);
                         if (target != null)
@@ -720,8 +813,12 @@ namespace Portfolio.Heroes
                     foreach (BattleStack target in hit)
                     {
                         int damage = SpellDamage(hero, def, target);
-                        int killed = Hurt(target, damage);
+                        int killed = Hurt(target, damage, out bool died);
                         Emit(EventKind.StackDamaged, battle.PlayerOf(target.side), target.id, damage, killed, -1);
+                        if (died)
+                        {
+                            Fell(target);
+                        }
                     }
                     break;
                 }
@@ -735,12 +832,9 @@ namespace Portfolio.Heroes
                     }
                     break;
                 case SpellTarget.DeadFriend:
-                {
-                    BattleStack target = DeadOrHurtStack(side, cell);
-                    int raised = Heal(target, def.Base + def.PerPower * SpellPower(hero), true);
-                    Emit(EventKind.CreaturesRaised, player, target.id, target.creature, raised);
+                    // The raised come back through the one StackHealed of Heal (CreaturesRaised is necromancy's, after a battle).
+                    Heal(DeadOrHurtStack(side, cell), def.Base + def.PerPower * SpellPower(hero), true);
                     break;
-                }
             }
             if (!CheckBattleEnd() && battle.Current != null && !battle.Current.alive)
             {

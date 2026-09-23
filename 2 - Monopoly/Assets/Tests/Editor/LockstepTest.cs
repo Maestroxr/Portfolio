@@ -3,6 +3,7 @@ using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 using static Portfolio.Monopoly.Tests.Fixture;
+using Gamebox.Lockstep;
 
 namespace Portfolio.Monopoly.Tests
 {

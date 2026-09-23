@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Gamebox.Editor;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
 namespace Portfolio.Heroes.EditorTools
@@ -45,20 +48,68 @@ namespace Portfolio.Heroes.EditorTools
                 AssetDatabase.CreateAsset(art, HeroesAssets.Path("Art/HeroesArt.asset"));
             }
 
-            Materials(art);
-            TerrainLayers(art);
-            Units(art);
-            Heroes(art);
-            Scatter(art);
-            HeroesObjectArt.Build(art);
-            HeroesUIArt.BuildAll(art);
-            Audio(art);
+            Staged(() =>
+            {
+                Materials(art);
+                TerrainLayers(art);
+                Units(art);
+                Heroes(art);
+                Scatter(art);
+                HeroesObjectArt.Build(art);
+                HeroesBattleArt.Build(art);
+                HeroesPortraits.Build(art);
+                HeroesUIArt.BuildAll(art);
+                Audio(art);
+            });
 
             EditorUtility.SetDirty(art);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log($"Heroes: art built in {log.ElapsedMilliseconds} ms ({art.units.Count} creatures, " +
                       $"{art.objects.Count} map objects, {art.towns.Count} towns, {art.icons.Count} icons).");
+        }
+
+        /// <summary>
+        /// Runs <paramref name="build"/> with a scene of its own made active, thrown away afterwards: the prefabs are put
+        /// together there, so whatever scene is open is not marked as changed by the objects coming and going. While a
+        /// scene that was never saved is open (as in batch mode, or after File > New Scene) Unity refuses to add another
+        /// untitled one next to it, and there is nothing in it to keep clean, so the work is done in the open scene.
+        /// </summary>
+        public static void Staged(Action build)
+        {
+            if (UntitledOpen())
+            {
+                build();
+                return;
+            }
+            Scene open = SceneManager.GetActiveScene();
+            Scene stage = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
+            SceneManager.SetActiveScene(stage);
+            try
+            {
+                build();
+            }
+            finally
+            {
+                if (open.IsValid())
+                {
+                    SceneManager.SetActiveScene(open);
+                }
+                EditorSceneManager.CloseScene(stage, true);
+            }
+        }
+
+        /// <summary>Whether a scene that has never been saved is loaded.</summary>
+        public static bool UntitledOpen()
+        {
+            for (int i = 0; i < SceneManager.sceneCount; i++)
+            {
+                if (string.IsNullOrEmpty(SceneManager.GetSceneAt(i).path))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         // ------------------------------------------------------------------ import settings
@@ -356,6 +407,17 @@ namespace Portfolio.Heroes.EditorTools
         /// <summary>Saves a built object as a prefab, keeping the GUID of the one already there.</summary>
         public static GameObject Save(GameObject root, string relative)
         {
+            // Parts made of the same model are told apart by name, or a rebuild matches them to each other's saved
+            // copies in a different order every time and rewrites a prefab that has not changed.
+            var seen = new Dictionary<string, int>();
+            foreach (Transform child in root.transform)
+            {
+                seen[child.name] = seen.TryGetValue(child.name, out int count) ? count + 1 : 1;
+                if (seen[child.name] > 1)
+                {
+                    child.name = $"{child.name} ({seen[child.name]})";
+                }
+            }
             string path = HeroesAssets.Path(relative);
             HeroesAssets.EnsureFolderOf(relative);
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
@@ -410,6 +472,58 @@ namespace Portfolio.Heroes.EditorTools
             });
             art.arrow = Projectile("Arrow", "Quaternius/Items/Arrow", 0.55f, new Color(0.75f, 0.6f, 0.4f));
             art.bolt = Projectile("Bolt", "Quaternius/Items/Arrow", 0.4f, new Color(0.55f, 0.55f, 0.6f));
+
+            // The particles of the spells and bursts: a soft round dot, blended over the scene or adding light to it.
+            Texture2D soft = SoftDot();
+            Shader particles = Shader.Find("Universal Render Pipeline/Particles/Unlit");
+            art.particleMaterial = HeroesAssets.Material($"{Generated}/Effects/Particle.mat", particles, m => Particle(m, soft, false));
+            art.glowMaterial = HeroesAssets.Material($"{Generated}/Effects/Glow.mat", particles, m => Particle(m, soft, true));
+        }
+
+        /// <summary>A white dot, solid in its middle and fading softly to nothing at its rim.</summary>
+        private static Texture2D SoftDot()
+        {
+            const int size = 64;
+            var raster = new Raster(size, size, Color.clear);
+            var center = new Vector2(size / 2f, size / 2f);
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float r = Vector2.Distance(new Vector2(x + 0.5f, y + 0.5f), center) / (size * 0.5f);
+                    float a = 1f - Mathf.SmoothStep(0.2f, 1f, r);
+                    raster.Set(x, y, new Color(1f, 1f, 1f, a));
+                }
+            }
+            return HeroesAssets.SaveTexture(raster.ToTexture(), $"{Generated}/Effects/Soft.png", importer =>
+            {
+                importer.textureType = TextureImporterType.Default;
+                importer.alphaIsTransparency = true;
+                importer.mipmapEnabled = true;
+                importer.wrapMode = TextureWrapMode.Clamp;
+                importer.maxTextureSize = 64;
+                importer.textureCompression = TextureImporterCompression.Uncompressed;
+            });
+        }
+
+        /// <summary>A transparent particle material of the pipeline: alpha blended, or additive (it only adds light).</summary>
+        private static void Particle(Material material, Texture texture, bool additive)
+        {
+            material.SetTexture("_BaseMap", texture);
+            material.SetColor("_BaseColor", Color.white);
+            material.SetFloat("_Surface", 1f);
+            material.SetFloat("_Blend", additive ? 2f : 0f);
+            material.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            material.SetFloat("_DstBlend", (float)(additive ? UnityEngine.Rendering.BlendMode.One : UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha));
+            material.SetFloat("_SrcBlendAlpha", (float)UnityEngine.Rendering.BlendMode.One);
+            material.SetFloat("_DstBlendAlpha", (float)(additive ? UnityEngine.Rendering.BlendMode.One : UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha));
+            material.SetFloat("_ZWrite", 0f);
+            material.SetFloat("_Cull", (float)UnityEngine.Rendering.CullMode.Off);
+            material.SetOverrideTag("RenderType", "Transparent");
+            material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+            material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+            material.DisableKeyword("_ALPHAMODULATE_ON");
         }
 
         private static void Transparent(Material material)
@@ -478,6 +592,7 @@ namespace Portfolio.Heroes.EditorTools
                 }
                 var terrainLayer = new TerrainLayer
                 {
+                    name = texture,
                     diffuseTexture = diffuse,
                     normalMapTexture = normal,
                     tileSize = new Vector2(size, size),
@@ -734,7 +849,13 @@ namespace Portfolio.Heroes.EditorTools
                 GameObject mountPrefab = Save(mountRoot, $"{Generated}/Heroes/{heroClass}Mount.prefab");
 
                 GameObject riderRoot = Root(heroClass + "Rider");
-                Piece(riderRoot.transform, rider, Vector3.zero, 0f, 1f, 1.7f, tint);
+                GameObject model = Piece(riderRoot.transform, rider, Vector3.zero, 0f, 1f, 1.7f, tint);
+                string seated = pose;
+                if (string.IsNullOrEmpty(seated) && model != null)
+                {
+                    // The Quaternius adventurers have no seated clip, so one is made of their idle with the legs bent.
+                    seated = Saddle(model, $"{Generated}/Heroes/{heroClass}Saddle.anim");
+                }
                 GameObject riderPrefab = Save(riderRoot, $"{Generated}/Heroes/{heroClass}Rider.prefab");
 
                 art.heroes.Add(new HeroesArt.HeroArt
@@ -742,13 +863,129 @@ namespace Portfolio.Heroes.EditorTools
                     heroClass = heroClass,
                     rider = riderPrefab,
                     mount = mountPrefab,
-                    riderPose = pose,
+                    riderPose = seated,
                     riderCast = cast,
                     mountIdle = "AnimalArmature|Idle",
                     mountWalk = "AnimalArmature|Walk",
-                    seat = new Vector3(0f, 1.25f, -0.05f)
+                    seat = Seat(mountPrefab, riderPrefab, "AnimalArmature|Idle", seated)
                 });
             }
+        }
+
+        /// <summary>
+        /// Bakes a seated pose for a rider whose pack has none: his idle a third of the way in, thighs forward and shins
+        /// down, held in a legacy clip added to his model's clips, so the map's puppet plays it like any other. Returns
+        /// the name the clip plays by, which is the name of its file.
+        /// </summary>
+        private static string Saddle(GameObject model, string relative)
+        {
+            var animation = model.GetComponentInChildren<Animation>(true);
+            if (animation == null)
+            {
+                return "";
+            }
+            Transform[] bones = animation.GetComponentsInChildren<Transform>(true);
+            var rest = bones.Select(bone => (bone.localPosition, bone.localRotation)).ToArray();
+            HeroesPortraits.Pose(model, "Idle");
+            HeroesPortraits.Straddle(model);
+            var clip = new AnimationClip { name = System.IO.Path.GetFileNameWithoutExtension(relative), legacy = true, wrapMode = WrapMode.Loop };
+            for (int i = 0; i < bones.Length; i++)
+            {
+                Transform bone = bones[i];
+                if (bone == animation.transform)
+                {
+                    continue;
+                }
+                string path = AnimationUtility.CalculateTransformPath(bone, animation.transform);
+                Quaternion r = bone.localRotation;
+                Vector3 p = bone.localPosition;
+                clip.SetCurve(path, typeof(Transform), "localRotation.x", AnimationCurve.Constant(0f, 1f, r.x));
+                clip.SetCurve(path, typeof(Transform), "localRotation.y", AnimationCurve.Constant(0f, 1f, r.y));
+                clip.SetCurve(path, typeof(Transform), "localRotation.z", AnimationCurve.Constant(0f, 1f, r.z));
+                clip.SetCurve(path, typeof(Transform), "localRotation.w", AnimationCurve.Constant(0f, 1f, r.w));
+                clip.SetCurve(path, typeof(Transform), "localPosition.x", AnimationCurve.Constant(0f, 1f, p.x));
+                clip.SetCurve(path, typeof(Transform), "localPosition.y", AnimationCurve.Constant(0f, 1f, p.y));
+                clip.SetCurve(path, typeof(Transform), "localPosition.z", AnimationCurve.Constant(0f, 1f, p.z));
+            }
+            clip.EnsureQuaternionContinuity();
+            // The model goes back to its rest pose before it is saved; the clip holds the seated one.
+            for (int i = 0; i < bones.Length; i++)
+            {
+                bones[i].localPosition = rest[i].localPosition;
+                bones[i].localRotation = rest[i].localRotation;
+            }
+            clip = HeroesAssets.CreateOrReplace(clip, relative);
+            // Added under its own name: a clip added under another is copied, and the copy, being no asset, would be
+            // left out of the saved prefab.
+            if (animation.GetClip(clip.name) == null)
+            {
+                animation.AddClip(clip, clip.name);
+            }
+            return clip.name;
+        }
+
+        /// <summary>
+        /// Where the rider's feet go on the mount so that, seated, his hips rest in the saddle: a third of the way back
+        /// from the withers (the first bone of the neck) to the croup (the root of the tail), a little under the top of
+        /// the mount's back there, with the mount in its idle and the rider in his seated pose.
+        /// </summary>
+        private static Vector3 Seat(GameObject mount, GameObject rider, string mountIdle, string pose)
+        {
+            var fallback = new Vector3(0f, 1.25f, -0.05f);
+            using (var studio = new ModelStudio())
+            {
+                GameObject horse = studio.Place(mount);
+                GameObject man = studio.Place(rider);
+                HeroesPortraits.Pose(horse, mountIdle);
+                HeroesPortraits.Pose(man, pose, 0f);
+                Transform croup = Bone(horse, "Back");
+                Transform withers = Bone(horse, "Neck1");
+                if (withers == null)
+                {
+                    withers = Bone(horse, "Torso");
+                }
+                Transform hips = Bone(man, "hips");
+                if (croup == null || withers == null || hips == null)
+                {
+                    return fallback;
+                }
+                Vector3 back = horse.transform.InverseTransformPoint(croup.position);
+                Vector3 front = horse.transform.InverseTransformPoint(withers.position);
+                float z = Mathf.Lerp(front.z, back.z, 1f / 3f);
+                // The hips sink a little under the top of the back, the thighs hanging down its flanks.
+                float y = BackTop(horse, z, out float top) ? top - 0.03f : Mathf.Max(back.y, front.y) + 0.08f;
+                Vector3 hipsAt = man.transform.InverseTransformPoint(hips.position);
+                return new Vector3(0f, y - hipsAt.y, z - hipsAt.z);
+            }
+        }
+
+        /// <summary>The highest point of a posed model over a strip across its middle at <paramref name="z"/>, in its own space.</summary>
+        private static bool BackTop(GameObject model, float z, out float top)
+        {
+            top = float.MinValue;
+            foreach (SkinnedMeshRenderer skin in model.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+            {
+                var baked = new Mesh();
+                skin.BakeMesh(baked);
+                // A baked mesh is in the renderer's place and turn, without its scale.
+                Matrix4x4 toModel = model.transform.worldToLocalMatrix * Matrix4x4.TRS(skin.transform.position, skin.transform.rotation, Vector3.one);
+                foreach (Vector3 vertex in baked.vertices)
+                {
+                    Vector3 p = toModel.MultiplyPoint3x4(vertex);
+                    if (Mathf.Abs(p.x) < 0.25f && Mathf.Abs(p.z - z) < 0.12f)
+                    {
+                        top = Mathf.Max(top, p.y);
+                    }
+                }
+                Object.DestroyImmediate(baked);
+            }
+            return top > float.MinValue;
+        }
+
+        private static Transform Bone(GameObject root, string name)
+        {
+            return root.GetComponentsInChildren<Transform>(true)
+                .FirstOrDefault(t => string.Equals(t.name, name, StringComparison.OrdinalIgnoreCase));
         }
 
         // ------------------------------------------------------------------ scenery
@@ -764,11 +1001,12 @@ namespace Portfolio.Heroes.EditorTools
                 ("KayKit/Nature/tree_single_A", 2.6f), ("KayKit/Nature/tree_single_B", 2.9f),
                 ("KayKit/Nature/tree_single_A_cut", 1.6f), ("KayKit/Nature/tree_single_B_cut", 1.8f)
             });
+            // The only pines of the packs are the Halloween pack's autumn ones; their needles are repainted green.
             art.pineTrees = Trees("Pine", new[]
             {
                 ("KayKit/Halloween/tree_pine_yellow_large", 4.2f), ("KayKit/Halloween/tree_pine_yellow_medium", 3.2f),
                 ("KayKit/Halloween/tree_pine_orange_large", 4.2f), ("KayKit/Halloween/tree_pine_orange_medium", 3.2f)
-            });
+            }, HeroesBattleArt.Paint.Evergreen);
             art.deadTrees = Trees("Dead", new[]
             {
                 ("KayKit/Halloween/tree_dead_large", 3.8f), ("KayKit/Halloween/tree_dead_medium", 3.0f),
@@ -818,7 +1056,8 @@ namespace Portfolio.Heroes.EditorTools
         /// The trees the terrain plants: the model itself is the prefab, because a terrain prototype has to carry a
         /// renderer on its own root and an empty holder around it would be refused.
         /// </summary>
-        private static GameObject[] Trees(string name, (string model, float height)[] pieces)
+        private static GameObject[] Trees(string name, (string model, float height)[] pieces,
+            HeroesBattleArt.Paint paint = HeroesBattleArt.Paint.None)
         {
             var prefabs = new List<GameObject>();
             for (int i = 0; i < pieces.Length; i++)
@@ -830,6 +1069,7 @@ namespace Portfolio.Heroes.EditorTools
                     Object.DestroyImmediate(root);
                     continue;
                 }
+                HeroesBattleArt.Repaint(piece, paint);
                 // The model stands on its own: its scale is kept, and it starts at the point the terrain plants it.
                 piece.transform.SetParent(null, true);
                 piece.transform.localPosition = Vector3.zero;

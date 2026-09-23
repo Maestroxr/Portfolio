@@ -385,9 +385,11 @@ namespace Portfolio.Heroes
             {
                 hadHumans |= player.human;
             }
-            if (hadHumans && !anyHuman && !IsOnlineTable)
+            if (hadHumans && !anyHuman)
             {
-                // Every person at the table lost: the computer won.
+                // Every person at the table lost: the computer won. Online too: a seat the computer plays on for somebody
+                // who left is no person's any more, and a game only the computer players are left in would go on for
+                // nobody (they need not ever settle it among themselves).
                 Finish(alive[0].index);
                 return;
             }
@@ -413,9 +415,6 @@ namespace Portfolio.Heroes
                 }
             }
         }
-
-        /// <summary>Online every seat counts as a person even when the computer plays it on for somebody who left.</summary>
-        public bool IsOnlineTable { get; set; }
 
         private bool MetGoal(PlayerState player)
         {

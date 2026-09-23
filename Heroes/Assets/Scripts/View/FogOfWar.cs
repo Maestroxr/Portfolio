@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -27,6 +28,7 @@ namespace Portfolio.Heroes
         private Material instance;
         private bool dirty;
         private PlayerState player;
+        private readonly HashSet<int> lifted = new HashSet<int>();
 
         public bool Visible
         {
@@ -132,16 +134,49 @@ namespace Portfolio.Heroes
             return tex;
         }
 
-        /// <summary>Shows what <paramref name="viewer"/> has explored (null: everything, for a battle or the end of a game).</summary>
+        /// <summary>Shows what <paramref name="viewer"/> has explored (null: everything, for the end of a game).</summary>
         public void Show(PlayerState viewer)
         {
             player = viewer;
             dirty = true;
         }
 
+        /// <summary>The player whose explored land the shroud leaves clear (null: everything).</summary>
+        public PlayerState Viewer => player;
+
+        /// <summary>
+        /// Clears the shroud over <paramref name="cells"/> whoever is looking, whatever they have explored: the field of a
+        /// battle fought on the map, whose stacks line up at its edges past where their hero has seen. Null puts the
+        /// shroud back over them.
+        /// </summary>
+        public void Lift(IEnumerable<int> cells)
+        {
+            lifted.Clear();
+            if (cells != null)
+            {
+                foreach (int cell in cells)
+                {
+                    lifted.Add(cell);
+                }
+            }
+            dirty = true;
+        }
+
         public void MarkDirty()
         {
             dirty = true;
+        }
+
+        /// <summary>Whether the shroud lies over a point of the map as it is drawn now (for the development tours).</summary>
+        public bool Shrouds(Vector3 world)
+        {
+            if (hidden == null)
+            {
+                return false;
+            }
+            int x = Mathf.FloorToInt(world.x / texel);
+            int y = Mathf.FloorToInt(world.z / texel);
+            return x >= 0 && y >= 0 && x < width && y < height && hidden[y * width + x] > 127;
         }
 
         private void LateUpdate()
@@ -169,7 +204,7 @@ namespace Portfolio.Heroes
                     }
                     else
                     {
-                        value = player == null || player.Explored(cell) ? (byte)0 : (byte)255;
+                        value = player == null || player.Explored(cell) || lifted.Contains(cell) ? (byte)0 : (byte)255;
                     }
                     hidden[y * width + x] = value;
                 }
@@ -229,6 +264,16 @@ namespace Portfolio.Heroes
             if (instance != null)
             {
                 Destroy(instance);
+            }
+            // The quad hangs under the camera, not under the map, so it would outlive the map it covered.
+            if (quad != null)
+            {
+                MeshFilter filter = quad.GetComponent<MeshFilter>();
+                if (filter != null && filter.sharedMesh != null)
+                {
+                    Destroy(filter.sharedMesh);
+                }
+                Destroy(quad.gameObject);
             }
         }
     }

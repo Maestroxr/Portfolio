@@ -173,7 +173,7 @@ reducers: the game is played through the action log of the base server (see Mult
 | `ValidateAction` | The command is one a player may send, and the seat is the sender's own, or a computer's when the sender is the host. Building, mortgaging and trading do not restart the clock. |
 | `OnTurnTimedOut` | Appends the timeout action. |
 | `OnMemberLeft` | The seat of the leaver becomes a computer player: the row changes and an action tells every client where in the log. |
-| `OnRoomFinished`, `OnRoomCleared`, `OnUserDeleted` | Statistics; the seats of the room go; the statistics of a deleted user go. |
+| `OnRoomFinished`, `OnRoomCleared`, `OnUserDeleted` | The members take the places of their seats at the table as their clients reported them (`RankTable` of the base server: a computer player that won comes first), and the statistics count a win for the member who won; the seats of the room go; the statistics of a deleted user go. |
 
 - `Packages/manifest.json` references the SpacetimeDB SDK and the base server package
   (`com.skinnerboxes.baseserver`, `file:../../../BaseGame/BaseServer`); `Server/StdbModule.csproj` imports

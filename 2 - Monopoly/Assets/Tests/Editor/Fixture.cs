@@ -1,5 +1,6 @@
 using System.Linq;
 using NUnit.Framework;
+using Gamebox.Lockstep;
 
 namespace Portfolio.Monopoly.Tests
 {

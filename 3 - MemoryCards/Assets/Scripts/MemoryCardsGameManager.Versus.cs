@@ -107,20 +107,17 @@ namespace Portfolio.MemoryCards
             RefreshPlayers();
         }
 
+        protected override IOnlineLobby OnlineLobby => online;
+
         /// <summary>The online button of the level select: opens the lobby of the game's server.</summary>
-        public void OpenOnline()
+        public override void OpenOnline()
         {
             if (phase != Phase.Menu)
             {
                 return;
             }
             PlayClick();
-            if (online == null)
-            {
-                UI?.UpdateError("Online play is not set up in this scene.");
-                return;
-            }
-            online.OpenLobby();
+            base.OpenOnline();
         }
 
         private void RefreshPlayers()

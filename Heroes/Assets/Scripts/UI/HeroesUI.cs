@@ -1,6 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using System.Text;
 using Gamebox;
 using Gamebox.UI;
 using TMPro;
@@ -11,53 +8,42 @@ using UnityEngine.UI;
 namespace Portfolio.Heroes.UI
 {
     /// <summary>
-    /// The interface of the game. It builds itself when a scenario starts, because what it has to show depends on the
-    /// scenario: the resources of the player along the top, his heroes and towns down the right, the log and the
-    /// minimap at the bottom, and over the map the screens of a town, of a hero and of a battle. It also reads the
-    /// pointer on the map: what it is over, the trail it would take, and the order a click gives.
+    /// The interface of the game, built from code the first time it is needed. Before a scenario it is the title screen
+    /// with the campaign behind it; during one it is the adventure screen around the map (<see cref="AdventureHud"/>),
+    /// and over the map the screens of a town, of a hero and of a battle, and the questions the rules ask. It also reads
+    /// the pointer on the map: what it is over, the trail a hero would take, and the order a click gives. The shared
+    /// menu of the framework, restyled by the scene builder, is the pause menu and the settings panel.
     /// </summary>
     public class HeroesUI : GameUI
     {
+        /// <summary>The key the manager keeps the level of the last saved scenario under, which Continue takes up.</summary>
+        public const string LastSaveKey = "Heroes.Save.Level";
+
+        /// <summary>The pause menu's way back to the title screen, added to the shared menu by the scene builder.</summary>
+        [SerializeField] private Button titleButton;
+
         private HeroesGameManager manager;
         private Canvas canvas;
         private RectTransform screen;
-
-        private readonly TextMeshProUGUI[] resources = new TextMeshProUGUI[ResourceSet.Kinds];
-        private TextMeshProUGUI date;
-        private TextMeshProUGUI playerName;
-        private RectTransform heroColumn;
-        private RectTransform logContent;
-        private ScrollRect logScroll;
-        private Button endTurn;
-        private Button nextHero;
-        private Button sleepHero;
-        private Button heroBook;
-        private Button townBook;
-        private RectTransform announce;
-        private TextMeshProUGUI announceTitle;
-        private TextMeshProUGUI announceBody;
-        private Coroutine announcing;
-
-        private RectTransform topBar;
-        private RectTransform heroFrame;
-        private RectTransform commands;
-        private RectTransform logFrame;
-        private RectTransform minimapFrame;
+        private RectTransform safe;
+        private AdventureHud hud;
+        private TitleScreen title;
         private CampaignScreen campaignScreen;
         private TownScreen town;
         private HeroScreen heroSheet;
         private BattleBar battleBar;
         private ChoiceBox choice;
         private ResultsBox results;
-        private Minimap minimap;
+        private MessageBox message;
 
-        private readonly List<HeroButton> heroButtons = new List<HeroButton>();
         private bool busy;
         private int hoverCell = -1;
         private MovePlan plan;
-
-        /// <summary>The width a line of the log has inside its panel.</summary>
-        private const float LogWidth = 484f;
+        private CursorKind cursor = CursorKind.Default;
+        private bool cursorSet;
+        private BaseGameState shownState = BaseGameState.Initialization;
+        private bool leaveArmed;
+        private string leaveWords;
 
         public bool Busy => busy;
 
@@ -67,6 +53,24 @@ namespace Portfolio.Heroes.UI
 
         public BattleBar Bar => battleBar;
 
+        public AdventureHud Hud => hud;
+
+        public TitleScreen Title => title;
+
+        public CampaignScreen Campaign => campaignScreen;
+
+        public ChoiceBox Choice => choice;
+
+        public ResultsBox Results => results;
+
+        public MessageBox Message => message;
+
+        /// <summary>
+        /// Whether the player at this device may give an order now: the rules wait for them and the map has played out
+        /// everything that happened. The interface never sends a command otherwise.
+        /// </summary>
+        public bool CanCommand => manager != null && manager.Game != null && !busy && manager.WaitingForHuman;
+
         private HeroesGame Game => manager != null ? manager.Game : null;
 
         private IHeroesCommands Commands => manager != null ? manager.Commands : null;
@@ -74,8 +78,8 @@ namespace Portfolio.Heroes.UI
         // ------------------------------------------------------------------ building
 
         /// <summary>
-        /// Builds the whole interface once, the first time anything needs it: the screen of a scenario and the screens
-        /// that come before one. Everything in it is filled from the game as it goes, so it is never rebuilt.
+        /// Builds the whole interface once, the first time anything needs it: the title, the screen of a scenario and
+        /// the screens that come before one. Everything in it is filled from the game as it goes, so it is never rebuilt.
         /// </summary>
         public void Prepare()
         {
@@ -90,20 +94,24 @@ namespace Portfolio.Heroes.UI
             }
             UIKit.Art = manager.Art;
             Clicker.Audio = manager.Sound;
+            if (manager.Sound != null)
+            {
+                // The sound follows the settings in use, the player's own once they are switched on.
+                manager.Sound.Source = () => manager.Options;
+            }
             canvas = MakeCanvas();
             screen = (RectTransform)canvas.transform;
-            TopBar();
-            RightColumn();
-            Buttons();
-            LogPanel();
-            Announcement();
+            safe = MakeSafeArea(screen);
 
-            town = TownScreen.Make(screen, manager);
-            heroSheet = HeroScreen.Make(screen, manager);
-            battleBar = BattleBar.Make(screen, manager);
-            choice = ChoiceBox.Make(screen, manager);
-            results = ResultsBox.Make(screen, manager);
-            campaignScreen = CampaignScreen.Make(screen, manager);
+            hud = AdventureHud.Make(safe, manager, this);
+            town = TownScreen.Make(safe, manager);
+            heroSheet = HeroScreen.Make(safe, manager);
+            battleBar = BattleBar.Make(safe, manager);
+            choice = ChoiceBox.Make(safe, manager);
+            results = ResultsBox.Make(safe, manager);
+            campaignScreen = CampaignScreen.Make(safe, manager);
+            message = MessageBox.Make(safe, manager);
+            title = TitleScreen.Make(screen, safe, manager, this);
             Tooltip.Prepare(screen);
             CloseAll();
             ShowHud(false);
@@ -114,25 +122,202 @@ namespace Portfolio.Heroes.UI
         {
             manager = owner;
             Prepare();
-            for (int i = logContent.childCount - 1; i >= 0; i--)
-            {
-                Destroy(logContent.GetChild(i).gameObject);
-            }
+            hud.ClearLog();
             CloseAll();
+            title.Hide();
             ShowHud(true);
-            Log(manager.Scenario != null ? manager.Scenario.Goal : "Take the land.", -1);
+            if (manager.IsOnlineGame)
+            {
+                Log("A game of the room. Take the land.", -1);
+            }
+            else
+            {
+                Log(manager.Scenario != null ? manager.Scenario.Goal : "Take the land.", -1);
+            }
+        }
+
+        /// <summary>
+        /// Shows or hides the panels of the adventure map (the resources, the heroes and towns, the commands, the log and
+        /// the little map): a battle hides them while it is fought, in either style.
+        /// </summary>
+        public void ShowAdventureHud(bool on)
+        {
+            ShowHud(on);
         }
 
         /// <summary>The panels of a scenario are hidden while there is none.</summary>
-        private void ShowHud(bool on)
+        public void ShowHud(bool on)
         {
-            foreach (RectTransform part in new[] { topBar, heroFrame, commands, logFrame, minimapFrame })
+            hud?.Show(on);
+            if (!on)
             {
-                if (part != null)
-                {
-                    part.gameObject.SetActive(on);
-                }
+                TooltipBox.Hide(this);
             }
+        }
+
+        private Canvas MakeCanvas()
+        {
+            var go = new GameObject("HeroesCanvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+            go.transform.SetParent(transform, false);
+            var made = go.GetComponent<Canvas>();
+            made.renderMode = RenderMode.ScreenSpaceOverlay;
+            made.sortingOrder = 10;
+            // As every Gamebox canvas: the 1920x1080 layout grows to fill any screen rather than being cut by it.
+            var scaler = go.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
+            if (EventSystem.current == null)
+            {
+                new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
+            }
+            return made;
+        }
+
+        /// <summary>The part of the screen no notch or rounded corner covers, where everything that can be read goes.</summary>
+        private static RectTransform MakeSafeArea(RectTransform parent)
+        {
+            RectTransform area = UIKit.Stretch(UIKit.Rect(parent, "SafeArea"));
+            var safeArea = area.gameObject.AddComponent<SafeArea>();
+            safeArea.ReferenceOrientation = ScreenOrientation.LandscapeLeft;
+            safeArea.Edges = SafeArea.SafeAreaMode.Left | SafeArea.SafeAreaMode.Right | SafeArea.SafeAreaMode.Top | SafeArea.SafeAreaMode.Bottom;
+            safeArea.Alignment = SafeArea.AlignmentMode.CenterHorizontally;
+            return area;
+        }
+
+        protected override void Awake()
+        {
+            base.Awake();
+            Prepare();
+            if (titleButton != null)
+            {
+                titleButton.onClick.AddListener(LeaveToTitle);
+            }
+        }
+
+        /// <summary>
+        /// The pause menu's Leave to the Title. A scenario is saved on its way out, but no game is saved in the middle of
+        /// a battle: there the first press says what would be lost and the button asks again, and only a second press
+        /// leaves.
+        /// </summary>
+        private void LeaveToTitle()
+        {
+            if (manager == null)
+            {
+                return;
+            }
+            HeroesGame game = manager.Game;
+            bool loses = game != null && game.InBattle && !game.IsOver && !manager.InSession;
+            if (loses && !leaveArmed)
+            {
+                ArmLeave(true);
+                UpdateError("A battle cannot be saved: leaving now loses it, and all that was done since the game was last saved.");
+                return;
+            }
+            ArmLeave(false);
+            manager.ReturnToTitle();
+        }
+
+        /// <summary>Turns the pause menu's Leave to the Title into its second, final press, or back.</summary>
+        private void ArmLeave(bool on)
+        {
+            leaveArmed = on;
+            TMP_Text label = titleButton != null ? titleButton.GetComponentInChildren<TMP_Text>(true) : null;
+            if (label == null)
+            {
+                return;
+            }
+            leaveWords ??= label.text;
+            label.text = on ? "Leave and Lose the Battle" : leaveWords;
+        }
+
+        // ------------------------------------------------------------------ the title, the menus and the way back
+
+        /// <summary>
+        /// The title screen stands in for the shared menu before a game and after it; the shared menu is the pause menu.
+        /// A game's end leaves its results box on screen instead of the menu.
+        /// </summary>
+        public override void UpdateGameState(Gamebox.GameState state)
+        {
+            shownState = state.BaseState;
+            Prepare();
+            ArmLeave(false);
+            base.UpdateGameState(state);
+            switch (state.BaseState)
+            {
+                case BaseGameState.Initialization:
+                    HideMenu();
+                    ShowHud(false);
+                    town?.Close();
+                    heroSheet?.Close();
+                    choice?.Close();
+                    battleBar?.Hide();
+                    hud?.HideAnnouncement();
+                    SetCursor(CursorKind.Default);
+                    title?.Show();
+                    break;
+                case BaseGameState.Running:
+                    title?.Hide();
+                    break;
+                case BaseGameState.Paused:
+                    TooltipBox.Hide(this);
+                    break;
+                default:
+                    HideMenu();
+                    break;
+            }
+        }
+
+        /// <summary>The settings panel goes back to where it was opened from: the title, or the pause menu.</summary>
+        public override void HideSettings()
+        {
+            base.HideSettings();
+            if (shownState == BaseGameState.Initialization)
+            {
+                HideMenu();
+                title?.Show();
+            }
+        }
+
+        public override void EnableLoad()
+        {
+            base.EnableLoad();
+            title?.Refresh();
+        }
+
+        /// <summary>Escape closes what lies over the map first: a message, the market, a town, a hero, the campaign.</summary>
+        public override bool HandleBack()
+        {
+            if (base.HandleBack())
+            {
+                return true;
+            }
+            if (message != null && message.IsOpen)
+            {
+                message.Close();
+                return true;
+            }
+            if (town != null && town.HandleBack())
+            {
+                return true;
+            }
+            if (heroSheet != null && heroSheet.IsOpen)
+            {
+                heroSheet.Close();
+                return true;
+            }
+            if (results != null && results.IsOpen)
+            {
+                // The end of a game: Escape does what its one button does.
+                results.Leave();
+                return true;
+            }
+            if (campaignScreen != null && campaignScreen.IsOpen)
+            {
+                campaignScreen.Close();
+                return true;
+            }
+            return false;
         }
 
         /// <summary>The shared menu's New Game opens the campaign instead of starting one straight away.</summary>
@@ -144,8 +329,8 @@ namespace Portfolio.Heroes.UI
             }
         }
 
-        /// <summary>Shows the chapters and the skirmish maps. False when the interface is not up yet.</summary>
-        public bool OpenCampaign()
+        /// <summary>Shows the chapters, or the skirmish maps. False when the interface is not up yet.</summary>
+        public bool OpenCampaign(bool skirmish = false)
         {
             Prepare();
             if (campaignScreen == null)
@@ -153,134 +338,92 @@ namespace Portfolio.Heroes.UI
                 return false;
             }
             HideMenu();
-            campaignScreen.Show();
+            campaignScreen.Show(skirmish);
             return true;
         }
 
-        private Canvas MakeCanvas()
+        /// <summary>The campaign was closed with Back: the title shows again (the title is where it was opened from).</summary>
+        public void CampaignClosed()
         {
-            var go = new GameObject("HeroesCanvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-            go.transform.SetParent(transform, false);
-            var made = go.GetComponent<Canvas>();
-            made.renderMode = RenderMode.ScreenSpaceOverlay;
-            made.sortingOrder = 10;
-            var scaler = go.GetComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
-            scaler.matchWidthOrHeight = 0.5f;
-            if (EventSystem.current == null)
+            if (shownState == BaseGameState.Initialization && !manager.InSession)
             {
-                new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
+                title.Show();
             }
-            return made;
         }
 
-        /// <summary>The seven resources and the date, on the bar along the top.</summary>
-        private void TopBar()
+        /// <summary>
+        /// Where the battles of new games are fought, chosen on the campaign screen: it becomes one of the player's own
+        /// settings, saved like the settings panel saves them. The defaults are never changed, so while they are in use
+        /// the player's saved settings come back first, as "Use My Settings" brings them, and only the style changes.
+        /// </summary>
+        public void SetBattleStyle(int style)
         {
-            Image bar = UIKit.Frame(screen, "TopBar");
-            RectTransform rect = UIKit.Pin((RectTransform)bar.transform, new Vector2(0.5f, 1f), new Vector2(0f, 0f),
-                new Vector2(1500f, 74f));
-            rect.pivot = new Vector2(0.5f, 1f);
-            topBar = rect;
-
-            RectTransform row = UIKit.Rect(rect, "Resources");
-            UIKit.Stretch(row, 26f, 8f, 320f, 8f);
-            HorizontalLayoutGroup layout = UIKit.Layout<HorizontalLayoutGroup>(row, 6f);
-            layout.childForceExpandWidth = true;
-            layout.childAlignment = TextAnchor.MiddleLeft;
-            for (int i = 0; i < ResourceSet.Kinds; i++)
+            HeroesSettings active = manager.Options;
+            if (active == null || active.battleStyle == style)
             {
-                var kind = (ResourceKind)i;
-                resources[i] = UIKit.Resource(row, kind, 40f);
-                UIKit.Fit((RectTransform)resources[i].transform.parent, 0f, 44f, true);
-                Tooltip.Attach(resources[i].transform.parent.gameObject, Land.ResourceName(kind));
+                return;
             }
-
-            date = UIKit.Label(rect, "Date", "", 26f, UIKit.Gold, TextAlignmentOptions.MidlineRight);
-            UIKit.Pin((RectTransform)date.transform, new Vector2(1f, 0.5f), new Vector2(-26f, 12f), new Vector2(290f, 30f));
-            playerName = UIKit.Label(rect, "Player", "", 22f, UIKit.Dim, TextAlignmentOptions.MidlineRight);
-            UIKit.Pin((RectTransform)playerName.transform, new Vector2(1f, 0.5f), new Vector2(-26f, -16f), new Vector2(290f, 26f));
+            if (manager.UsingDefaultSettings)
+            {
+                manager.LoadCustomSettings();
+            }
+            if (manager.CustomSettings is not HeroesSettings custom)
+            {
+                return;
+            }
+            if (GameSettingsUI is HeroesSettingsUI panel)
+            {
+                // The panel is what is saved: it shows the player's settings as they stand, with the new style.
+                panel.UpdateFromSettings(custom);
+                panel.SetBattleStyle(style);
+                manager.SaveCustomSettings();
+                panel.UsingDefault(false);
+            }
+            else
+            {
+                custom.battleStyle = style;
+                manager.SaveCustomSettings();
+            }
         }
 
-        /// <summary>The heroes and towns of the player, down the right hand side.</summary>
-        private void RightColumn()
+        /// <summary>
+        /// The Menu command of the map: the pause menu at one device (the game stops under it), the match menu of the
+        /// lobby online (it does not).
+        /// </summary>
+        public void OpenMenu()
         {
-            Image frame = UIKit.Frame(screen, "Heroes");
-            RectTransform rect = UIKit.Pin((RectTransform)frame.transform, new Vector2(1f, 1f), new Vector2(-14f, -88f),
-                new Vector2(250f, 620f));
-            heroFrame = rect;
-            heroColumn = UIKit.Rect(rect, "Column");
-            UIKit.Stretch(heroColumn, 16f, 16f, 16f, 16f);
-            VerticalLayoutGroup layout = UIKit.Layout<VerticalLayoutGroup>(heroColumn, 6f);
-            layout.childForceExpandWidth = true;
-            layout.childAlignment = TextAnchor.UpperCenter;
+            TooltipBox.Hide(this);
+            OnPauseClicked();
         }
 
-        /// <summary>The commands of a turn, in the corner the eye goes to last.</summary>
-        private void Buttons()
+        /// <summary>After an online game, back to its room in the lobby.</summary>
+        public void LeaveToRoom()
         {
-            RectTransform holder = UIKit.Rect(screen, "Commands");
-            UIKit.Pin(holder, new Vector2(1f, 0f), new Vector2(-14f, 14f), new Vector2(250f, 190f));
-            commands = holder;
-
-            endTurn = UIKit.Push(holder, "EndTurn", "End Turn", () => Commands?.EndTurn(), 28f);
-            UIKit.Pin((RectTransform)endTurn.transform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(250f, 64f));
-
-            RectTransform row = UIKit.Rect(holder, "Row");
-            UIKit.Pin(row, new Vector2(0f, 0f), new Vector2(0f, 74f), new Vector2(250f, 62f));
-            HorizontalLayoutGroup layout = UIKit.Layout<HorizontalLayoutGroup>(row, 8f);
-            layout.childAlignment = TextAnchor.MiddleCenter;
-
-            HeroesArt art = manager.Art;
-            nextHero = UIKit.Icon(row, "NextHero", art.Icon("next_hero"), () => manager.Select(manager.NextHero()), "Next hero");
-            UIKit.Fit((RectTransform)nextHero.transform, 56f, 56f);
-            sleepHero = UIKit.Icon(row, "Sleep", art.Icon("sleep"), ToggleSleep, "Sleep this hero");
-            UIKit.Fit((RectTransform)sleepHero.transform, 56f, 56f);
-            heroBook = UIKit.Icon(row, "Hero", art.Icon("hero"), OpenHero, "Hero");
-            UIKit.Fit((RectTransform)heroBook.transform, 56f, 56f);
-            townBook = UIKit.Icon(row, "Town", art.Icon("kingdom"), OpenTown, "Town");
-            UIKit.Fit((RectTransform)townBook.transform, 56f, 56f);
-
-            Button menu = UIKit.Icon(holder, "Menu", art.Icon("menu"), ShowMenu, "Menu");
-            UIKit.Pin((RectTransform)menu.transform, new Vector2(1f, 0f), new Vector2(0f, 142f), new Vector2(48f, 48f));
+            IGameController controller = ActiveController;
+            if (controller != null)
+            {
+                controller.TransitionState(BaseGameState.Initialization);
+            }
+            else
+            {
+                manager.ReturnToTitle();
+            }
         }
 
-        /// <summary>The running account of what happened, and the little map beside it.</summary>
-        private void LogPanel()
+        /// <summary>The credits of the art, the music and the fonts, from the credits file of the art.</summary>
+        public void OpenCredits()
         {
-            Image frame = UIKit.Frame(screen, "Log");
-            RectTransform rect = UIKit.Pin((RectTransform)frame.transform, new Vector2(0f, 0f), new Vector2(14f, 14f),
-                new Vector2(520f, 180f));
-            logFrame = rect;
-            logContent = UIKit.Scroll(rect, "Scroll", out logScroll);
-            UIKit.Stretch((RectTransform)logScroll.transform, 18f, 18f, 18f, 18f);
-            VerticalLayoutGroup layout = UIKit.Layout<VerticalLayoutGroup>(logContent, 2f);
-            layout.childForceExpandWidth = true;
-
-            Image mapFrame = UIKit.Frame(screen, "Minimap");
-            RectTransform mapRect = UIKit.Pin((RectTransform)mapFrame.transform, new Vector2(0f, 0f), new Vector2(548f, 14f),
-                new Vector2(228f, 228f));
-            minimapFrame = mapRect;
-            minimap = Minimap.Make(mapRect, manager);
-        }
-
-        private void Announcement()
-        {
-            Image frame = UIKit.Parchment(screen, "Announce");
-            announce = UIKit.Pin((RectTransform)frame.transform, new Vector2(0.5f, 0.5f), new Vector2(0f, 220f),
-                new Vector2(620f, 130f));
-            announceTitle = UIKit.Title(announce, "Title", "", 40f, UIKit.Ink * 0.25f);
-            UIKit.Pin((RectTransform)announceTitle.transform, new Vector2(0.5f, 1f), new Vector2(0f, -22f), new Vector2(560f, 46f));
-            announceBody = UIKit.Label(announce, "Body", "", 26f, new Color(0.25f, 0.18f, 0.1f), TextAlignmentOptions.Top);
-            UIKit.Pin((RectTransform)announceBody.transform, new Vector2(0.5f, 1f), new Vector2(0f, -72f), new Vector2(560f, 44f));
-            announce.gameObject.SetActive(false);
-        }
-
-        protected override void Awake()
-        {
-            base.Awake();
             Prepare();
+            TextAsset credits = manager.Art != null ? manager.Art.credits : null;
+            message.ShowCredits(credits != null ? credits.text : "Heroes");
+        }
+
+        public void EndTurn()
+        {
+            if (CanCommand)
+            {
+                Commands?.EndTurn();
+            }
         }
 
         // ------------------------------------------------------------------ what the manager asks for
@@ -292,11 +435,9 @@ namespace Portfolio.Heroes.UI
             heroSheet?.Close();
             choice?.Close();
             results?.Close();
+            message?.Close();
             battleBar?.Hide();
-            if (announce != null)
-            {
-                announce.gameObject.SetActive(false);
-            }
+            hud?.HideAnnouncement();
         }
 
         public void SetBusy(bool on)
@@ -305,6 +446,8 @@ namespace Portfolio.Heroes.UI
             if (on)
             {
                 manager.Path?.Clear();
+                hoverCell = -1;
+                TooltipBox.Hide(this);
             }
             Refresh();
         }
@@ -312,88 +455,24 @@ namespace Portfolio.Heroes.UI
         /// <summary>Redraws everything that shows a number: resources, the date, the heroes, the little map.</summary>
         public void Refresh()
         {
-            HeroesGame game = Game;
-            if (game == null || canvas == null)
+            if (Game == null || canvas == null)
             {
                 return;
             }
-            PlayerState viewer = manager.ViewerState;
-            for (int i = 0; i < ResourceSet.Kinds; i++)
-            {
-                resources[i].text = viewer != null ? Short(viewer.resources.values[i]) : "0";
-            }
-            date.text = $"Month {game.State.Month}, Week {game.State.WeekOfMonth}, Day {game.State.DayOfWeek}";
-            PlayerState current = game.State.Player(game.State.currentPlayer);
-            playerName.text = current != null ? current.name : "";
-            playerName.color = current != null ? HeroesArt.PlayerColor((int)current.color) : UIKit.Dim;
-
-            RefreshHeroes(viewer);
-            bool mine = current != null && current.index == manager.Viewer && !busy && !game.InBattle;
-            UIKit.Enable(endTurn, mine);
-            UIKit.Enable(nextHero, mine && manager.NextHero() != null);
-            UIKit.Enable(sleepHero, mine && manager.Selected != null);
-            UIKit.Enable(heroBook, manager.Selected != null);
-            UIKit.Enable(townBook, viewer != null && viewer.towns.Count > 0);
+            hud.Refresh(busy);
             town?.Refresh();
             heroSheet?.Refresh();
-            minimap?.Refresh();
-        }
-
-        private static string Short(int amount)
-        {
-            return amount >= 100000 ? $"{amount / 1000}k" : amount.ToString();
-        }
-
-        private void RefreshHeroes(PlayerState viewer)
-        {
-            var wanted = new List<(bool isHero, int id)>();
-            if (viewer != null)
-            {
-                foreach (int id in viewer.heroes)
-                {
-                    wanted.Add((true, id));
-                }
-                foreach (int id in viewer.towns)
-                {
-                    wanted.Add((false, id));
-                }
-            }
-            while (heroButtons.Count < wanted.Count)
-            {
-                heroButtons.Add(HeroButton.Make(heroColumn, manager, this));
-            }
-            for (int i = 0; i < heroButtons.Count; i++)
-            {
-                if (i < wanted.Count)
-                {
-                    heroButtons[i].Show(wanted[i].isHero, wanted[i].id);
-                }
-                else
-                {
-                    heroButtons[i].gameObject.SetActive(false);
-                }
-            }
         }
 
         public void Log(string text, int player)
         {
-            if (string.IsNullOrEmpty(text) || logContent == null)
+            if (string.IsNullOrEmpty(text) || hud == null)
             {
                 return;
             }
-            Color color = player >= 0 ? HeroesArt.PlayerColor(PlayerColorOf(player)) : UIKit.Dim;
-            TextMeshProUGUI line = UIKit.Label(logContent, "Line", text, 21f, color);
-            line.textWrappingMode = TextWrappingModes.Normal;
-            // The width is fixed to the panel, so a long line wraps rather than growing out of it.
-            UIKit.Fit((RectTransform)line.transform, LogWidth, 0f);
-            var element = line.GetComponent<LayoutElement>();
-            element.preferredHeight = -1f;
-            element.minHeight = 24f;
-            if (logContent.childCount > 60)
-            {
-                Destroy(logContent.GetChild(0).gameObject);
-            }
-            StartCoroutine(ScrollDown());
+            // On the parchment a player's lines are written in a darker ink of their colour.
+            int color = PlayerColorOf(player);
+            hud.Log(text, player >= 0 && color >= 0 ? LogInk(HeroesArt.PlayerColor(color)) : UIKit.InkOnParchment);
         }
 
         private int PlayerColorOf(int player)
@@ -402,46 +481,65 @@ namespace Portfolio.Heroes.UI
             return state != null ? (int)state.color : -1;
         }
 
-        private IEnumerator ScrollDown()
+        /// <summary>The parchment of the log as the eye sees it behind the lines (its texture's middle tone).</summary>
+        private static readonly Color LogPaper = new Color(0.9f, 0.816f, 0.631f);
+
+        /// <summary>
+        /// A realm's colour as ink on the log's parchment: mixed toward the parchment's own brown ink, at least as much as
+        /// suits the deep red and blue, and further for the light green and yellow, until it reads at 5 to 1 or better.
+        /// </summary>
+        private static Color LogInk(Color color)
         {
-            yield return null;
-            if (logScroll != null)
+            for (float mix = 0.42f; mix < 1f; mix += 0.04f)
             {
-                logScroll.verticalNormalizedPosition = 0f;
+                Color ink = Color.Lerp(color, UIKit.InkOnParchment, mix);
+                if (Contrast(ink, LogPaper) >= 5f)
+                {
+                    return ink;
+                }
             }
+            return UIKit.InkOnParchment;
+        }
+
+        /// <summary>The contrast of two colours as the web's guidelines measure it, from 1 (the same) to 21.</summary>
+        private static float Contrast(Color a, Color b)
+        {
+            float first = Luminance(a);
+            float second = Luminance(b);
+            return (Mathf.Max(first, second) + 0.05f) / (Mathf.Min(first, second) + 0.05f);
+        }
+
+        private static float Luminance(Color color)
+        {
+            Color linear = color.linear;
+            return 0.2126f * linear.r + 0.7152f * linear.g + 0.0722f * linear.b;
         }
 
         /// <summary>The banner that names the day, the week or the town that just changed hands.</summary>
-        public void Announce(string title, string body)
+        public void Announce(string heading, string body)
         {
-            if (announce == null)
-            {
-                return;
-            }
-            announceTitle.text = title;
-            announceBody.text = body;
-            announce.gameObject.SetActive(true);
-            if (announcing != null)
-            {
-                StopCoroutine(announcing);
-            }
-            announcing = StartCoroutine(HideAnnounce());
+            hud?.Announce(heading, TurnLine(body));
         }
 
-        private IEnumerator HideAnnounce()
+        /// <summary>
+        /// A new day is announced with the name of the realm whose turn it is: the banner says it as a turn, "Your turn"
+        /// for the player at this device. Any other line is shown as it is.
+        /// </summary>
+        private string TurnLine(string body)
         {
-            yield return new WaitForSeconds(1.9f);
-            float t = 0f;
-            var group = announce.GetComponent<CanvasGroup>() ?? announce.gameObject.AddComponent<CanvasGroup>();
-            while (t < 1f)
+            GameState state = Game?.State;
+            if (state == null || string.IsNullOrEmpty(body))
             {
-                t += Time.deltaTime * 2.5f;
-                group.alpha = 1f - t;
-                yield return null;
+                return body;
             }
-            group.alpha = 1f;
-            announce.gameObject.SetActive(false);
-            announcing = null;
+            foreach (PlayerState player in state.players)
+            {
+                if (player.name == body)
+                {
+                    return player.index == manager.Viewer ? "Your turn" : $"{player.name}'s turn";
+                }
+            }
+            return body;
         }
 
         public void ShowTurn(int who)
@@ -462,6 +560,8 @@ namespace Portfolio.Heroes.UI
         public void BeginBattle(BattleState battle)
         {
             CloseAll();
+            hud.CloseLog();
+            TooltipBox.Hide(this);
             battleBar.Begin(battle);
         }
 
@@ -498,46 +598,75 @@ namespace Portfolio.Heroes.UI
             }
         }
 
-        private void ToggleSleep()
-        {
-            HeroState hero = manager.Selected;
-            if (hero != null)
-            {
-                Commands?.Sleep(hero.id, !hero.sleeping);
-            }
-        }
+        /// <summary>Whether a screen of the game lies over the map (the map then takes no clicks).</summary>
+        private bool ScreenOpen => town.IsOpen || heroSheet.IsOpen || choice.IsOpen || results.IsOpen || message.IsOpen ||
+                                   campaignScreen.IsOpen;
 
         // ------------------------------------------------------------------ the pointer on the map
 
         private void Update()
         {
-            if (manager == null || Game == null || !manager.IsGameRunning)
+            if (manager == null)
             {
                 return;
             }
-            if (Game.InBattle)
+            if (manager.Rig != null && manager.Options != null)
             {
-                battleBar?.Hover(PointerCell());
+                manager.Rig.EdgeScroll = manager.Options.edgeScroll;
+            }
+            // Online, whose turn it is and the clock are on the bar along the top of the map (over a town or a hero too)
+            // and in a battle on the battle bar, by the round: the turn banner of the lobby, which would stand over the
+            // field and the battle's opening words, stays off.
+            Gamebox.Online.OnlineLobbyUI lobby = manager.Online != null ? manager.Online.LobbyUI : null;
+            if (lobby != null)
+            {
+                lobby.ShowTurnBanner = false;
+            }
+            if (Game == null || !manager.IsGameRunning)
+            {
+                // Over the pause menu, the settings or the end of a game the pointer is the plain one, whatever the map
+                // or the field showed under it.
+                MapTip(-1);
+                SetCursor(CursorKind.Default);
+                battleBar?.ForgetPointer();
+                return;
+            }
+            if (Game.InBattle || manager.Battle.Running)
+            {
+                // The battle bar reads the pointer on the field of the battle, whichever style it is fought in.
+                MapTip(-1);
+                cursorSet = false;
+                battleBar?.Pointer();
                 return;
             }
             AdventureHover();
         }
 
+        /// <summary>
+        /// Development tours only: a place on the screen that stands in for the pointer on the map, so a tour can show
+        /// what hovering over something looks like. Null for the real pointer.
+        /// </summary>
+        public Vector3? TourPointer { get; set; }
+
         /// <summary>The cell the pointer is over, or -1 when it is over the interface or off the map.</summary>
         private int PointerCell()
         {
-            if (manager.Rig == null || EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+            if (manager.Rig == null || manager.Map == null)
             {
                 return -1;
             }
-            return manager.Rig.PointerGround(Input.mousePosition, out Vector3 point, manager.Map.GroundMask)
+            if (TourPointer == null && EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+            {
+                return -1;
+            }
+            return manager.Rig.PointerGround(TourPointer ?? Input.mousePosition, out Vector3 point, manager.Map.GroundMask)
                 ? manager.Map.CellAt(point)
                 : -1;
         }
 
         private void AdventureHover()
         {
-            int cell = busy ? -1 : PointerCell();
+            int cell = busy || ScreenOpen ? -1 : PointerCell();
             HeroState hero = manager.Selected;
             if (cell != hoverCell)
             {
@@ -549,9 +678,11 @@ namespace Portfolio.Heroes.UI
                 }
                 else
                 {
-                    manager.Path.Clear();
+                    manager.Path?.Clear();
                 }
+                MapTip(cell);
             }
+            SetCursor(cell < 0 ? CursorKind.Default : CursorFor(cell, hero));
             if (cell >= 0 && Input.GetMouseButtonDown(0) && !manager.Rig.IsDragging)
             {
                 Click(cell);
@@ -586,46 +717,78 @@ namespace Portfolio.Heroes.UI
                     return;
                 }
             }
-            if (manager.Selected != null && plan != null && plan.Cells.Count > 0)
+            if (manager.Selected != null && plan != null && plan.Cells.Count > 0 && CanCommand)
             {
                 Commands?.MoveHero(manager.Selected.id, cell);
             }
         }
 
-        // ------------------------------------------------------------------ a line of text for anything
-
-        /// <summary>What a cell holds, as the tooltip and the log say it.</summary>
-        public string Describe(int cell)
+        /// <summary>The pointer of the map: what a click on the cell would do.</summary>
+        private CursorKind CursorFor(int cell, HeroState hero)
         {
             GameState state = Game.State;
-            var text = new StringBuilder();
-            HeroState hero = state.HeroAt(cell);
-            if (hero != null)
-            {
-                PlayerState owner = state.Player(hero.owner);
-                text.Append(hero.Name).Append(", ").Append(HeroData.Class(hero.Def != null ? hero.Def.Class : HeroClass.Knight).Name);
-                if (owner != null)
-                {
-                    text.Append(" (").Append(owner.name).Append(')');
-                }
-                return text.ToString();
-            }
+            HeroState standing = state.HeroAt(cell);
             MapObject what = state.ObjectAt(cell);
+            if (standing != null && standing.owner == manager.Viewer)
+            {
+                return CursorKind.Hand;
+            }
+            if (what != null && what.kind == ObjectKind.Town && state.Town(what.subtype) is TownState here &&
+                here.owner == manager.Viewer && (hero == null || hero.cell != cell))
+            {
+                return CursorKind.Hand;
+            }
+            if (hero == null)
+            {
+                return CursorKind.Default;
+            }
+            if (plan == null || plan.Cells.Count == 0)
+            {
+                return cell == hero.cell ? CursorKind.Hand : CursorKind.Blocked;
+            }
+            if (standing != null || what != null && what.kind == ObjectKind.Monster)
+            {
+                return CursorKind.Fight;
+            }
+            if (what != null && what.kind == ObjectKind.Town)
+            {
+                TownState target = state.Town(what.subtype);
+                return target != null && target.owner != manager.Viewer && !target.garrison.IsEmpty ? CursorKind.Fight : CursorKind.Visit;
+            }
             if (what != null)
             {
-                if (what.kind == ObjectKind.Town)
-                {
-                    TownState here = state.Town(what.subtype);
-                    return here != null ? $"{here.name}, a {Land.FactionName(here.faction)} town" : "Town";
-                }
-                if (what.kind == ObjectKind.Monster)
-                {
-                    CreatureDef def = Creatures.Get(what.subtype);
-                    return def != null ? $"{what.amount} {(what.amount == 1 ? def.Name : def.Plural)}" : "A wandering army";
-                }
-                return MapObjects.Name(what.kind);
+                return MapObjects.IsPickup(what.kind) ? CursorKind.Take : CursorKind.Visit;
             }
-            return Land.Name(state.map.TerrainAt(cell));
+            return CursorKind.Travel;
+        }
+
+        private void SetCursor(CursorKind kind)
+        {
+            if (cursorSet && kind == cursor || manager == null || manager.Art == null)
+            {
+                return;
+            }
+            cursor = kind;
+            cursorSet = true;
+            manager.Art.UseCursor(kind);
+        }
+
+        /// <summary>The tooltip of what stands on a cell, with its picture; nothing for bare ground.</summary>
+        private void MapTip(int cell)
+        {
+            if (cell < 0 || Game == null)
+            {
+                TooltipBox.Hide(this);
+                return;
+            }
+            if (MapTips.Describe(manager, cell, out string heading, out string body, out Sprite picture))
+            {
+                TooltipBox.Show(this, heading, body, picture);
+            }
+            else
+            {
+                TooltipBox.Hide(this);
+            }
         }
     }
 }
