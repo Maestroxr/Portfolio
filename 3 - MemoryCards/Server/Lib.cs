@@ -1,3 +1,4 @@
+using Portfolio.MemoryCards;
 using SpacetimeDB;
 
 /// <summary>
@@ -5,50 +6,28 @@ using SpacetimeDB;
 /// and the turn timer; see the BaseServer folder of this project) plus the game itself. Both declare the same
 /// partial class, so the tables, reducers and helpers of the base server are in reach here.
 ///
-/// A versus game is dealt and judged here, so nobody can look at a card they have not turned. The faces of a
-/// board are the private <see cref="CardDeck"/>; the public <see cref="BoardCard"/> rows say where each card
-/// stands and show a face only while the card is face up. The players call <see cref="FlipCard"/> on their
-/// turn; what a flip did goes out as a <see cref="FlipEvent"/> for the clients to animate, the score goes to
-/// the member of the base server, and the turn passes with the base server's turns: a set lets the player go
-/// on, a mistake shows for a moment and passes the turn, and so does running out of time.
+/// A versus game is dealt and judged here with the rules of the game itself: the model of the Unity project
+/// (Assets/Scripts/Model, shown under Model: <see cref="Dealer"/>, <see cref="MemoryRound"/>, <see cref="VersusMatch"/>,
+/// <see cref="BoardOptions"/>) is compiled into this module, so the client and the server cannot drift apart. For
+/// every flip the board is rebuilt from the tables, the round judges the flip, the versus rules say what it means for
+/// the player, and what changed goes back into the tables and out to the clients as a <see cref="FlipEvent"/>. The
+/// faces of a board are the private <see cref="CardDeck"/>; the public <see cref="BoardCard"/> rows say where each
+/// card stands and show a face only while the card is face up, so nobody can look at a card they have not turned. The
+/// turn passes with the base server's turns: a set lets the player go on, a mistake shows for a moment (the clock
+/// stops) and passes the turn, a bomb passes it at once, and so does running out of time. The score is kept here and
+/// nowhere else: the reports and the early end the base server offers are refused.
 ///
 /// After a change: publish the module, then generate the client bindings (Gamebox > Server in the Unity editor,
 /// or <c>spacetime publish</c> and <c>spacetime generate</c> in the project folder, which read spacetime.json).
 /// </summary>
 public static partial class Module
 {
-    // The numbers of the client's CardKind, CardState and FlipOutcome enums.
-    public const byte KindAnimal = 0;
-    public const byte KindWild = 1;
-    public const byte KindBomb = 2;
-    public const byte KindPeek = 4;
-    public const byte KindUnknown = 255;
+    /// <summary>The kind of a card on the wire while it is face down.</summary>
+    public const byte KindUnknown = (byte)CardKind.Unknown;
 
-    public const byte StateHidden = 0;
-    public const byte StateRevealed = 1;
-    public const byte StateMatched = 2;
-    public const byte StateSpent = 3;
-
-    public const byte OutcomeCracked = 1;
-    public const byte OutcomeRevealed = 2;
-    public const byte OutcomeMatched = 3;
-    public const byte OutcomeMismatched = 4;
-    public const byte OutcomeWildMatched = 6;
-    public const byte OutcomeBomb = 7;
-    public const byte OutcomePeek = 9;
-    /// <summary>A mistake turned back face down.</summary>
-    public const byte OutcomeFlippedBack = 20;
-    /// <summary>The player ran out of time; the cards they had face up turned back.</summary>
-    public const byte OutcomeTimedOut = 21;
-    /// <summary>The board is shown to everybody before the first turn (memorize).</summary>
-    public const byte OutcomePreview = 22;
-
-    public const int PointsPerPair = 100;
-    public const int PointsPerTriple = 160;
-    public const int MaxComboMultiplier = 5;
-    public const int WildBonus = 50;
-    public const int PeekPoints = 25;
-    public const int BombPoints = 50;
+    public const int DefaultTurnSeconds = 20;
+    public const int MinTurnSeconds = 5;
+    public const int MaxTurnSeconds = 120;
 
     /// <summary>Seconds a mistake stays face up before it turns back and the turn passes.</summary>
     private const double MismatchSeconds = 1.4;
@@ -56,6 +35,8 @@ public static partial class Module
     private const double DealSecondsPerCard = 0.04;
     private const double DealSeconds = 2.2;
     private const double PreviewExtraSeconds = 1.8;
+    /// <summary>Seconds the clients take to show a peek; the turn that goes on after it gets them on top.</summary>
+    private const uint PeekSeconds = 3;
 
     // ---------------------------------------------------------------------------------------------------
     // Tables
@@ -102,12 +83,13 @@ public static partial class Module
         /// <summary>Position of the card on the board, row by row.</summary>
         public ushort Index;
 
+        /// <summary>The client's <see cref="CardState"/>.</summary>
         public byte State;
 
         /// <summary>A frozen card takes one flip to crack the ice before it turns.</summary>
         public bool Frozen;
 
-        /// <summary><see cref="KindUnknown"/> while the card is face down.</summary>
+        /// <summary>The client's <see cref="CardKind"/>; <see cref="KindUnknown"/> while the card is face down.</summary>
         public byte Kind;
 
         /// <summary>The animal of the card, as its index in the client's pool; -1 while face down and for special cards.</summary>
@@ -125,6 +107,8 @@ public static partial class Module
         public ulong RoomId;
 
         public List<byte> Kinds;
+
+        /// <summary>The animal of every card as its index in the client's pool; -1 for special cards.</summary>
         public List<int> Animals;
     }
 
@@ -143,6 +127,7 @@ public static partial class Module
         /// <summary>The card that was flipped; meaningless for cards turning back and the preview.</summary>
         public ushort Card;
 
+        /// <summary>The client's <see cref="FlipOutcome"/>, the server's own kinds (cards turning back, time up, the preview) included.</summary>
         public byte Outcome;
 
         /// <summary>Points won, or lost to a bomb.</summary>
@@ -188,7 +173,7 @@ public static partial class Module
         public uint Round;
     }
 
-    /// <summary>What a player did in versus games over time.</summary>
+    /// <summary>What a player did in versus games over time. A game given up counts as one that was not won.</summary>
     [SpacetimeDB.Table(Accessor = "MemoryStats", Public = true)]
     public partial struct MemoryStats
     {
@@ -201,73 +186,14 @@ public static partial class Module
         public long BestScore;
     }
 
-    // ---------------------------------------------------------------------------------------------------
-    // The rules of a board
-    // ---------------------------------------------------------------------------------------------------
-
-    /// <summary>The board a room plays, as the host's client wrote it into the options of the room.</summary>
-    private readonly struct BoardRules
-    {
-        public readonly int Cards, Columns, MatchSize, Wilds, Bombs, Peeks, Frozen, Animals;
-        public readonly float Preview;
-
-        public BoardRules(string? options)
-        {
-            Cards = Option(options, "cards", 16, 0, 1000);
-            Columns = Option(options, "columns", 4, 0, 1000);
-            MatchSize = Option(options, "match", 2, 0, 1000);
-            Wilds = Option(options, "wilds", 0, 0, 1000);
-            Bombs = Option(options, "bombs", 0, 0, 1000);
-            Peeks = Option(options, "peeks", 0, 0, 1000);
-            Frozen = Option(options, "frozen", 0, 0, 1000);
-            Animals = Option(options, "animals", 30, 0, 1000);
-            // Tenths of a second, to keep the options whole numbers.
-            Preview = Option(options, "preview", 0, 0, 300) / 10f;
-        }
-
-        public int AnimalCards => Cards - Wilds - Bombs - Peeks;
-
-        public int Sets => MatchSize > 0 ? AnimalCards / MatchSize : 0;
-
-        public string? Error()
-        {
-            if (MatchSize < 2 || MatchSize > 4)
-            {
-                return "Sets are made of 2, 3 or 4 cards.";
-            }
-            if (Columns < 1 || Columns > 10)
-            {
-                return "A board has 1 to 10 cards in a row.";
-            }
-            if (Cards < MatchSize || Cards > 60)
-            {
-                return "A board has up to 60 cards.";
-            }
-            if (Cards % Columns != 0)
-            {
-                return "The cards do not fill the rows of the board.";
-            }
-            if (AnimalCards < MatchSize || AnimalCards % MatchSize != 0)
-            {
-                return "The animal cards do not make whole sets.";
-            }
-            if (Sets > Animals)
-            {
-                return $"The board needs {Sets} different animals but there are only {Animals}.";
-            }
-            if (Frozen > AnimalCards)
-            {
-                return "More frozen cards than animal cards.";
-            }
-            return null;
-        }
-    }
+    /// <summary>A card of an event: its index and the face the clients may see.</summary>
+    private readonly record struct Face(ushort Index, byte Kind, int Animal);
 
     // ---------------------------------------------------------------------------------------------------
     // Reducers
     // ---------------------------------------------------------------------------------------------------
 
-    /// <summary>The player whose turn it is flips a card.</summary>
+    /// <summary>The player whose turn it is flips a card: the rules of the game judge it (<see cref="MemoryRound.Flip"/>, <see cref="VersusMatch.Judge"/>).</summary>
     [SpacetimeDB.Reducer]
     public static void FlipCard(ReducerContext ctx, ushort index)
     {
@@ -278,56 +204,79 @@ public static partial class Module
         {
             throw new Exception("Wait for the cards to turn back.");
         }
-        var card = CardAt(ctx, room.Id, index) ?? throw new Exception("There is no such card.");
-        if (card.State != StateHidden)
+        var deck = ctx.Db.CardDeck.RoomId.Find(room.Id) ?? throw new Exception("There is no deck.");
+        var round = LoadRound(ctx, room, board, deck);
+        if (index >= round.Cards.Count)
+        {
+            throw new Exception("There is no such card.");
+        }
+        var card = round.Cards[index];
+        if (card.State != CardState.Hidden)
         {
             throw new Exception("This card is face up already.");
         }
-        var deck = ctx.Db.CardDeck.RoomId.Find(room.Id) ?? throw new Exception("There is no deck.");
+
+        var result = round.Flip(card);
+        var outcome = VersusMatch.Judge(result, (int)Math.Min(member.Score, int.MaxValue), round);
         board.Flips++;
+        board.Combo = (uint)round.Combo;
+        board.MatchedSets = (ushort)round.MatchedSets;
+        board.MismatchShowing = result.IsMistake;
+        ctx.Db.MemoryBoard.RoomId.Update(board);
 
-        if (card.Frozen)
+        // What the flip changed: the card, its set or its mistake, and a half finished set a bomb took back.
+        var changed = new List<MemoryCard> { card };
+        changed.AddRange(result.Cards);
+        changed.AddRange(result.FlippedBack);
+        Store(ctx, room.Id, deck, changed, member.Seat);
+
+        member = AddScore(ctx, member, outcome.Points);
+        if (outcome.SetCompleted)
         {
-            card.Frozen = false;
-            ctx.Db.BoardCard.Id.Update(card);
-            ctx.Db.MemoryBoard.RoomId.Update(board);
-            Emit(ctx, room.Id, member.Seat, index, OutcomeCracked, 0, board.Combo, new List<BoardCard>());
-            return;
+            var stats = StatsOf(ctx, member.Identity);
+            stats.Sets++;
+            ctx.Db.MemoryStats.Player.Update(stats);
         }
 
-        card.Kind = deck.Kinds[index];
-        card.Animal = deck.Animals[index];
-        switch (card.Kind)
+        // The event names the cards it is about, with their faces: the flipped card, its set or mistake, or what a peek shows.
+        List<MemoryCard> shown = result.Outcome switch
         {
-            case KindBomb:
-            {
-                card.State = StateSpent;
-                card = ctx.Db.BoardCard.Id.Update(card);
-                var loss = -(int)Math.Min(member.Score, BombPoints);
-                AddScore(ctx, member, loss);
-                board.Combo = 0;
-                ctx.Db.MemoryBoard.RoomId.Update(board);
-                Emit(ctx, room.Id, member.Seat, index, OutcomeBomb, loss, 0, new List<BoardCard> { card });
-                NextTurn(ctx, room);
-                return;
-            }
-            case KindPeek:
-            {
-                card.State = StateSpent;
-                ctx.Db.BoardCard.Id.Update(card);
-                AddScore(ctx, member, PeekPoints);
-                ctx.Db.MemoryBoard.RoomId.Update(board);
-                // Everybody gets the same look at the cards that are still face down.
-                var hidden = CardsOf(ctx, room.Id).Where(other => other.State == StateHidden).Select(other => WithFace(other, deck)).ToList();
-                Emit(ctx, room.Id, member.Seat, index, OutcomePeek, PeekPoints, board.Combo, hidden);
-                BeginTurn(ctx, room, member.Seat);
-                return;
-            }
+            FlipOutcome.Cracked => new List<MemoryCard>(),
+            FlipOutcome.Peek => round.Cards.Where(other => other == card || other.IsHidden).ToList(),
+            FlipOutcome.Revealed or FlipOutcome.Bomb => new List<MemoryCard> { card },
+            _ => result.Cards,
+        };
+        Emit(ctx, room.Id, member.Seat, index, result.Outcome, outcome.Points, (uint)round.Combo, Faces(deck, shown));
+        if (result.FlippedBack.Count > 0)
+        {
+            Emit(ctx, room.Id, member.Seat, index, FlipOutcome.FlippedBack, 0, 0, Faces(deck, result.FlippedBack, hidden: true));
         }
 
-        card.State = StateRevealed;
-        ctx.Db.BoardCard.Id.Update(card);
-        Evaluate(ctx, room, board, deck, member, index);
+        if (round.IsCleared)
+        {
+            FinishRoom(ctx, room);
+        }
+        else if (result.IsMistake)
+        {
+            // The mistake shows for a moment, with the clock stopped: the turn is decided, and passes when it turns back.
+            BeginTurn(ctx, room, member.Seat, 0);
+            ctx.Db.MismatchTimer.Insert(new MismatchTimer
+            {
+                ScheduledAt = new ScheduleAt.Time(ctx.Timestamp + TimeDuration.FromSeconds(MismatchSeconds)),
+                RoomId = room.Id,
+                Flips = board.Flips,
+            });
+        }
+        else if (outcome.PassesNow)
+        {
+            NextTurn(ctx, room);
+        }
+        else if (outcome.FreshClock)
+        {
+            // A set or a peek earns the whole turn again; a peek is watched first, which costs the player nothing.
+            BeginTurn(ctx, room, member.Seat, room.TurnSeconds + (result.Outcome == FlipOutcome.Peek ? PeekSeconds : 0));
+        }
+        // A card waiting for the rest of its set, or cracked ice: the turn runs on.
     }
 
     /// <summary>Called by SpacetimeDB a moment after a mistake: the cards turn back and the next player is up.</summary>
@@ -347,7 +296,7 @@ public static partial class Module
             return;
         }
         var seat = TurnOf(ctx, room.Id)?.Seat ?? NoSeat;
-        TurnBack(ctx, room.Id, board, seat, OutcomeFlippedBack);
+        TurnBack(ctx, room, board, seat, FlipOutcome.FlippedBack);
         NextTurn(ctx, room);
     }
 
@@ -378,48 +327,56 @@ public static partial class Module
 
     static partial void ConfigureRoom(ReducerContext ctx, ref Room room, ref string? error)
     {
-        room.MinPlayers = 2;
-        room.MaxPlayers = Math.Clamp(room.MaxPlayers, (byte)2, (byte)4);
-        room.TurnSeconds = (uint)Option(room.Options, "turn", 20, 5, 120);
-        error = new BoardRules(room.Options).Error();
+        room.MinPlayers = VersusMatch.MinPlayers;
+        room.MaxPlayers = Math.Clamp(room.MaxPlayers, (byte)VersusMatch.MinPlayers, (byte)VersusMatch.MaxPlayers);
+        // A clock there always is: without one an idle player would hold the game forever.
+        room.TurnSeconds = (uint)Option(room.Options, TurnOption, DefaultTurnSeconds, MinTurnSeconds, MaxTurnSeconds);
+        var rules = RulesOf(room, out var animals);
+        if (!rules.IsValid(animals, out var message))
+        {
+            error = message;
+        }
     }
 
     static partial void OnRoomStarted(ReducerContext ctx, Room room)
     {
-        var rules = new BoardRules(room.Options);
-        var (kinds, animals, frozen) = Deal(rules, ctx.Rng);
-        ctx.Db.CardDeck.Insert(new CardDeck { RoomId = room.Id, Kinds = kinds, Animals = animals });
+        var rules = RulesOf(room, out var animals);
+        var deal = Dealer.Create(rules, animals, ctx.Rng);
+        var deck = ctx.Db.CardDeck.Insert(new CardDeck
+        {
+            RoomId = room.Id,
+            Kinds = deal.Cards.Select(card => (byte)card.Kind).ToList(),
+            Animals = deal.Cards.Select(card => card.IsAnimal ? deal.Animals[card.Animal] : -1).ToList(),
+        });
         ctx.Db.MemoryBoard.Insert(new MemoryBoard
         {
             RoomId = room.Id,
-            Cards = (ushort)rules.Cards,
+            Cards = (ushort)deal.Cards.Count,
             Columns = (byte)rules.Columns,
             MatchSize = (byte)rules.MatchSize,
-            Sets = (ushort)rules.Sets,
-            PreviewSeconds = rules.Preview,
+            Sets = (ushort)deal.Animals.Count,
+            PreviewSeconds = rules.PreviewTime,
         });
-        var cards = new List<BoardCard>();
-        for (var i = 0; i < rules.Cards; i++)
+        foreach (var card in deal.Cards)
         {
-            cards.Add(ctx.Db.BoardCard.Insert(new BoardCard
+            ctx.Db.BoardCard.Insert(new BoardCard
             {
                 RoomId = room.Id,
-                Index = (ushort)i,
-                State = StateHidden,
-                Frozen = frozen[i],
+                Index = (ushort)card.Id,
+                State = (byte)CardState.Hidden,
+                Frozen = card.Frozen,
                 Kind = KindUnknown,
                 Animal = -1,
                 MatchedBy = NoSeat,
-            }));
+            });
         }
 
-        var wait = DealSeconds + rules.Cards * DealSecondsPerCard;
-        if (rules.Preview > 0f)
+        var wait = DealSeconds + deal.Cards.Count * DealSecondsPerCard;
+        if (rules.PreviewTime > 0f)
         {
             // Memorize: everybody sees every card for a moment, so the faces go out once, for that.
-            var deck = new CardDeck { RoomId = room.Id, Kinds = kinds, Animals = animals };
-            Emit(ctx, room.Id, NoSeat, 0, OutcomePreview, 0, 0, cards.Select(card => WithFace(card, deck)).ToList());
-            wait += rules.Preview + PreviewExtraSeconds;
+            Emit(ctx, room.Id, NoSeat, 0, FlipOutcome.Preview, 0, 0, Faces(deck, deal.Cards));
+            wait += rules.PreviewTime + PreviewExtraSeconds;
         }
         ctx.Db.PlayTimer.Insert(new PlayTimer
         {
@@ -434,27 +391,38 @@ public static partial class Module
         // Out of time: what the player had face up turns back, and the base server passes the turn.
         if (ctx.Db.MemoryBoard.RoomId.Find(room.Id) is { } board)
         {
-            TurnBack(ctx, room.Id, board, turn.Seat, OutcomeTimedOut);
+            TurnBack(ctx, room, board, turn.Seat, FlipOutcome.TimedOut);
         }
     }
 
     static partial void OnMemberLeft(ReducerContext ctx, Room room, RoomMember member)
     {
-        // A player who leaves on their turn takes no cards along; the base server passes the turn.
-        if (room.State == RoomState.Playing && TurnOf(ctx, room.Id) is { } turn && turn.Seat == member.Seat
-            && ctx.Db.MemoryBoard.RoomId.Find(room.Id) is { } board)
+        if (room.State != RoomState.Playing)
         {
-            TurnBack(ctx, room.Id, board, member.Seat, OutcomeFlippedBack);
+            return;
+        }
+        // Whoever leaves a running game gives it up: a game played, not won. The others play on (or win, when alone).
+        var stats = StatsOf(ctx, member.Identity);
+        stats.Games++;
+        ctx.Db.MemoryStats.Player.Update(stats);
+        // A player who leaves on their turn takes no cards along; the base server passes the turn.
+        if (TurnOf(ctx, room.Id) is { } turn && turn.Seat == member.Seat && ctx.Db.MemoryBoard.RoomId.Find(room.Id) is { } board)
+        {
+            TurnBack(ctx, room, board, member.Seat, FlipOutcome.FlippedBack);
         }
     }
 
     static partial void OnRoomFinished(ReducerContext ctx, Room room)
     {
-        foreach (var member in MembersOf(ctx, room.Id))
+        // The places go by the rules of the game (score, then sets, then seat: VersusMatch.Compare), the same the
+        // results of the clients show; the base server ranked by score alone. A draw is a game nobody won.
+        var members = RankMembers(ctx, room);
+        var winners = members.Count(member => member.Place == 1);
+        foreach (var member in members)
         {
             var stats = StatsOf(ctx, member.Identity);
             stats.Games++;
-            if (member.Place == 1)
+            if (member.Place == 1 && winners == 1)
             {
                 stats.Wins++;
             }
@@ -477,160 +445,135 @@ public static partial class Module
         ctx.Db.MemoryStats.Player.Delete(user.Identity);
     }
 
-    // ---------------------------------------------------------------------------------------------------
-    // The rules
-    // ---------------------------------------------------------------------------------------------------
-
-    /// <summary>A card turned face up: a set, a mistake, or the player goes on turning. The same rules as the client's MemoryRound.</summary>
-    private static void Evaluate(ReducerContext ctx, Room room, MemoryBoard board, CardDeck deck, RoomMember member, ushort flipped)
+    static partial void ValidateAction(ReducerContext ctx, Room room, RoomMember member, ref RoomAction action, ref bool decisive, ref string? error)
     {
-        var revealed = CardsOf(ctx, room.Id).Where(card => card.State == StateRevealed).ToList();
-        var wilds = revealed.Count(card => card.Kind == KindWild);
-        var animals = revealed.Where(card => card.Kind == KindAnimal).ToList();
-        var animal = animals.Count > 0 ? animals[0].Animal : -1;
+        // Every move of this game is a flip the server judges: the action log has no place in it.
+        error = "Memory Cards is played with flips, not actions.";
+    }
 
-        if (animals.Any(card => card.Animal != animal))
+    static partial void ValidateScore(ReducerContext ctx, Room room, RoomMember member, bool final, ref long score, ref string? error)
+    {
+        error = "The server keeps the score of a Memory Cards game.";
+    }
+
+    static partial void ValidateEndRoom(ReducerContext ctx, Room room, RoomMember host, ref string? error)
+    {
+        error = "A game of Memory Cards plays to the last set. Leave it to give it up.";
+    }
+
+    // ---------------------------------------------------------------------------------------------------
+    // The board in the tables
+    // ---------------------------------------------------------------------------------------------------
+
+    /// <summary>The rules of the board a room plays, as its host wrote them into the options, and the animals to deal from.</summary>
+    private static RoundRules RulesOf(Room room, out int animals)
+    {
+        var options = room.Options;
+        return BoardOptions.Read((key, fallback) => Option(options, key, fallback, 0, BoardOptions.MaxValue), out animals);
+    }
+
+    /// <summary>
+    /// The round of a room as the rules see it right now: the cards from the rows and the deck (a face up card is one
+    /// the player is turning), the combo of the current run from the board.
+    /// </summary>
+    private static MemoryRound LoadRound(ReducerContext ctx, Room room, MemoryBoard board, CardDeck deck)
+    {
+        var rules = RulesOf(room, out _);
+        var rows = CardsOf(ctx, room.Id).ToDictionary(row => row.Index);
+        var deal = new Deal();
+        // The round counts the animals of the board from 0; the deck knows them by their index in the client's pool.
+        deal.Animals.AddRange(deck.Animals.Where(animal => animal >= 0).Distinct().OrderBy(animal => animal));
+        for (var i = 0; i < deck.Kinds.Count; i++)
         {
-            board.MismatchShowing = true;
-            board.Combo = 0;
-            ctx.Db.MemoryBoard.RoomId.Update(board);
-            ctx.Db.MismatchTimer.Insert(new MismatchTimer
+            rows.TryGetValue((ushort)i, out var row);
+            deal.Cards.Add(new MemoryCard
             {
-                ScheduledAt = new ScheduleAt.Time(ctx.Timestamp + TimeDuration.FromSeconds(MismatchSeconds)),
-                RoomId = room.Id,
-                Flips = board.Flips,
+                Id = i,
+                Slot = i,
+                Kind = (CardKind)deck.Kinds[i],
+                Animal = deck.Animals[i] >= 0 ? deal.Animals.IndexOf(deck.Animals[i]) : -1,
+                State = (CardState)row.State,
+                Frozen = row.Frozen,
             });
-            Emit(ctx, room.Id, member.Seat, flipped, OutcomeMismatched, 0, 0, revealed);
-            return;
         }
+        return new MemoryRound(rules, deal, 0, (int)board.Combo);
+    }
 
-        List<BoardCard> set;
-        var bonus = 0;
-        var outcome = OutcomeMatched;
-        var completesSet = true;
-        if (wilds >= 2 && animals.Count == 0)
+    /// <summary>Writes <paramref name="cards"/> of the round back into their rows: state, ice, the face while the card is up, who matched it.</summary>
+    private static void Store(ReducerContext ctx, ulong roomId, CardDeck deck, IEnumerable<MemoryCard> cards, byte seat)
+    {
+        var rows = CardsOf(ctx, roomId).ToDictionary(row => row.Index);
+        foreach (var card in cards.Distinct())
         {
-            // Two wild cards together cancel out for a bonus; no set of animals is found.
-            set = revealed;
-            bonus = WildBonus * 2;
-            outcome = OutcomeWildMatched;
-            completesSet = false;
-        }
-        else if (wilds > 0 && animals.Count > 0)
-        {
-            // A wild card takes every card of the animal off the board, the ones still face down included.
-            set = revealed;
-            for (var i = 0; i < deck.Kinds.Count; i++)
+            if (!rows.TryGetValue((ushort)card.Id, out var row))
             {
-                if (deck.Kinds[i] == KindAnimal && deck.Animals[i] == animal && CardAt(ctx, room.Id, (ushort)i) is { State: StateHidden } other)
-                {
-                    set.Add(WithFace(other, deck));
-                }
+                continue;
             }
-            bonus = WildBonus;
-            outcome = OutcomeWildMatched;
-        }
-        else if (wilds == 0 && animals.Count >= board.MatchSize)
-        {
-            set = revealed;
-        }
-        else
-        {
-            ctx.Db.MemoryBoard.RoomId.Update(board);
-            Emit(ctx, room.Id, member.Seat, flipped, OutcomeRevealed, 0, board.Combo, revealed.Where(card => card.Index == flipped).ToList());
-            return;
-        }
-
-        var matched = new List<BoardCard>();
-        foreach (var card in set)
-        {
-            var done = card;
-            done.State = StateMatched;
-            done.Frozen = false;
-            done.MatchedBy = member.Seat;
-            matched.Add(ctx.Db.BoardCard.Id.Update(done));
-        }
-        var points = bonus;
-        if (completesSet)
-        {
-            board.MatchedSets++;
-            board.Combo++;
-            var basePoints = board.MatchSize >= 3 ? PointsPerTriple : PointsPerPair;
-            points += basePoints * (int)Math.Clamp(board.Combo, 1, MaxComboMultiplier);
-            var stats = StatsOf(ctx, member.Identity);
-            stats.Sets++;
-            ctx.Db.MemoryStats.Player.Update(stats);
-        }
-        ctx.Db.MemoryBoard.RoomId.Update(board);
-        AddScore(ctx, member, points);
-        Emit(ctx, room.Id, member.Seat, flipped, outcome, points, board.Combo, matched);
-
-        if (board.MatchedSets >= board.Sets)
-        {
-            FinishRoom(ctx, room);
-        }
-        else
-        {
-            // A set earns another turn, with a full clock.
-            BeginTurn(ctx, room, member.Seat);
+            row.State = (byte)card.State;
+            row.Frozen = card.Frozen;
+            row.Kind = card.IsHidden ? KindUnknown : deck.Kinds[card.Id];
+            row.Animal = card.IsHidden ? -1 : deck.Animals[card.Id];
+            if (card.State == CardState.Matched && row.MatchedBy == NoSeat)
+            {
+                row.MatchedBy = seat;
+            }
+            rows[row.Index] = ctx.Db.BoardCard.Id.Update(row);
         }
     }
 
     /// <summary>Turns the face up cards that are not matched back down, faces gone, and ends the run of the player.</summary>
-    private static void TurnBack(ReducerContext ctx, ulong roomId, MemoryBoard board, byte seat, byte outcome)
+    private static void TurnBack(ReducerContext ctx, Room room, MemoryBoard board, byte seat, FlipOutcome outcome)
     {
-        var turned = new List<BoardCard>();
-        foreach (var card in CardsOf(ctx, roomId).Where(card => card.State == StateRevealed))
+        if (ctx.Db.CardDeck.RoomId.Find(room.Id) is not { } deck)
         {
-            var hidden = card;
-            hidden.State = StateHidden;
-            hidden.Kind = KindUnknown;
-            hidden.Animal = -1;
-            turned.Add(ctx.Db.BoardCard.Id.Update(hidden));
+            return;
         }
-        ctx.Db.MismatchTimer.RoomId.Delete(roomId);
+        var turned = LoadRound(ctx, room, board, deck).HideRevealed();
+        ctx.Db.MismatchTimer.RoomId.Delete(room.Id);
         board.MismatchShowing = false;
         board.Combo = 0;
         ctx.Db.MemoryBoard.RoomId.Update(board);
-        if (turned.Count > 0 || outcome == OutcomeTimedOut)
+        Store(ctx, room.Id, deck, turned, seat);
+        if (turned.Count > 0 || outcome == FlipOutcome.TimedOut)
         {
-            Emit(ctx, roomId, seat, 0, outcome, 0, 0, turned);
+            Emit(ctx, room.Id, seat, 0, outcome, 0, 0, Faces(deck, turned, hidden: true));
         }
     }
 
-    /// <summary>Deals a board: the sets, the special cards, the ice, all shuffled. The same steps as the client's Dealer.</summary>
-    private static (List<byte> Kinds, List<int> Animals, List<bool> Frozen) Deal(BoardRules rules, Random random)
+    /// <summary>The sets a seat found: the animal cards it matched make sets of the board's size (a wild card takes a whole set).</summary>
+    private static int SetsOf(ReducerContext ctx, ulong roomId, byte seat, int matchSize)
     {
-        var pool = Enumerable.Range(0, rules.Animals).ToList();
-        Shuffle(pool, random);
-        var cards = new List<(byte Kind, int Animal, bool Frozen)>();
-        for (var set = 0; set < rules.Sets; set++)
+        var cards = CardsOf(ctx, roomId).Count(card => card.MatchedBy == seat && card.Kind == (byte)CardKind.Animal);
+        return matchSize > 0 ? cards / matchSize : 0;
+    }
+
+    /// <summary>
+    /// Gives the members of a finished game their places by the rules of the game (<see cref="VersusMatch.Compare"/>,
+    /// equal results share a place) and returns them.
+    /// </summary>
+    private static List<RoomMember> RankMembers(ReducerContext ctx, Room room)
+    {
+        var members = MembersOf(ctx, room.Id);
+        var matchSize = ctx.Db.MemoryBoard.RoomId.Find(room.Id)?.MatchSize ?? 2;
+        var seats = members.ToDictionary(member => member.Identity, member => new VersusSeat
         {
-            for (var copy = 0; copy < rules.MatchSize; copy++)
+            Seat = member.Seat,
+            Score = (int)Math.Min(member.Score, int.MaxValue),
+            Sets = SetsOf(ctx, room.Id, member.Seat, matchSize),
+        });
+        members.Sort((a, b) => VersusMatch.Compare(seats[a.Identity], seats[b.Identity]));
+        uint place = 0;
+        for (var i = 0; i < members.Count; i++)
+        {
+            if (i == 0 || !VersusMatch.SharePlace(seats[members[i - 1].Identity], seats[members[i].Identity]))
             {
-                cards.Add((KindAnimal, pool[set], false));
+                place = (uint)i + 1;
             }
+            var member = members[i];
+            member.Place = place;
+            members[i] = ctx.Db.RoomMember.Identity.Update(member);
         }
-        var ice = Enumerable.Range(0, cards.Count).ToList();
-        Shuffle(ice, random);
-        foreach (var index in ice.Take(rules.Frozen))
-        {
-            cards[index] = (KindAnimal, cards[index].Animal, true);
-        }
-        cards.AddRange(Enumerable.Repeat((KindWild, -1, false), rules.Wilds));
-        cards.AddRange(Enumerable.Repeat((KindBomb, -1, false), rules.Bombs));
-        cards.AddRange(Enumerable.Repeat((KindPeek, -1, false), rules.Peeks));
-        Shuffle(cards, random);
-        return (cards.Select(card => card.Kind).ToList(), cards.Select(card => card.Animal).ToList(), cards.Select(card => card.Frozen).ToList());
-    }
-
-    private static void Shuffle<T>(IList<T> list, Random random)
-    {
-        for (var n = list.Count - 1; n > 0; n--)
-        {
-            var k = random.Next(n + 1);
-            (list[k], list[n]) = (list[n], list[k]);
-        }
+        return members;
     }
 
     // ---------------------------------------------------------------------------------------------------
@@ -639,39 +582,25 @@ public static partial class Module
 
     private static IEnumerable<BoardCard> CardsOf(ReducerContext ctx, ulong roomId) => ctx.Db.BoardCard.RoomId.Filter(roomId);
 
-    private static BoardCard? CardAt(ReducerContext ctx, ulong roomId, ushort index)
+    /// <summary>The faces of <paramref name="cards"/> for an event, or none of them when they turned back <paramref name="hidden"/>.</summary>
+    private static List<Face> Faces(CardDeck deck, IEnumerable<MemoryCard> cards, bool hidden = false)
     {
-        foreach (var card in ctx.Db.BoardCard.RoomId.Filter(roomId))
-        {
-            if (card.Index == index)
-            {
-                return card;
-            }
-        }
-        return null;
+        return cards.Select(card => new Face((ushort)card.Id, hidden ? KindUnknown : deck.Kinds[card.Id], hidden ? -1 : deck.Animals[card.Id])).ToList();
     }
 
-    /// <summary>A card with its face filled in from the deck, for an event; the row of a face down card keeps hiding it.</summary>
-    private static BoardCard WithFace(BoardCard card, CardDeck deck)
-    {
-        card.Kind = deck.Kinds[card.Index];
-        card.Animal = deck.Animals[card.Index];
-        return card;
-    }
-
-    private static void Emit(ReducerContext ctx, ulong roomId, byte seat, ushort flipped, byte outcome, int points, uint combo, List<BoardCard> cards)
+    private static void Emit(ReducerContext ctx, ulong roomId, byte seat, ushort flipped, FlipOutcome outcome, int points, uint combo, List<Face> faces)
     {
         ctx.Db.FlipEvent.Insert(new FlipEvent
         {
             RoomId = roomId,
             Seat = seat,
             Card = flipped,
-            Outcome = outcome,
+            Outcome = (byte)outcome,
             Points = points,
             Combo = combo,
-            Cards = cards.Select(card => card.Index).ToList(),
-            Kinds = cards.Select(card => card.Kind).ToList(),
-            Animals = cards.Select(card => card.Animal).ToList(),
+            Cards = faces.Select(face => face.Index).ToList(),
+            Kinds = faces.Select(face => face.Kind).ToList(),
+            Animals = faces.Select(face => face.Animal).ToList(),
         });
     }
 

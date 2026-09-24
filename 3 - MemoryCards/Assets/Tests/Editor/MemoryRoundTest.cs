@@ -394,5 +394,36 @@ namespace Portfolio.MemoryCards.Tests
             Assert.AreEqual(FlipOutcome.Matched, round.Flip(round.Cards[3]).Outcome);
             Assert.IsTrue(round.IsCleared);
         }
+
+        [Test]
+        public void ARoundRebuiltAroundAFaceUpCardGoesOnWithIt()
+        {
+            // The server rebuilds the round from its tables for every flip: a face up card is the set in progress.
+            Deal deal = Boards.Make("0 1 0 1");
+            deal.Cards[0].State = CardState.Revealed;
+            var round = new MemoryRound(Boards.Rules(4), deal, 0, 2);
+            Assert.AreEqual(1, round.Revealed.Count);
+            Assert.AreEqual(2, round.Combo);
+            FlipResult result = round.Flip(round.Cards[2]);
+            Assert.AreEqual(FlipOutcome.Matched, result.Outcome);
+            Assert.AreEqual(MemoryRound.PointsPerPair * 3, result.Points, "the combo of the run goes on");
+            Assert.AreEqual(1, round.MatchedSets);
+        }
+
+        [Test]
+        public void ARoundRebuiltFromMatchedCardsKnowsHowFarItGot()
+        {
+            Deal deal = Boards.Make("0 1 0 1 2 2");
+            deal.Cards[0].State = CardState.Matched;
+            deal.Cards[2].State = CardState.Matched;
+            deal.Cards[4].State = CardState.Matched;
+            deal.Cards[5].State = CardState.Matched;
+            var round = new MemoryRound(Boards.Rules(6, 3), deal);
+            Assert.AreEqual(3, round.Sets);
+            Assert.AreEqual(2, round.MatchedSets);
+            round.Flip(round.Cards[1]);
+            round.Flip(round.Cards[3]);
+            Assert.IsTrue(round.IsCleared);
+        }
     }
 }

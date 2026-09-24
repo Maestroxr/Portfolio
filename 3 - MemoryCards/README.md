@@ -98,17 +98,21 @@ scene, so the Quit button closes a build of the game on its own; in the editor i
 | `Scripts/Model/Dealer.cs`, `RoundRules.cs` | Deals a board (sets, special cards, frozen cards, parade order) and validates the rules |
 | `Scripts/Model/StarGoals.cs`, `EndlessRules.cs` | The three stars of a level; the boards of the endless run |
 | `Scripts/MemoryCardsGameManager.cs` | Level select, dealing, memorize, clicks through the rules engine, animations, results, progress, save and load |
-| `Scripts/Model/VersusMatch.cs` | The rules of several players at one board: turns, scores per player, the clock of a turn, the standings |
+| `Scripts/Model/VersusMatch.cs` | The rules of several players at one board: turns, scores per player, the clock of a turn, the standings; the server judges online flips with the same code |
+| `Scripts/Model/BoardOptions.cs` | The board of an online room in the room's options: written by the host's client, read back by the server |
 | `Scripts/MemoryCardsGameManager.Versus.cs`, `Scripts/UI/VersusHud.cs` | Versus games at one device and online: the seats, the turn clock, the flips the server judged, the scoreboard, the results |
-| `Scripts/MemoryCardsOnlineController.cs` | The online game: rooms and levels for the lobby, the board of the room, flip events, turns and scores from the server |
+| `Scripts/MemoryCardsOnlineController.cs` | The online game: rooms and levels for the lobby, the board of the room, flip events, turns and scores from the server (a turn reaches the manager after the flip that ended the last one) |
 | `Scripts/Flippable.cs`, `Scripts/View/*` | The card (flip, deal, shuffle, match, mistake, ice, explosion), board layout, UI particles, backdrop, audio |
 | `Scripts/UI/*` | Level select (world tabs, level cards, details), HUD, results, pause menu, settings panel |
 | `Scripts/MemoryCardsAutopilot.cs` | Plays a level by itself; add it to any object in play mode to test a level end to end |
 | `Scripts/MemoryCardsTour.cs` | Development builds only: `-memorycards-tour <folder>` plays through the game and saves screenshots; `-memorycards-versus <folder>` plays only the versus game for three |
-| `Scripts/MemoryCardsOnlineTour.cs` | Development builds only: `-memorycards-online host <folder>` and `-memorycards-online join <folder>` (or `idle`, `quitter`) play an online game between two running players |
+| `Scripts/MemoryCardsOnlineTour.cs` | Development builds only, on BaseGame's `OnlineTour`: `-memorycards-online host <folder>` and `-memorycards-online join <folder>` (or `idle`, `quitter`) play an online game between two running players; `-memorycards-mistakes <rate>`, `-memorycards-bombs` and `-memorycards-level <n>` change what and how they play |
 
 The rules engine knows nothing of Unity objects, so it is covered by edit mode tests (`Tests/Editor`, assembly
-`Skinnerboxes.MemoryCards.Tests`) together with the dealer, the settings, the campaign unlocks and the progress.
+`Skinnerboxes.MemoryCards.Tests`) together with the dealer, the settings, the campaign unlocks and the progress. The
+tests of the rules (the dealer, the round, the versus rules, the board options) also run outside Unity: `dotnet test`
+in the `Tests` folder next to `Assets` compiles the model with a small stand-in for what it uses of UnityEngine
+(`Scripts/Model/Shim~`) and runs them in about a second.
 
 Everything the game shows is built by the editor code in `Assets/Editor` (menu **Memory Cards**):
 
@@ -133,19 +137,25 @@ A versus game is any board of the campaign or free play without what limits a si
 the move limit go (the turn timer and the other players take that place), and so do the parade and the shuffle, which
 need one player's run of play; clock cards are dealt as peek cards (`VersusMatch.RulesFor`). The board, the sets,
 triplets, memorize, ice, wild cards, bombs and peek cards stay. `VersusMatch` keeps the seats, their scores and the
-clock of the turn; it is plain C# and covered by edit mode tests.
+clock of the turn; it is plain C# and covered by edit mode tests. A set lets the player go on with a full clock, a
+mistake passes the turn once it turned back, a bomb passes it at once and takes a half finished set back with it, and
+the standings go by score, then by sets found (equal on both is a draw).
 
 - **At one device** the round of the manager judges every flip as it does for one player, the versus game books the
   result for the player whose turn it is, and the players pass the device around. A click during a mistake only turns
   the cards back, because the next card belongs to the next player. A turn lasts 20 seconds.
-- **Online** the server deals the board and judges every flip, so nobody can look at a card they have not turned. The
-  host picks a level and the seconds a turn lasts in the lobby (the shared lobby of BaseGame); the host's client writes
-  the board of the level into the options of the room (`MemoryCardsOnlineController.ComposeOptions`), because the server
-  does not know the game's level assets. On every client the round only mirrors the board: a click asks the server for a
-  flip (`FlipCard`), and what the server answers comes back as an event that is played with the same animations as a
-  local flip. Turns, the turn timer, the scores and the places are the base server's. A player who leaves is skipped,
-  and a game with one player left is over. Online games do not pause (the pause button opens the match menu), are not
-  saved, and the next game of a room starts from the lobby.
+- **Online** the server deals the board and judges every flip with the rules of the game itself (the model is compiled
+  into the server module, see "Server"), so nobody can look at a card they have not turned and the two sides cannot
+  disagree. The host picks a level and the seconds a turn lasts in the lobby (the shared lobby of BaseGame); the host's
+  client writes the board of the level into the options of the room (`BoardOptions`, through
+  `MemoryCardsOnlineController.ComposeOptions`), because the server does not know the game's level assets. On every
+  client the round only mirrors the board: a click asks the server for a flip (`FlipCard`), and what the server answers
+  comes back as an event that is played with the same animations as a local flip; the flip that ended a turn is shown
+  before the next turn is announced. Turns and the turn timer are the base server's: the clock stops while a mistake
+  shows, and a peek costs no time. The server keeps the scores and gives the places by the rules of the game; it refuses
+  scores reported by a client, actions for the log and an early end by the host, so a game plays to the last set. A
+  player who leaves is skipped and charged a game not won, and a game with one player left is over. Online games do not
+  pause (the pause button opens the match menu), are not saved, and the next game of a room starts from the lobby.
 
 ## Phones and tablets
 
@@ -170,7 +180,9 @@ The game's [SpacetimeDB](https://spacetimedb.com) module is the folder `Server` 
 it; open `Server/StdbModule.csproj` in the IDE). It is the Gamebox base server of the BaseGame repository (`BaseServer`:
 users and login, connecting and disconnecting, the player profile) plus `Server/Lib.cs`, which declares the same
 `public static partial class Module` to add the tables and reducers of this game and implements the base server's
-partial methods to react to its events. It holds the online versus game:
+partial methods to react to its events. The rules are the game's own: `Server/StdbModule.csproj` compiles the model
+(`Assets/Scripts/Model`, shown under `Model`) into the module together with `Model/Shim~/UnityEngine.cs`, the little
+the model uses of UnityEngine, so there is one rule set for the client and the server. It holds the online versus game:
 
 | In `Server/Lib.cs` | What |
 | --- | --- |
@@ -180,15 +192,16 @@ partial methods to react to its events. It holds the online versus game:
 | `FlipEvent` (public event table) | What a flip did (revealed, a set, a mistake, a bomb, a peek, cards turning back, time up, the board shown for memorizing), with the faces it is about. Sent, never stored. |
 | `MismatchTimer`, `PlayTimer` (scheduled) | Turn a mistake back after a moment; begin the first turn once the clients dealt the board. |
 | `MemoryStats` (public) | Games, wins, sets and the best score of a player. |
-| `FlipCard(index)` | The player whose turn it is flips a card; the same rules as `MemoryRound`. |
-| `ConfigureRoom`, `OnRoomStarted`, `OnTurnTimedOut`, `OnMemberLeft`, `OnRoomFinished`, `OnRoomCleared`, `OnUserDeleted` | The base server's extension points: check the board of a room, deal it, take the cards back from a player who ran out of time or left, keep the stats, clean up. |
+| `FlipCard(index)` | The player whose turn it is flips a card: the round is rebuilt from the tables, `MemoryRound.Flip` and `VersusMatch.Judge` say what happened, and it goes back into the tables and out as a `FlipEvent`. |
+| `ConfigureRoom`, `OnRoomStarted`, `OnTurnTimedOut`, `OnMemberLeft`, `OnRoomFinished`, `OnRoomCleared`, `OnUserDeleted` | The base server's extension points: check the board of a room (`BoardOptions`, `RoundRules.IsValid`), deal it (`Dealer`), take the cards back from a player who ran out of time or left (and charge the one who left a game not won), rank the players by score and sets and keep the stats, clean up. |
+| `ValidateAction`, `ValidateScore`, `ValidateEndRoom` | Refused: the game has no action log, the server keeps the score, and a game plays to the last set. |
 
 - `Packages/manifest.json` references the SpacetimeDB SDK and the base server package
   (`com.skinnerboxes.baseserver`, `file:../../../BaseGame/BaseServer`); `Server/StdbModule.csproj` imports
   `BaseServer.props` from there, which compiles the base server into this module.
 - `spacetime.json` names the database (`skinnerboxes-memorycards`, on the `local` server) and where the client bindings go:
   `Assets/Scripts/Server/Bindings`, namespace `Portfolio.MemoryCards.Server`.
-- After a change to `Server/Lib.cs`: `Gamebox > Server > Publish Module` and `Generate Client Bindings` in the editor,
+- After a change to `Server/Lib.cs` or the model: `Gamebox > Server > Publish Module` and `Generate Client Bindings` in the editor,
   or `spacetime publish` and `spacetime generate` in this folder. Generating also writes this game's
   `GameServerClient` (`Assets/Scripts/Server`), the component that connects, logs the player in and keeps the profiles,
   the rooms and the turns. The scene builder puts it into the scene together with the online controller and the lobby

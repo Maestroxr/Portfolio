@@ -22,20 +22,29 @@ namespace Portfolio.MemoryCards
     {
         /// <summary>The player who flipped.</summary>
         public int Seat;
-        /// <summary>Points the player won (or lost, to a bomb).</summary>
+        /// <summary>Points the player won (or lost, to a bomb: no more than they had).</summary>
         public int Points;
         /// <summary>The player goes on: a set, a special card that does not end the turn, or a set still open.</summary>
         public bool KeepsTurn;
         /// <summary>The turn passes once the mistake is turned back (see <see cref="VersusMatch.PassTurn"/>).</summary>
         public bool PassesAfterMistake;
+        /// <summary>The player earned the whole turn again: a set, or a special card.</summary>
+        public bool FreshClock;
+        /// <summary>A set of animals was completed for the player.</summary>
+        public bool SetCompleted;
+
+        /// <summary>The turn passes at once (a bomb): whatever the player had face up goes back with it.</summary>
+        public bool PassesNow => !KeepsTurn && !PassesAfterMistake;
     }
 
 
     /// <summary>
     /// The rules of several players at one board, on top of the rules of the board itself (<see cref="MemoryRound"/>):
     /// the players take turns, a completed set scores for the player who found it and lets them go on, a mistake or a
-    /// bomb passes the turn, and every turn has a time limit. A game on one device feeds it the results of its round;
-    /// an online game is judged by the server with the same rules and only mirrors the seats here.
+    /// bomb passes the turn (a bomb takes a half finished set back with it), and every turn has a time limit. A game on
+    /// one device feeds it the results of its round; the server of an online game judges every flip with
+    /// <see cref="Judge"/> and ranks the players with <see cref="Compare"/>, the same code (this file is compiled into
+    /// the server module), and the clients only mirror the seats here.
     /// </summary>
     public sealed class VersusMatch
     {
@@ -78,46 +87,74 @@ namespace Portfolio.MemoryCards
         public bool HasTurnLimit => TurnSeconds > 0f;
 
         /// <summary>
-        /// Books the result of a flip of the current player. Points go to them (a bomb takes no more than they have),
-        /// and the result says whether they go on. After a mistake the turn passes with <see cref="PassTurn"/>, once
-        /// the cards are turned back.
+        /// What a flip of the current player means to them: the points (a bomb takes no more than the
+        /// <paramref name="score"/> they have), whether they go on and whether the clock starts over. When the turn
+        /// passes at once, the cards the player still had face up on <paramref name="board"/> go back down and into
+        /// <see cref="FlipResult.FlippedBack"/>, so the next player does not inherit half a set.
         /// </summary>
-        public VersusOutcome Apply(FlipResult result)
+        public static VersusOutcome Judge(FlipResult result, int score, MemoryRound board)
         {
             if (result == null)
             {
                 throw new ArgumentNullException(nameof(result));
             }
-            VersusSeat seat = CurrentSeat;
-            var outcome = new VersusOutcome { Seat = seat.Seat, KeepsTurn = true };
+            var outcome = new VersusOutcome { KeepsTurn = true, SetCompleted = result.SetCompleted };
             switch (result.Outcome)
             {
                 case FlipOutcome.Matched:
                 case FlipOutcome.WildMatched:
                     outcome.Points = result.Points;
-                    seat.Sets++;
-                    seat.BestCombo = Math.Max(seat.BestCombo, result.Combo);
                     // A set earns the whole turn again.
-                    TurnLeft = TurnSeconds;
+                    outcome.FreshClock = true;
                     break;
                 case FlipOutcome.Mismatched:
                 case FlipOutcome.WrongOrder:
-                    seat.Mistakes++;
                     outcome.KeepsTurn = false;
                     outcome.PassesAfterMistake = true;
                     break;
                 case FlipOutcome.Bomb:
-                    outcome.Points = -Math.Min(seat.Score, MemoryRound.BombPoints);
+                    outcome.Points = -Math.Min(Math.Max(0, score), MemoryRound.BombPoints);
                     outcome.KeepsTurn = false;
                     break;
                 case FlipOutcome.Clock:
                 case FlipOutcome.Peek:
                     outcome.Points = result.Points;
-                    TurnLeft = TurnSeconds;
+                    outcome.FreshClock = true;
                     break;
             }
+            if (outcome.PassesNow && board != null)
+            {
+                result.FlippedBack.AddRange(board.HideRevealed());
+            }
+            return outcome;
+        }
+
+        /// <summary>
+        /// Books the result of a flip of the current player (<see cref="Judge"/>): points go to them, sets and mistakes
+        /// are counted, the clock starts over when they earned it, and a bomb passes the turn at once (with the half
+        /// finished set of <paramref name="board"/> turned back). After a mistake the turn passes with
+        /// <see cref="PassTurn"/>, once the cards are turned back.
+        /// </summary>
+        public VersusOutcome Apply(FlipResult result, MemoryRound board = null)
+        {
+            VersusSeat seat = CurrentSeat;
+            VersusOutcome outcome = Judge(result, seat.Score, board);
+            outcome.Seat = seat.Seat;
             seat.Score = Math.Max(0, seat.Score + outcome.Points);
-            if (result.Outcome == FlipOutcome.Bomb)
+            if (outcome.SetCompleted)
+            {
+                seat.Sets++;
+                seat.BestCombo = Math.Max(seat.BestCombo, result.Combo);
+            }
+            if (result.IsMistake)
+            {
+                seat.Mistakes++;
+            }
+            if (outcome.FreshClock)
+            {
+                TurnLeft = TurnSeconds;
+            }
+            if (outcome.PassesNow)
             {
                 PassTurn();
             }
@@ -160,14 +197,28 @@ namespace Portfolio.MemoryCards
         }
 
         /// <summary>
-        /// The players from the winner down: by score, then by sets, then by seat. Whoever left the game comes after
-        /// everybody who stayed, whatever they had.
+        /// The order of the standings: whoever stayed before whoever left, then by score, then by sets, then by seat.
+        /// The server ranks the members of a room with it, so the places it gives are the ones the results show.
         /// </summary>
+        public static int Compare(VersusSeat a, VersusSeat b)
+        {
+            return a.Playing != b.Playing ? b.Playing.CompareTo(a.Playing)
+                : a.Score != b.Score ? b.Score.CompareTo(a.Score)
+                : a.Sets != b.Sets ? b.Sets.CompareTo(a.Sets)
+                : a.Seat.CompareTo(b.Seat);
+        }
+
+        /// <summary>Whether two players share a place: the same score and the same sets, both still in the game (or both gone).</summary>
+        public static bool SharePlace(VersusSeat a, VersusSeat b)
+        {
+            return a.Playing == b.Playing && a.Score == b.Score && a.Sets == b.Sets;
+        }
+
+        /// <summary>The players from the winner down (<see cref="Compare"/>).</summary>
         public List<VersusSeat> Standings()
         {
             var standings = new List<VersusSeat>(seats);
-            standings.Sort((a, b) => a.Playing != b.Playing ? b.Playing.CompareTo(a.Playing) : a.Score != b.Score ? b.Score.CompareTo(a.Score)
-                : a.Sets != b.Sets ? b.Sets.CompareTo(a.Sets) : a.Seat.CompareTo(b.Seat));
+            standings.Sort(Compare);
             return standings;
         }
 
@@ -176,7 +227,7 @@ namespace Portfolio.MemoryCards
         {
             List<VersusSeat> standings = Standings();
             VersusSeat best = standings[0];
-            return standings.FindAll(seat => seat.Playing == best.Playing && seat.Score == best.Score && seat.Sets == best.Sets);
+            return standings.FindAll(seat => SharePlace(seat, best));
         }
 
         /// <summary>

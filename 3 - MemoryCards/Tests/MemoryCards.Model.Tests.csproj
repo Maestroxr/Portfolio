@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The tests of the rules of Memory Cards outside Unity: `dotnet test` in this folder runs them in about a second.
+    They are the same test files the editor runs (Assets/Tests/Editor), compiled together with the model
+    (Assets/Scripts/Model) and the little it needs of UnityEngine (Model/Shim~), the way the server module compiles
+    the model in. The tests that need the engine (the campaign, the settings) stay with the editor.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <RootNamespace>Portfolio.MemoryCards.Tests</RootNamespace>
+    <AssemblyName>MemoryCards.Model.Tests</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="NUnit" Version="3.14.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="../Assets/Scripts/Model/*.cs" Link="Model/%(Filename)%(Extension)" />
+    <Compile Include="../Assets/Scripts/Model/Shim~/UnityEngine.cs" Link="Model/UnityEngine.cs" />
+    <Compile Include="../Assets/Tests/Editor/Boards.cs" Link="Tests/Boards.cs" />
+    <Compile Include="../Assets/Tests/Editor/BoardOptionsTest.cs" Link="Tests/BoardOptionsTest.cs" />
+    <Compile Include="../Assets/Tests/Editor/DealerTest.cs" Link="Tests/DealerTest.cs" />
+    <Compile Include="../Assets/Tests/Editor/MemoryRoundTest.cs" Link="Tests/MemoryRoundTest.cs" />
+    <Compile Include="../Assets/Tests/Editor/VersusMatchTest.cs" Link="Tests/VersusMatchTest.cs" />
+  </ItemGroup>
+
+</Project>

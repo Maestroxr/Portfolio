@@ -24,7 +24,7 @@ namespace Portfolio.MemoryCards.Tests
         /// <summary>Flips a card for the player whose turn it is, as the manager does.</summary>
         private static VersusOutcome Flip(MemoryRound round, VersusMatch match, int card)
         {
-            return match.Apply(round.Flip(round.Cards[card]));
+            return match.Apply(round.Flip(round.Cards[card]), round);
         }
 
         [Test]
@@ -256,6 +256,72 @@ namespace Portfolio.MemoryCards.Tests
             Assert.Throws<System.ArgumentException>(() => Match(1));
             Assert.Throws<System.ArgumentException>(() => Match(5));
             Assert.DoesNotThrow(() => Match(4));
+        }
+
+        [Test]
+        public void ABombTakesAHalfFinishedSetBackWithTheTurn()
+        {
+            MemoryRound round = Round("0 B 0 1 1");
+            VersusMatch match = Match(2);
+            Flip(round, match, 0);
+            FlipResult bomb = round.Flip(round.Cards[1]);
+            VersusOutcome outcome = match.Apply(bomb, round);
+            Assert.IsTrue(outcome.PassesNow);
+            Assert.AreEqual(1, match.Current);
+            Assert.AreEqual(1, bomb.FlippedBack.Count, "the card the player had face up went back down");
+            Assert.AreEqual(CardState.Hidden, round.Cards[0].State);
+            Assert.AreEqual(0, round.Revealed.Count, "the next player starts with a clean board");
+            Assert.AreEqual(0, round.Combo);
+        }
+
+        [Test]
+        public void TwoWildCardsScoreButCompleteNoSet()
+        {
+            MemoryRound round = Round("W W 0 0");
+            VersusMatch match = Match(2);
+            Flip(round, match, 0);
+            VersusOutcome outcome = Flip(round, match, 1);
+            Assert.AreEqual(MemoryRound.WildBonus * 2, outcome.Points);
+            Assert.IsFalse(outcome.SetCompleted);
+            Assert.IsTrue(outcome.KeepsTurn);
+            Assert.AreEqual(0, match.Seats[0].Sets);
+            Assert.AreEqual(0, round.MatchedSets);
+        }
+
+        [Test]
+        public void JudgingWithoutATableIsTheSameRuleTheServerPlaysBy()
+        {
+            MemoryRound round = Round("0 B 0 1 1");
+            VersusOutcome waiting = VersusMatch.Judge(round.Flip(round.Cards[0]), 30, round);
+            Assert.IsTrue(waiting.KeepsTurn);
+            Assert.IsFalse(waiting.FreshClock, "a card waiting for its set does not restart the clock");
+            FlipResult bomb = round.Flip(round.Cards[1]);
+            VersusOutcome outcome = VersusMatch.Judge(bomb, 30, round);
+            Assert.AreEqual(-30, outcome.Points, "a bomb takes no more than the player has");
+            Assert.IsTrue(outcome.PassesNow);
+            Assert.AreEqual(1, bomb.FlippedBack.Count);
+
+            MemoryRound other = Round("0 1 0 1");
+            other.Flip(other.Cards[0]);
+            VersusOutcome set = VersusMatch.Judge(other.Flip(other.Cards[2]), 0, other);
+            Assert.IsTrue(set.FreshClock);
+            Assert.IsTrue(set.SetCompleted);
+            Assert.AreEqual(MemoryRound.PointsPerPair, set.Points);
+        }
+
+        [Test]
+        public void EqualScoresWithMoreSetsAreNotADraw()
+        {
+            VersusMatch match = Match(2);
+            match.Seats[0].Score = 300;
+            match.Seats[0].Sets = 2;
+            match.Seats[1].Score = 300;
+            match.Seats[1].Sets = 3;
+            Assert.AreEqual(1, match.Winners().Count);
+            Assert.AreEqual(1, match.Winners()[0].Seat);
+            Assert.Less(VersusMatch.Compare(match.Seats[1], match.Seats[0]), 0, "the order the server ranks the room by");
+            Assert.IsFalse(VersusMatch.SharePlace(match.Seats[0], match.Seats[1]));
+            Assert.IsTrue(VersusMatch.SharePlace(match.Seats[0], new VersusSeat { Score = 300, Sets = 2 }));
         }
     }
 }

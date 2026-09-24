@@ -23,7 +23,17 @@ namespace Portfolio.MemoryCards
         WildMatched,
         Bomb,
         Clock,
-        Peek
+        Peek,
+
+        // What the server of an online game sends besides flips (its FlipEvent), in the same field; a round never
+        // produces them.
+
+        /// <summary>Online: a mistake, or the cards of a player whose turn ended, turned back face down.</summary>
+        FlippedBack = 20,
+        /// <summary>Online: the player ran out of time; the cards they had face up turned back.</summary>
+        TimedOut = 21,
+        /// <summary>Online: the board is shown to everybody before the first turn (memorize).</summary>
+        Preview = 22
     }
 
 
@@ -66,6 +76,9 @@ namespace Portfolio.MemoryCards
         /// <summary>The mistake count reached the shuffle interval: the hidden cards swap places once the mismatch is hidden.</summary>
         public bool Shuffle;
 
+        /// <summary>A set of animals was completed (two wild cards that cancel out score, but complete none).</summary>
+        public bool SetCompleted;
+
         public bool Ignored => Outcome == FlipOutcome.Ignored;
 
         public bool IsMatch => Outcome == FlipOutcome.Matched || Outcome == FlipOutcome.WildMatched;
@@ -77,7 +90,9 @@ namespace Portfolio.MemoryCards
     /// <summary>
     /// The rules engine of one board. It knows nothing of the view: the manager passes the tapped card to
     /// <see cref="Flip"/>, animates the returned <see cref="FlipResult"/>, calls <see cref="HideMismatch"/> after the
-    /// unflip delay and <see cref="Tick"/> every frame the clock runs.
+    /// unflip delay and <see cref="Tick"/> every frame the clock runs. The server of an online game runs the same
+    /// engine on a board it rebuilds from its tables for every flip (this file is compiled into the server module):
+    /// cards that are face up in the deal are the set the player is turning.
     /// </summary>
     public sealed class MemoryRound
     {
@@ -112,6 +127,10 @@ namespace Portfolio.MemoryCards
             for (int i = 0; i < cards.Count; i++)
             {
                 slots[cards[i].Slot] = i;
+                if (cards[i].State == CardState.Revealed)
+                {
+                    revealed.Add(cards[i]);
+                }
             }
             Sets = 0;
             var counted = new HashSet<int>();
@@ -120,6 +139,11 @@ namespace Portfolio.MemoryCards
                 if (card.IsAnimal && counted.Add(card.Animal))
                 {
                     Sets++;
+                    // A board rebuilt in the middle of a game: the animals already matched are the sets found.
+                    if (IsAnimalMatched(card.Animal))
+                    {
+                        MatchedSets++;
+                    }
                 }
             }
             Score = score;
@@ -552,6 +576,7 @@ namespace Portfolio.MemoryCards
             Combo++;
             BestCombo = Mathf.Max(BestCombo, Combo);
             int basePoints = Rules.MatchSize >= 3 ? PointsPerTriple : PointsPerPair;
+            result.SetCompleted = true;
             result.Outcome = outcome;
             result.Points = basePoints * ComboMultiplier + bonus;
             Score += result.Points;

@@ -12,7 +12,9 @@ namespace Portfolio.MemoryCards
         /// <summary>Gives time back.</summary>
         Clock = 3,
         /// <summary>Shows every hidden card for a moment.</summary>
-        Peek = 4
+        Peek = 4,
+        /// <summary>A face down card of an online board: only the server knows what it is until it turns.</summary>
+        Unknown = 255
     }
 
 

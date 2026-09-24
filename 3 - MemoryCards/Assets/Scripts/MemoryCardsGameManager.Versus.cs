@@ -28,14 +28,10 @@ namespace Portfolio.MemoryCards
         /// <summary>What the server said a flip did (its FlipEvent), in the terms of this game.</summary>
         internal sealed class OnlineFlip
         {
-            /// <summary>Codes of the server that are not a <see cref="FlipOutcome"/>.</summary>
-            public const int FlippedBack = 20;
-            public const int TimedOut = 21;
-            public const int Preview = 22;
-
             public int Seat;
             public int Card;
-            public int Outcome;
+            /// <summary>A flip, or one of the server's own events (<see cref="FlipOutcome.FlippedBack"/> and the ones after it).</summary>
+            public FlipOutcome Outcome;
             public int Points;
             public int Combo;
             public readonly List<OnlineCard> Cards = new List<OnlineCard>();
@@ -59,7 +55,10 @@ namespace Portfolio.MemoryCards
         [SerializeField] internal MemoryCardsOnlineController online;
 
         private readonly List<MemoryCardsPlayer> seatPlayers = new List<MemoryCardsPlayer>();
-        private readonly Queue<OnlineFlip> onlineFlips = new Queue<OnlineFlip>();
+        /// <summary>What the server sent, in its order: flips to play and turns to begin, taken while the board is free.</summary>
+        private readonly Queue<System.Action> onlineEvents = new Queue<System.Action>();
+        /// <summary>Until when the banner of the last flip (a bomb, a lost turn) shows: the next turn is announced after it.</summary>
+        private float bannerBusyUntil;
         private VersusMatch versus;
         private OnlineBoard onlineBoard;
         private int localPlayers = 1;
@@ -135,17 +134,22 @@ namespace Portfolio.MemoryCards
         internal void PrepareOnlineGame(OnlineBoard board)
         {
             onlineBoard = board;
-            onlineFlips.Clear();
+            onlineEvents.Clear();
         }
 
         /// <summary>The flip of another player, or the answer to the local player's own, in the order of the server.</summary>
         internal void OnlineFlipArrived(OnlineFlip flip)
         {
-            onlineFlips.Enqueue(flip);
+            onlineEvents.Enqueue(() => PlayOnlineFlip(flip));
         }
 
-        /// <summary>The server began a turn.</summary>
+        /// <summary>The server began a turn; it is taken after the flips that came before it (the one that ended the last turn).</summary>
         internal void OnlineTurn(int seat, int number)
+        {
+            onlineEvents.Enqueue(() => BeginOnlineTurn(seat, number));
+        }
+
+        private void BeginOnlineTurn(int seat, int number)
         {
             if (!IsOnlineVersus)
             {
@@ -156,7 +160,16 @@ namespace Portfolio.MemoryCards
             versus.SetTurn(seat, number, 0f);
             if (changed && phase != Phase.Finished)
             {
-                AnnounceTurn();
+                // The banner of a bomb or a lost turn shows first; the new turn is announced after it.
+                float wait = bannerBusyUntil - Time.time;
+                if (wait > 0f)
+                {
+                    After(wait, AnnounceTurn);
+                }
+                else
+                {
+                    AnnounceTurn();
+                }
             }
             RefreshVersusInput();
         }
@@ -262,7 +275,7 @@ namespace Portfolio.MemoryCards
             if (!keepOnlineBoard)
             {
                 onlineBoard = null;
-                onlineFlips.Clear();
+                onlineEvents.Clear();
             }
             if (player != null)
             {
@@ -316,11 +329,11 @@ namespace Portfolio.MemoryCards
             }
             if (IsOnlineVersus)
             {
-                while (phase == Phase.Playing && onlineFlips.Count > 0)
+                while (phase == Phase.Playing && onlineEvents.Count > 0)
                 {
-                    PlayOnlineFlip(onlineFlips.Dequeue());
+                    onlineEvents.Dequeue()();
                 }
-                if (versusOver && phase == Phase.Playing && onlineFlips.Count == 0)
+                if (versusOver && phase == Phase.Playing && onlineEvents.Count == 0)
                 {
                     Finish();
                 }
@@ -335,10 +348,11 @@ namespace Portfolio.MemoryCards
         /// <summary>A local flip was judged by the round: the versus game books it for the player whose turn it is.</summary>
         private VersusOutcome BookLocalFlip(FlipResult result)
         {
-            VersusOutcome outcome = versus.Apply(result);
-            if (result.Outcome == FlipOutcome.Bomb && !round.IsOver)
+            // A bomb passes the turn at once and takes a half finished set back with it (result.FlippedBack).
+            VersusOutcome outcome = versus.Apply(result, round);
+            if (outcome.PassesNow && !round.IsOver)
             {
-                // The bomb passed the turn already; the next player hears about it once it went off.
+                // The turn passed already; the next player hears about it once the bomb went off.
                 After(flipTime + 0.9f, AnnounceTurn);
             }
             SyncSeatPlayers();
@@ -409,7 +423,7 @@ namespace Portfolio.MemoryCards
             {
                 Learn(shown);
             }
-            if (flip.Outcome == OnlineFlip.FlippedBack || flip.Outcome == OnlineFlip.TimedOut)
+            if (flip.Outcome == FlipOutcome.FlippedBack || flip.Outcome == FlipOutcome.TimedOut)
             {
                 foreach (OnlineCard turned in flip.Cards)
                 {
@@ -421,11 +435,12 @@ namespace Portfolio.MemoryCards
                     }
                 }
                 mirrorMismatch = false;
-                if (flip.Outcome == OnlineFlip.TimedOut && flip.Seat >= 0 && flip.Seat < versus.Seats.Count)
+                if (flip.Outcome == FlipOutcome.TimedOut && flip.Seat >= 0 && flip.Seat < versus.Seats.Count)
                 {
                     sounds?.Play(sounds.mismatch, 0.7f, 0.85f);
                     string who = flip.Seat == localSeat ? "You" : versus.Seats[flip.Seat].Name;
                     gameUI?.ShowBanner("TIME'S UP!", $"{who} ran out of time", badColor, 1.1f);
+                    bannerBusyUntil = Time.time + 1.1f;
                 }
                 return;
             }
@@ -436,7 +451,7 @@ namespace Portfolio.MemoryCards
             {
                 return;
             }
-            var result = new FlipResult { Outcome = (FlipOutcome)flip.Outcome, Card = card, Points = flip.Points, Combo = flip.Combo };
+            var result = new FlipResult { Outcome = flip.Outcome, Card = card, Points = flip.Points, Combo = flip.Combo };
             foreach (OnlineCard part in flip.Cards)
             {
                 MemoryCard other = CardAt(part.Index);
@@ -463,7 +478,8 @@ namespace Portfolio.MemoryCards
                         matched.Frozen = false;
                     }
                     // Two wild cards that cancel out score, but find no set.
-                    if (seat != null && result.Cards.Exists(matched => matched.IsAnimal))
+                    result.SetCompleted = result.Cards.Exists(matched => matched.IsAnimal);
+                    if (seat != null && result.SetCompleted)
                     {
                         seat.Sets++;
                         seat.BestCombo = Mathf.Max(seat.BestCombo, flip.Combo);
@@ -483,6 +499,11 @@ namespace Portfolio.MemoryCards
                     card.State = CardState.Spent;
                     // The cards of a peek are the ones it shows, not a set.
                     result.Cards.Clear();
+                    if (result.Outcome == FlipOutcome.Bomb)
+                    {
+                        // The next turn, which came with the bomb, is announced once it went off.
+                        bannerBusyUntil = Time.time + flipTime + 0.9f;
+                    }
                     break;
             }
             SyncSeatPlayers();
@@ -493,7 +514,7 @@ namespace Portfolio.MemoryCards
         private void Learn(OnlineCard shown)
         {
             MemoryCard card = CardAt(shown.Index);
-            if (card == null || shown.Kind == (CardKind)255)
+            if (card == null || shown.Kind == CardKind.Unknown)
             {
                 return;
             }

@@ -79,8 +79,8 @@ namespace Portfolio.Monopoly
             if (Hosting)
             {
                 int guests = Quits ? 2 : 1;
-                string options = RoomOptions.Write(MonopolyOnlineController.TurnOption, 20, MonopolyOnlineController.ComputersOption, 1,
-                    MonopolyOnlineController.LevelOption, 1);
+                string options = RoomOptions.Write(RoomOptions.TurnOption, 20, RoomOptions.ComputersOption, 1,
+                    RoomOptions.ComputerLevelOption, 1);
                 yield return HostRoom("Tour table", Mode, options, 4);
                 yield return new WaitForSeconds(0.5f);
                 yield return Shot("01_room");

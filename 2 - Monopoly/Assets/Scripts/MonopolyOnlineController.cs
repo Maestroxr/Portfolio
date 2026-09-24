@@ -54,14 +54,14 @@ namespace Portfolio.Monopoly
 
         public override IReadOnlyList<RoomOptionSpec> OptionSpecs => optionSpecs ??= new[]
         {
-            ClockSpec("Time to move", TurnSeconds, 3),
-            ComputersSpec("Computer players", 2),
-            ComputerLevelSpec("Computer level")
+            RoomOptionSpec.Clock("Time to move", TurnSeconds, 3),
+            RoomOptionSpec.Computers("Computer players", 2),
+            RoomOptionSpec.ComputerLevel("Computer level")
         };
 
         public override string DescribeRoom(RoomInfo room)
         {
-            int computers = room.Option(ComputersOption, 0);
+            int computers = room.Option(RoomOptions.ComputersOption, 0);
             return computers > 0 ? $"{base.DescribeRoom(room)}, computer players" : base.DescribeRoom(room);
         }
 

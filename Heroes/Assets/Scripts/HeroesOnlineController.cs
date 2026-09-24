@@ -72,9 +72,9 @@ namespace Portfolio.Heroes
         {
             new RoomOptionSpec(SizeOption, "Map size", Sizes, SizeLabels, 1),
             new RoomOptionSpec(BattlesOption, "Battles", Battles, BattleLabels, (int)BattleStyle.Battlefield),
-            ClockSpec("Turn clock", TurnSeconds, 2),
-            ComputersSpec("Computer players", 3),
-            ComputerLevelSpec("Computer skill"),
+            RoomOptionSpec.Clock("Turn clock", TurnSeconds, 2),
+            RoomOptionSpec.Computers("Computer players", 3),
+            RoomOptionSpec.ComputerLevel("Computer skill"),
             new RoomOptionSpec(TreasureOption, "Treasure", Amounts, AmountLabels, 1),
             new RoomOptionSpec(MonstersOption, "Wandering armies", Amounts, AmountLabels, 1)
         };
