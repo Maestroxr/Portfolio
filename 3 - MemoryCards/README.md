@@ -112,7 +112,9 @@ The rules engine knows nothing of Unity objects, so it is covered by edit mode t
 `Skinnerboxes.MemoryCards.Tests`) together with the dealer, the settings, the campaign unlocks and the progress. The
 tests of the rules (the dealer, the round, the versus rules, the board options) also run outside Unity: `dotnet test`
 in the `Tests` folder next to `Assets` compiles the model with a small stand-in for what it uses of UnityEngine
-(`Scripts/Model/Shim~`) and runs them in about a second.
+(`Scripts/Model/Shim~`) and runs them in about a second. The test project imports BaseGame's `ModelTests.props`, which
+brings the test packages and `Gamebox.Lockstep`, whose shuffle the dealer uses (the server module compiles that file
+in too).
 
 Everything the game shows is built by the editor code in `Assets/Editor` (menu **Memory Cards**):
 

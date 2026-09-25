@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Gamebox.Lockstep;
 using UnityEngine;
 
 namespace Portfolio.MemoryCards
@@ -370,7 +371,7 @@ namespace Portfolio.MemoryCards
             // Keep shuffling until at least half of the cards changed place, so a shuffle always shows.
             for (int attempt = 0; attempt < 8; attempt++)
             {
-                Dealer.Shuffle(targets, random);
+                random.Shuffle(targets);
                 int changed = 0;
                 for (int i = 0; i < moving.Count; i++)
                 {

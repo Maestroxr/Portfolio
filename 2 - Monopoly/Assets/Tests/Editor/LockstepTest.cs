@@ -101,45 +101,6 @@ namespace Portfolio.Monopoly.Tests
             Assert.IsFalse(table.Apply(null, 1));
         }
 
-        // ------------------------------------------------------------------ random numbers
-
-        [Test]
-        public void TheSeededRandomIsReproducible()
-        {
-            var first = new SeededRandom(12345);
-            var second = new SeededRandom(12345);
-            var other = new SeededRandom(12346);
-            var numbers = new List<int>();
-            bool differs = false;
-            for (int i = 0; i < 500; i++)
-            {
-                int number = first.Range(1, 7);
-                numbers.Add(number);
-                Assert.AreEqual(number, second.Range(1, 7));
-                differs |= number != other.Range(1, 7);
-                Assert.That(number, Is.InRange(1, 6));
-            }
-            Assert.IsTrue(differs, "A neighbouring seed gives other dice");
-            for (int face = 1; face <= 6; face++)
-            {
-                Assert.That(numbers.Count(n => n == face), Is.InRange(50, 120), $"The die favours or avoids {face}");
-            }
-
-            first.Reseed(7);
-            second.Reseed(7);
-            for (int i = 0; i < 100; i++)
-            {
-                double value = first.Value();
-                Assert.AreEqual(value, second.Value());
-                Assert.That(value, Is.GreaterThanOrEqualTo(0.0).And.LessThan(1.0));
-            }
-            Assert.AreEqual(3, new SeededRandom(1).Range(3, 3), "An empty range gives its start");
-
-            // The numbers themselves are part of the protocol: every build of the game has to roll these.
-            var pinned = new SeededRandom(2024);
-            CollectionAssert.AreEqual(new[] { 1, 4, 3, 4, 3, 1, 5, 1 }, Enumerable.Range(0, 8).Select(_ => pinned.Range(1, 7)).ToArray());
-        }
-
         // ------------------------------------------------------------------ tables in step
 
         [TestCaseSource(nameof(RuleSets))]

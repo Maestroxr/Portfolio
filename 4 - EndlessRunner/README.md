@@ -130,7 +130,7 @@ How it is built:
   books; it is plain C# and covered by edit mode tests.
 - **The race.** The score is reported to the room every second (`ReportScore`), and the scoreboard (`RaceHud`) ranks
   the runners by what is known of them: how far the ghost is, the coins the server gave them, or the reported score if
-  that is more (`RaceStandings`, the ranking rule of the base server). The end of a run goes to the server with
+  that is more (`RaceStandings`, on BaseGame's `Standings`: the ranking rule of the base server). The end of a run goes to the server with
   `FinishRun(distance, score)`; when the last runner is done the base server ranks the members, and the results show its
   places. Meanwhile the camera chases the leading ghost (`RunnerCamera.Watch`) and the track is laid out around that
   runner, again from further back if need be (`TrackGenerator.Rewind`).

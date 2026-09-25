@@ -192,7 +192,7 @@ namespace Portfolio.Heroes.UI
             {
                 return -1;
             }
-            int level = disk.DoesKeyExist(HeroesUI.LastSaveKey) ? disk.GetInt(HeroesUI.LastSaveKey) : manager.LevelIndex;
+            int level = disk.GetInt(manager.LastSavedLevelKey, manager.LevelIndex);
             if (level < 0)
             {
                 return -1;

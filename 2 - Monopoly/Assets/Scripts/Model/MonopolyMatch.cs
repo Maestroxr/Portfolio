@@ -198,24 +198,15 @@ namespace Portfolio.Monopoly
                     deck.order.Add(i);
                 }
             }
-            Shuffle(deck.order);
+            random.Shuffle(deck.order);
             return deck;
-        }
-
-        private void Shuffle<T>(IList<T> list)
-        {
-            for (int i = list.Count - 1; i > 0; i--)
-            {
-                int j = random.Range(0, i + 1);
-                (list[i], list[j]) = (list[j], list[i]);
-            }
         }
 
         /// <summary>Short game: every player is dealt title deeds at random (and pays their printed price).</summary>
         private void DealProperties()
         {
             List<int> pile = board.Properties.ToList();
-            Shuffle(pile);
+            random.Shuffle(pile);
             int next = 0;
             for (int round = 0; round < rules.dealtProperties; round++)
             {

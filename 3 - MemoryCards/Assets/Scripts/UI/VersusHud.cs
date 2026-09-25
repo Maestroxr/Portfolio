@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using Gamebox.Online;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -78,7 +79,7 @@ namespace Portfolio.MemoryCards
                 chip.root.localScale = Vector3.one;
                 if (chip.nameText != null)
                 {
-                    chip.nameText.text = i == localSeat ? $"{seats[i].Name} (you)" : seats[i].Name;
+                    chip.nameText.text = Standings.Who(seats[i].Name, i == localSeat);
                     chip.nameText.color = SeatColor(i);
                 }
             }

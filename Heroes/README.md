@@ -230,7 +230,9 @@ in place, so a rebuild keeps the references the scenes already have and writes t
 
 ## Checking it
 
-The tests are in the Unity Test Runner (EditMode, `Skinnerboxes.Heroes.Tests`). A development player (for example
+The tests are in the Unity Test Runner (EditMode, `Skinnerboxes.Heroes.Tests`). They know nothing of Unity, so they
+also run outside it: `dotnet test` in the `Tests` folder next to `Assets` compiles them with the model and
+`Gamebox.Lockstep` (BaseGame's `ModelTests.props`) and runs them in a few seconds. A development player (for example
 `-executeMethod Gamebox.Editor.PlayerBuild.BuildFromCommandLine -gamebox-target StandaloneWindows64
 -gamebox-development -gamebox-output Build/Heroes.exe`) can play itself and save a screenshot of every step, then quit;
 without these arguments, and in a release player, nothing of it runs:

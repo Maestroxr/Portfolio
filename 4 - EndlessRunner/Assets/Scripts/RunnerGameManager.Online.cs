@@ -578,7 +578,7 @@ namespace Portfolio.EndlessRunner
             ranking.AddRange(racers);
             if (raceFinished)
             {
-                ranking.Sort((a, b) => a.Place != b.Place ? a.Place.CompareTo(b.Place) : a.Seat.CompareTo(b.Seat));
+                Standings.SortByPlace(ranking, racer => racer.Place, racer => racer.Seat);
             }
             else
             {
@@ -710,11 +710,8 @@ namespace Portfolio.EndlessRunner
             var standings = new StringBuilder();
             foreach (Racer racer in ranking)
             {
-                string who = racer.Local ? $"{racer.Name} (you)" : racer.Name;
-                string color = ColorUtility.ToHtmlStringRGB(Color.Lerp(RacerColor(racer.Slot), Color.white, 0.3f));
-                standings.Append(standings.Length > 0 ? "\n" : string.Empty)
-                    .Append($"{RaceStandings.Ordinal(Mathf.Max(1, racer.Place))}   <color=#{color}><b>{who}</b></color>   {racer.Score}")
-                    .Append($"   <size=70%>{racer.Distance:0} m, {racer.Coins} coins</size>");
+                standings.Append(standings.Length > 0 ? "\n" : string.Empty).Append(Standings.Line(Mathf.Max(1, racer.Place), racer.Name, racer.Local,
+                    racer.Score.ToString(), Color.Lerp(RacerColor(racer.Slot), Color.white, 0.3f), $"{racer.Distance:0} m, {racer.Coins} coins"));
             }
             ui?.ShowResults(new RunResult
             {

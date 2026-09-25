@@ -38,6 +38,7 @@ namespace Portfolio.Asteroids.Server
             AddTable(RoomAction = new(conn));
             AddTable(RoomMember = new(conn));
             AddTable(RoomPose = new(conn));
+            AddTable(RoomSeat = new(conn));
             AddTable(RoomTurn = new(conn));
             AddTable(ShipSignal = new(conn));
             AddTable(ShotVolley = new(conn));
@@ -548,6 +549,7 @@ namespace Portfolio.Asteroids.Server
             new QueryBuilder().From.RoomAction().ToSql(),
             new QueryBuilder().From.RoomMember().ToSql(),
             new QueryBuilder().From.RoomPose().ToSql(),
+            new QueryBuilder().From.RoomSeat().ToSql(),
             new QueryBuilder().From.RoomTurn().ToSql(),
             new QueryBuilder().From.ShipSignal().ToSql(),
             new QueryBuilder().From.ShotVolley().ToSql(),
@@ -568,6 +570,7 @@ namespace Portfolio.Asteroids.Server
         public global::SpacetimeDB.Table<RoomAction, RoomActionCols, RoomActionIxCols> RoomAction() => new("room_action", new RoomActionCols("room_action"), new RoomActionIxCols("room_action"));
         public global::SpacetimeDB.Table<RoomMember, RoomMemberCols, RoomMemberIxCols> RoomMember() => new("room_member", new RoomMemberCols("room_member"), new RoomMemberIxCols("room_member"));
         public global::SpacetimeDB.Table<RoomPose, RoomPoseCols, RoomPoseIxCols> RoomPose() => new("room_pose", new RoomPoseCols("room_pose"), new RoomPoseIxCols("room_pose"));
+        public global::SpacetimeDB.Table<RoomSeat, RoomSeatCols, RoomSeatIxCols> RoomSeat() => new("room_seat", new RoomSeatCols("room_seat"), new RoomSeatIxCols("room_seat"));
         public global::SpacetimeDB.Table<RoomTurn, RoomTurnCols, RoomTurnIxCols> RoomTurn() => new("room_turn", new RoomTurnCols("room_turn"), new RoomTurnIxCols("room_turn"));
         public global::SpacetimeDB.Table<ShipSignal, ShipSignalCols, ShipSignalIxCols> ShipSignal() => new("ship_signal", new ShipSignalCols("ship_signal"), new ShipSignalIxCols("ship_signal"));
         public global::SpacetimeDB.Table<ShotVolley, ShotVolleyCols, ShotVolleyIxCols> ShotVolley() => new("shot_volley", new ShotVolleyCols("shot_volley"), new ShotVolleyIxCols("shot_volley"));

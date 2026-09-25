@@ -1,4 +1,4 @@
-using System.Globalization;
+using Gamebox.Online;
 using UnityEngine;
 
 namespace Portfolio.Asteroids
@@ -33,12 +33,10 @@ namespace Portfolio.Asteroids
             new Color(1f, 0.5f, 0.9f)
         };
 
-        /// <summary>Ships per pilot from the value of the option; the default when it is missing or not a number.</summary>
-        public static int Lives(string value)
+        /// <summary>Ships per pilot in the options of a room; the default when the option is missing or not a number.</summary>
+        public static int Lives(string options)
         {
-            return int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int lives)
-                ? Mathf.Clamp(lives, MinLives, MaxLives)
-                : DefaultLives;
+            return Mathf.Clamp(RoomOptions.Number(options, LivesKey, DefaultLives), MinLives, MaxLives);
         }
 
         /// <summary>The colour of a seat: the halo of the ship, its name and its line on the HUD.</summary>

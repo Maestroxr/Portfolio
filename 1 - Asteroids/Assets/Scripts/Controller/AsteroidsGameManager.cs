@@ -68,7 +68,7 @@ namespace Portfolio.Asteroids
         private MissionPhase phase = MissionPhase.Menu;
         private float phaseTime;
         private float missionTime;
-        private int countdownStep;
+        private readonly Countdown countdown = new Countdown();
         private int lives;
         private int livesLost;
         private int hintIndex;
@@ -79,7 +79,6 @@ namespace Portfolio.Asteroids
         private bool recordAnnounced;
         #endregion
 
-        private const string SavePrefix = "Asteroids.Save.";
         private const int SaveVersion = 2;
 
         public override IGameController Controller => controller;
@@ -714,7 +713,7 @@ namespace Portfolio.Asteroids
             }
             phase = MissionPhase.Briefing;
             phaseTime = 0f;
-            countdownStep = -1;
+            countdown.Restart();
             TransitionState(BaseGameState.Running);
         }
 
@@ -783,20 +782,16 @@ namespace Portfolio.Asteroids
 
         private void UpdateCountdown()
         {
-            float step = countdownTime / 3f;
-            int current = Mathf.FloorToInt(phaseTime / step);
-            if (current == countdownStep)
+            if (!countdown.Advance(phaseTime, countdownTime, out string label))
             {
                 return;
             }
-            countdownStep = current;
-            if (current < 3)
+            ui?.ShowCountdown(label);
+            if (!countdown.IsDone)
             {
-                ui?.ShowCountdown((3 - current).ToString());
                 sounds?.Countdown();
                 return;
             }
-            ui?.ShowCountdown("GO!");
             sounds?.Go();
             phase = MissionPhase.Playing;
             phaseTime = 0f;
@@ -1341,7 +1336,7 @@ namespace Portfolio.Asteroids
         public override bool DoesSaveGameExist()
         {
             IStorageStrategy disk = Disk;
-            return disk != null && disk.DoesKeyExist(SavePrefix + "Version") && disk.GetInt(SavePrefix + "Version") == SaveVersion;
+            return disk != null && disk.DoesKeyExist(SaveKey("Version")) && disk.GetInt(SaveKey("Version")) == SaveVersion;
         }
 
 
@@ -1360,25 +1355,25 @@ namespace Portfolio.Asteroids
                 UI?.UpdateError("There is no mission in flight to save.");
                 return;
             }
-            disk.SetInt(SavePrefix + "Version", SaveVersion);
-            disk.SetInt(SavePrefix + "Level", LevelIndex);
-            disk.SetInt(SavePrefix + "Wave", Mathf.Max(1, director.WaveNumber));
-            disk.SetBool(SavePrefix + "BossStage", director.State == WaveDirector.Stage.Boss);
-            disk.SetInt(SavePrefix + "Score", score.Score);
-            disk.SetInt(SavePrefix + "Lives", Mathf.Max(1, lives));
-            disk.SetInt(SavePrefix + "LivesLost", livesLost);
-            disk.SetFloat(SavePrefix + "Time", missionTime);
-            disk.SetInt(SavePrefix + "WavesCleared", objective.WavesCleared);
-            disk.SetInt(SavePrefix + "Crystals", objective.Crystals);
-            disk.SetFloat(SavePrefix + "Survived", objective.Survived);
-            disk.SetFloat(SavePrefix + "Hull", ship.IsAlive ? ship.Health : ship.MaxHealth);
-            disk.SetFloat(SavePrefix + "Shield", ship.Shield);
-            disk.SetInt(SavePrefix + "Weapon", (int)ship.Weapons.Type);
-            disk.SetInt(SavePrefix + "WeaponLevel", ship.Weapons.Level);
-            disk.SetInt(SavePrefix + "Bombs", ship.Bombs);
-            disk.SetFloat(SavePrefix + "ShipX", ship.Position.x);
-            disk.SetFloat(SavePrefix + "ShipY", ship.Position.y);
-            disk.SetFloat(SavePrefix + "ShipAngle", ship.transform.eulerAngles.z);
+            disk.SetInt(SaveKey("Version"), SaveVersion);
+            disk.SetInt(SaveKey("Level"), LevelIndex);
+            disk.SetInt(SaveKey("Wave"), Mathf.Max(1, director.WaveNumber));
+            disk.SetBool(SaveKey("BossStage"), director.State == WaveDirector.Stage.Boss);
+            disk.SetInt(SaveKey("Score"), score.Score);
+            disk.SetInt(SaveKey("Lives"), Mathf.Max(1, lives));
+            disk.SetInt(SaveKey("LivesLost"), livesLost);
+            disk.SetFloat(SaveKey("Time"), missionTime);
+            disk.SetInt(SaveKey("WavesCleared"), objective.WavesCleared);
+            disk.SetInt(SaveKey("Crystals"), objective.Crystals);
+            disk.SetFloat(SaveKey("Survived"), objective.Survived);
+            disk.SetFloat(SaveKey("Hull"), ship.IsAlive ? ship.Health : ship.MaxHealth);
+            disk.SetFloat(SaveKey("Shield"), ship.Shield);
+            disk.SetInt(SaveKey("Weapon"), (int)ship.Weapons.Type);
+            disk.SetInt(SaveKey("WeaponLevel"), ship.Weapons.Level);
+            disk.SetInt(SaveKey("Bombs"), ship.Bombs);
+            disk.SetFloat(SaveKey("ShipX"), ship.Position.x);
+            disk.SetFloat(SaveKey("ShipY"), ship.Position.y);
+            disk.SetFloat(SaveKey("ShipAngle"), ship.transform.eulerAngles.z);
             var asteroids = new List<Asteroid>();
             foreach (Shootable target in field.Targets)
             {
@@ -1387,11 +1382,11 @@ namespace Portfolio.Asteroids
                     asteroids.Add(asteroid);
                 }
             }
-            disk.SetInt(SavePrefix + "Asteroids", asteroids.Count);
+            disk.SetInt(SaveKey("Asteroids"), asteroids.Count);
             for (int i = 0; i < asteroids.Count; i++)
             {
                 Asteroid asteroid = asteroids[i];
-                string key = $"{SavePrefix}A{i}.";
+                string key = SaveKey($"A{i}.");
                 disk.SetInt(key + "Kind", (int)asteroid.Kind);
                 disk.SetInt(key + "Size", (int)asteroid.Size);
                 disk.SetFloat(key + "X", asteroid.Position.x);
@@ -1401,13 +1396,8 @@ namespace Portfolio.Asteroids
                 disk.SetFloat(key + "Health", asteroid.Health);
                 disk.SetBool(key + "Wave", asteroid.CountsForWave);
             }
-            try
+            if (!PersistSavedGame())
             {
-                disk.Persist();
-            }
-            catch (NotImplementedException notImplemented)
-            {
-                UI?.UpdateError($"Cannot save game - storage does not support it. {notImplemented.Message}");
                 return;
             }
             UI?.EnableLoad();
@@ -1424,7 +1414,7 @@ namespace Portfolio.Asteroids
                 UI?.UpdateError("There is no saved game to load.");
                 return;
             }
-            int level = disk.GetInt(SavePrefix + "Level");
+            int level = disk.GetInt(SaveKey("Level"));
             if (level < 0 || level >= LevelCount)
             {
                 UI?.UpdateError("The saved mission no longer exists.");
@@ -1435,25 +1425,25 @@ namespace Portfolio.Asteroids
             {
                 return;
             }
-            score.Reset(disk.GetInt(SavePrefix + "Score"));
+            score.Reset(disk.GetInt(SaveKey("Score")));
             SyncScore();
-            lives = Mathf.Clamp(disk.GetInt(SavePrefix + "Lives"), 1, AsteroidSettings.LivesLimit);
-            livesLost = disk.GetInt(SavePrefix + "LivesLost");
-            missionTime = disk.GetFloat(SavePrefix + "Time");
-            objective.Restore(disk.GetInt(SavePrefix + "WavesCleared"), disk.GetInt(SavePrefix + "Crystals"), disk.GetFloat(SavePrefix + "Survived"));
-            ship.Weapons.Set((WeaponType)disk.GetInt(SavePrefix + "Weapon"), disk.GetInt(SavePrefix + "WeaponLevel"));
-            ship.Health = Mathf.Max(1f, disk.GetFloat(SavePrefix + "Hull"));
-            ship.RestoreShield(disk.GetFloat(SavePrefix + "Shield") - ship.Shield);
-            for (int b = ship.Bombs; b < disk.GetInt(SavePrefix + "Bombs"); b++)
+            lives = Mathf.Clamp(disk.GetInt(SaveKey("Lives")), 1, AsteroidSettings.LivesLimit);
+            livesLost = disk.GetInt(SaveKey("LivesLost"));
+            missionTime = disk.GetFloat(SaveKey("Time"));
+            objective.Restore(disk.GetInt(SaveKey("WavesCleared")), disk.GetInt(SaveKey("Crystals")), disk.GetFloat(SaveKey("Survived")));
+            ship.Weapons.Set((WeaponType)disk.GetInt(SaveKey("Weapon")), disk.GetInt(SaveKey("WeaponLevel")));
+            ship.Health = Mathf.Max(1f, disk.GetFloat(SaveKey("Hull")));
+            ship.RestoreShield(disk.GetFloat(SaveKey("Shield")) - ship.Shield);
+            for (int b = ship.Bombs; b < disk.GetInt(SaveKey("Bombs")); b++)
             {
                 ship.AddBomb();
             }
-            ship.Position = new Vector2(disk.GetFloat(SavePrefix + "ShipX"), disk.GetFloat(SavePrefix + "ShipY"));
-            ship.transform.rotation = Quaternion.Euler(0f, 0f, disk.GetFloat(SavePrefix + "ShipAngle"));
-            int count = disk.GetInt(SavePrefix + "Asteroids");
+            ship.Position = new Vector2(disk.GetFloat(SaveKey("ShipX")), disk.GetFloat(SaveKey("ShipY")));
+            ship.transform.rotation = Quaternion.Euler(0f, 0f, disk.GetFloat(SaveKey("ShipAngle")));
+            int count = disk.GetInt(SaveKey("Asteroids"));
             for (int i = 0; i < count; i++)
             {
-                string key = $"{SavePrefix}A{i}.";
+                string key = SaveKey($"A{i}.");
                 var kind = (AsteroidKind)disk.GetInt(key + "Kind");
                 var size = (AsteroidSize)disk.GetInt(key + "Size");
                 var position = new Vector2(disk.GetFloat(key + "X"), disk.GetFloat(key + "Y"));
@@ -1464,7 +1454,7 @@ namespace Portfolio.Asteroids
                     asteroid.Health = Mathf.Min(asteroid.MaxHealth, disk.GetFloat(key + "Health"));
                 }
             }
-            director.Resume(disk.GetInt(SavePrefix + "Wave"), disk.GetBool(SavePrefix + "BossStage"));
+            director.Resume(disk.GetInt(SaveKey("Wave")), disk.GetBool(SaveKey("BossStage")));
             phase = MissionPhase.Playing;
             phaseTime = 0f;
             TransitionState(BaseGameState.Running);

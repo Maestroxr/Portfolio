@@ -972,7 +972,7 @@ namespace Portfolio.Heroes
             if (introStart >= 0f)
             {
                 float t = Mathf.Clamp01((Time.unscaledTime - introStart) / IntroLength);
-                float k = 1f - Mathf.Pow(1f - t, 3f);
+                float k = Gamebox.Tween.OutCubic(t);
                 view.transform.SetPositionAndRotation(Vector3.Lerp(introPosition, restPosition, k),
                     Quaternion.Slerp(introRotation, restRotation, k));
                 if (t >= 1f)

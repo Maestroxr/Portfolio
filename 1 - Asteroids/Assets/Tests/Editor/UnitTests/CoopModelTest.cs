@@ -168,14 +168,16 @@ namespace Portfolio.Asteroids.Tests
         [Test]
         public void TheShipsOfARoomComeFromItsOptions()
         {
-            Assert.That(CoopRules.Lives("5"), Is.EqualTo(5));
+            Assert.That(CoopRules.Lives("lives=5;missions=12"), Is.EqualTo(5));
             Assert.That(CoopRules.Lives(null), Is.EqualTo(CoopRules.DefaultLives));
-            Assert.That(CoopRules.Lives("many"), Is.EqualTo(CoopRules.DefaultLives));
-            Assert.That(CoopRules.Lives("0"), Is.EqualTo(CoopRules.MinLives));
-            Assert.That(CoopRules.Lives("99"), Is.EqualTo(CoopRules.MaxLives));
+            Assert.That(CoopRules.Lives("missions=12"), Is.EqualTo(CoopRules.DefaultLives));
+            Assert.That(CoopRules.Lives("lives=many"), Is.EqualTo(CoopRules.DefaultLives));
+            Assert.That(CoopRules.Lives("lives=0"), Is.EqualTo(CoopRules.MinLives));
+            Assert.That(CoopRules.Lives("lives=99"), Is.EqualTo(CoopRules.MaxLives));
             foreach (string choice in CoopRules.LivesChoices)
             {
-                Assert.That(CoopRules.Lives(choice).ToString(), Is.EqualTo(choice), "Every choice of the lobby is a number of ships the rules accept.");
+                Assert.That(CoopRules.Lives($"{CoopRules.LivesKey}={choice}").ToString(), Is.EqualTo(choice),
+                    "Every choice of the lobby is a number of ships the rules accept.");
             }
         }
 

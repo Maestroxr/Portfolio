@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Gamebox.Lockstep;
 using UnityEngine;
 
 namespace Portfolio.Asteroids
@@ -136,7 +137,7 @@ namespace Portfolio.Asteroids
                         hazards.Add(kind);
                     }
                 }
-                Shuffle(hazards);
+                random.Shuffle(hazards);
                 waveInterval = Mathf.Max(1.5f, CurrentWave.hazardInterval);
                 hazardTimer = Mathf.Min(3f, waveInterval);
             }
@@ -240,7 +241,7 @@ namespace Portfolio.Asteroids
                     hazards.Add(kind);
                 }
             }
-            Shuffle(hazards);
+            random.Shuffle(hazards);
             waveInterval = Mathf.Max(1.5f, CurrentWave.hazardInterval);
             hazardTimer = Mathf.Min(3f, waveInterval);
 
@@ -427,16 +428,6 @@ namespace Portfolio.Asteroids
             State = Stage.Boss;
             stageTime = 0f;
             BossArrived?.Invoke(ActiveBoss);
-        }
-
-
-        private void Shuffle<T>(List<T> list)
-        {
-            for (int i = list.Count - 1; i > 0; i--)
-            {
-                int j = random.Next(i + 1);
-                (list[i], list[j]) = (list[j], list[i]);
-            }
         }
     }
 }

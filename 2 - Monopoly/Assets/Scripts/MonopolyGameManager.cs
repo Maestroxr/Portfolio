@@ -31,8 +31,6 @@ namespace Portfolio.Monopoly
         [SerializeField] private List<MonopolyPlayer> tokens = new List<MonopolyPlayer>();
         [SerializeField] private ParticleSystem confetti;
 
-        private const string SavePrefix = "Monopoly.Save.";
-
         private MonopolySettings customSettings;
         private MonopolySettings activeSettings;
         private MonopolySettings matchSettings;

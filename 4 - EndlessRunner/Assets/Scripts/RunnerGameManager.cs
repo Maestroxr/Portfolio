@@ -101,7 +101,7 @@ namespace Portfolio.EndlessRunner
         private readonly float[] powerUpTimers = new float[PowerUps.Count];
         private RunPhase phase = RunPhase.Menu;
         private float phaseTime;
-        private int countdownStep;
+        private readonly Countdown countdown = new Countdown();
         private int coins;
         private float coinPoints;
         private float distance;
@@ -463,7 +463,7 @@ namespace Portfolio.EndlessRunner
             runnerCamera.SetMode(RunnerCamera.Mode.Chase);
             phase = RunPhase.Countdown;
             phaseTime = 0f;
-            countdownStep = -1;
+            countdown.Restart();
             TransitionState(BaseGameState.Running);
             if (sounds != null)
             {
@@ -533,20 +533,16 @@ namespace Portfolio.EndlessRunner
 
         private void UpdateCountdown()
         {
-            float stepTime = countdownTime / 3f;
-            int step = Mathf.FloorToInt(phaseTime / stepTime);
-            if (step == countdownStep)
+            if (!countdown.Advance(phaseTime, countdownTime, out string label))
             {
                 return;
             }
-            countdownStep = step;
-            if (step < 3)
+            ui?.ShowCountdown(label);
+            if (!countdown.IsDone)
             {
-                ui?.ShowCountdown((3 - step).ToString());
                 sounds?.Play(sounds.countdown, 0.8f);
                 return;
             }
-            ui?.ShowCountdown("GO!");
             sounds?.Play(sounds.go);
             phase = RunPhase.Running;
             phaseTime = 0f;

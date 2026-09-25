@@ -87,7 +87,7 @@ namespace Portfolio.Heroes
             {
                 time += Time.deltaTime;
                 float k = time / duration;
-                t.position = start + Vector3.up * (rise * (1f - (1f - k) * (1f - k)));
+                t.position = start + Vector3.up * (rise * Gamebox.Tween.OutQuad(k));
                 if (view != null)
                 {
                     t.rotation = view.transform.rotation;

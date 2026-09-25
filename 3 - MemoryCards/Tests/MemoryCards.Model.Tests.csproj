@@ -4,23 +4,16 @@
     The tests of the rules of Memory Cards outside Unity: `dotnet test` in this folder runs them in about a second.
     They are the same test files the editor runs (Assets/Tests/Editor), compiled together with the model
     (Assets/Scripts/Model) and the little it needs of UnityEngine (Model/Shim~), the way the server module compiles
-    the model in. The tests that need the engine (the campaign, the settings) stay with the editor.
+    the model in; BaseGame's ModelTests.props brings the test packages and Gamebox.Lockstep. The tests that need the
+    engine (the campaign, the settings) stay with the editor.
   -->
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <IsPackable>false</IsPackable>
-    <Nullable>disable</Nullable>
-    <ImplicitUsings>disable</ImplicitUsings>
-    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <RootNamespace>Portfolio.MemoryCards.Tests</RootNamespace>
     <AssemblyName>MemoryCards.Model.Tests</AssemblyName>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
-    <PackageReference Include="NUnit" Version="3.14.0" />
-    <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
-  </ItemGroup>
+  <Import Project="../../../BaseGame/Assets/Tests/ModelTests~/ModelTests.props" />
 
   <ItemGroup>
     <Compile Include="../Assets/Scripts/Model/*.cs" Link="Model/%(Filename)%(Extension)" />

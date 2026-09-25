@@ -7,14 +7,14 @@ namespace Portfolio.Asteroids.Tests
 {
     public class CampaignTest
     {
-        private readonly List<Object> created = new List<Object>();
+        private readonly TemporaryObjects objects = new TemporaryObjects();
         private AsteroidsCampaign campaign;
         private AsteroidsProgress progress;
 
         [SetUp]
         public void SetUp()
         {
-            campaign = Create<AsteroidsCampaign>();
+            campaign = objects.Asset<AsteroidsCampaign>();
             campaign.sectors = new[]
             {
                 new AsteroidsCampaign.Sector { title = "One", starsRequired = 0 },
@@ -23,12 +23,12 @@ namespace Portfolio.Asteroids.Tests
             campaign.endlessAfter = 2;
             for (int i = 0; i < 4; i++)
             {
-                AsteroidsLevel level = Create<AsteroidsLevel>();
+                AsteroidsLevel level = objects.Asset<AsteroidsLevel>();
                 level.sector = i / 2;
                 level.objective = LevelObjective.ClearWaves;
                 campaign.LevelList.Add(level);
             }
-            AsteroidsLevel endless = Create<AsteroidsLevel>();
+            AsteroidsLevel endless = objects.Asset<AsteroidsLevel>();
             endless.objective = LevelObjective.Endless;
             campaign.LevelList.Add(endless);
             progress = new AsteroidsProgress(new TransientStrategy(), GameType.Asteroids);
@@ -37,18 +37,7 @@ namespace Portfolio.Asteroids.Tests
         [TearDown]
         public void TearDown()
         {
-            foreach (Object item in created)
-            {
-                Object.DestroyImmediate(item);
-            }
-            created.Clear();
-        }
-
-        private T Create<T>() where T : ScriptableObject
-        {
-            T item = ScriptableObject.CreateInstance<T>();
-            created.Add(item);
-            return item;
+            objects.Dispose();
         }
 
         [Test]
@@ -106,7 +95,7 @@ namespace Portfolio.Asteroids.Tests
         [Test]
         public void SettingsValidateAndRoundTrip()
         {
-            var settings = Create<AsteroidSettings>();
+            var settings = objects.Asset<AsteroidSettings>();
             Assert.IsTrue(settings.AreSettingsValid(out _));
             settings.Lives = 0;
             Assert.IsFalse(settings.AreSettingsValid(out _));
@@ -115,12 +104,12 @@ namespace Portfolio.Asteroids.Tests
             settings.AsteroidExplosionRadius = 4f;
             var storage = new TransientStrategy();
             settings.SaveSettings(storage, "Test.");
-            var loaded = Create<AsteroidSettings>();
+            var loaded = objects.Asset<AsteroidSettings>();
             loaded.LoadSettings(storage, "Test.");
             Assert.That(loaded.Lives, Is.EqualTo(5));
             Assert.That(loaded.AsteroidSpeed, Is.EqualTo(1.5f));
             Assert.That(loaded.AsteroidExplosionRadius, Is.EqualTo(4f));
-            var copy = Create<AsteroidSettings>();
+            var copy = objects.Asset<AsteroidSettings>();
             copy.CopySettings(settings);
             Assert.That(copy.Lives, Is.EqualTo(5));
             settings.AsteroidSpeed = 99f;

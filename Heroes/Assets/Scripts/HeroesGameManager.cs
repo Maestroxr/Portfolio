@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using Gamebox;
 using Gamebox.UI;
 using Portfolio.Heroes.UI;
@@ -27,7 +28,6 @@ namespace Portfolio.Heroes
         [SerializeField] private CameraRig cameraRig;
         [SerializeField] private HeroesAudio sound;
 
-        private const string SavePrefix = "Heroes.Save.";
 
         private HeroesSettings customSettings;
         private HeroesSettings activeSettings;
@@ -478,7 +478,11 @@ namespace Portfolio.Heroes
 
         // ------------------------------------------------------------------ saving
 
-        private string SaveKey => $"{SavePrefix}{LevelIndex}";
+        /// <summary>Where the game of the scenario being played is saved.</summary>
+        private string SaveSlot => SaveKey(LevelIndex.ToString(CultureInfo.InvariantCulture));
+
+        /// <summary>Where the scenario of the last save is noted, for the title screen to offer it.</summary>
+        internal string LastSavedLevelKey => SaveKey("Level");
 
         /// <summary>Saves once a day, at the start of a human turn, so a scenario can be taken up again.</summary>
         private void Save(int who)
@@ -506,14 +510,14 @@ namespace Portfolio.Heroes
                 sound?.Play(Sfx.Error, 0.6f);
                 return;
             }
-            Disk.SetString(SaveKey, JsonUtility.ToJson(Game.State));
-            Disk.SetInt($"{SavePrefix}Level", LevelIndex);
-            Disk.Persist();
+            Disk.SetString(SaveSlot, JsonUtility.ToJson(Game.State));
+            Disk.SetInt(LastSavedLevelKey, LevelIndex);
+            PersistSavedGame();
         }
 
         public override bool DoesSaveGameExist()
         {
-            return Disk != null && !string.IsNullOrEmpty(Disk.GetString(SaveKey));
+            return Disk != null && !string.IsNullOrEmpty(Disk.GetString(SaveSlot));
         }
 
         public override void LoadGame()
@@ -522,7 +526,7 @@ namespace Portfolio.Heroes
             {
                 return;
             }
-            string json = Disk.GetString(SaveKey);
+            string json = Disk.GetString(SaveSlot);
             if (string.IsNullOrEmpty(json))
             {
                 return;
@@ -549,8 +553,8 @@ namespace Portfolio.Heroes
         {
             if (Disk != null)
             {
-                Disk.SetString(SaveKey, "");
-                Disk.Persist();
+                Disk.SetString(SaveSlot, "");
+                Disk.TryPersist();
             }
         }
 

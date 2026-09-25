@@ -1460,12 +1460,6 @@ namespace Portfolio.MemoryCards
 
         #region Saving/Loading
 
-        private string SaveKey(string name)
-        {
-            return $"{GameIdentifier}.Save.{name}";
-        }
-
-
         public override bool DoesSaveGameExist()
         {
             IStorageStrategy disk = Disk;
@@ -1557,13 +1551,8 @@ namespace Portfolio.MemoryCards
             disk.SetInt(SaveKey("RunSets"), runSets);
             disk.SetInt(SaveKey("RunCombo"), runBestCombo);
             disk.SetFloat(SaveKey("RunTime"), runTime);
-            try
+            if (!PersistSavedGame())
             {
-                disk.Persist();
-            }
-            catch (NotImplementedException excp)
-            {
-                UI?.UpdateError($"Cannot save game - storage does not support it. {excp.Message}");
                 return;
             }
             UI?.EnableLoad();

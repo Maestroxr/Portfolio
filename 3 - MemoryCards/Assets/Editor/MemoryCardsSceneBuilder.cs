@@ -425,8 +425,7 @@ namespace Portfolio.MemoryCards.EditorTools
             tab.button = rect.gameObject.AddComponent<Button>();
             tab.button.targetGraphic = tab.background;
             tab.button.transition = Selectable.Transition.None;
-            var press = rect.gameObject.AddComponent<PressScale>();
-            press.target = tab.content;
+            Springy(rect, tab.content);
             return tab;
         }
 
@@ -479,9 +478,7 @@ namespace Portfolio.MemoryCards.EditorTools
             card.button = rect.gameObject.AddComponent<Button>();
             card.button.targetGraphic = card.back;
             card.button.transition = Selectable.Transition.None;
-            var press = rect.gameObject.AddComponent<PressScale>();
-            press.target = (RectTransform)card.content.parent;
-            press.hoverScale = 1.04f;
+            Springy(rect, card.content.parent, 1.04f);
             return card;
         }
 
@@ -1014,7 +1011,7 @@ namespace Portfolio.MemoryCards.EditorTools
             var button = rect.gameObject.AddComponent<Button>();
             button.targetGraphic = image;
             button.colors = ButtonColors();
-            rect.gameObject.AddComponent<PressScale>();
+            Springy(rect);
             float iconSize = size.y * 0.5f;
             float offset = icon != null ? iconSize * 0.45f : 0f;
             if (icon != null)
@@ -1037,9 +1034,18 @@ namespace Portfolio.MemoryCards.EditorTools
             var button = rect.gameObject.AddComponent<Button>();
             button.targetGraphic = image;
             button.colors = ButtonColors();
-            rect.gameObject.AddComponent<PressScale>();
+            Springy(rect);
             Image(rect, "Icon", icon, iconColor, Center, Center, new Vector2(0f, size * 0.04f), new Vector2(size * 0.5f, size * 0.5f));
             return button;
+        }
+
+        /// <summary>
+        /// Makes a control spring a little bigger under the pointer and squash under a press, the Memory Cards way, scaling
+        /// <paramref name="scaled"/> (the control itself when null).
+        /// </summary>
+        private static PressFeedback Springy(RectTransform rect, Transform scaled = null, float hover = 1.06f)
+        {
+            return PressFeedback.Attach(rect.gameObject, hover, 0.93f, scaled, true);
         }
 
         private static Button TextButton(Transform parent, string name, string label, Vector2 anchor, Vector2 pivot, Vector2 position, Vector2 size, out TextMeshProUGUI text)

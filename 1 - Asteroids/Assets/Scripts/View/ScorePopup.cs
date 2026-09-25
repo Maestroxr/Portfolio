@@ -1,3 +1,4 @@
+using Gamebox;
 using TMPro;
 using UnityEngine;
 
@@ -41,7 +42,7 @@ namespace Portfolio.Asteroids
             float t = Mathf.Clamp01(age / lifetime);
             float pop = t < 0.15f ? Mathf.Lerp(0.4f, 1.25f, t / 0.15f) : Mathf.Lerp(1.25f, 1f, Mathf.Clamp01((t - 0.15f) / 0.2f));
             transform.localScale = Vector3.one * size * pop;
-            transform.position = start + Vector3.up * rise * (1f - (1f - t) * (1f - t));
+            transform.position = start + Vector3.up * rise * Tween.OutQuad(t);
             if (label != null)
             {
                 Color faded = color;

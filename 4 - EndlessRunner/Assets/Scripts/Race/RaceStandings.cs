@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Gamebox.Online;
 
 namespace Portfolio.EndlessRunner
 {
@@ -36,23 +37,18 @@ namespace Portfolio.EndlessRunner
 
 
     /// <summary>
-    /// The standings of a race, by the rule the base server ranks a finished room with: the higher score is ahead, the
-    /// lower seat wins a tie in the order, and equal scores share a place.
+    /// The standings of a race, by the rule the base server ranks a finished room with (<see cref="Standings"/>): the
+    /// higher score is ahead, the lower seat wins a tie in the order, and equal scores share a place.
     /// </summary>
     public static class RaceStandings
     {
         /// <summary>Sorts the runners by score and gives them their places.</summary>
         public static void Rank(List<Racer> racers)
         {
-            racers.Sort((a, b) => a.Score != b.Score ? b.Score.CompareTo(a.Score) : a.Seat.CompareTo(b.Seat));
-            int place = 0;
+            int[] places = Standings.Rank(racers, racer => racer.Score, racer => racer.Seat);
             for (int i = 0; i < racers.Count; i++)
             {
-                if (i == 0 || racers[i - 1].Score != racers[i].Score)
-                {
-                    place = i + 1;
-                }
-                racers[i].Place = place;
+                racers[i].Place = places[i];
             }
         }
 
@@ -61,23 +57,6 @@ namespace Portfolio.EndlessRunner
         {
             long meters = distance > 0f ? (long)distance : 0;
             return meters + (long)coins * pointsPerCoin;
-        }
-
-        /// <summary>"1st", "2nd", "3rd", "4th"...</summary>
-        public static string Ordinal(int place)
-        {
-            int lastTwo = place % 100;
-            if (lastTwo >= 11 && lastTwo <= 13)
-            {
-                return place + "th";
-            }
-            switch (place % 10)
-            {
-                case 1: return place + "st";
-                case 2: return place + "nd";
-                case 3: return place + "rd";
-                default: return place + "th";
-            }
         }
     }
 }

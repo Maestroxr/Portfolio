@@ -98,32 +98,22 @@ namespace Portfolio.MemoryCards
 
         public override void LoadSettings(IStorageStrategy storage, string prefix)
         {
-            CardsAmount = LoadInt(storage, $"{prefix}CardsAmount", CardsAmount);
-            CardsPerRow = LoadInt(storage, $"{prefix}CardsPerRow", CardsPerRow);
-            FlippedCardsPerMatch = LoadInt(storage, $"{prefix}FlippedCardsPerMatch", FlippedCardsPerMatch);
-            TimePerGame = LoadFloat(storage, $"{prefix}TimePerGame", TimePerGame);
-            TimeUntilUnflip = LoadFloat(storage, $"{prefix}TimeUntilUnflip", TimeUntilUnflip);
-            PreviewTime = LoadFloat(storage, $"{prefix}PreviewTime", PreviewTime);
-            Hearts = LoadInt(storage, $"{prefix}Hearts", Hearts);
-            MoveLimit = LoadInt(storage, $"{prefix}MoveLimit", MoveLimit);
-            MatchTimeBonus = LoadFloat(storage, $"{prefix}MatchTimeBonus", MatchTimeBonus);
-            ShuffleEvery = LoadInt(storage, $"{prefix}ShuffleEvery", ShuffleEvery);
-            Parade = storage.DoesKeyExist($"{prefix}Parade") ? storage.GetBool($"{prefix}Parade") : Parade;
-            Bombs = LoadInt(storage, $"{prefix}Bombs", Bombs);
-            Wilds = LoadInt(storage, $"{prefix}Wilds", Wilds);
-            Clocks = LoadInt(storage, $"{prefix}Clocks", Clocks);
-            Peeks = LoadInt(storage, $"{prefix}Peeks", Peeks);
-            Frozen = LoadInt(storage, $"{prefix}Frozen", Frozen);
-        }
-
-        private static int LoadInt(IStorageStrategy storage, string key, int fallback)
-        {
-            return storage.DoesKeyExist(key) ? storage.GetInt(key) : fallback;
-        }
-
-        private static float LoadFloat(IStorageStrategy storage, string key, float fallback)
-        {
-            return storage.DoesKeyExist(key) ? storage.GetFloat(key) : fallback;
+            CardsAmount = storage.GetInt($"{prefix}CardsAmount", CardsAmount);
+            CardsPerRow = storage.GetInt($"{prefix}CardsPerRow", CardsPerRow);
+            FlippedCardsPerMatch = storage.GetInt($"{prefix}FlippedCardsPerMatch", FlippedCardsPerMatch);
+            TimePerGame = storage.GetFloat($"{prefix}TimePerGame", TimePerGame);
+            TimeUntilUnflip = storage.GetFloat($"{prefix}TimeUntilUnflip", TimeUntilUnflip);
+            PreviewTime = storage.GetFloat($"{prefix}PreviewTime", PreviewTime);
+            Hearts = storage.GetInt($"{prefix}Hearts", Hearts);
+            MoveLimit = storage.GetInt($"{prefix}MoveLimit", MoveLimit);
+            MatchTimeBonus = storage.GetFloat($"{prefix}MatchTimeBonus", MatchTimeBonus);
+            ShuffleEvery = storage.GetInt($"{prefix}ShuffleEvery", ShuffleEvery);
+            Parade = storage.GetBool($"{prefix}Parade", Parade);
+            Bombs = storage.GetInt($"{prefix}Bombs", Bombs);
+            Wilds = storage.GetInt($"{prefix}Wilds", Wilds);
+            Clocks = storage.GetInt($"{prefix}Clocks", Clocks);
+            Peeks = storage.GetInt($"{prefix}Peeks", Peeks);
+            Frozen = storage.GetInt($"{prefix}Frozen", Frozen);
         }
 
         public override void CopySettings(IGameSettings other)

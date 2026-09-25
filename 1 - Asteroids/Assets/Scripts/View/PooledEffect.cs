@@ -1,3 +1,4 @@
+using Gamebox;
 using UnityEngine;
 
 namespace Portfolio.Asteroids
@@ -163,7 +164,7 @@ namespace Portfolio.Asteroids
             {
                 return;
             }
-            float eased = 1f - (1f - t) * (1f - t) * (1f - t);
+            float eased = Tween.OutCubic(t);
             float size = scale * ringGrowth * Mathf.Lerp(0.15f, 1f, eased);
             ring.transform.localScale = new Vector3(size, size, 1f);
             block ??= new MaterialPropertyBlock();

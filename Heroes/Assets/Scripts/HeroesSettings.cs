@@ -46,20 +46,14 @@ namespace Portfolio.Heroes
             storage.SetInt($"{prefix}.{Keys[9]}", monsters);
             storage.SetInt($"{prefix}.{Keys[10]}", difficulty);
             storage.SetInt($"{prefix}.{Keys[11]}", battleStyle);
-            try
-            {
-                storage.Persist();
-            }
-            catch (NotImplementedException)
-            {
-            }
+            storage.TryPersist();
         }
 
         public override void LoadSettings(IStorageStrategy storage, string prefix)
         {
-            float F(int i, float fallback) => storage.DoesKeyExist($"{prefix}.{Keys[i]}") ? storage.GetFloat($"{prefix}.{Keys[i]}") : fallback;
-            bool B(int i, bool fallback) => storage.DoesKeyExist($"{prefix}.{Keys[i]}") ? storage.GetBool($"{prefix}.{Keys[i]}") : fallback;
-            int I(int i, int fallback) => storage.DoesKeyExist($"{prefix}.{Keys[i]}") ? storage.GetInt($"{prefix}.{Keys[i]}") : fallback;
+            float F(int i, float fallback) => storage.GetFloat($"{prefix}.{Keys[i]}", fallback);
+            bool B(int i, bool fallback) => storage.GetBool($"{prefix}.{Keys[i]}", fallback);
+            int I(int i, int fallback) => storage.GetInt($"{prefix}.{Keys[i]}", fallback);
             heroSpeed = F(0, heroSpeed);
             battleSpeed = F(1, battleSpeed);
             showEnemyMoves = B(2, showEnemyMoves);

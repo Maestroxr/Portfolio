@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Gamebox.Lockstep;
 
 namespace Portfolio.MemoryCards
 {
@@ -43,7 +44,7 @@ namespace Portfolio.MemoryCards
             {
                 pool.Add(i);
             }
-            Shuffle(pool, random);
+            random.Shuffle(pool);
             for (int i = 0; i < rules.Sets; i++)
             {
                 deal.Animals.Add(pool[i]);
@@ -63,13 +64,13 @@ namespace Portfolio.MemoryCards
             AddSpecials(cards, CardKind.Peek, rules.Peeks);
 
             var animals = cards.FindAll(card => card.IsAnimal);
-            Shuffle(animals, random);
+            random.Shuffle(animals);
             for (int i = 0; i < rules.Frozen && i < animals.Count; i++)
             {
                 animals[i].Frozen = true;
             }
 
-            Shuffle(cards, random);
+            random.Shuffle(cards);
             for (int i = 0; i < cards.Count; i++)
             {
                 cards[i].Id = i;
@@ -83,7 +84,7 @@ namespace Portfolio.MemoryCards
                 {
                     deal.Parade.Add(i);
                 }
-                Shuffle(deal.Parade, random);
+                random.Shuffle(deal.Parade);
             }
             return deal;
         }
@@ -93,18 +94,6 @@ namespace Portfolio.MemoryCards
             for (int i = 0; i < count; i++)
             {
                 cards.Add(new MemoryCard { Kind = kind, Animal = -1 });
-            }
-        }
-
-        /// <summary>Fisher-Yates shuffle.</summary>
-        public static void Shuffle<T>(IList<T> list, Random random)
-        {
-            for (int n = list.Count - 1; n > 0; n--)
-            {
-                int k = random.Next(n + 1);
-                T value = list[k];
-                list[k] = list[n];
-                list[n] = value;
             }
         }
     }

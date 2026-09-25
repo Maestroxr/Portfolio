@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Gamebox.Editor;
+using Gamebox.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -364,7 +365,7 @@ namespace Portfolio.Monopoly.EditorTools
             {
                 Button button = Button(row.transform, $"Choice {i + 1}", "Choice", Icons.Dice, MonopolyStyle.Red, new Vector2(160f, 62f), 22f);
                 var action = button.gameObject.AddComponent<ActionButton>();
-                Object.DestroyImmediate(button.GetComponent<PressScale>());
+                Object.DestroyImmediate(button.GetComponent<PressFeedback>());
                 // The action button paints its own disabled look.
                 ColorBlock colors = button.colors;
                 colors.disabledColor = Color.white;
@@ -740,7 +741,7 @@ namespace Portfolio.Monopoly.EditorTools
                 Stretch(name.rectTransform, 64f, 0f, 8f, 0f);
                 var button = rect.gameObject.AddComponent<Button>();
                 button.targetGraphic = frame;
-                rect.gameObject.AddComponent<PressScale>();
+                Pressable(rect);
                 partners.Add(new TradeUI.PartnerButton { button = button, badge = badge, token = token, name = name, frame = frame });
             }
 

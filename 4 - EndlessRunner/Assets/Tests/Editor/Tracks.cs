@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Gamebox;
 using UnityEngine;
 
 namespace Portfolio.EndlessRunner.Tests
@@ -11,7 +12,7 @@ namespace Portfolio.EndlessRunner.Tests
     {
         public const float Gravity = 32f;
 
-        private readonly List<Object> created = new List<Object>();
+        private readonly TemporaryObjects objects = new TemporaryObjects();
 
         public PieceCatalog Catalog { get; }
 
@@ -90,25 +91,17 @@ namespace Portfolio.EndlessRunner.Tests
 
         public void Destroy()
         {
-            foreach (Object item in created)
-            {
-                Object.DestroyImmediate(item);
-            }
-            created.Clear();
+            objects.Dispose();
         }
 
         private T Asset<T>() where T : ScriptableObject
         {
-            T asset = ScriptableObject.CreateInstance<T>();
-            created.Add(asset);
-            return asset;
+            return objects.Asset<T>();
         }
 
         private T Piece<T>(string name, float length) where T : TrackPiece
         {
-            var pieceObject = new GameObject(name);
-            created.Add(pieceObject);
-            T piece = pieceObject.AddComponent<T>();
+            T piece = objects.Component<T>(name);
             piece.length = length;
             return piece;
         }

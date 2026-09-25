@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Gamebox.Online;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -116,7 +117,7 @@ namespace Portfolio.EndlessRunner
             if (racer.Local && shownPlace != racer.Place)
             {
                 shownPlace = racer.Place;
-                SetText(placeText, RaceStandings.Ordinal(Mathf.Max(1, racer.Place)));
+                SetText(placeText, Standings.Ordinal(Mathf.Max(1, racer.Place)));
             }
         }
 

@@ -584,7 +584,7 @@ namespace Portfolio.Heroes.UI
             while (t < 1f)
             {
                 t = Mathf.MoveTowards(t, 1f, Time.unscaledDeltaTime / 0.3f);
-                float eased = 1f - (1f - t) * (1f - t);
+                float eased = Gamebox.Tween.OutQuad(t);
                 announceGroup.alpha = eased;
                 announce.localScale = Vector3.one * Mathf.Lerp(0.86f, 1f, eased);
                 yield return null;

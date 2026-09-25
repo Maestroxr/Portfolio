@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Gamebox.Online;
 using Gamebox;
 using Gamebox.UI;
 using TMPro;
@@ -552,7 +553,7 @@ namespace Portfolio.EndlessRunner
             if (result.Online)
             {
                 // A race: the places are the server's, and the next one starts from the room.
-                SetLabel(resultTitle, result.Runners < 2 ? "RUN OVER" : result.Place == 1 ? "YOU WIN!" : $"{RaceStandings.Ordinal(result.Place).ToUpperInvariant()} PLACE");
+                SetLabel(resultTitle, result.Runners < 2 ? "RUN OVER" : result.Place == 1 ? "YOU WIN!" : $"{Standings.Ordinal(result.Place).ToUpperInvariant()} PLACE");
                 SetLabel(resultSubtitle, result.Runners < 2 ? $"{result.LevelTitle} - online" : $"{result.LevelTitle} - race of {result.Runners}");
                 SetLabel(resultStats, result.Standings);
                 SetLabel(resultGoals, $"You ran <b>{result.Distance:0} m</b> and took <b>{result.Coins}</b> coins.\nThe host starts the next race from the room.");
@@ -628,7 +629,7 @@ namespace Portfolio.EndlessRunner
             {
                 countdownTime += deltaTime;
                 float t = countdownTime / 0.75f;
-                countdownText.transform.localScale = Vector3.one * Mathf.Lerp(1.7f, 1f, EaseOut(Mathf.Clamp01(t * 2.5f)));
+                countdownText.transform.localScale = Vector3.one * Mathf.Lerp(1.7f, 1f, Tween.OutCubic(Mathf.Clamp01(t * 2.5f)));
                 countdownText.alpha = t < 0.6f ? 1f : Mathf.Clamp01(1f - (t - 0.6f) / 0.4f);
                 if (t >= 1f)
                 {
@@ -641,7 +642,7 @@ namespace Portfolio.EndlessRunner
             {
                 toastTime += deltaTime;
                 float t = toastTime / 2.4f;
-                toastText.rectTransform.anchoredPosition = new Vector2(0f, 150f + EaseOut(Mathf.Clamp01(t * 3f)) * 40f);
+                toastText.rectTransform.anchoredPosition = new Vector2(0f, 150f + Tween.OutCubic(Mathf.Clamp01(t * 3f)) * 40f);
                 toastText.alpha = t < 0.75f ? Mathf.Clamp01(toastTime * 6f) : Mathf.Clamp01(1f - (t - 0.75f) / 0.25f);
                 if (t >= 1f)
                 {
@@ -709,7 +710,7 @@ namespace Portfolio.EndlessRunner
                     continue;
                 }
                 float age = resultsTime - (0.5f + i * 0.4f);
-                float pop = age < 0.25f ? Mathf.Lerp(1.6f, 1f, EaseOut(age / 0.25f)) : 1f;
+                float pop = age < 0.25f ? Mathf.Lerp(1.6f, 1f, Tween.OutCubic(age / 0.25f)) : 1f;
                 resultStars[i].transform.localScale = Vector3.one * pop;
             }
             if (resultsTime > 3f)
@@ -717,13 +718,6 @@ namespace Portfolio.EndlessRunner
                 resultsTime = -1f;
             }
         }
-
-        private static float EaseOut(float t)
-        {
-            t = Mathf.Clamp01(t);
-            return 1f - (1f - t) * (1f - t) * (1f - t);
-        }
-
         #endregion
 
         private static void SetLabel(TMP_Text label, string text)

@@ -15,11 +15,13 @@
   <!--
     The rules of the game are the model of the Unity project (Assets/Scripts/Model: the dealer, the round, the versus
     rules, the board in the room options), compiled into the module as they are, with the little they use of
-    UnityEngine (Model/Shim~). One rule set for the client and the server.
+    UnityEngine (Model/Shim~) and the random helpers of BaseGame's Gamebox.Lockstep they shuffle with. One rule set for
+    the client and the server.
   -->
   <ItemGroup>
     <Compile Include="../Assets/Scripts/Model/*.cs" Link="Model/%(Filename)%(Extension)" />
     <Compile Include="../Assets/Scripts/Model/Shim~/UnityEngine.cs" Link="Model/UnityEngine.cs" />
+    <Compile Include="../../../BaseGame/Assets/Scripts/Lockstep/SeededRandom.cs" Link="Gamebox.Lockstep/SeededRandom.cs" />
   </ItemGroup>
 
 </Project>

@@ -92,10 +92,10 @@ namespace Portfolio.Asteroids
             {
                 Lives = storage.GetInt($"{prefix}Lives");
             }
-            HullStrength = LoadFloat(storage, $"{prefix}HullStrength", HullStrength);
-            AsteroidSpeed = LoadFloat(storage, $"{prefix}AsteroidSpeed", AsteroidSpeed);
-            AsteroidSpawnRate = LoadFloat(storage, $"{prefix}AsteroidSpawnRate", AsteroidSpawnRate);
-            AsteroidExplosionRadius = LoadFloat(storage, $"{prefix}AsteroidExplosionRadius", AsteroidExplosionRadius);
+            HullStrength = storage.GetFloat($"{prefix}HullStrength", HullStrength);
+            AsteroidSpeed = storage.GetFloat($"{prefix}AsteroidSpeed", AsteroidSpeed);
+            AsteroidSpawnRate = storage.GetFloat($"{prefix}AsteroidSpawnRate", AsteroidSpawnRate);
+            AsteroidExplosionRadius = storage.GetFloat($"{prefix}AsteroidExplosionRadius", AsteroidExplosionRadius);
             if (storage.DoesKeyExist($"{prefix}SpawnAsteroid"))
             {
                 SpawnAsteroid = storage.GetBool($"{prefix}SpawnAsteroid");
@@ -115,12 +115,6 @@ namespace Portfolio.Asteroids
             AsteroidSpawnRate = source.AsteroidSpawnRate;
             SpawnAsteroid = source.SpawnAsteroid;
             AsteroidExplosionRadius = source.AsteroidExplosionRadius;
-        }
-
-
-        private static float LoadFloat(IStorageStrategy storage, string key, float fallback)
-        {
-            return storage.DoesKeyExist(key) ? storage.GetFloat(key) : fallback;
         }
     }
 }

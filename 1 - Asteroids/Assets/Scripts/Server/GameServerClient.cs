@@ -10,13 +10,13 @@ namespace Portfolio.Asteroids.Server
     /// <summary>
     /// The server client of the bindings next to this file: the component to put in a scene. It ties the shared
     /// <see cref="ServerClient"/> to the tables and the reducers of the base server as these bindings name them
-    /// (users, rooms and their members, turns, the action log, poses), which is all that has to be written per set
-    /// of bindings.
+    /// (users, rooms and their members, turns, the action log, the seats of a table, poses), which is all that has to
+    /// be written per set of bindings; everything else, the same whatever the names, is in the base classes.
     ///
     /// The original of this class belongs to BaseGame's bindings of the base server;
-    /// <c>Gamebox &gt; Server &gt; Generate Client Bindings</c> writes it into a game, in the namespace of the game's
-    /// bindings. So change the original, keep what is not tied to generated names in <see cref="ServerClient"/>,
-    /// and add a game's own tables and reducers in a class derived from this one, or from outside through
+    /// <c>Gamebox &gt; Server &gt; Generate Client Bindings</c> and <c>Publish All Games</c> write it into a game, in the
+    /// namespace of the game's bindings. So change the original, keep what is not tied to generated names in the base
+    /// classes, and add a game's own tables and reducers in a class derived from this one, or from outside through
     /// <c>Connection</c> and <c>ConnectionOpened</c>.
     /// </summary>
     [AddComponentMenu("Gamebox/Online/Game Server Client (Portfolio.Asteroids.Server)")]
@@ -24,28 +24,14 @@ namespace Portfolio.Asteroids.Server
     {
         protected override void Bind(DbConnection connection)
         {
-            connection.Db.User.OnInsert += (context, row) => NotifyPlayerChanged(ToProfile(row));
-            connection.Db.User.OnUpdate += (context, previous, row) => NotifyPlayerChanged(ToProfile(row));
-            connection.Db.User.OnDelete += (context, row) => NotifyPlayerRemoved(row.Identity);
-
-            connection.Db.Room.OnInsert += (context, row) => NotifyRoomChanged(ToRoom(row));
-            connection.Db.Room.OnUpdate += (context, previous, row) => NotifyRoomChanged(ToRoom(row));
-            connection.Db.Room.OnDelete += (context, row) => NotifyRoomRemoved(row.Id);
-
-            connection.Db.RoomMember.OnInsert += (context, row) => NotifyMemberChanged(ToMember(row));
-            connection.Db.RoomMember.OnUpdate += (context, previous, row) => NotifyMemberChanged(ToMember(row));
-            connection.Db.RoomMember.OnDelete += (context, row) => NotifyMemberRemoved(row.Identity);
-
-            connection.Db.RoomTurn.OnInsert += (context, row) => NotifyTurnChanged(ToTurn(row));
-            connection.Db.RoomTurn.OnUpdate += (context, previous, row) => NotifyTurnChanged(ToTurn(row));
-            connection.Db.RoomTurn.OnDelete += (context, row) => NotifyTurnRemoved(row.RoomId);
-
-            connection.Db.RoomAction.OnInsert += (context, row) =>
-                NotifyAction(new RoomActionInfo(row.Id, row.RoomId, row.Sender, row.Seat, row.Kind, row.Payload, row.Random));
-
-            connection.Db.RoomPose.OnInsert += (context, row) => NotifyPoseChanged(ToPose(row));
-            connection.Db.RoomPose.OnUpdate += (context, previous, row) => NotifyPoseChanged(ToPose(row));
-            connection.Db.RoomPose.OnDelete += (context, row) => NotifyPoseRemoved(row.Identity);
+            RemoteTables db = connection.Db;
+            Watch(db.User, row => NotifyPlayerChanged(ToProfile(row)), row => NotifyPlayerRemoved(row.Identity));
+            Watch(db.Room, row => NotifyRoomChanged(ToRoom(row)), row => NotifyRoomRemoved(row.Id));
+            Watch(db.RoomMember, row => NotifyMemberChanged(ToMember(row)), row => NotifyMemberRemoved(row.Identity));
+            Watch(db.RoomTurn, row => NotifyTurnChanged(ToTurn(row)), row => NotifyTurnRemoved(row.RoomId));
+            Watch(db.RoomSeat, row => NotifySeatChanged(ToSeat(row)), row => NotifySeatRemoved(row.Id));
+            Watch(db.RoomPose, row => NotifyPoseChanged(ToPose(row)), row => NotifyPoseRemoved(row.Identity));
+            db.RoomAction.OnInsert += (context, row) => NotifyAction(ToAction(row));
 
             RemoteReducers reducers = connection.Reducers;
             reducers.OnSetName += (context, playerName) => NotifyReducerFinished(SetNameReducer, context.Event.Status);
@@ -64,135 +50,59 @@ namespace Portfolio.Asteroids.Server
             connection.OnUnhandledReducerError += (context, error) => Fail(error.Message);
         }
 
-        protected override Action Subscribe(DbConnection connection, string[] queries, Action applied, Action<Exception> failed)
-        {
-            // Unsubscribing works only once the rows arrived: one that comes earlier waits for them.
-            bool cancelled = false;
-            SubscriptionHandle handle = null;
-            handle = connection.SubscriptionBuilder()
-                .OnApplied(context =>
-                {
-                    if (cancelled)
-                    {
-                        handle.Unsubscribe();
-                    }
-                    else
-                    {
-                        applied?.Invoke();
-                    }
-                })
-                .OnError((context, error) => failed?.Invoke(error))
-                .Subscribe(queries);
-            return () =>
-            {
-                if (cancelled)
-                {
-                    return;
-                }
-                cancelled = true;
-                if (handle.IsActive)
-                {
-                    handle.Unsubscribe();
-                }
-            };
-        }
+        protected override Action Subscribe(DbConnection connection, string[] queries, Action applied, Action<Exception> failed) =>
+            Subscription<SubscriptionEventContext, ErrorContext>(
+                (onApplied, onError) => connection.SubscriptionBuilder().OnApplied(onApplied).OnError(onError).Subscribe(queries), applied, failed);
 
-        protected override void SendSetName(string playerName)
-        {
-            Connection.Reducers.SetName(playerName);
-        }
+        protected override void SendSetName(string playerName) => Connection.Reducers.SetName(playerName);
 
-        protected override void SendSetAvatar(uint avatar)
-        {
-            Connection.Reducers.SetAvatar(avatar);
-        }
+        protected override void SendSetAvatar(uint avatar) => Connection.Reducers.SetAvatar(avatar);
 
-        protected override void SendDeleteAccount()
-        {
-            Connection.Reducers.DeleteAccount();
-        }
+        protected override void SendDeleteAccount() => Connection.Reducers.DeleteAccount();
 
-        protected override void SendCreateRoom(string roomName, byte maxPlayers, int level, string options)
-        {
+        protected override void SendCreateRoom(string roomName, byte maxPlayers, int level, string options) =>
             Connection.Reducers.CreateRoom(roomName, maxPlayers, level, options);
-        }
 
-        protected override void SendJoinRoom(ulong roomId)
-        {
-            Connection.Reducers.JoinRoom(roomId);
-        }
+        protected override void SendJoinRoom(ulong roomId) => Connection.Reducers.JoinRoom(roomId);
 
-        protected override void SendLeaveRoom()
-        {
-            Connection.Reducers.LeaveRoom();
-        }
+        protected override void SendLeaveRoom() => Connection.Reducers.LeaveRoom();
 
-        protected override void SendSetReady(bool ready)
-        {
-            Connection.Reducers.SetReady(ready);
-        }
+        protected override void SendSetReady(bool ready) => Connection.Reducers.SetReady(ready);
 
-        protected override void SendConfigureRoomGame(byte maxPlayers, int level, string options)
-        {
+        protected override void SendConfigureRoomGame(byte maxPlayers, int level, string options) =>
             Connection.Reducers.ConfigureRoomGame(maxPlayers, level, options);
-        }
 
-        protected override void SendStartRoom()
-        {
-            Connection.Reducers.StartRoom();
-        }
+        protected override void SendStartRoom() => Connection.Reducers.StartRoom();
 
-        protected override void SendReportScore(long score)
-        {
-            Connection.Reducers.ReportScore(score);
-        }
+        protected override void SendReportScore(long score) => Connection.Reducers.ReportScore(score);
 
-        protected override void SendFinishPlaying(long score)
-        {
-            Connection.Reducers.FinishPlaying(score);
-        }
+        protected override void SendFinishPlaying(long score) => Connection.Reducers.FinishPlaying(score);
 
-        protected override void SendEndRoom()
-        {
-            Connection.Reducers.EndRoom();
-        }
+        protected override void SendEndRoom() => Connection.Reducers.EndRoom();
 
-        protected override void SendSubmitAction(byte seat, uint kind, string payload)
-        {
-            Connection.Reducers.SubmitAction(seat, kind, payload);
-        }
+        protected override void SendSubmitAction(byte seat, uint kind, string payload) => Connection.Reducers.SubmitAction(seat, kind, payload);
 
-        protected override void SendUpdatePose(Vector3 position, Vector3 velocity, float heading, uint state, int value)
-        {
+        protected override void SendUpdatePose(Vector3 position, Vector3 velocity, float heading, uint state, int value) =>
             Connection.Reducers.UpdatePose(position.x, position.y, position.z, velocity.x, velocity.y, velocity.z, heading, state, value);
-        }
 
-        private static PlayerProfile ToProfile(User row)
-        {
-            return new PlayerProfile(row.Identity, row.Name, row.Guest, row.Avatar, row.Online,
-                row.CreatedAt, row.LastLoginAt, row.LastSeenAt, row.Logins, row.SecondsOnline);
-        }
+        private static PlayerProfile ToProfile(User row) => new PlayerProfile(row.Identity, row.Name, row.Guest, row.Avatar, row.Online,
+            row.CreatedAt, row.LastLoginAt, row.LastSeenAt, row.Logins, row.SecondsOnline);
 
-        private static RoomInfo ToRoom(Room row)
-        {
-            return new RoomInfo(row.Id, row.Name, row.Host, (RoomPhase)(int)row.State, row.MinPlayers, row.MaxPlayers, row.Level,
-                row.Options, row.TurnSeconds, row.Seed, row.Round);
-        }
+        private static RoomInfo ToRoom(Room row) => new RoomInfo(row.Id, row.Name, row.Host, (RoomPhase)(int)row.State, row.MinPlayers,
+            row.MaxPlayers, row.Level, row.Options, row.TurnSeconds, row.Seed, row.Round);
 
-        private static RoomMemberInfo ToMember(RoomMember row)
-        {
-            return new RoomMemberInfo(row.Identity, row.RoomId, row.Seat, row.Ready, row.Playing, row.Score, row.Place);
-        }
+        private static RoomMemberInfo ToMember(RoomMember row) =>
+            new RoomMemberInfo(row.Identity, row.RoomId, row.Seat, row.Ready, row.Playing, row.Score, row.Place);
 
-        private static RoomTurnInfo ToTurn(RoomTurn row)
-        {
-            return new RoomTurnInfo(row.RoomId, row.Seat, row.Number, row.Seconds);
-        }
+        private static RoomTurnInfo ToTurn(RoomTurn row) => new RoomTurnInfo(row.RoomId, row.Seat, row.Number, row.Seconds);
 
-        private static RoomPoseInfo ToPose(RoomPose row)
-        {
-            return new RoomPoseInfo(row.Identity, row.RoomId, new Vector3(row.X, row.Y, row.Z),
-                new Vector3(row.VelocityX, row.VelocityY, row.VelocityZ), row.Heading, row.State, row.Value, row.Sequence);
-        }
+        private static RoomActionInfo ToAction(RoomAction row) =>
+            new RoomActionInfo(row.Id, row.RoomId, row.Sender, row.Seat, row.Kind, row.Payload, row.Random);
+
+        private static RoomSeatInfo ToSeat(RoomSeat row) =>
+            new RoomSeatInfo(row.Id, row.RoomId, row.Seat, row.Kind, row.Player, row.Name, row.Look, row.BotLevel);
+
+        private static RoomPoseInfo ToPose(RoomPose row) => new RoomPoseInfo(row.Identity, row.RoomId, new Vector3(row.X, row.Y, row.Z),
+            new Vector3(row.VelocityX, row.VelocityY, row.VelocityZ), row.Heading, row.State, row.Value, row.Sequence);
     }
 }

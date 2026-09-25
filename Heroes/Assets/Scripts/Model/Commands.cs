@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Text;
 using Gamebox.Lockstep;
 
@@ -127,8 +126,7 @@ namespace Portfolio.Heroes
         /// </summary>
         public string Payload()
         {
-            return string.Join(",", a.ToString(CultureInfo.InvariantCulture), b.ToString(CultureInfo.InvariantCulture),
-                c.ToString(CultureInfo.InvariantCulture), d.ToString(CultureInfo.InvariantCulture), e.ToString(CultureInfo.InvariantCulture));
+            return PayloadText.Numbers(',', a, b, c, d, e);
         }
 
         /// <summary>
@@ -148,18 +146,10 @@ namespace Portfolio.Heroes
             {
                 return null;
             }
-            string[] parts = (payload ?? "").Split(',');
-            if (parts.Length != 5)
+            var numbers = new List<int>(5);
+            if (!PayloadText.TryNumbers(payload, ',', numbers, 5) || numbers.Count != 5)
             {
                 return null;
-            }
-            var numbers = new int[5];
-            for (int i = 0; i < numbers.Length; i++)
-            {
-                if (!int.TryParse(parts[i], NumberStyles.Integer, CultureInfo.InvariantCulture, out numbers[i]))
-                {
-                    return null;
-                }
             }
             return Of((CommandKind)kind, player, numbers[0], numbers[1], numbers[2], numbers[3], numbers[4]);
         }

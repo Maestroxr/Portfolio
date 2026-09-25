@@ -293,7 +293,7 @@ namespace Portfolio.MemoryCards
             {
                 return position;
             }
-            float e = EaseOutCubic(move.Progress);
+            float e = Gamebox.Tween.OutCubic(move.Progress);
             return Vector2.LerpUnclamped(moveFrom, position, e);
         }
 
@@ -452,7 +452,7 @@ namespace Portfolio.MemoryCards
             float spin = 0f;
             if (move.Active)
             {
-                float e = EaseOutCubic(move.Progress);
+                float e = Gamebox.Tween.OutCubic(move.Progress);
                 anchored += Vector2.up * (moveArc * Mathf.Sin(Mathf.PI * e));
                 spin = moveSpin * (1f - e);
             }
@@ -601,13 +601,6 @@ namespace Portfolio.MemoryCards
             {
                 cracked = false;
             }
-        }
-
-        private static float EaseOutCubic(float t)
-        {
-            t = Mathf.Clamp01(t);
-            float inv = 1f - t;
-            return 1f - inv * inv * inv;
         }
     }
 }

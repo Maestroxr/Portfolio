@@ -17,7 +17,6 @@ namespace Portfolio.Heroes.UI
     public class HeroesUI : GameUI
     {
         /// <summary>The key the manager keeps the level of the last saved scenario under, which Continue takes up.</summary>
-        public const string LastSaveKey = "Heroes.Save.Level";
 
         /// <summary>The pause menu's way back to the title screen, added to the shared menu by the scene builder.</summary>
         [SerializeField] private Button titleButton;

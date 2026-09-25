@@ -7,14 +7,14 @@ namespace Portfolio.MemoryCards.Tests
 {
     public class CampaignTest
     {
-        private readonly List<Object> created = new List<Object>();
+        private readonly TemporaryObjects objects = new TemporaryObjects();
         private MemoryCardsCampaign campaign;
         private MemoryCardsProgress progress;
 
         [SetUp]
         public void SetUp()
         {
-            campaign = Create<MemoryCardsCampaign>();
+            campaign = objects.Asset<MemoryCardsCampaign>();
             campaign.worlds = new[]
             {
                 new MemoryCardsCampaign.World { title = "Farm", starsRequired = 0 },
@@ -24,15 +24,15 @@ namespace Portfolio.MemoryCards.Tests
             campaign.endlessAfter = 2;
             for (int i = 0; i < 4; i++)
             {
-                MemoryCardsLevel level = Create<MemoryCardsLevel>();
+                MemoryCardsLevel level = objects.Asset<MemoryCardsLevel>();
                 level.world = i / 2;
                 campaign.LevelList.Add(level);
             }
-            MemoryCardsLevel endless = Create<MemoryCardsLevel>();
+            MemoryCardsLevel endless = objects.Asset<MemoryCardsLevel>();
             endless.kind = LevelKind.Endless;
             endless.world = 2;
             campaign.LevelList.Add(endless);
-            MemoryCardsLevel freePlay = Create<MemoryCardsLevel>();
+            MemoryCardsLevel freePlay = objects.Asset<MemoryCardsLevel>();
             freePlay.kind = LevelKind.FreePlay;
             freePlay.world = 2;
             campaign.LevelList.Add(freePlay);
@@ -42,18 +42,7 @@ namespace Portfolio.MemoryCards.Tests
         [TearDown]
         public void TearDown()
         {
-            foreach (Object item in created)
-            {
-                Object.DestroyImmediate(item);
-            }
-            created.Clear();
-        }
-
-        private T Create<T>() where T : ScriptableObject
-        {
-            T item = ScriptableObject.CreateInstance<T>();
-            created.Add(item);
-            return item;
+            objects.Dispose();
         }
 
         [Test]

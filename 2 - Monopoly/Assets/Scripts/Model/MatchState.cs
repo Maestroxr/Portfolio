@@ -210,28 +210,4 @@ namespace Portfolio.Monopoly
             return HasSpeed ? $"{a}+{b}+{speed}" : $"{a}+{b}";
         }
     }
-
-    public sealed class SystemRandom : IRandom
-    {
-        private readonly Random random;
-
-        public SystemRandom(int seed)
-        {
-            random = new Random(seed);
-        }
-
-        public SystemRandom() : this(Environment.TickCount)
-        {
-        }
-
-        public int Range(int min, int max)
-        {
-            return random.Next(min, max);
-        }
-
-        public double Value()
-        {
-            return random.NextDouble();
-        }
-    }
 }

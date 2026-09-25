@@ -237,7 +237,7 @@ namespace Portfolio.EndlessRunner
         {
             CoinClaims claims = manager.Claims;
             Note($"result: {manager.State}; " + string.Join(", ", manager.Racers.OrderBy(racer => racer.Place)
-                .Select(racer => $"{RaceStandings.Ordinal(racer.Place)} {racer.Name} {racer.Score} ({racer.Distance:0} m, {racer.Coins} coins)")));
+                .Select(racer => $"{Standings.Ordinal(racer.Place)} {racer.Name} {racer.Score} ({racer.Distance:0} m, {racer.Coins} coins)")));
             Note($"coins: counted {manager.Coins} here; the track holds {manager.track.LevelCoins}; all runners took {claims.SettledCoins} in {claims.SettledCount} pieces; "
                 + $"pending {claims.PendingCount}");
             foreach (Racer racer in manager.Racers)

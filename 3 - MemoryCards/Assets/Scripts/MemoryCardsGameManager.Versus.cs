@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
+using Gamebox.Online;
 using Gamebox;
 using UnityEngine;
 
@@ -618,13 +619,13 @@ namespace Portfolio.MemoryCards
             bool localWon = localSeat < 0 || winners.Exists(seat => seat.Seat == localSeat);
             var standings = new StringBuilder();
             List<VersusSeat> ranking = versus.Standings();
+            // Players with the same result share a place, the way the server ranks the room.
+            int[] places = Standings.Places(ranking, VersusMatch.SharePlace);
             for (int i = 0; i < ranking.Count; i++)
             {
                 VersusSeat seat = ranking[i];
-                string name = seat.Seat == localSeat ? $"{seat.Name} (you)" : seat.Name;
-                standings.Append(i > 0 ? "\n" : string.Empty)
-                    .Append($"{i + 1}.  <b>{name}</b>   {seat.Score.ToString("N0", CultureInfo.InvariantCulture)}")
-                    .Append($"   <size=70%>{seat.Sets} {(seat.Sets == 1 ? "set" : "sets")}</size>");
+                standings.Append(i > 0 ? "\n" : string.Empty).Append(Standings.Line(places[i], seat.Name, seat.Seat == localSeat,
+                    seat.Score.ToString("N0", CultureInfo.InvariantCulture), null, $"{seat.Sets} {(seat.Sets == 1 ? "set" : "sets")}"));
             }
             MemoryCardsLevel level = CardsLevel;
             int sets = 0;

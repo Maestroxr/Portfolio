@@ -95,11 +95,11 @@ namespace Portfolio.EndlessRunner
 
         public override void LoadSettings(IStorageStrategy storage, string prefix)
         {
-            ForwardSpeed = LoadFloat(storage, $"{prefix}ForwardSpeed", ForwardSpeed);
-            MaxSpeed = LoadFloat(storage, $"{prefix}MaxSpeed", MaxSpeed);
-            Acceleration = LoadFloat(storage, $"{prefix}Acceleration", Acceleration);
-            SideSpeed = LoadFloat(storage, $"{prefix}SideSpeed", SideSpeed);
-            JumpHeight = LoadFloat(storage, $"{prefix}JumpHeight", JumpHeight);
+            ForwardSpeed = storage.GetFloat($"{prefix}ForwardSpeed", ForwardSpeed);
+            MaxSpeed = storage.GetFloat($"{prefix}MaxSpeed", MaxSpeed);
+            Acceleration = storage.GetFloat($"{prefix}Acceleration", Acceleration);
+            SideSpeed = storage.GetFloat($"{prefix}SideSpeed", SideSpeed);
+            JumpHeight = storage.GetFloat($"{prefix}JumpHeight", JumpHeight);
             if (storage.DoesKeyExist($"{prefix}Hearts"))
             {
                 Hearts = storage.GetInt($"{prefix}Hearts");
@@ -119,12 +119,6 @@ namespace Portfolio.EndlessRunner
             SideSpeed = source.SideSpeed;
             JumpHeight = source.JumpHeight;
             Hearts = source.Hearts;
-        }
-
-
-        private static float LoadFloat(IStorageStrategy storage, string key, float fallback)
-        {
-            return storage.DoesKeyExist(key) ? storage.GetFloat(key) : fallback;
         }
     }
 }

@@ -95,16 +95,16 @@ namespace Portfolio.Monopoly
         public override void LoadSettings(IStorageStrategy storage, string prefix)
         {
             RuleSet r = Rules;
-            r.startingCash = ReadInt(storage, $"{prefix}.StartingCash", r.startingCash);
-            r.roundLimit = ReadInt(storage, $"{prefix}.RoundLimit", r.roundLimit);
-            r.dealtProperties = ReadInt(storage, $"{prefix}.DealtProperties", r.dealtProperties);
-            r.housesForHotel = ReadInt(storage, $"{prefix}.HousesForHotel", r.housesForHotel);
-            r.auctions = ReadBool(storage, $"{prefix}.Auctions", r.auctions);
-            r.speedDie = ReadBool(storage, $"{prefix}.SpeedDie", r.speedDie);
-            r.freeParkingJackpot = ReadBool(storage, $"{prefix}.Jackpot", r.freeParkingJackpot);
-            r.doubleSalaryOnGo = ReadBool(storage, $"{prefix}.DoubleGo", r.doubleSalaryOnGo);
-            r.noRentInJail = ReadBool(storage, $"{prefix}.NoRentInJail", r.noRentInJail);
-            r.partyCards = ReadBool(storage, $"{prefix}.PartyCards", r.partyCards);
+            r.startingCash = storage.GetInt($"{prefix}.StartingCash", r.startingCash);
+            r.roundLimit = storage.GetInt($"{prefix}.RoundLimit", r.roundLimit);
+            r.dealtProperties = storage.GetInt($"{prefix}.DealtProperties", r.dealtProperties);
+            r.housesForHotel = storage.GetInt($"{prefix}.HousesForHotel", r.housesForHotel);
+            r.auctions = storage.GetBool($"{prefix}.Auctions", r.auctions);
+            r.speedDie = storage.GetBool($"{prefix}.SpeedDie", r.speedDie);
+            r.freeParkingJackpot = storage.GetBool($"{prefix}.Jackpot", r.freeParkingJackpot);
+            r.doubleSalaryOnGo = storage.GetBool($"{prefix}.DoubleGo", r.doubleSalaryOnGo);
+            r.noRentInJail = storage.GetBool($"{prefix}.NoRentInJail", r.noRentInJail);
+            r.partyCards = storage.GetBool($"{prefix}.PartyCards", r.partyCards);
             if (storage.DoesKeyExist($"{prefix}.AnimationSpeed"))
             {
                 animationSpeed = storage.GetFloat($"{prefix}.AnimationSpeed");
@@ -125,14 +125,5 @@ namespace Portfolio.Monopoly
             botThinkTime = source.botThinkTime;
         }
 
-        private static int ReadInt(IStorageStrategy storage, string key, int fallback)
-        {
-            return storage.DoesKeyExist(key) ? storage.GetInt(key) : fallback;
-        }
-
-        private static bool ReadBool(IStorageStrategy storage, string key, bool fallback)
-        {
-            return storage.DoesKeyExist(key) ? storage.GetBool(key) : fallback;
-        }
     }
 }

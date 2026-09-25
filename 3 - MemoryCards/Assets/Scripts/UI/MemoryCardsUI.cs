@@ -1034,7 +1034,7 @@ namespace Portfolio.MemoryCards
                 float t = bannerTime / Mathf.Max(0.1f, bannerLength);
                 float appear = Mathf.Clamp01(bannerTime / 0.18f);
                 bannerGroup.alpha = t < 0.8f ? appear : Mathf.Clamp01(1f - (t - 0.8f) / 0.2f);
-                bannerGroup.transform.localScale = Vector3.one * Mathf.Lerp(1.6f, 1f, EaseOutBack(appear));
+                bannerGroup.transform.localScale = Vector3.one * Mathf.Lerp(1.6f, 1f, Tween.OutBack(appear));
                 if (t >= 1f)
                 {
                     bannerTime = -1f;
@@ -1058,7 +1058,7 @@ namespace Portfolio.MemoryCards
                 Popup popup = popups[i];
                 popup.age += dt;
                 float t = popup.age / popup.life;
-                popup.text.rectTransform.anchoredPosition = popup.start + new Vector2(0f, EaseOutCubic(t) * 55f);
+                popup.text.rectTransform.anchoredPosition = popup.start + new Vector2(0f, Tween.OutCubic(t) * 55f);
                 popup.text.alpha = t < 0.7f ? 1f : 1f - (t - 0.7f) / 0.3f;
                 popup.text.transform.localScale = Vector3.one * (t < 0.15f ? Mathf.Lerp(0.5f, 1.15f, t / 0.15f) : Mathf.Lerp(1.15f, 1f, (t - 0.15f) / 0.85f));
                 if (t >= 1f)
@@ -1100,7 +1100,7 @@ namespace Portfolio.MemoryCards
             if (resultPanel != null)
             {
                 float t = Mathf.Clamp01(resultsTime / 0.35f);
-                resultPanel.localScale = Vector3.one * Mathf.LerpUnclamped(0.6f, 1f, EaseOutBack(t));
+                resultPanel.localScale = Vector3.one * Mathf.LerpUnclamped(0.6f, 1f, Tween.OutBack(t));
             }
             while (starsPopped < resultStarCount && starsPopped < resultStars.Length && resultsTime > 0.55f + starsPopped * 0.38f)
             {
@@ -1119,7 +1119,7 @@ namespace Portfolio.MemoryCards
                     continue;
                 }
                 float age = resultsTime - (0.55f + i * 0.38f);
-                float pop = age < 0.3f ? Mathf.Lerp(1.8f, 1f, EaseOutBack(age / 0.3f)) : 1f;
+                float pop = age < 0.3f ? Mathf.Lerp(1.8f, 1f, Tween.OutBack(age / 0.3f)) : 1f;
                 resultStars[i].transform.localScale = Vector3.one * pop;
                 resultStars[i].transform.localRotation = Quaternion.Euler(0f, 0f, age < 0.3f ? (1f - age / 0.3f) * 40f : 0f);
             }
@@ -1127,20 +1127,6 @@ namespace Portfolio.MemoryCards
             {
                 resultsTime = -1f;
             }
-        }
-
-        private static float EaseOutBack(float t)
-        {
-            t = Mathf.Clamp01(t);
-            const float c1 = 1.70158f;
-            const float c3 = c1 + 1f;
-            return 1f + c3 * Mathf.Pow(t - 1f, 3f) + c1 * Mathf.Pow(t - 1f, 2f);
-        }
-
-        private static float EaseOutCubic(float t)
-        {
-            t = Mathf.Clamp01(t);
-            return 1f - Mathf.Pow(1f - t, 3f);
         }
 
         #endregion

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Text;
+using Gamebox.Lockstep;
 
 namespace Portfolio.Monopoly
 {
@@ -50,6 +50,9 @@ namespace Portfolio.Monopoly
     {
         private const char FieldSeparator = '|';
         private const char ListSeparator = ',';
+
+        /// <summary>No board has more spaces than this; a longer list is not a trade.</summary>
+        private const int MaxTradedSpaces = 64;
 
         public CommandKind kind;
         public int seat;
@@ -246,20 +249,16 @@ namespace Portfolio.Monopoly
                 case CommandKind.Unmortgage:
                 case CommandKind.AnswerTrade:
                 case CommandKind.SeatToComputer:
-                    return Number(argument);
+                    return PayloadText.Number(argument);
                 case CommandKind.ProposeTrade:
                     if (offer == null)
                     {
                         return "";
                     }
                     return new StringBuilder()
-                        .Append(Number(offer.to)).Append(FieldSeparator)
-                        .Append(Number(offer.giveCash)).Append(FieldSeparator)
-                        .Append(Number(offer.getCash)).Append(FieldSeparator)
-                        .Append(Number(offer.giveJailCards)).Append(FieldSeparator)
-                        .Append(Number(offer.getJailCards)).Append(FieldSeparator)
-                        .Append(string.Join(ListSeparator.ToString(), offer.giveSpaces.Select(Number))).Append(FieldSeparator)
-                        .Append(string.Join(ListSeparator.ToString(), offer.getSpaces.Select(Number)))
+                        .Append(PayloadText.Numbers(FieldSeparator, offer.to, offer.giveCash, offer.getCash, offer.giveJailCards, offer.getJailCards))
+                        .Append(FieldSeparator).Append(PayloadText.Numbers(ListSeparator, offer.giveSpaces))
+                        .Append(FieldSeparator).Append(PayloadText.Numbers(ListSeparator, offer.getSpaces))
                         .ToString();
                 default:
                     return "";
@@ -286,7 +285,7 @@ namespace Portfolio.Monopoly
                 case CommandKind.Unmortgage:
                 case CommandKind.AnswerTrade:
                 case CommandKind.SeatToComputer:
-                    return TryNumber(payload, out command.argument) ? command : null;
+                    return PayloadText.TryNumber(payload, out command.argument) ? command : null;
                 case CommandKind.ProposeTrade:
                     command.offer = ParseOffer(seat, payload);
                     return command.offer != null ? command : null;
@@ -300,45 +299,17 @@ namespace Portfolio.Monopoly
             string[] fields = payload.Split(FieldSeparator);
             var offer = new TradeOffer { from = from };
             if (fields.Length != 7
-                || !TryNumber(fields[0], out offer.to)
-                || !TryNumber(fields[1], out offer.giveCash)
-                || !TryNumber(fields[2], out offer.getCash)
-                || !TryNumber(fields[3], out offer.giveJailCards)
-                || !TryNumber(fields[4], out offer.getJailCards)
-                || !TryNumbers(fields[5], offer.giveSpaces)
-                || !TryNumbers(fields[6], offer.getSpaces))
+                || !PayloadText.TryNumber(fields[0], out offer.to)
+                || !PayloadText.TryNumber(fields[1], out offer.giveCash)
+                || !PayloadText.TryNumber(fields[2], out offer.getCash)
+                || !PayloadText.TryNumber(fields[3], out offer.giveJailCards)
+                || !PayloadText.TryNumber(fields[4], out offer.getJailCards)
+                || !PayloadText.TryNumbers(fields[5], ListSeparator, offer.giveSpaces, MaxTradedSpaces)
+                || !PayloadText.TryNumbers(fields[6], ListSeparator, offer.getSpaces, MaxTradedSpaces))
             {
                 return null;
             }
             return offer;
-        }
-
-        private static string Number(int value)
-        {
-            return value.ToString(CultureInfo.InvariantCulture);
-        }
-
-        private static bool TryNumber(string text, out int value)
-        {
-            return int.TryParse(text, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out value);
-        }
-
-        private static bool TryNumbers(string text, List<int> values)
-        {
-            if (text.Length == 0)
-            {
-                return true;
-            }
-            foreach (string part in text.Split(ListSeparator))
-            {
-                // No board has more spaces than this; a longer list is not a trade.
-                if (!TryNumber(part, out int value) || values.Count >= 64)
-                {
-                    return false;
-                }
-                values.Add(value);
-            }
-            return true;
         }
 
         public override string ToString()

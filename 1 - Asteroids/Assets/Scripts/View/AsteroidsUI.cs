@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Gamebox.Online;
 using Gamebox;
 using Gamebox.UI;
 using TMPro;
@@ -813,7 +814,7 @@ namespace Portfolio.Asteroids
                 }
                 if (slot.nameText != null)
                 {
-                    slot.nameText.text = pilot.Local ? $"{pilot.Name} (you)" : pilot.Name;
+                    slot.nameText.text = Standings.Who(pilot.Name, pilot.Local);
                     slot.nameText.color = pilot.Flying ? Color.white : new Color(1f, 1f, 1f, 0.45f);
                 }
                 if (slot.scoreText != null)
@@ -960,7 +961,7 @@ namespace Portfolio.Asteroids
             {
                 countdownTime += deltaTime;
                 float t = countdownTime / 0.8f;
-                countdownText.transform.localScale = Vector3.one * Mathf.Lerp(1.8f, 1f, EaseOut(Mathf.Clamp01(t * 2.5f)));
+                countdownText.transform.localScale = Vector3.one * Mathf.Lerp(1.8f, 1f, Tween.OutCubic(Mathf.Clamp01(t * 2.5f)));
                 countdownText.alpha = t < 0.6f ? 1f : Mathf.Clamp01(1f - (t - 0.6f) / 0.4f);
                 if (t >= 1f)
                 {
@@ -974,7 +975,7 @@ namespace Portfolio.Asteroids
                 announceTime += deltaTime;
                 float t = announceTime;
                 announceGroup.alpha = t < 0.2f ? t / 0.2f : t < 1.8f ? 1f : Mathf.Clamp01(1f - (t - 1.8f) / 0.5f);
-                announceGroup.transform.localScale = Vector3.one * (t < 0.2f ? Mathf.Lerp(1.25f, 1f, EaseOut(t / 0.2f)) : 1f);
+                announceGroup.transform.localScale = Vector3.one * (t < 0.2f ? Mathf.Lerp(1.25f, 1f, Tween.OutCubic(t / 0.2f)) : 1f);
                 if (t > 2.3f)
                 {
                     announceTime = -1f;
@@ -998,7 +999,7 @@ namespace Portfolio.Asteroids
             {
                 toastTime += deltaTime;
                 float t = toastTime / 2f;
-                toastText.rectTransform.anchoredPosition = new Vector2(0f, -210f - EaseOut(Mathf.Clamp01(t * 3f)) * 20f);
+                toastText.rectTransform.anchoredPosition = new Vector2(0f, -210f - Tween.OutCubic(Mathf.Clamp01(t * 3f)) * 20f);
                 toastText.alpha = t < 0.75f ? Mathf.Clamp01(toastTime * 6f) : Mathf.Clamp01(1f - (t - 0.75f) / 0.25f);
                 if (t >= 1f)
                 {
@@ -1091,20 +1092,13 @@ namespace Portfolio.Asteroids
                     continue;
                 }
                 float age = resultsTime - (0.6f + i * 0.45f);
-                float pop = age < 0.25f ? Mathf.Lerp(1.7f, 1f, EaseOut(age / 0.25f)) : 1f;
+                float pop = age < 0.25f ? Mathf.Lerp(1.7f, 1f, Tween.OutCubic(age / 0.25f)) : 1f;
                 resultStars[i].transform.localScale = Vector3.one * pop;
             }
             if (resultsTime > 3f)
             {
                 resultsTime = -1f;
             }
-        }
-
-
-        private static float EaseOut(float t)
-        {
-            t = Mathf.Clamp01(t);
-            return 1f - (1f - t) * (1f - t) * (1f - t);
         }
 
         #endregion

@@ -1,4 +1,5 @@
 using Gamebox.Editor;
+using Gamebox.UI;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -158,8 +159,14 @@ namespace Portfolio.Monopoly.EditorTools
                 TextMeshProUGUI text = Text(content, "Label", label, fontSize, ink, Heavy);
                 text.textWrappingMode = TextWrappingModes.NoWrap;
             }
-            rect.gameObject.AddComponent<PressScale>();
+            Pressable(rect);
             return button;
+        }
+
+        /// <summary>Makes a control grow a touch under the pointer and give a little under a press, the Monopoly way.</summary>
+        public static PressFeedback Pressable(RectTransform rect)
+        {
+            return PressFeedback.Attach(rect.gameObject, 1.03f, 0.93f);
         }
 
         public static TextMeshProUGUI LabelOf(Button button)
@@ -193,7 +200,7 @@ namespace Portfolio.Monopoly.EditorTools
             Stretch(glyph.rectTransform);
             var button = rect.gameObject.AddComponent<Button>();
             button.targetGraphic = face;
-            rect.gameObject.AddComponent<PressScale>();
+            Pressable(rect);
             return button;
         }
 

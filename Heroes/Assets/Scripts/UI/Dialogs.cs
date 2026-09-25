@@ -139,7 +139,7 @@ namespace Portfolio.Heroes.UI
             while (t < 1f)
             {
                 t = Mathf.MoveTowards(t, 1f, Time.unscaledDeltaTime / 0.2f);
-                float eased = 1f - (1f - t) * (1f - t) * (1f - t);
+                float eased = Gamebox.Tween.OutCubic(t);
                 group.alpha = eased;
                 Window.localScale = Vector3.one * Mathf.Lerp(0.94f, 1f, eased);
                 yield return null;

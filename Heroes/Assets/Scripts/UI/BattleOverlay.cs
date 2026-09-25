@@ -224,7 +224,7 @@ namespace Portfolio.Heroes.UI
         {
             float t = Mathf.Clamp01((Time.unscaledTime - shownAt) / 0.2f);
             group.alpha = t;
-            window.localScale = Vector3.one * Mathf.Lerp(0.94f, 1f, 1f - (1f - t) * (1f - t));
+            window.localScale = Vector3.one * Mathf.Lerp(0.94f, 1f, Gamebox.Tween.OutQuad(t));
             if (Time.frameCount > askedOnFrame &&
                 (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || key != KeyCode.None && Input.GetKeyDown(key)))
             {

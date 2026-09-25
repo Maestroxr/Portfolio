@@ -90,7 +90,7 @@ namespace Portfolio.Asteroids
         /// <summary>The options of a room: the ships the host picked, and how many missions there are for the server to check the level against.</summary>
         public override string ComposeOptions(int level, string picked)
         {
-            int lives = CoopRules.Lives(RoomOptions.Value(picked, CoopRules.LivesKey));
+            int lives = CoopRules.Lives(picked);
             return RoomOptions.Write(CoopRules.LivesKey, lives, CoopRules.MissionsKey, Asteroids != null ? Asteroids.LevelCount : 1);
         }
 
@@ -100,7 +100,7 @@ namespace Portfolio.Asteroids
             AsteroidsGameManager manager = Asteroids;
             AsteroidsLevel mission = manager != null && manager.AsteroidsCampaign != null ? manager.AsteroidsCampaign.Mission(room.Level) : null;
             string title = mission != null ? mission.Title : $"Mission {room.Level + 1}";
-            int lives = CoopRules.Lives(room.Option(CoopRules.LivesKey));
+            int lives = CoopRules.Lives(room.Options);
             return $"{title}, {lives} {(lives == 1 ? "ship" : "ships")} each";
         }
 
@@ -389,16 +389,22 @@ namespace Portfolio.Asteroids
         {
             var members = new List<RoomMemberInfo>(Server.Members);
             long Score(RoomMemberInfo member) => Server.IsLocal(member) && Asteroids != null && member.Place == 0 ? Asteroids.Scoring.Score : member.Score;
-            members.Sort((a, b) => a.Place != b.Place && a.Place > 0 && b.Place > 0 ? a.Place.CompareTo(b.Place) : Score(b).CompareTo(Score(a)));
+            int[] places;
+            if (members.TrueForAll(member => member.Place > 0))
+            {
+                Standings.SortByPlace(members, member => member.Place, member => member.Seat);
+                places = members.ConvertAll(member => (int)member.Place).ToArray();
+            }
+            else
+            {
+                places = Standings.Rank(members, Score, member => member.Seat);
+            }
             var text = new StringBuilder();
             for (int i = 0; i < members.Count; i++)
             {
                 RoomMemberInfo member = members[i];
-                string color = ColorUtility.ToHtmlStringRGB(CoopRules.SeatColor(member.Seat));
-                string who = Server.IsLocal(member) ? $"{NameOf(member)} (you)" : NameOf(member);
-                uint place = member.Place > 0 ? member.Place : (uint)i + 1;
-                text.Append(i > 0 ? "\n" : string.Empty)
-                    .Append($"{place}.  <color=#{color}><b>{who}</b></color>   {Score(member).ToString("N0", CultureInfo.InvariantCulture)}");
+                text.Append(i > 0 ? "\n" : string.Empty).Append(Standings.Line(places[i], NameOf(member), Server.IsLocal(member),
+                    Score(member).ToString("N0", CultureInfo.InvariantCulture), CoopRules.SeatColor(member.Seat)));
             }
             return text.ToString();
         }

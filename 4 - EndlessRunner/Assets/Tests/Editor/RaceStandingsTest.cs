@@ -46,19 +46,5 @@ namespace Portfolio.EndlessRunner.Tests
             Assert.AreEqual(419 + 570, RaceStandings.Score(419.9f, 57, 10));
             Assert.AreEqual(30, RaceStandings.Score(-2.5f, 3, 10), "the fourth runner starts behind the line");
         }
-
-        [Test]
-        public void PlacesAreSpelledAsOrdinals()
-        {
-            Assert.AreEqual("1st", RaceStandings.Ordinal(1));
-            Assert.AreEqual("2nd", RaceStandings.Ordinal(2));
-            Assert.AreEqual("3rd", RaceStandings.Ordinal(3));
-            Assert.AreEqual("4th", RaceStandings.Ordinal(4));
-            Assert.AreEqual("11th", RaceStandings.Ordinal(11));
-            Assert.AreEqual("12th", RaceStandings.Ordinal(12));
-            Assert.AreEqual("13th", RaceStandings.Ordinal(13));
-            Assert.AreEqual("21st", RaceStandings.Ordinal(21));
-            Assert.AreEqual("102nd", RaceStandings.Ordinal(102));
-        }
     }
 }

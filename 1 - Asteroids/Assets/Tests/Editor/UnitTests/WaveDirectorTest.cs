@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Gamebox;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -49,33 +50,27 @@ namespace Portfolio.Asteroids.Tests
             }
         }
 
-        private readonly List<Object> created = new List<Object>();
+        private readonly TemporaryObjects objects = new TemporaryObjects();
 
         [TearDown]
         public void TearDown()
         {
-            foreach (Object item in created)
-            {
-                Object.DestroyImmediate(item);
-            }
-            created.Clear();
+            objects.Dispose();
         }
 
         private AsteroidsLevel Level(LevelObjective objective, params WaveSpec[] waves)
         {
-            var level = ScriptableObject.CreateInstance<AsteroidsLevel>();
+            AsteroidsLevel level = objects.Asset<AsteroidsLevel>();
             level.objective = objective;
             level.waves = waves;
-            created.Add(level);
             return level;
         }
 
         private AsteroidSettings Settings(bool trickle)
         {
-            var settings = ScriptableObject.CreateInstance<AsteroidSettings>();
+            AsteroidSettings settings = objects.Asset<AsteroidSettings>();
             settings.SpawnAsteroid = trickle;
             settings.AsteroidSpawnRate = 2f;
-            created.Add(settings);
             return settings;
         }
 
@@ -140,8 +135,7 @@ namespace Portfolio.Asteroids.Tests
         public void BossMissionSummonsTheBossAfterTheLastWave()
         {
             AsteroidsLevel level = Level(LevelObjective.Boss, new WaveSpec { rocks = 1 });
-            level.boss = new GameObject("Boss").AddComponent<Boss>();
-            created.Add(level.boss.gameObject);
+            level.boss = objects.Component<Boss>("Boss");
             var spawner = new FakeSpawner();
             var director = new WaveDirector(level, Settings(false), spawner, new System.Random(3));
             director.Begin(1, true);

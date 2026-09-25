@@ -588,7 +588,7 @@ namespace Portfolio.Monopoly
         public override bool DoesSaveGameExist()
         {
             IStorageStrategy disk = Disk;
-            return disk != null && disk.DoesKeyExist(SavePrefix + "Exists") && disk.GetBool(SavePrefix + "Exists") && disk.DoesKeyExist(SavePrefix + "Data");
+            return disk != null && disk.DoesKeyExist(SaveKey("Exists")) && disk.GetBool(SaveKey("Exists")) && disk.DoesKeyExist(SaveKey("Data"));
         }
 
         public override void SaveGame()
@@ -610,18 +610,10 @@ namespace Portfolio.Monopoly
                 return;
             }
             var data = new SaveData { match = Match, setup = Setup, mode = LevelIndex };
-            disk.SetString(SavePrefix + "Data", JsonUtility.ToJson(data));
-            disk.SetBool(SavePrefix + "Exists", true);
-            try
+            disk.SetString(SaveKey("Data"), JsonUtility.ToJson(data));
+            disk.SetBool(SaveKey("Exists"), true);
+            if (!PersistSavedGame(silent))
             {
-                disk.Persist();
-            }
-            catch (NotImplementedException notImplemented)
-            {
-                if (!silent)
-                {
-                    UI?.UpdateError($"Cannot save the game: {notImplemented.Message}");
-                }
                 return;
             }
             UI?.EnableLoad();
@@ -638,19 +630,13 @@ namespace Portfolio.Monopoly
             {
                 return;
             }
-            if (disk.DoesKeyExist(SavePrefix + "Data"))
+            if (disk.DoesKeyExist(SaveKey("Data")))
             {
-                disk.DeleteByKey(SavePrefix + "Data");
+                disk.DeleteByKey(SaveKey("Data"));
             }
-            disk.SetBool(SavePrefix + "Exists", false);
-            try
-            {
-                disk.Persist();
-            }
-            catch (NotImplementedException)
-            {
-                // Nothing to clear on a transient store.
-            }
+            disk.SetBool(SaveKey("Exists"), false);
+            // Nothing to clear on a transient store.
+            disk.TryPersist();
         }
 
         public override void LoadGame()
@@ -664,7 +650,7 @@ namespace Portfolio.Monopoly
             SaveData data;
             try
             {
-                data = JsonUtility.FromJson<SaveData>(disk.GetString(SavePrefix + "Data"));
+                data = JsonUtility.FromJson<SaveData>(disk.GetString(SaveKey("Data")));
             }
             catch (ArgumentException exception)
             {
