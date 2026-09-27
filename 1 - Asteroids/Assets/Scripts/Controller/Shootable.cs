@@ -33,6 +33,7 @@ namespace Portfolio.Asteroids
         private float ramCooldown;
         private Vector3 restScale = Vector3.one;
         private bool flashing;
+        private float baseMaxHealth = -1f;
 
         /// <summary>Hull points left; set directly only when restoring a saved game.</summary>
         public float Health { get; protected internal set; }
@@ -45,7 +46,8 @@ namespace Portfolio.Asteroids
 
         public virtual int Score => score;
 
-        public virtual float ContactDamage => contactDamage;
+        /// <summary>Hull damage the ship takes when it flies into this; nothing for what stands on the ground (strike).</summary>
+        public virtual float ContactDamage => altitude == Altitude.Ground ? 0f : contactDamage;
 
         public bool Invulnerable
         {
@@ -61,6 +63,20 @@ namespace Portfolio.Asteroids
 
         /// <summary>Whether the current wave waits for this to be destroyed.</summary>
         public bool CountsForWave { get; set; }
+
+
+        /// <summary>
+        /// Sets the hull to <paramref name="factor"/> times the prefab's (a strike unit's toughness, a boss's difficulty and
+        /// co-op scaling). Call it before the body is added to the field; the prefab's value is kept, so factors never pile up.
+        /// </summary>
+        internal void ScaleHealth(float factor)
+        {
+            if (baseMaxHealth < 0f)
+            {
+                baseMaxHealth = maxHealth;
+            }
+            maxHealth = baseMaxHealth * Mathf.Max(0.01f, factor);
+        }
 
 
         public override void OnSpawned()
@@ -211,12 +227,35 @@ namespace Portfolio.Asteroids
         /// </summary>
         public virtual void OnRammed(AsteroidsPlayer player, Vector2 direction, bool dashing)
         {
+            if (Field != null && Field.Playground != null && !Field.Playground.Wraps)
+            {
+                // Strike: the field paces the rams (every StrikeRules.RamInterval while they overlap); each one hurts.
+                TakeHit(new DamageInfo(StrikeRules.RamUnitDamage, direction, Position - direction * radius, DamageSource.Collision, true)
+                    { Seat = SeatOf(player) });
+                return;
+            }
             if (ramCooldown > 0f)
             {
                 return;
             }
             ramCooldown = 0.3f;
             TakeHit(new DamageInfo(dashing ? 3f : 2f, direction, Position - direction * radius, DamageSource.Collision, true) { Seat = SeatOf(player) });
+        }
+
+
+        /// <summary>
+        /// Strike ramming: true when the local ship may ram this again now (at most once every <paramref name="interval"/>
+        /// seconds of world time while they overlap), and the next turn starts.
+        /// </summary>
+        internal bool TakeRamTurn(float interval)
+        {
+            if (ramCooldown > 0f)
+            {
+                return false;
+            }
+            // What the last frame overshot counts toward the next turn, so the pace does not follow the frame rate.
+            ramCooldown = interval + Mathf.Clamp(ramCooldown, -interval * 0.5f, 0f);
+            return true;
         }
 
 

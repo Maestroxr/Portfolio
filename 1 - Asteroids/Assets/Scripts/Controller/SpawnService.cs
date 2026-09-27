@@ -15,7 +15,7 @@ namespace Portfolio.Asteroids
     /// clients use it to show what the simulator announces: <see cref="SpawnPuppet"/> takes the same prefab from the same
     /// pool, and <see cref="FireGhostShot"/> shows the shots of the other pilots.
     /// </summary>
-    public class SpawnService : MonoBehaviour, IWaveSpawner
+    public partial class SpawnService : MonoBehaviour, IWaveSpawner
     {
         private struct PendingComet
         {
@@ -30,7 +30,7 @@ namespace Portfolio.Asteroids
         [Tooltip("One pool per weapon, in WeaponType order.")]
         [SerializeField] internal ShotPool[] playerShotPools = new ShotPool[0];
         [SerializeField] internal ShotPool droneShotPool;
-        [Tooltip("One pool per enemy projectile, in EnemyShotKind order.")]
+        [Tooltip("One pool per enemy projectile, in EnemyShotKind order (the strike kinds 5 to 9 included).")]
         [SerializeField] internal ShotPool[] enemyShotPools = new ShotPool[0];
         [SerializeField] internal ExplodablePool minePool;
         [SerializeField] internal ExplodablePool bombPool;
@@ -153,6 +153,7 @@ namespace Portfolio.Asteroids
             PodLoot = level != null ? level.PodLoot : null;
             ScoutChance = level != null ? Mathf.Clamp01(0.15f + level.Sector * 0.18f) : 0.3f;
             pendingComets.Clear();
+            ConfigureStrike(level);
         }
 
 
@@ -315,19 +316,21 @@ namespace Portfolio.Asteroids
         public Shot FireGhostShot(byte kind, int level, Vector2 position, Vector2 velocity, float lifetime)
         {
             bool drone = kind == BodyCodec.DroneShot;
-            ShotPool pool = drone ? droneShotPool : kind < playerShotPools.Length ? playerShotPools[kind] : null;
+            ShotPool strikePool = StrikeGhostPool(kind);
+            bool strike = strikePool != null;
+            ShotPool pool = drone ? droneShotPool : strike ? strikePool : kind < playerShotPools.Length ? playerShotPools[kind] : null;
             var shot = Deploy(pool) as Shot;
             if (shot == null)
             {
                 return null;
             }
-            var type = drone ? WeaponType.Blaster : (WeaponType)kind;
+            var type = drone || strike ? WeaponType.Blaster : (WeaponType)kind;
             shot.Position = position;
             shot.Velocity = velocity;
             shot.Lifetime = Mathf.Max(0.05f, lifetime);
             shot.Damage = 0f;
-            shot.Pierce = drone ? 1 : WeaponRules.Pierce(type, level);
-            shot.BlastRadius = drone ? 0f : WeaponRules.BlastRadius(type);
+            shot.Pierce = drone || strike ? 1 : WeaponRules.Pierce(type, level);
+            shot.BlastRadius = drone || strike ? 0f : WeaponRules.BlastRadius(type);
             shot.IsGhost = true;
             field.Add(shot);
             return shot;
@@ -340,6 +343,10 @@ namespace Portfolio.Asteroids
             var shot = Deploy(pool) as Shot;
             if (shot == null)
             {
+                if (kind >= EnemyShotKind.Flak)
+                {
+                    WarnOnce($"no {kind} enemy shot to fire (its pool is {(pool == null ? "missing" : "empty")}).");
+                }
                 return null;
             }
             shot.Position = position;
@@ -387,6 +394,10 @@ namespace Portfolio.Asteroids
             var reward = Deploy(pool) as Reward;
             if (reward == null)
             {
+                if (prefab is StrikeReward)
+                {
+                    WarnOnce($"no {prefab.name} pickup to drop (its pool is empty).");
+                }
                 return null;
             }
             reward.Position = position;
@@ -601,7 +612,9 @@ namespace Portfolio.Asteroids
             Boss boss = Instantiate(prefab, bossParent != null ? bossParent : transform);
             boss.name = prefab.name;
             boss.NetVariant = CatalogIndex(prefab);
+            ScaleBoss(boss);
             field.Add(boss);
+            (boss as StrikeBoss)?.AttachParts();
             boss.CountsForWave = true;
             boss.Loot = PodLoot;
             boss.LootChance = 1f;
@@ -685,7 +698,7 @@ namespace Portfolio.Asteroids
                     variant = reward.NetVariant;
                     return variant >= 0;
                 default:
-                    return false;
+                    return DescribeStrike(body, ref kind, ref variant);
             }
         }
 
@@ -749,12 +762,13 @@ namespace Portfolio.Asteroids
                     if (boss != null)
                     {
                         boss.name = prefab.name;
+                        ScaleBoss(boss);
                     }
                     body = boss;
                     break;
                 }
                 default:
-                    body = null;
+                    body = SpawnStrikePuppet(kind, variant);
                     break;
             }
             if (body == null)
@@ -764,6 +778,7 @@ namespace Portfolio.Asteroids
             body.IsPuppet = true;
             body.NetVariant = variant;
             field.Add(body);
+            (body as StrikeBoss)?.AttachParts();
             if (body is GravityWell && lifetime > 0f)
             {
                 // A black hole closes as its time runs out, which shows.

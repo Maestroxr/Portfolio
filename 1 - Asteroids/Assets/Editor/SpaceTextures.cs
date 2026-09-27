@@ -8,7 +8,7 @@ namespace Portfolio.Asteroids.EditorTools
     /// and lava cracks for the rocks, planet surfaces, a ring system, the accretion disk of a black hole and the
     /// particle sprites. Written as PNG files by the art builder.
     /// </summary>
-    internal static class SpaceTextures
+    internal static partial class SpaceTextures
     {
         // ------------------------------------------------------------------ noise
 

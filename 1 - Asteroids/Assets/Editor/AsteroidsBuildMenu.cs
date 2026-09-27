@@ -23,18 +23,64 @@ namespace Portfolio.Asteroids.EditorTools
             }
             try
             {
-                AsteroidsArtBuilder.BuildAll();
-                AsteroidsContentBuilder.BuildHulls();
-                AsteroidsPrefabBuilder.BuildAll();
-                AsteroidsContentBuilder.BuildAll();
-                AsteroidsSceneBuilder.Build();
-                AssetDatabase.SaveAssets();
-                Debug.Log($"Asteroids built under {AsteroidsAssets.Root}.");
+                BuildSteps();
             }
             finally
             {
                 EditorUtility.ClearProgressBar();
             }
+        }
+
+        /// <summary>
+        /// Batch mode (<c>-executeMethod</c>): the steps of Build Everything without the question about unsaved scenes. An
+        /// exception, or a build problem (<see cref="AsteroidsAssets.Problems"/>: an invalid strike level, a missing strike
+        /// prefab), is logged and ends the editor with exit code 1.
+        /// </summary>
+        public static void BuildEverythingBatch()
+        {
+            try
+            {
+                BuildSteps();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+                EditorUtility.ClearProgressBar();
+                EditorApplication.Exit(1);
+                return;
+            }
+            EditorUtility.ClearProgressBar();
+            if (AsteroidsAssets.Problems.Count > 0)
+            {
+                EditorApplication.Exit(1);
+            }
+        }
+
+        private static void BuildSteps()
+        {
+            AsteroidsAssets.Problems.Clear();
+            AsteroidsArtBuilder.BuildAll();
+            AsteroidsContentBuilder.BuildHulls();
+            AsteroidsPrefabBuilder.BuildAll();
+            AsteroidsContentBuilder.BuildAll();
+            AsteroidsSceneBuilder.Build();
+            AssetDatabase.SaveAssets();
+            if (!ReportProblems())
+            {
+                Debug.Log($"Asteroids built under {AsteroidsAssets.Root}.");
+            }
+        }
+
+        /// <summary>Logs the build's problems as one error; whether there were any.</summary>
+        private static bool ReportProblems()
+        {
+            if (AsteroidsAssets.Problems.Count == 0)
+            {
+                return false;
+            }
+            Debug.LogError($"Asteroids built under {AsteroidsAssets.Root} with {AsteroidsAssets.Problems.Count} problems:\n  " +
+                string.Join("\n  ", AsteroidsAssets.Problems));
+            return true;
         }
 
         [MenuItem("Asteroids/Rebuild Art", priority = 20)]
@@ -53,6 +99,7 @@ namespace Portfolio.Asteroids.EditorTools
         [MenuItem("Asteroids/Rebuild Prefabs", priority = 21)]
         public static void RebuildPrefabs()
         {
+            AsteroidsAssets.Problems.Clear();
             try
             {
                 AsteroidsContentBuilder.BuildHulls();
@@ -62,11 +109,13 @@ namespace Portfolio.Asteroids.EditorTools
             {
                 EditorUtility.ClearProgressBar();
             }
+            ReportProblems();
         }
 
         [MenuItem("Asteroids/Rebuild Campaign", priority = 22)]
         public static void RebuildContent()
         {
+            AsteroidsAssets.Problems.Clear();
             try
             {
                 AsteroidsContentBuilder.BuildAll();
@@ -75,6 +124,7 @@ namespace Portfolio.Asteroids.EditorTools
             {
                 EditorUtility.ClearProgressBar();
             }
+            ReportProblems();
         }
 
         [MenuItem("Asteroids/Rebuild Scene", priority = 23)]
@@ -82,7 +132,9 @@ namespace Portfolio.Asteroids.EditorTools
         {
             if (EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
             {
+                AsteroidsAssets.Problems.Clear();
                 AsteroidsSceneBuilder.Build();
+                ReportProblems();
             }
         }
 
@@ -150,6 +202,26 @@ namespace Portfolio.Asteroids.EditorTools
             var progress = new AsteroidsProgress(new PlayerPrefsStrategy(), GameType.Asteroids);
             progress.ResetAll(campaign != null ? campaign.Count : 20);
             Debug.Log("Asteroids: progress reset.");
+        }
+
+        /// <summary>Adds 2,000,000 money to the strike pilot in this editor's saved progress (for trying the Supply Room).</summary>
+        [MenuItem("Asteroids/Debug/Strike: Add 2,000,000", priority = 110)]
+        public static void AddStrikeMoney()
+        {
+            var progress = new AsteroidsProgress(new PlayerPrefsStrategy(), GameType.Asteroids);
+            StrikeLoadout pilot = progress.LoadPilot();
+            pilot.Money = StrikeRules.AddToWallet(pilot.Money, 2000000);
+            progress.SavePilot(pilot);
+            Debug.Log($"Asteroids: the strike pilot has {pilot.Money:N0} money.");
+        }
+
+        /// <summary>Forgets the strike pilot in this editor's saved progress: the next strike mission starts with a new pilot.</summary>
+        [MenuItem("Asteroids/Debug/Strike: Reset Pilot", priority = 111)]
+        public static void ResetStrikePilot()
+        {
+            var progress = new AsteroidsProgress(new PlayerPrefsStrategy(), GameType.Asteroids);
+            progress.ResetPilot();
+            Debug.Log("Asteroids: the strike pilot was reset.");
         }
     }
 }

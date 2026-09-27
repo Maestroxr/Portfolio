@@ -17,7 +17,7 @@ namespace Portfolio.Asteroids.EditorTools
     /// them, the post-processing profile and the launcher entry. The numbers live here, so hand edits to those assets are
     /// overwritten by a rebuild.
     /// </summary>
-    internal static class AsteroidsContentBuilder
+    internal static partial class AsteroidsContentBuilder
     {
         public const string CampaignPath = "Config/Campaign/AsteroidsCampaign.asset";
 
@@ -547,6 +547,16 @@ namespace Portfolio.Asteroids.EditorTools
             });
             levels.Add(endless);
 
+            List<AsteroidsCampaign.Sector> sectors = Sectors.Select(sector => new AsteroidsCampaign.Sector
+            {
+                title = sector.title,
+                theme = Theme(sector.theme),
+                starsRequired = sector.stars,
+                mode = MissionMode.Field
+            }).ToList();
+            // The strike missions and sectors come after the field ones, so no field index moves.
+            AppendStrikeContent(levels, sectors);
+
             AsteroidsAssets.SaveScriptable<AsteroidsCampaign>(CampaignPath, campaign =>
             {
                 AsteroidsAssets.Set(campaign, "<LevelList>k__BackingField", p =>
@@ -557,15 +567,16 @@ namespace Portfolio.Asteroids.EditorTools
                         p.GetArrayElementAtIndex(i).objectReferenceValue = levels[i];
                     }
                 });
-                campaign.sectors = Sectors.Select(sector => new AsteroidsCampaign.Sector
-                {
-                    title = sector.title,
-                    theme = Theme(sector.theme),
-                    starsRequired = sector.stars
-                }).ToArray();
+                campaign.sectors = sectors.ToArray();
                 campaign.endlessAfter = 3;
             });
         }
+
+        /// <summary>
+        /// Appends the strike missions (after the endless one) and the strike sectors (after the field sectors), with their
+        /// themes and loot (AsteroidsContentBuilder.Strike.cs).
+        /// </summary>
+        static partial void AppendStrikeContent(List<GameLevel> levels, List<AsteroidsCampaign.Sector> sectors);
 
         private static AsteroidSettings BuildSettings(string path, float speed, float spawnRate, float explosion)
         {
@@ -647,9 +658,9 @@ namespace Portfolio.Asteroids.EditorTools
             AsteroidsAssets.Set(definition, "displayName", p => p.stringValue = "Asteroids");
             AsteroidsAssets.Set(definition, "description", p => p.stringValue =
                 "Fly through four sectors of space: split asteroids, dodge mines, comets and black holes, fight saucers, wasps and " +
-                "four bosses, and upgrade your guns. Twelve missions with three stars each, plus an endless mode.");
+                "four bosses, and upgrade your guns. Then take the war to the planets in SHADOW STRIKE: nine missions of vertical " +
+                "scrolling air and ground combat, a Supply Room to spend your earnings in, and nine bosses. Co-op for up to four pilots.");
             AsteroidsAssets.SetObject(definition, "icon", AsteroidsArtBuilder.Icon("GameIcon"));
-            EditorUtility.SetDirty(definition);
         }
     }
 }

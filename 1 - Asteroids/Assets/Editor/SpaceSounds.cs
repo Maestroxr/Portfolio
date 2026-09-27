@@ -9,7 +9,7 @@ namespace Portfolio.Asteroids.EditorTools
     /// slides, vibrato, FM and a one-pole low-pass, filtered noise, drums and a feedback echo. Everything is mono
     /// 22 kHz, 16-bit PCM written as WAV files. Loop buffers wrap notes that ring past their end, so loops are seamless.
     /// </summary>
-    internal static class SpaceSounds
+    internal static partial class SpaceSounds
     {
         public const int SampleRate = 22050;
 

@@ -9,7 +9,7 @@ namespace Portfolio.Asteroids.EditorTools
     /// flat meshes of flames and rings. Models are built with +Y toward the camera and +Z as their nose; prefabs turn
     /// them with a -90 degree rotation about X so the nose points up the screen.
     /// </summary>
-    internal static class SpaceModels
+    internal static partial class SpaceModels
     {
         /// <summary>A flying saucer: lens-shaped hull, rim band, glass dome, underside glow. Its rim lights are <see cref="SaucerLights"/>.</summary>
         public static MeshBuilder Saucer(bool scout)

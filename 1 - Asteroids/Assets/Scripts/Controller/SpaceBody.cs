@@ -18,6 +18,8 @@ namespace Portfolio.Asteroids
         [SerializeField] internal bool pulledByGravity = true;
         [Tooltip("Seconds before the body removes itself; zero keeps it until something else removes it.")]
         [SerializeField] internal float lifetime;
+        [Tooltip("The layer of the strike mode the body is on: air (can be rammed, casts a shadow) or ground (flown over).")]
+        [SerializeField] internal Altitude altitude = Altitude.Air;
 
         public Vector2 Velocity;
 
@@ -39,6 +41,12 @@ namespace Portfolio.Asteroids
         /// <summary>The seat of the pilot on another device who destroyed or collected the body; null for the local ship or nobody.</summary>
         internal int? ExitSeat { get; set; }
 
+        /// <summary>
+        /// Whether a pilot destroyed the body: with no <see cref="ExitSeat"/>, the pilot of this device. The field notes it
+        /// when it hears of the kill.
+        /// </summary>
+        internal bool ExitByPlayer { get; set; }
+
         /// <summary>What the spawner knows about the body that the body cannot tell itself: its pool among several of a kind.</summary>
         internal int NetVariant { get; set; }
 
@@ -52,6 +60,12 @@ namespace Portfolio.Asteroids
         }
 
         public bool Wraps => wraps;
+
+        /// <summary>The layer the body is on (strike mode); everything of the asteroid field is in the air.</summary>
+        public Altitude Altitude => altitude;
+
+        /// <summary>Whether a body that does not wrap has been on screen since it spawned.</summary>
+        public bool HasEntered => entered;
 
         public bool PulledByGravity => pulledByGravity;
 
@@ -91,6 +105,7 @@ namespace Portfolio.Asteroids
             drift = Vector2.zero;
             Exit = ExitReason.Expired;
             ExitSeat = null;
+            ExitByPlayer = false;
             if (randomSpin > 0f)
             {
                 Spin = Random.onUnitSphere * Random.Range(randomSpin * 0.35f, randomSpin);
@@ -124,24 +139,48 @@ namespace Portfolio.Asteroids
             {
                 return;
             }
-            if (wraps)
+            if (wraps && playground.Wraps)
             {
                 Position = playground.Wrap(Position, radius);
                 return;
+            }
+            if (!entered && playground.IsInside(Position, -radius))
+            {
+                entered = true;
+                OnEnteredScreen();
             }
             if (IsPuppet)
             {
                 return;
             }
-            entered |= playground.IsInside(Position, -radius);
-            if (playground.IsOutside(Position, radius, 1.5f))
+            if (HasLeft(playground))
             {
-                bool leaving = Vector2.Dot(Velocity, Position - (Vector2)playground.Middle) > 0f;
-                if (entered || leaving)
-                {
-                    LeftPlayfield();
-                }
+                LeftPlayfield();
             }
+        }
+
+
+        /// <summary>
+        /// Whether a body that does not wrap is gone for good: fully off the playfield and either seen on screen before or
+        /// moving away. Only the simulator asks; ground units of the strike mode leave only below the bottom edge.
+        /// </summary>
+        protected virtual bool HasLeft(Playground playground)
+        {
+            if (!playground.IsOutside(Position, radius, 1.5f))
+            {
+                return false;
+            }
+            bool leaving = Vector2.Dot(Velocity, Position - (Vector2)playground.Middle) > 0f;
+            return entered || leaving;
+        }
+
+
+        /// <summary>
+        /// A body that does not wrap came on screen for the first time since it spawned (on puppets too: it only shows
+        /// what happened). The strike units count themselves as hostiles that entered here.
+        /// </summary>
+        protected virtual void OnEnteredScreen()
+        {
         }
 
 
@@ -149,11 +188,11 @@ namespace Portfolio.Asteroids
         /// The simulator says where a puppet is and how it moves now. A small difference is eased out over the next
         /// frames; a big one (the puppet was pushed or wrapped differently) is closed at once.
         /// </summary>
-        internal void Correct(Vector2 position, Vector2 velocity, float snapDistance = 3f)
+        internal virtual void Correct(Vector2 position, Vector2 velocity, float snapDistance = 3f)
         {
             Velocity = velocity;
             Playground playground = Field != null ? Field.Playground : null;
-            Vector2 error = playground != null && wraps
+            Vector2 error = playground != null && wraps && playground.Wraps
                 ? FieldMath.Delta(Position, position, playground.WrapPeriod(radius))
                 : position - Position;
             if (error.sqrMagnitude > snapDistance * snapDistance)

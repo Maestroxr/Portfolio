@@ -93,4 +93,82 @@ namespace Portfolio.Asteroids
         public float Hull;
         public float FireRate;
     }
+
+
+    /// <summary>What the strike tab of the mission select shows about one strike mission.</summary>
+    public struct StrikeMissionSummary
+    {
+        public int Index;
+        /// <summary>1 to 9 within the strike campaign.</summary>
+        public int Number;
+        public string Title;
+        public string Description;
+        /// <summary>The index of the mission's sector in the campaign (4 to 6).</summary>
+        public int Sector;
+        public string SectorTitle;
+        public Color Accent;
+        public bool Unlocked;
+        public string LockReason;
+        public int Stars;
+        /// <summary>The most money one flight earned.</summary>
+        public int BestMoney;
+        public string BossName;
+        /// <summary>Strike stars needed to enter the mission's sector.</summary>
+        public int SectorStars;
+    }
+
+
+    /// <summary>Everything the strike HUD shows during a mission, refreshed every frame.</summary>
+    public struct StrikeHudState
+    {
+        /// <summary>The pilot's wallet before the mission.</summary>
+        public int Wallet;
+        /// <summary>The money earned in this mission so far.</summary>
+        public int MissionMoney;
+        /// <summary>Energy, 0 to 1.</summary>
+        public float Energy;
+        /// <summary>The phase shield in use, 0 to 1.</summary>
+        public float Shield;
+        public int PhaseShields;
+        public int Megabombs;
+        /// <summary>0 when the megabomb is ready, 1 right after one went off.</summary>
+        public float MegabombCooldown;
+        public StrikeItem Special;
+        /// <summary>How far the mission got toward the boss, 0 to 1.</summary>
+        public float Progress;
+        public bool BossActive;
+        public string BossName;
+        public float BossHealth;
+        /// <summary>The boss bar shows the health only with the Ion Scanner.</summary>
+        public bool HasScanner;
+        public bool ShieldLow;
+    }
+
+
+    /// <summary>What the strike results screen shows about a finished strike mission.</summary>
+    public struct StrikeResult
+    {
+        public string Title;
+        public bool Victory;
+        public int Stars;
+        public bool KillStar;
+        public bool DamageStar;
+        /// <summary>The money earned in the mission (paid into the wallet on a win).</summary>
+        public int Money;
+        /// <summary>The wallet after the mission.</summary>
+        public int Wallet;
+        public int HostilesEntered;
+        public int HostilesDestroyed;
+        public float DamageTaken;
+        public float Time;
+        /// <summary>The mission's best money so far was beaten.</summary>
+        public bool NewBest;
+        public bool HasNext;
+        public bool NextLocked;
+        public string NextLockReason;
+        /// <summary>A mission flown with other pilots: no Supply Room button, everybody's money.</summary>
+        public bool Coop;
+        /// <summary>The pilots of a shared mission by place, a line each.</summary>
+        public string Standings;
+    }
 }

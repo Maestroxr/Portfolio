@@ -100,6 +100,17 @@ namespace Portfolio.Asteroids
 
         public AsteroidsCampaign AsteroidsCampaign => campaign as AsteroidsCampaign;
 
+        /// <summary>The campaign asset; tests swap in a copy with missions of their own.</summary>
+        internal Campaign CampaignAsset
+        {
+            get => campaign;
+            set
+            {
+                campaign = value;
+                levelData.Clear();
+            }
+        }
+
         public AsteroidsLevel Mission => Level as AsteroidsLevel;
 
         public int LevelCount => campaign != null ? campaign.Count : 0;
@@ -122,6 +133,9 @@ namespace Portfolio.Asteroids
 
         /// <summary>Whether a mission is being flown (after the countdown, before the results).</summary>
         public bool IsMissionActive => IsGameRunning && (phase == MissionPhase.Playing || phase == MissionPhase.Respawning || phase == MissionPhase.Watching);
+
+        /// <summary>Whether the countdown before a mission runs (the ship already flies, the mission has not started).</summary>
+        public bool IsBriefing => IsGameRunning && phase == MissionPhase.Briefing;
 
         /// <summary>Kept from the original: where pickups were parented. Pickups now live in the playfield.</summary>
         public Transform RewardParent => field != null ? field.transform : transform;
@@ -169,7 +183,16 @@ namespace Portfolio.Asteroids
                 spawner.CometIncoming += OnCometIncoming;
                 spawner.HazardSpawned += OnHazardSpawned;
             }
+            AwakeStrike();
         }
+
+
+        /// <summary>Sets up the strike half (AsteroidsGameManager.Strike.cs).</summary>
+        partial void AwakeStrike();
+
+
+        /// <summary>Tears down the strike half (AsteroidsGameManager.Strike.cs).</summary>
+        partial void OnDestroyStrike();
 
 
         protected override void Start()
@@ -190,6 +213,7 @@ namespace Portfolio.Asteroids
 
         protected override void OnDestroy()
         {
+            OnDestroyStrike();
             if (ship != null)
             {
                 ship.Destroyed -= OnShipDestroyed;
@@ -241,8 +265,12 @@ namespace Portfolio.Asteroids
             float deltaTime = Time.deltaTime;
             if (State != null && State.Is(BaseGameState.Initialization))
             {
-                // The mission select floats over a quiet asteroid field.
+                // The mission select floats over a quiet asteroid field (or the ground of a strike mission).
                 field?.Tick(deltaTime);
+                if (IsStrike)
+                {
+                    UpdateStrikePreview(deltaTime);
+                }
                 return;
             }
             if (!IsGameRunning || ship == null || field == null)
@@ -261,6 +289,10 @@ namespace Portfolio.Asteroids
                 case MissionPhase.Respawning:
                 case MissionPhase.Watching:
                     UpdateMission(deltaTime);
+                    break;
+                case MissionPhase.Victory when IsStrike:
+                case MissionPhase.Defeat when IsStrike:
+                    UpdateStrikeEnding(deltaTime);
                     break;
                 case MissionPhase.Victory:
                     field.WorldTimeScale = Mathf.MoveTowards(field.WorldTimeScale, 0.35f, deltaTime);
@@ -303,6 +335,8 @@ namespace Portfolio.Asteroids
                 ship.gameObject.SetActive(false);
             }
             boss = null;
+            RestoreFieldWorld();
+            EnterStrikeMenu();
             int level = LevelIndex;
             if (!menuVisited)
             {
@@ -310,7 +344,10 @@ namespace Portfolio.Asteroids
                 level = SuggestedMission();
             }
             PreviewMission(level);
-            SpawnMenuField();
+            if (!IsStrike)
+            {
+                SpawnMenuField();
+            }
             sounds?.PlayMusic(sounds.MenuMusic);
         }
 
@@ -322,7 +359,7 @@ namespace Portfolio.Asteroids
             for (int i = 0; i < LevelCount; i++)
             {
                 AsteroidsLevel mission = MissionAt(i);
-                if (mission == null || mission.IsEndless || !IsUnlocked(i))
+                if (mission == null || mission.IsEndless || mission.Mode != MissionMode.Field || !IsUnlocked(i))
                 {
                     continue;
                 }
@@ -356,11 +393,21 @@ namespace Portfolio.Asteroids
             }
             LoadLevel(index);
             AsteroidsLevel mission = Mission;
+            if (mission is StrikeLevel strikeMission)
+            {
+                // The strike tab of the mission select, over the ground of the mission (AsteroidsGameManager.Strike.cs).
+                PreviewStrike(strikeMission);
+                return;
+            }
+            menuMode = MissionMode.Field;
+            fieldMenuMission = LevelIndex;
+            EndStrikePreview();
             if (mission != null && backdrop != null)
             {
                 backdrop.Apply(mission.ThemeForWave(1), backdrop.Theme == null);
             }
-            ui?.ShowMissionSelect(BuildSummaries(), LevelIndex, TotalStars, MaxStars, BuildHangar(), DoesSaveGameExist());
+            ui?.ShowMode(MissionMode.Field);
+            ui?.ShowMissionSelect(BuildSummaries(), LevelIndex, FieldStars, FieldMaxStars, BuildHangar(), DoesSaveGameExist());
         }
 
 
@@ -407,6 +454,12 @@ namespace Portfolio.Asteroids
         {
             if (phase != MissionPhase.Menu || IsLobbyOpen)
             {
+                return;
+            }
+            if (menuMode == MissionMode.Strike && !IsStrike)
+            {
+                // The strike tab without a strike mission: nothing to launch.
+                sounds?.Denied();
                 return;
             }
             if (Mission == null || !IsUnlocked(LevelIndex))
@@ -466,7 +519,7 @@ namespace Portfolio.Asteroids
             progress.SelectedShip = index;
             ApplySelectedHull();
             sounds?.Click();
-            ui?.ShowMissionSelect(BuildSummaries(), LevelIndex, TotalStars, MaxStars, BuildHangar(), DoesSaveGameExist());
+            ui?.ShowMissionSelect(BuildSummaries(), LevelIndex, FieldStars, FieldMaxStars, BuildHangar(), DoesSaveGameExist());
         }
 
 
@@ -474,6 +527,10 @@ namespace Portfolio.Asteroids
         public void ResetProgress()
         {
             progress.ResetAll(LevelCount);
+            // The strike pilot is read again (the progress forgot it too).
+            pilot = null;
+            fieldMenuMission = -1;
+            strikeMenuMission = -1;
             ApplySelectedHull();
             menuVisited = false;
             TransitionState(BaseGameState.Initialization);
@@ -526,9 +583,10 @@ namespace Portfolio.Asteroids
                 return "Beat the first sector's boss to unlock the endless mission.";
             }
             int required = sectors != null ? sectors.StarsRequired(index) : 0;
-            if (required > TotalStars)
+            int stars = sectors != null && progress != null ? sectors.TotalStars(progress, mission.Mode) : TotalStars;
+            if (required > stars)
             {
-                return $"Collect {required} stars to enter this sector ({TotalStars} so far).";
+                return $"Collect {required} stars to enter this sector ({stars} so far).";
             }
             return "Complete the previous mission to unlock this one.";
         }
@@ -537,6 +595,11 @@ namespace Portfolio.Asteroids
         private int TotalStars => campaign != null && progress != null ? campaign.TotalStars(progress) : 0;
 
         private int MaxStars => campaign != null ? campaign.MaxStars : 0;
+
+        /// <summary>Stars of the asteroid field missions (the field mission select and its sector gates count only these).</summary>
+        private int FieldStars => AsteroidsCampaign != null && progress != null ? AsteroidsCampaign.TotalStars(progress, MissionMode.Field) : TotalStars;
+
+        private int FieldMaxStars => AsteroidsCampaign != null ? AsteroidsCampaign.MaxStarsOf(MissionMode.Field) : MaxStars;
 
 
         private List<MissionSummary> BuildSummaries()
@@ -547,15 +610,16 @@ namespace Portfolio.Asteroids
             for (int i = 0; i < LevelCount; i++)
             {
                 AsteroidsLevel mission = MissionAt(i);
-                if (mission == null)
+                if (mission == null || mission.Mode != MissionMode.Field)
                 {
+                    // The strike missions have their own tab (StrikeUI).
                     continue;
                 }
                 if (!mission.IsEndless)
                 {
                     number++;
                 }
-                AsteroidsCampaign.Sector sector = sectors != null ? sectors.GetSector(mission.Sector) : null;
+                AsteroidsCampaign.Sector sector = sectors != null ? sectors.SectorOf(i) : null;
                 SectorTheme theme = mission.Theme;
                 var objectiveInfo = new MissionObjective(mission.Objective, mission.ObjectiveTarget, mission.Waves.Length,
                     mission.BossPrefab != null ? mission.BossPrefab.DisplayName : null);
@@ -728,21 +792,38 @@ namespace Portfolio.Asteroids
                 return false;
             }
             AsteroidSettings settings = AsteroidSettings;
+            bool strike = IsStrike;
             director?.Stop();
+            scroll?.Stop();
             field.Clear();
             field.WorldTimeScale = 1f;
-            FitPlayfield();
+            if (!strike)
+            {
+                RestoreFieldWorld();
+                // A room can start a field mission while the strike tab shows: the field HUD comes back.
+                ui?.ShowMode(MissionMode.Field);
+            }
             spawner.Configure(settings, mission);
-            backdrop?.Apply(mission.ThemeForWave(1), false);
+            if (!strike)
+            {
+                backdrop?.Apply(mission.ThemeForWave(1), false);
+            }
 
             ApplySelectedHull();
-            ship.ResetForMission(settings != null ? settings.HullStrength : 100f);
-            lives = settings != null ? Mathf.Clamp(settings.Lives, 1, AsteroidSettings.LivesLimit) : 3;
-            if (IsCoop)
+            if (strike)
             {
-                // Every pilot starts at a place of their own, with the ships the room gives them.
-                ship.Position = FieldMath.StartPoint(coop.Slot, coop.Pilots, CoopRules.StartRadius);
-                lives = Mathf.Clamp(coop.Lives, 1, AsteroidSettings.LivesLimit);
+                PrepareStrike();
+            }
+            else
+            {
+                ship.ResetForMission(settings != null ? settings.HullStrength : 100f);
+                lives = settings != null ? Mathf.Clamp(settings.Lives, 1, AsteroidSettings.LivesLimit) : 3;
+                if (IsCoop)
+                {
+                    // Every pilot starts at a place of their own, with the ships the room gives them.
+                    ship.Position = FieldMath.StartPoint(coop.Slot, coop.Pilots, CoopRules.StartRadius);
+                    lives = Mathf.Clamp(coop.Lives, 1, AsteroidSettings.LivesLimit);
+                }
             }
             livesLost = 0;
             score.Reset();
@@ -757,13 +838,17 @@ namespace Portfolio.Asteroids
 
             objective = new MissionObjective(mission.Objective, mission.ObjectiveTarget, mission.Waves.Length,
                 mission.BossPrefab != null ? mission.BossPrefab.DisplayName : null);
-            director = new WaveDirector(mission, settings, spawner, new System.Random(Random.Range(1, int.MaxValue)));
-            director.WaveStarted += OnWaveStarted;
-            director.WaveCleared += OnWaveCleared;
-            director.BossArrived += OnBossArrived;
-            director.AllWavesCleared += OnAllWavesCleared;
+            // A strike mission runs on the scroll director of PrepareStrike instead.
+            director = strike ? null : new WaveDirector(mission, settings, spawner, new System.Random(Random.Range(1, int.MaxValue)));
+            if (director != null)
+            {
+                director.WaveStarted += OnWaveStarted;
+                director.WaveCleared += OnWaveCleared;
+                director.BossArrived += OnBossArrived;
+                director.AllWavesCleared += OnAllWavesCleared;
+            }
 
-            sounds?.PlayMusic(sounds.BattleMusic);
+            sounds?.PlayMusic(strike ? sounds.StrikeMusic : sounds.BattleMusic);
             ui?.BeginMission(mission, objective.Briefing, lives, SectorTitleOf(mission));
             return true;
         }
@@ -772,6 +857,10 @@ namespace Portfolio.Asteroids
         private string SectorTitleOf(AsteroidsLevel mission)
         {
             AsteroidsCampaign.Sector sector = AsteroidsCampaign != null ? AsteroidsCampaign.GetSector(mission.Sector) : null;
+            if (sector != null && sector.mode != mission.Mode)
+            {
+                sector = null;
+            }
             if (mission.IsEndless)
             {
                 return "DEEP FIELD";
@@ -795,7 +884,11 @@ namespace Portfolio.Asteroids
             sounds?.Go();
             phase = MissionPhase.Playing;
             phaseTime = 0f;
-            if (Simulates)
+            if (Simulates && IsStrike)
+            {
+                BeginStrike();
+            }
+            else if (Simulates)
             {
                 director.Begin(1, true);
             }
@@ -804,6 +897,11 @@ namespace Portfolio.Asteroids
 
         private void UpdateMission(float deltaTime)
         {
+            if (IsStrike)
+            {
+                UpdateStrike(deltaTime);
+                return;
+            }
             missionTime += deltaTime;
             // A world shared with other pilots keeps its pace: no chrono field there.
             float chrono = !IsCoop && ship.IsPowerUpActive(PowerUpType.Chrono) ? chronoTimeScale : 1f;
@@ -812,7 +910,7 @@ namespace Portfolio.Asteroids
             if (Simulates)
             {
                 spawner.Tick(deltaTime * field.WorldTimeScale);
-                director.Tick(deltaTime * field.WorldTimeScale);
+                director?.Tick(deltaTime * field.WorldTimeScale);
             }
             field.Tick(deltaTime);
             score.Tick(deltaTime);
@@ -868,6 +966,11 @@ namespace Portfolio.Asteroids
             {
                 return;
             }
+            if (IsStrike)
+            {
+                RefreshStrikeHud();
+                return;
+            }
             var hud = new HudState
             {
                 Score = score.Score,
@@ -884,7 +987,7 @@ namespace Portfolio.Asteroids
                 DashRecharge = ship.Simulation.DashRecharge,
                 BossActive = boss != null && boss.InPlay,
                 BossName = boss != null ? boss.DisplayName : string.Empty,
-                BossHealth = boss != null ? boss.HealthFraction : 0f
+                BossHealth = boss != null ? boss.BarFraction : 0f
             };
             for (int i = 0; i < PowerUps.Count; i++)
             {
@@ -901,16 +1004,23 @@ namespace Portfolio.Asteroids
             phaseTime = 0f;
             director?.Stop();
             spawner?.ClearPending();
-            int bonus = lives * lifeBonus;
-            if (bonus > 0 && Mission != null && !Mission.IsEndless)
+            if (IsStrike)
             {
-                score.Add(bonus);
-                SyncScore();
+                WinStrike();
             }
-            ui?.Announce(Mission != null && Mission.Objective == LevelObjective.Boss ? "SECTOR SECURED" : "MISSION COMPLETE", string.Empty, new Color(0.45f, 1f, 0.6f));
-            sounds?.Victory();
-            cameraRig?.Pulse(0.6f);
-            ClearFieldWithFlair();
+            else
+            {
+                int bonus = lives * lifeBonus;
+                if (bonus > 0 && Mission != null && !Mission.IsEndless)
+                {
+                    score.Add(bonus);
+                    SyncScore();
+                }
+                ui?.Announce(Mission != null && Mission.Objective == LevelObjective.Boss ? "SECTOR SECURED" : "MISSION COMPLETE", string.Empty, new Color(0.45f, 1f, 0.6f));
+                sounds?.Victory();
+                cameraRig?.Pulse(0.6f);
+                ClearFieldWithFlair();
+            }
             if (IsCoop)
             {
                 CoopWon();
@@ -929,6 +1039,10 @@ namespace Portfolio.Asteroids
             phaseTime = 0f;
             director?.Stop();
             spawner?.ClearPending();
+            if (IsStrike)
+            {
+                LoseStrike();
+            }
             bool endless = Mission != null && Mission.IsEndless;
             ui?.Announce(endless ? "SHIP LOST" : "MISSION FAILED", endless ? $"Reached wave {director?.WaveNumber ?? 0}" : string.Empty, new Color(1f, 0.35f, 0.3f));
             sounds?.GameOver();
@@ -961,6 +1075,12 @@ namespace Portfolio.Asteroids
 
         private void ShowResults(bool victory)
         {
+            // A strike mission flown with other pilots shows its results through ShowCoopResults.
+            if (IsStrike && !IsCoop)
+            {
+                ShowStrikeResults(victory);
+                return;
+            }
             if (IsCoop)
             {
                 ShowCoopResults(victory);
@@ -1073,8 +1193,17 @@ namespace Portfolio.Asteroids
             boss = arrived;
             boss.Defeated += OnBossDefeated;
             boss.PhaseChanged += OnBossPhase;
-            ui?.ShowBoss(boss.DisplayName);
-            sounds?.PlayMusic(sounds.BossMusic);
+            if (IsStrike)
+            {
+                // The strike HUD has its own boss bar (RefreshStrikeHud).
+                ui?.Announce("WARNING", boss.DisplayName.ToUpperInvariant(), new Color(1f, 0.3f, 0.25f));
+                sounds?.SetBossAlarm(boss is StrikeBoss strikeBoss && strikeBoss.alarm);
+            }
+            else
+            {
+                ui?.ShowBoss(boss.DisplayName);
+            }
+            sounds?.PlayMusic(IsStrike ? sounds.StrikeBossMusic : sounds.BossMusic);
             sounds?.BossRoar(1f);
             cameraRig?.Shake(0.4f);
         }
@@ -1095,8 +1224,16 @@ namespace Portfolio.Asteroids
             boss = null;
             ui?.HideBoss();
             objective?.Defeat();
-            director?.BossDefeated();
-            sounds?.PlayMusic(sounds.BattleMusic);
+            if (IsStrike)
+            {
+                scroll?.BossDefeated();
+                sounds?.SetBossAlarm(false);
+            }
+            else
+            {
+                director?.BossDefeated();
+                sounds?.PlayMusic(sounds.BattleMusic);
+            }
             if (Mission != null && Mission.IsEndless)
             {
                 ui?.Announce("BOSS DESTROYED", string.Empty, new Color(1f, 0.85f, 0.3f));
@@ -1106,6 +1243,11 @@ namespace Portfolio.Asteroids
 
         private void OnTargetDestroyed(Shootable target, DamageInfo hit)
         {
+            if (IsStrike)
+            {
+                StrikeTargetDestroyed(target, hit);
+                return;
+            }
             if (!hit.ByPlayer || !IsMissionActiveOrEnding)
             {
                 return;
@@ -1137,7 +1279,8 @@ namespace Portfolio.Asteroids
         }
 
 
-        private bool IsMissionActiveOrEnding => IsMissionActive;
+        /// <summary>A mission is flown, or a strike mission was just won (kills and pickups of the free flight still pay).</summary>
+        private bool IsMissionActiveOrEnding => IsMissionActive || (IsGameRunning && IsStrike && phase == MissionPhase.Victory);
 
 
         private void OnExploded(Blast blast)
@@ -1163,7 +1306,8 @@ namespace Portfolio.Asteroids
 
         private void OnRewardCollected(Reward reward)
         {
-            if (reward is PointReward)
+            // Money shows its own "$" popup.
+            if (reward is PointReward || reward is StrikeReward strikeReward && strikeReward.Item == StrikeItem.MachineGun && strikeReward.Energy <= 0)
             {
                 return;
             }
@@ -1208,6 +1352,10 @@ namespace Portfolio.Asteroids
 
         private void OnShipDamaged(DamageInfo hit)
         {
+            if (IsStrike)
+            {
+                CountStrikeDamage(hit);
+            }
             score.BreakCombo();
             lastMultiplier = 1;
             cameraRig?.Hurt(0.7f);
@@ -1225,7 +1373,8 @@ namespace Portfolio.Asteroids
             lives--;
             livesLost++;
             score.BreakCombo();
-            if (lives <= 0)
+            // A strike pilot has one ship: no respawn.
+            if (lives <= 0 || IsStrike)
             {
                 Lose();
                 return;
@@ -1336,7 +1485,8 @@ namespace Portfolio.Asteroids
         public override bool DoesSaveGameExist()
         {
             IStorageStrategy disk = Disk;
-            return disk != null && disk.DoesKeyExist(SaveKey("Version")) && disk.GetInt(SaveKey("Version")) == SaveVersion;
+            // A strike mission cannot be saved, and the strike tab offers no Continue.
+            return !IsStrike && disk != null && disk.DoesKeyExist(SaveKey("Version")) && disk.GetInt(SaveKey("Version")) == SaveVersion;
         }
 
 
@@ -1347,6 +1497,11 @@ namespace Portfolio.Asteroids
             if (InSession)
             {
                 UI?.UpdateError("A mission flown with other pilots cannot be saved.");
+                return;
+            }
+            if (IsStrike)
+            {
+                UI?.UpdateError("A strike mission cannot be saved.");
                 return;
             }
             if (disk == null || !(State.Is(BaseGameState.Running) || State.Is(BaseGameState.Paused)) ||
@@ -1415,7 +1570,7 @@ namespace Portfolio.Asteroids
                 return;
             }
             int level = disk.GetInt(SaveKey("Level"));
-            if (level < 0 || level >= LevelCount)
+            if (level < 0 || level >= LevelCount || MissionAt(level) is StrikeLevel)
             {
                 UI?.UpdateError("The saved mission no longer exists.");
                 return;

@@ -14,7 +14,7 @@ namespace Portfolio.Asteroids.EditorTools
     /// <see cref="AsteroidsUI"/>. The canvas expands from 1920 x 1080 to any screen shape, and the texts and buttons of
     /// every screen sit in a safe area so notches and rounded corners do not cover them.
     /// </summary>
-    internal static class AsteroidsInterfaceBuilder
+    internal static partial class AsteroidsInterfaceBuilder
     {
         private static readonly Color PanelColor = new Color(0.35f, 0.75f, 1f, 0.95f);
         private static readonly Color Soft = new Color(0.78f, 0.86f, 0.96f);

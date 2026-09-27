@@ -16,7 +16,7 @@ namespace Portfolio.Asteroids.EditorTools
     /// textures and the model packs in Art/StarSparrow and Art/AsteroidsPack), meshes, the sounds and music, and the
     /// hangar pictures of the ships. Everything is written to fixed paths, so running it again updates in place.
     /// </summary>
-    internal static class AsteroidsArtBuilder
+    internal static partial class AsteroidsArtBuilder
     {
         public const string StarSparrow = "Art/StarSparrow";
         public const string RockPack = "Art/AsteroidsPack/Assets";
@@ -52,9 +52,19 @@ namespace Portfolio.Asteroids.EditorTools
             BuildSounds();
             Progress("Hangar pictures", 0.85f);
             BuildShipPreviews();
+            Progress("Strike art", 0.9f);
+            BuildStrikeArt();
+            Progress("Ground art", 0.95f);
+            BuildGroundArt();
             AssetDatabase.SaveAssets();
             EditorUtility.ClearProgressBar();
         }
+
+        /// <summary>The art of the strike mode's air units, bosses, shots, pickups, effects and sounds (AsteroidsArtBuilder.Strike.cs).</summary>
+        static partial void BuildStrikeArt();
+
+        /// <summary>The art of the strike mode's ground: terrain, ground units, props, decals (AsteroidsArtBuilder.Ground.cs).</summary>
+        static partial void BuildGroundArt();
 
         private static void Progress(string step, float value)
         {

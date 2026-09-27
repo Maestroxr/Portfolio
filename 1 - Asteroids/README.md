@@ -6,6 +6,12 @@ upgrades, shields and power-ups. A campaign of twelve missions in four sectors (
 thing per mission, the hangar unlocks three more ships with the stars you earn, and an endless mode runs through every
 sector until you run out of ships.
 
+A second mode, **Planet Strike**, is a vertical scroller in the manner of Raptor: Call of the Shadows. The ship flies
+low over the surface of three worlds while the ground scrolls under it, shoots down aircraft and destroys ground
+targets for money, buys and sells weapons and shields in the Supply Room between missions, and meets a boss at the
+end of every mission of the nine-mission campaign **SHADOW STRIKE** (see [Planet Strike](#planet-strike)). Both
+modes can be flown together online.
+
 ## Playing
 
 | Control | Keyboard | Gamepad | Touch (phones and tablets) |
@@ -59,6 +65,69 @@ sector until you run out of ships.
 | 12 | Dreadnought | Void Core | Destroy the boss | Boss: Dreadnought |
 | - | Deep Field | all four | Endless | Sectors change every 5 waves, a boss every 10 |
 
+## Planet Strike
+
+The PLANET STRIKE tab of the mission select holds the second campaign. Its rules follow Raptor (checked against the
+released source of the DOS game) wherever they make sense here.
+
+| Control | Keyboard | Gamepad | Touch |
+| --- | --- | --- | --- |
+| Fly (8 ways, the nose always points up) | W A S D, arrows | Left stick | The stick moves the ship directly |
+| Fire everything you carry (hold) | Space | A or right bumper | Hold FIRE |
+| Next special weapon | Left Shift, Right Shift, Q, K, Tab | X or left bumper | WEAPON |
+| Megabomb | B, E, L | B or Y | MEGA |
+| Pause | Escape | | Back button or the pause button |
+
+- **The pilot.** You fly one ship per mission. Energy (0-100) is its hull; it is not refilled between missions, it
+  regenerates one point every 4 seconds while you are not firing (never on Elite), and the Supply Room sells it.
+  Phase shields (up to 5, 100 points each) take every hit first. With energy at 10 or less and no shield left, every
+  hit also destroys a weapon ("WEAPON DESTROYED"; a spare copy takes its place, the machine gun is never lost).
+  Energy at 0 loses the mission.
+- **Money is the score.** Every kill pays its bounty, and money pickups (a credit orb, or the cargo of huts, depots and
+  transports) pay their value. A mission that is won is paid into the wallet when the ship lands; a mission that is
+  failed or abandoned leaves the pilot exactly as it took off, as reloading a pilot in Raptor does. Replaying a
+  mission pays again. Strike missions cannot be saved half way.
+- **Air and ground.** Aircraft fly their formations across the screen and can be rammed (both of you take damage);
+  ground units, from turrets to tanks, boats and fuel depots, scroll with the ground, are flown over, and leave
+  craters. Weapons hit air units, ground units or both. Fuel tanks and depots explode and set off their neighbours.
+- **Weapons.** The machine gun, the plasma cannon and the micro missiles fire whenever you fire; one special weapon,
+  chosen with the WEAPON key, fires with them: dumbfire missiles, an auto-tracking mini-gun, a laser turret, missile
+  pods, air-to-air and air-to-ground missiles, bombs, a pulse cannon, the deathray and the twin laser. The megabomb
+  clears every enemy shot and hits everything on screen.
+- **Bosses.** Every mission ends with a boss made of parts: turrets, launchers and modules die one by one, and a part
+  (or the core) behind a shield opens once the parts of the tier before it are gone. The scroll stops for the fight.
+  Without the Ion Scanner the boss bar shows only the boss's name.
+- **Difficulty** (on the mission details): Rookie halves the damage you take and the bosses' health, Veteran is the
+  campaign as designed, Elite adds more enemies and stops the energy from regenerating.
+- **Stars.** Complete the mission; destroy 70% of the hostiles that came on screen; take at most 30 damage. The second
+  and third sectors need 4 and 10 strike stars.
+
+The Supply Room (a button on the mission details and on the results) buys and sells at half price:
+
+| Item | Price | | Item | Price |
+| --- | --- | --- | --- | --- |
+| Energy (25 points) | 10,000 | | Air/Ground Missiles | 110,000 |
+| Ion Scanner | 10,000 | | Dumbfire Missiles | 145,200 |
+| Megabomb (up to 5) | 32,250 | | Micro-Missile Launcher | 175,600 |
+| Air/Air Missiles | 63,500 | | Missile Pods | 204,950 |
+| Phase Shield (up to 5) | 78,500 | | Auto-Track Mini-Gun | 250,650 |
+| Plasma Cannon | 78,800 | | Laser Turret | 512,850 |
+| Bombs | 98,200 | | Pulse Cannon | 725,000 |
+| | | | Deathray | 950,000 |
+| | | | Twin Laser | 1,750,000 |
+
+| # | Mission | World | Boss | New |
+| --- | --- | --- | --- | --- |
+| 1 | Dust Devil | Ares Flats (desert) | Sand Crawler | The scrolling ground, air and ground targets, money |
+| 2 | Refinery Row | Ares Flats | Refinery Guardian | Exploding fuel tanks and depots, gunships |
+| 3 | Offshore | Ares Flats (coast and sea) | Sea Fortress | Gunboats, bombers, kamikaze divers |
+| 4 | Green Hell | Verdant Delta (jungle), 4 stars | Twin Rotor | Interceptors from behind, phase shields |
+| 5 | Delta Run | Verdant Delta (rivers) | Twin Silos | Transports with cargo, a boss without a core |
+| 6 | Night Raid | Verdant Delta (city at night) | Skyhammer | Sky mines |
+| 7 | Moonbase | Outer Colonies (moon), 10 stars | Dome Fortress | Laser towers |
+| 8 | Magma Works | Outer Colonies (volcanic) | Foundry Crawler | Heavy armour, lava lakes |
+| 9 | Shadow Station | Outer Colonies (station) | The Shadow | Three rings of defence, three phases |
+
 ## Base game integration
 
 The game is built on the base classes of the BaseGame package (`com.skinnerboxes.basegame`, assembly
@@ -97,7 +166,17 @@ with the game type; the save and load buttons of the menu save and restore a mis
 | `Scripts/Controller/AsteroidsOnlineController.cs`, `AsteroidsGameManager.Coop.cs` | The online mission: rooms and missions for the lobby, the pilots of the room, the manager's co-op mode (own lives and score, a fixed playfield, no director on the clients that only show the world) |
 | `Scripts/Controller/FieldReplication.cs`, `IFieldLink.cs`, `RemoteShip.cs` | Keeps the playfields in step: the simulator announces, updates and removes bodies, the others show them as puppets and report their hits, shots and claims; the stand-ins of the other ships |
 | `Scripts/Model/BodyCodec.cs`, `BodyRegistry.cs`, `FieldMath.cs`, `ShipPose.cs`, `CoopRules.cs` | The plain parts of it: what a body is on the wire, the net ids, distances on a field that wraps, the flags of a ship's pose, the options of a room |
-| `Scripts/Controller/AsteroidsOnlineTour.cs` | Development builds only: `-asteroids-online host <folder>` and `-asteroids-online join <folder>` fly a mission together between two running players (`-asteroids-level <index>`, `-asteroids-lives <n>`) |
+| `Scripts/Controller/AsteroidsOnlineTour.cs` | Development builds only: `-asteroids-online host <folder>` and `-asteroids-online join <folder>` fly a mission together between two running players (`-asteroids-level <index>`, `-asteroids-lives <n>`; for strike missions also `-asteroids-difficulty <0-2>` and `-asteroids-skip-to-boss <seconds>`) |
+| `Scripts/Model/Strike/*` | Planet Strike's plain rules and data: `StrikeRules` (every number of the mode), `StrikeUnitRules` and `StrikeWeaponRules` (the unit and weapon tables), `StrikeArmory` (the Supply Room's catalogue and rules, and `StrikeLoadout`, a pilot's money, energy, shields and weapons), `ScrollDirector` (the scroll, the timeline of a level and the boss's arrival), `FlightPaths` (the aircraft's routes), `StrikeLevel` and `StrikeTheme` |
+| `Scripts/Controller/Strike/*` | The strike bodies (`StrikeAircraft`, `GroundUnit`, `StrikeBoss` with its `BossPart`s, `StrikeReward`, `EnemyBeam`), the pilot's weapons (`StrikeGunnery`, `PlayerBeam`) and `StrikeAutopilot` |
+| `Scripts/Controller/AsteroidsGameManager.Strike.cs`, `SpawnService.Strike.cs` | The strike mission's flow (the working copy of the pilot, money, stars, the fly-off, the Supply Room) and its spawning |
+| `Scripts/View/Strike/*` | The scrolling ground (`StrikeTerrain`, `TerrainTile`; the ground sits a little behind the air layer and `DepthLayer` / `DepthAnchor` place it so it lines up with its logical position under the perspective camera), the aircraft's `DropShadow`s, and `StrikeUI` (the strike tab, the Supply Room, the HUD and the results) |
+| `Scripts/Controller/AsteroidsTour.cs` | Development builds only: `-asteroids-tour <folder>` flies a plan (`-asteroids-tour-plan menu,shop,strike:1,boss:1,field:0`, or `strike:all`) with the autopilot and takes screenshots (`-asteroids-tour-god`, `-asteroids-tour-speed`, `-asteroids-tour-money`); it puts the saved progress back afterwards |
+
+A strike mission keeps the playfield in screen space: the camera and the playfield stay where they are (a fixed 16:9
+field that does not wrap), the ground moves down under it, and ground units carry the scroll in their motion while
+aircraft fly their routes in screen space. Strike missions are appended to the one campaign after the endless mission
+(their own sectors and stars, sector by sector), so progress keys and online room levels stay as they were.
 
 Everything the game shows is generated by the editor code in `Assets/Editor` (menu **Asteroids**):
 
@@ -110,6 +189,18 @@ Everything the game shows is generated by the editor code in `Assets/Editor` (me
   post-processing profile and the launcher entry.
 - **Rebuild Scene**: `Scenes/Asteroids.unity` with its lighting, backdrop, pools, effects, audio and interface.
 - **Build Everything** runs all four steps. **Debug** unlocks every mission or resets the progress of this editor.
+- Planet Strike has its own parts of each step (the `*.Strike.cs` and `*.Ground.cs` files next to the builders):
+  - art: the six worlds' ground (a hand-written ground shader, `Art/Shaders/Ground.shader`, with per-tile maps and
+    detail layers), their props and the ground units' models, the recoloured StarSparrow aircraft, the boss hulls and
+    parts, icons for every item, the strike sounds and two music loops (`Art/Ground`, `Art/Strike`);
+  - prefabs: `Prefabs/Strike/{Air, Ground, Bosses, Shots, Pickups, Effects, Terrain, Props, Decals}` and the ship's
+    shadow, beams and autopilot;
+  - campaign: the six `Config/Strike/Themes`, the nine `Config/Strike/Level{n}` (each laid out tile by tile, with
+    ground units only where their tile allows them) and the three strike sectors;
+  - scene: the strike pools, audio, the terrain object and the strike interface.
+- `AsteroidsBuildMenu.BuildEverythingBatch` runs Build Everything from the command line
+  (`-executeMethod Portfolio.Asteroids.EditorTools.AsteroidsBuildMenu.BuildEverythingBatch`) and exits with 1 when a
+  level is not valid or a prefab is missing. **Debug** also has "Strike: Add 2,000,000" and "Strike: Reset Pilot".
 
 The generators write to fixed paths and update existing assets in place (GUIDs and references are kept). Values that
 belong to the content (missions, waves, theme colours, ship stats) live in the builders, so hand edits to those
@@ -141,6 +232,15 @@ room's host simulates the world** exactly as in the single player game (waves, s
   reports waves and objective for the others' HUD and says when the mission is won; it is lost when nobody flies any
   more, and abandoned when the host leaves. The Chrono Field does not slow a shared world. Online missions do not pause
   (the pause button opens the match menu), are not saved and leave the campaign progress as it is.
+- **Planet Strike together.** The lobby lists the strike missions as "Strike n." next to the asteroid missions (one
+  list of room levels), with a "Strike difficulty" option. The host simulates the scroll, the aircraft, the ground
+  units and the boss as above; it also sends the scroll distance four times a second, and the other clients ease their
+  ground toward it. Ground units move with each client's own ground, so they stay on it however the scroll changes.
+  A boss's parts travel as bodies of their own, tied to their boss. Every pilot flies with their own weapons, energy
+  and shields (one ship each; a pilot whose ship is destroyed watches), is paid for their own kills and the pickups
+  they reach first, and banks the money of a won mission into their own pilot when their ship lands (no stars are
+  given online). The Supply Room is not open inside a room. Boss health grows by half for every pilot after the
+  first.
 
 ## Phones and tablets
 
@@ -150,7 +250,8 @@ The game runs on Android with the shared mobile code of BaseGame (see its README
   `VirtualJoystick` for the left thumb and the FIRE, DASH and NOVA `TouchButton`s for the right one. The player's input
   (`PlayerShipInput`) reads them next to the keyboard and gamepad: `PlayerShipInput.Steer` turns the ship toward the
   stick, easing off as the nose gets there, and thrusts once the nose is within about 70 degrees of it (covered by
-  `ShipInputTest`). The controls show only when the game is played by touch.
+  `ShipInputTest`). The controls show only when the game is played by touch. In a strike mission the stick moves the
+  ship directly, and DASH and NOVA become WEAPON (the next special) and MEGA (the megabomb).
 - **HUD.** With touch the hull and shield panel moves under the score and the weapon panel under the lives, the dash
   ring and the B key hint give way to the DASH button, and the tips move to the top (`TouchLayout`). The missions whose
   tips name keys have touch wording (`AsteroidsLevel.touchHints`, set by the content builder).
@@ -218,4 +319,5 @@ The BaseGame README ("Online play") describes the shared client, `BaseServer/REA
 ## Notes
 
 Escape (the back button on a phone) pauses the game and opens the shared menu; F1/F4/F5 restart, save and load a
-mission, and Enter launches the selected mission. Saving needs the PlayerPrefs storage strategy.
+mission, and Enter launches the selected mission. Saving needs the PlayerPrefs storage strategy. Strike missions are
+not saved half way (F4/F5 and the menu's save and load are off there): the pilot is saved when a mission is won.

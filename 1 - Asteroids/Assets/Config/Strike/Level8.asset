@@ -1,0 +1,2059 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5e93eff3830c9344687a5cd6f63bd773, type: 3}
+  m_Name: Level8
+  m_EditorClassIdentifier: Skinnerboxes.Asteroids::Portfolio.Asteroids.StrikeLevel
+  <Index>k__BackingField: 20
+  <Title>k__BackingField: Magma Works
+  <Settings>k__BackingField: {fileID: 11400000, guid: a4621c90bf8b4fb4f8d530d842f8c4a0, type: 2}
+  description: On a volcanic world the Shadow forges its war machines over rivers of lava. Wreck the foundries and hunt the Foundry Crawler through the smoke.
+  introduces: Heavy armour and lava lakes. The Foundry Crawler's vents fire walls of bolts.
+  hints:
+  - 'Bunkers and laser towers are worth a fortune: bring ground weapons.'
+  - The crawler's cannon opens when its turrets and vents are gone.
+  touchHints: []
+  sector: 6
+  theme: {fileID: 11400000, guid: 9a9ff548805707043b700b1ba546a47e, type: 2}
+  themeRotation: []
+  wavesPerTheme: 5
+  objective: 3
+  objectiveTarget: 1
+  waves: []
+  boss: {fileID: 3029718452017953504, guid: b3e5f31ed3f945a49b14bb4c885bcbef, type: 3}
+  bossRotation: []
+  bossEvery: 10
+  asteroidLoot: {fileID: 0}
+  lootChance: 0
+  podLoot: {fileID: 0}
+  scoreGoal: 0
+  speedMultiplier: 1
+  terrain: {fileID: 11400000, guid: caf288bc6cc9db9428a7dda6120785ec, type: 2}
+  segments:
+  - kind: 0
+    variant: 0
+    tiles: 2
+  - kind: 1
+    variant: 0
+    tiles: 3
+  - kind: 4
+    variant: 0
+    tiles: 2
+  - kind: 7
+    variant: 0
+    tiles: 2
+  - kind: 1
+    variant: 1
+    tiles: 2
+  - kind: 4
+    variant: 1
+    tiles: 2
+  - kind: 0
+    variant: 1
+    tiles: 2
+  - kind: 7
+    variant: 1
+    tiles: 3
+  - kind: 1
+    variant: 0
+    tiles: 3
+  - kind: 7
+    variant: 0
+    tiles: 5
+  events:
+  - at: 6.5
+    unit: 17
+    count: 1
+    formation: 0
+    x: -11.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 11
+    unit: 20
+    count: 1
+    formation: 0
+    x: 12.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 12.5
+    unit: 1
+    count: 2
+    formation: 4
+    x: -9
+    spacing: 4
+    path: 11
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 2
+  - at: 14
+    unit: 18
+    count: 1
+    formation: 0
+    x: -11
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 180
+    drive: 0.6712497
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 16
+    unit: 25
+    count: 1
+    formation: 0
+    x: 6
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 1
+  - at: 21.5
+    unit: 5
+    count: 3
+    formation: 1
+    x: -5
+    spacing: 2.5
+    path: 1
+    mirror: 1
+    speed: 1
+    flight: 2
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 1
+  - at: 24
+    unit: 20
+    count: 1
+    formation: 0
+    x: 4
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 1
+  - at: 26
+    unit: 20
+    count: 1
+    formation: 0
+    x: -7.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 29
+    unit: 25
+    count: 1
+    formation: 0
+    x: -11
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 31
+    unit: 20
+    count: 1
+    formation: 0
+    x: 10.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 2
+  - at: 33.5
+    unit: 1
+    count: 3
+    formation: 2
+    x: 9
+    spacing: 4
+    path: 4
+    mirror: 1
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 36
+    unit: 25
+    count: 1
+    formation: 0
+    x: -3
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 37.5
+    unit: 20
+    count: 1
+    formation: 0
+    x: 3
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 2
+  - at: 46
+    unit: 4
+    count: 2
+    formation: 4
+    x: -9
+    spacing: 5
+    path: 8
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 46.5
+    unit: 25
+    count: 1
+    formation: 0
+    x: 3.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 52.5
+    unit: 17
+    count: 1
+    formation: 0
+    x: 5.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 1
+  - at: 54.5
+    unit: 0
+    count: 3
+    formation: 3
+    x: -9
+    spacing: 3
+    path: 9
+    mirror: 1
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 54.5
+    unit: 20
+    count: 1
+    formation: 0
+    x: -11.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 64.5
+    unit: 18
+    count: 1
+    formation: 0
+    x: 10.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 180
+    drive: 0.6388797
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 1
+  - at: 67.5
+    unit: 20
+    count: 1
+    formation: 0
+    x: 7.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 68
+    unit: 5
+    count: 3
+    formation: 1
+    x: 0
+    spacing: 2.5
+    path: 1
+    mirror: 1
+    speed: 1
+    flight: 2
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 2
+  - at: 69.5
+    unit: 20
+    count: 1
+    formation: 0
+    x: 1.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 2
+  - at: 71.5
+    unit: 20
+    count: 1
+    formation: 0
+    x: -6.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 1
+  - at: 72
+    unit: 20
+    count: 1
+    formation: 0
+    x: 8
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 72.5
+    unit: 18
+    count: 1
+    formation: 0
+    x: -13
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 180
+    drive: 1.1550871
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 77
+    unit: 18
+    count: 1
+    formation: 0
+    x: -10.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 180
+    drive: 1.0881689
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 1
+  - at: 79
+    unit: 5
+    count: 3
+    formation: 1
+    x: -5
+    spacing: 2.5
+    path: 2
+    mirror: 1
+    speed: 1
+    flight: 2
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 86.5
+    unit: 20
+    count: 1
+    formation: 0
+    x: 7
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 87.5
+    unit: 4
+    count: 2
+    formation: 4
+    x: 9
+    spacing: 5
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 98.5
+    unit: 2
+    count: 1
+    formation: 0
+    x: -5
+    spacing: 3
+    path: 0
+    mirror: 1
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 1
+  - at: 104
+    unit: 20
+    count: 1
+    formation: 0
+    x: 4
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 2
+  - at: 106
+    unit: 20
+    count: 1
+    formation: 0
+    x: 11.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 109
+    unit: 4
+    count: 2
+    formation: 4
+    x: 9
+    spacing: 5
+    path: 8
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 2
+  - at: 109
+    unit: 20
+    count: 1
+    formation: 0
+    x: 3
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 112
+    unit: 21
+    count: 1
+    formation: 0
+    x: 10
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 120
+    unit: 4
+    count: 2
+    formation: 4
+    x: 9
+    spacing: 5
+    path: 8
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 1
+  - at: 128.5
+    unit: 18
+    count: 1
+    formation: 0
+    x: 4
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 180
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 1
+  - at: 128.5
+    unit: 20
+    count: 1
+    formation: 0
+    x: 11.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 130
+    unit: 25
+    count: 1
+    formation: 0
+    x: 0.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 131
+    unit: 5
+    count: 4
+    formation: 1
+    x: 0
+    spacing: 2.5
+    path: 2
+    mirror: 0
+    speed: 1
+    flight: 2
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 2
+  - at: 135
+    unit: 20
+    count: 1
+    formation: 0
+    x: 6
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 137.5
+    unit: 20
+    count: 1
+    formation: 0
+    x: -3
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 142
+    unit: 18
+    count: 1
+    formation: 0
+    x: 5.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 180
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 1
+  - at: 143.5
+    unit: 25
+    count: 1
+    formation: 0
+    x: -5.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 144.5
+    unit: 4
+    count: 2
+    formation: 4
+    x: 0
+    spacing: 5
+    path: 8
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 2
+  - at: 145
+    unit: 21
+    count: 1
+    formation: 0
+    x: -10.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 1
+  - at: 152
+    unit: 26
+    count: 1
+    formation: 0
+    x: 6
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 122500
+    minDifficulty: 0
+  - at: 153
+    unit: 1
+    count: 3
+    formation: 2
+    x: 5
+    spacing: 4
+    path: 4
+    mirror: 1
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 154
+    unit: 18
+    count: 1
+    formation: 0
+    x: -9.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 180
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 156
+    unit: 20
+    count: 1
+    formation: 0
+    x: -3.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 2
+  - at: 165
+    unit: 1
+    count: 2
+    formation: 4
+    x: -5
+    spacing: 4
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 168
+    unit: 21
+    count: 1
+    formation: 0
+    x: 9
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 173.5
+    unit: 17
+    count: 1
+    formation: 0
+    x: -2
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 176.5
+    unit: 20
+    count: 1
+    formation: 0
+    x: -6
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 178
+    unit: 4
+    count: 2
+    formation: 4
+    x: -9
+    spacing: 5
+    path: 8
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 1
+  - at: 182.5
+    unit: 17
+    count: 1
+    formation: 0
+    x: -12
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 188.5
+    unit: 0
+    count: 5
+    formation: 2
+    x: 0
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 2
+  - at: 191
+    unit: 21
+    count: 1
+    formation: 0
+    x: -12.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 1
+  - at: 191.5
+    unit: 25
+    count: 1
+    formation: 0
+    x: 9.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 2
+  - at: 192.5
+    unit: 20
+    count: 1
+    formation: 0
+    x: 1.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 198
+    unit: 6
+    count: 1
+    formation: 0
+    x: 0
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 205
+    unit: 25
+    count: 1
+    formation: 0
+    x: -11
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 206.5
+    unit: 25
+    count: 1
+    formation: 0
+    x: -5.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 207.5
+    unit: 1
+    count: 3
+    formation: 2
+    x: -5
+    spacing: 4
+    path: 5
+    mirror: 1
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 210
+    unit: 6
+    count: 1
+    formation: 0
+    x: -6
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 55700
+    minDifficulty: 0
+  - at: 210
+    unit: 25
+    count: 1
+    formation: 0
+    x: -12
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 1
+  - at: 218
+    unit: 6
+    count: 1
+    formation: 0
+    x: -9
+    spacing: 3
+    path: 4
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 223
+    unit: 25
+    count: 1
+    formation: 0
+    x: -6.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 228
+    unit: 20
+    count: 1
+    formation: 0
+    x: -7.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 2
+  - at: 228.5
+    unit: 21
+    count: 1
+    formation: 0
+    x: -3.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 230
+    unit: 3
+    count: 1
+    formation: 0
+    x: -3
+    spacing: 8
+    path: 6
+    mirror: 0
+    speed: 1
+    flight: 1
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 1
+  - at: 230.5
+    unit: 25
+    count: 1
+    formation: 0
+    x: -11.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 241
+    unit: 1
+    count: 2
+    formation: 4
+    x: 5
+    spacing: 4
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 242
+    unit: 18
+    count: 1
+    formation: 0
+    x: -12.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 180
+    drive: 1.4846938
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 243.5
+    unit: 25
+    count: 1
+    formation: 0
+    x: -5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 1
+  - at: 250.5
+    unit: 17
+    count: 1
+    formation: 0
+    x: 6.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 253
+    unit: 1
+    count: 2
+    formation: 4
+    x: 0
+    spacing: 4
+    path: 0
+    mirror: 1
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 253.5
+    unit: 20
+    count: 1
+    formation: 0
+    x: -3
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 2
+  - at: 254
+    unit: 17
+    count: 1
+    formation: 0
+    x: 10
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 263
+    unit: 25
+    count: 1
+    formation: 0
+    x: -2
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 263.5
+    unit: 2
+    count: 1
+    formation: 0
+    x: 0
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 1
+  - at: 263.5
+    unit: 17
+    count: 1
+    formation: 0
+    x: -9.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 264.5
+    unit: 20
+    count: 1
+    formation: 0
+    x: 3
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 271.5
+    unit: 17
+    count: 1
+    formation: 0
+    x: -14.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 1
+  - at: 273
+    unit: 1
+    count: 2
+    formation: 4
+    x: 5
+    spacing: 4
+    path: 0
+    mirror: 1
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 283
+    unit: 5
+    count: 3
+    formation: 1
+    x: -5
+    spacing: 2.5
+    path: 2
+    mirror: 1
+    speed: 1
+    flight: 2
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 284
+    unit: 21
+    count: 1
+    formation: 0
+    x: -1.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 2
+  - at: 287
+    unit: 26
+    count: 1
+    formation: 0
+    x: -4
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 16
+    money: 0
+    minDifficulty: 0
+  - at: 294
+    unit: 1
+    count: 2
+    formation: 4
+    x: 9
+    spacing: 4
+    path: 0
+    mirror: 1
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 294.5
+    unit: 21
+    count: 1
+    formation: 0
+    x: 8
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 297.5
+    unit: 20
+    count: 1
+    formation: 0
+    x: -10
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 306.5
+    unit: 25
+    count: 1
+    formation: 0
+    x: -12
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 307
+    unit: 6
+    count: 1
+    formation: 0
+    x: -5
+    spacing: 3
+    path: 4
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 1
+  - at: 309
+    unit: 25
+    count: 1
+    formation: 0
+    x: 7
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 1
+  - at: 311.5
+    unit: 20
+    count: 1
+    formation: 0
+    x: 11.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 316
+    unit: 25
+    count: 1
+    formation: 0
+    x: -5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 316.5
+    unit: 3
+    count: 1
+    formation: 0
+    x: 0
+    spacing: 8
+    path: 7
+    mirror: 0
+    speed: 1
+    flight: 1
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 2
+  - at: 322
+    unit: 20
+    count: 1
+    formation: 0
+    x: 7.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 326
+    unit: 20
+    count: 1
+    formation: 0
+    x: -3.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 329
+    unit: 17
+    count: 1
+    formation: 0
+    x: -12
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 330
+    unit: 4
+    count: 2
+    formation: 4
+    x: 0
+    spacing: 5
+    path: 8
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 335.5
+    unit: 25
+    count: 1
+    formation: 0
+    x: -8.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 1
+  - at: 340.5
+    unit: 6
+    count: 1
+    formation: 0
+    x: 9
+    spacing: 3
+    path: 0
+    mirror: 1
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 345.5
+    unit: 18
+    count: 1
+    formation: 0
+    x: -4
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 180
+    drive: 0.9059235
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 347.5
+    unit: 17
+    count: 1
+    formation: 0
+    x: 3
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 1
+  - at: 350
+    unit: 18
+    count: 1
+    formation: 0
+    x: -0.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 180
+    drive: 0.7343115
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 2
+  - at: 350.5
+    unit: 1
+    count: 2
+    formation: 4
+    x: 5
+    spacing: 4
+    path: 4
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 352.5
+    unit: 25
+    count: 1
+    formation: 0
+    x: -4
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 362
+    unit: 5
+    count: 4
+    formation: 1
+    x: 9
+    spacing: 2.5
+    path: 2
+    mirror: 0
+    speed: 1
+    flight: 2
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 362.5
+    unit: 18
+    count: 1
+    formation: 0
+    x: 7.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 180
+    drive: 0.92349094
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 365.5
+    unit: 25
+    count: 1
+    formation: 0
+    x: -0
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 1
+  - at: 371.5
+    unit: 1
+    count: 3
+    formation: 2
+    x: 5
+    spacing: 4
+    path: 5
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 371.5
+    unit: 25
+    count: 1
+    formation: 0
+    x: -12.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 375.5
+    unit: 21
+    count: 1
+    formation: 0
+    x: -0
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 376
+    unit: 20
+    count: 1
+    formation: 0
+    x: -5.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 2
+  - at: 377
+    unit: 18
+    count: 1
+    formation: 0
+    x: 10.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 180
+    drive: 0.98869765
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 383
+    unit: 20
+    count: 1
+    formation: 0
+    x: -4.5
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 1
+  - at: 383.5
+    unit: 4
+    count: 2
+    formation: 4
+    x: 9
+    spacing: 5
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 383.5
+    unit: 21
+    count: 1
+    formation: 0
+    x: 9
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 385
+    unit: 20
+    count: 1
+    formation: 0
+    x: -10
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 1
+  - at: 389.5
+    unit: 20
+    count: 1
+    formation: 0
+    x: 8
+    spacing: 3
+    path: 0
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 395.5
+    unit: 6
+    count: 1
+    formation: 0
+    x: 9
+    spacing: 3
+    path: 0
+    mirror: 1
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 403.5
+    unit: 5
+    count: 4
+    formation: 1
+    x: -5
+    spacing: 2.5
+    path: 1
+    mirror: 0
+    speed: 1
+    flight: 2
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 0
+  - at: 414.5
+    unit: 1
+    count: 1
+    formation: 0
+    x: 0
+    spacing: 4
+    path: 4
+    mirror: 0
+    speed: 1
+    flight: 0
+    heading: 0
+    drive: 0
+    offset: {x: 3, y: 0}
+    bonus: 0
+    money: 0
+    minDifficulty: 2
+  scrollSpeed: 2.4
+  bossAt: 440
+  toughness: 2.5
+  bossBounty: 60000

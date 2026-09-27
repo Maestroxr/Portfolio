@@ -9,7 +9,7 @@ namespace Portfolio.Asteroids.EditorTools
     /// of a mission node, and the icons, drawn from signed distance functions with an outline, a soft glow and a
     /// vertical gradient.
     /// </summary>
-    internal static class SpaceIcons
+    internal static partial class SpaceIcons
     {
         private sealed class Layer
         {

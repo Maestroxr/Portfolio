@@ -52,6 +52,7 @@ MonoBehaviour:
   randomSpin: 0
   pulledByGravity: 0
   lifetime: 4.5
+  altitude: 1
   Velocity: {x: 0, y: 0}
   Spin: {x: 0, y: 0, z: 0}
   FiredBy: {fileID: 0}
@@ -66,6 +67,13 @@ MonoBehaviour:
   trail: {fileID: 0}
   exhaust: {fileID: 4380373824143802473}
   impactTint: {r: 1, g: 0.35, b: 0.3, a: 1}
+  reach: 3
+  acceleration: 0
+  maxSpeed: 0
+  wobble: 0
+  burstOnExpire: 0
+  burstRadius: 2.2
+  burstDamage: 50
 --- !u!1 &805766933526202378
 GameObject:
   m_ObjectHideFlags: 0

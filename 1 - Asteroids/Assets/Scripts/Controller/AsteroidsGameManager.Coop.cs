@@ -10,8 +10,11 @@ namespace Portfolio.Asteroids
     /// against its own copy of the world. The client of the room's host simulates that world as in the single player
     /// game (waves, spawns, the objective, the boss); on the others the manager runs without a wave director, shows
     /// what the simulator reports and follows its verdict. The playfield has the same fixed size for everybody, a
-    /// pilot without ships watches the others, nothing pauses and nothing is saved, and the campaign progress stays
-    /// as it is. Keeping the copies of the world in step is not done here but in <see cref="FieldReplication"/>.
+    /// pilot without ships watches the others, nothing pauses and the campaign progress stays as it is. The one thing a
+    /// shared mission saves is the strike pilot: a won planet strike banks the loadout of a pilot who landed (money
+    /// included), like a solo one; any other end discards it. In a strike mission the guests' ground scrolls as the
+    /// simulator reports it (<see cref="CoopScrollReported"/>). Keeping the copies of the world in step is not done
+    /// here but in <see cref="FieldReplication"/>.
     /// </summary>
     public partial class AsteroidsGameManager
     {
@@ -26,6 +29,8 @@ namespace Portfolio.Asteroids
             public int Pilots;
             public Vector2 HalfSize;
             public int Lives;
+            /// <summary>Strike: the room's difficulty, which wins for this room without changing the pilot's own.</summary>
+            public StrikeDifficulty Difficulty = StrikeDifficulty.Veteran;
         }
 
 
@@ -49,6 +54,26 @@ namespace Portfolio.Asteroids
         private int coopWave;
         private int coopWavesCleared;
 
+        // A guest's strike scroll: what the simulator reported last and when it arrived.
+        private bool coopScrollKnown;
+        private float coopScrollFollowed;
+        private float coopScrollDistance;
+        private float coopScrollSpeed;
+        private float coopScrollAt;
+        private int coopScrollFrame = -1;
+
+        // The co-op strike results on show, shown again when the places come in.
+        private StrikeResult? coopStrikeResult;
+
+        /// <summary>A guest's ground this far (m) from where the simulator's is jumps there at once instead of catching up.</summary>
+        private const float CoopScrollSnap = 4f;
+
+        /// <summary>How fast a guest's ground closes a small gap to the simulator's, per second.</summary>
+        private const float CoopScrollEase = 2f;
+
+        /// <summary>A report older than this (s) is not carried further: the simulator went quiet.</summary>
+        private const float CoopScrollLead = 1f;
+
         /// <summary>The mission is flown with other pilots.</summary>
         internal bool IsCoop => coop != null && InSession;
 
@@ -57,6 +82,20 @@ namespace Portfolio.Asteroids
 
         /// <summary>The HUD shows the objective as the simulator reports it.</summary>
         private bool FollowsSimulator => IsCoop && !coop.Simulates;
+
+        /// <summary>A guest of a shared strike mission: its ground scrolls as the simulator reports, not by a director of its own.</summary>
+        internal bool FollowsScroll => FollowsSimulator && IsStrike;
+
+        /// <summary>How far a guest's strike mission got toward its boss, 0 to 1, from the scroll it follows.</summary>
+        internal float CoopScrollProgress => Mission is StrikeLevel strike && strike.BossAt > 0f && field != null
+            ? Mathf.Clamp01(field.ScrollDistance / strike.BossAt)
+            : 0f;
+
+        /// <summary>
+        /// The victory of a shared strike mission is on (the free flight and the fly-off): kills and pickups still pay,
+        /// and the money goes to the server at once, since the room finishes two seconds after the win.
+        /// </summary>
+        internal bool InCoopVictoryWindow => IsCoop && IsStrike && IsGameRunning && phase == MissionPhase.Victory;
 
         /// <summary>The lobby lies over the mission select, which must not react to keys meant for it.</summary>
         internal bool IsLobbyOpen => online != null && online.LobbyUI != null && online.LobbyUI.IsOpen;
@@ -92,6 +131,13 @@ namespace Portfolio.Asteroids
             coopProgress = 0f;
             coopWave = 0;
             coopWavesCleared = 0;
+            coopScrollKnown = false;
+            coopScrollFollowed = 0f;
+            coopScrollDistance = 0f;
+            coopScrollSpeed = 0f;
+            coopScrollAt = 0f;
+            coopScrollFrame = -1;
+            coopStrikeResult = null;
             ClearRemoteShips();
             if (spawner != null)
             {
@@ -110,7 +156,11 @@ namespace Portfolio.Asteroids
             coop = null;
             ClearRemoteShips();
             ui?.ShowPilots(null);
-            FitPlayfield();
+            // The pilot left the room before landing (or the room went away): the working copy of a strike mission is
+            // never banked. A copy that was banked on the results is gone already.
+            DiscardCoopPilot();
+            coopStrikeResult = null;
+            RestoreFieldWorld();
         }
 
 
@@ -218,8 +268,11 @@ namespace Portfolio.Asteroids
         /// <summary>The ships of the hangar, for the stand-ins of the other pilots.</summary>
         internal PlayerSettings[] Hangar => hangar;
 
-        /// <summary>The hull strength of the mission, which the stand-ins need to show how much of it is left.</summary>
-        internal float MissionHullStrength => AsteroidSettings != null ? AsteroidSettings.HullStrength : 100f;
+        /// <summary>
+        /// The hull strength of the mission, which the stand-ins need to show how much of it is left: a strike ship's
+        /// energy, otherwise the asteroid settings' hull.
+        /// </summary>
+        internal float MissionHullStrength => IsStrike ? StrikeRules.MaxEnergy : AsteroidSettings != null ? AsteroidSettings.HullStrength : 100f;
 
 
         internal void ShowPilots(List<PilotStatus> pilots)
@@ -255,6 +308,15 @@ namespace Portfolio.Asteroids
         /// <summary>How far the mission got, for the simulator to tell the others. False outside of a running mission.</summary>
         internal bool CoopReport(out int wave, out int wavesCleared, out string status, out float progress)
         {
+            if (IsStrike)
+            {
+                // Strike: the row's wave counts the hostiles that came on screen, and nothing is ever cleared.
+                wave = HostilesEntered;
+                wavesCleared = 0;
+                progress = ScrollProgress;
+                status = StrikeStatus(progress);
+                return IsCoop && coop.Simulates && IsMissionActive;
+            }
             wave = director != null ? director.WaveNumber : 0;
             wavesCleared = objective != null ? objective.WavesCleared : 0;
             status = objective != null ? objective.Status(Mathf.Max(1, wave)) : string.Empty;
@@ -272,6 +334,12 @@ namespace Portfolio.Asteroids
             }
             coopStatus = status ?? string.Empty;
             coopProgress = progress;
+            if (IsStrike)
+            {
+                // No waves in a strike mission: no bonus and no announcements, only the hostiles that came on screen.
+                coopWave = Mathf.Max(coopWave, wave);
+                return;
+            }
             if (wavesCleared > coopWavesCleared && IsMissionActive)
             {
                 int bonus = Mathf.RoundToInt(waveBonus * wavesCleared);
@@ -287,6 +355,86 @@ namespace Portfolio.Asteroids
                 sounds?.WaveStart();
             }
             coopWave = Mathf.Max(coopWave, wave);
+        }
+
+
+        /// <summary>What the simulator's strike mission says about itself on the others' HUD.</summary>
+        private string StrikeStatus(float progress)
+        {
+            ScrollDirector run = scroll;
+            if (run != null && (run.State == ScrollDirector.Stage.BossApproach || run.State == ScrollDirector.Stage.Boss))
+            {
+                return "Destroy the target";
+            }
+            if (run != null && run.State == ScrollDirector.Stage.Done)
+            {
+                return "Target destroyed";
+            }
+            return $"Target in {Mathf.RoundToInt((1f - Mathf.Clamp01(progress)) * 100f)}%";
+        }
+
+
+        /// <summary>
+        /// The simulator reported its strike scroll (<see cref="IFieldLink.ScrollReported"/>, a few times a second): the
+        /// ground of a guest follows it, from the first report on (until then it stands still).
+        /// </summary>
+        internal void CoopScrollReported(float distance, float speed)
+        {
+            if (!FollowsScroll || field == null)
+            {
+                return;
+            }
+            coopScrollDistance = distance;
+            coopScrollSpeed = Mathf.Max(0f, speed);
+            coopScrollAt = Time.time;
+            if (!coopScrollKnown)
+            {
+                coopScrollKnown = true;
+                coopScrollFollowed = distance;
+            }
+        }
+
+
+        /// <summary>
+        /// A frame of a guest's strike scroll, in every phase of the mission (the briefing too): the ground moves on at
+        /// the reported speed and closes a small gap to where the simulator's is by now; it never runs backwards unless
+        /// the gap is big. The distance is kept here and written to the field every frame (whatever else moved it in
+        /// between), and <see cref="SpaceField.ScrollSpeed"/> is what the ground did, so the ground units that move with
+        /// it stay on their ground. Runs once a frame, whoever calls it first (the online controller calls it every frame;
+        /// the strike mission may call it before it ticks the field).
+        /// </summary>
+        internal void FollowCoopScroll(float deltaTime)
+        {
+            if (!FollowsScroll || field == null || !IsGameRunning || Time.frameCount == coopScrollFrame)
+            {
+                return;
+            }
+            coopScrollFrame = Time.frameCount;
+            if (!coopScrollKnown || deltaTime <= 0f)
+            {
+                return;
+            }
+            float expected = coopScrollDistance + coopScrollSpeed * Mathf.Min(Time.time - coopScrollAt, CoopScrollLead);
+            float error = expected - (coopScrollFollowed + coopScrollSpeed * deltaTime);
+            float speed;
+            if (Mathf.Abs(error) > CoopScrollSnap)
+            {
+                coopScrollFollowed = expected;
+                speed = coopScrollSpeed;
+            }
+            else
+            {
+                float step = Mathf.Max(0f, coopScrollSpeed * deltaTime + error * Mathf.Min(1f, CoopScrollEase * deltaTime));
+                coopScrollFollowed += step;
+                speed = step / deltaTime;
+            }
+            field.ScrollDistance = coopScrollFollowed;
+            field.ScrollSpeed = speed;
+            StrikeTerrain terrain = field.Terrain;
+            if (terrain != null && terrain.IsShown)
+            {
+                terrain.SetDistance(coopScrollFollowed);
+            }
         }
 
 
@@ -337,6 +485,11 @@ namespace Portfolio.Asteroids
         {
             if (IsCoop && phase == MissionPhase.Results && online != null)
             {
+                if (IsStrike)
+                {
+                    ShowCoopStrikeStandings(online.DescribeStandings());
+                    return;
+                }
                 ui?.ShowStandings(online.DescribeStandings());
             }
         }
@@ -346,7 +499,10 @@ namespace Portfolio.Asteroids
 
         #region The end of a shared mission
 
-        /// <summary>The mission is won. The simulator tells the server; every pilot reports the score with the bonus for the ships left.</summary>
+        /// <summary>
+        /// The mission is won. The simulator tells the server (after sending what changed, so the others see the boss go
+        /// before the verdict); every pilot reports the score with the bonus for the ships left.
+        /// </summary>
         private void CoopWon()
         {
             if (online == null)
@@ -366,18 +522,29 @@ namespace Portfolio.Asteroids
         {
             phase = MissionPhase.Watching;
             phaseTime = 0f;
-            ui?.Announce("OUT OF SHIPS", "Watching the other pilots", new Color(1f, 0.35f, 0.3f));
+            ui?.Announce(IsStrike ? "SHIP DESTROYED" : "OUT OF SHIPS", "Watching the other pilots", new Color(1f, 0.35f, 0.3f));
             sounds?.GameOver();
             online?.PilotOut(score.Score);
         }
 
 
+        /// <summary>
+        /// The server ended the mission without a victory (every ship lost, or the host left): a strike pilot is not banked,
+        /// and the loops of the fight (a boss's alarm, a beam) stop, as when a solo strike is lost.
+        /// </summary>
         private void FailCoop(string title, string subtitle)
         {
             phase = MissionPhase.Defeat;
             phaseTime = 0f;
             director?.Stop();
+            scroll?.Stop();
             spawner?.ClearPending();
+            DiscardCoopPilot();
+            if (IsStrike)
+            {
+                sounds?.SetBossAlarm(false);
+                sounds?.SetBeam(false);
+            }
             ui?.Announce(title, subtitle, new Color(1f, 0.35f, 0.3f));
             sounds?.GameOver();
         }
@@ -386,6 +553,11 @@ namespace Portfolio.Asteroids
         /// <summary>The results of a shared mission: how it ended, this pilot's numbers and everybody's scores. No stars, no records.</summary>
         private void ShowCoopResults(bool victory)
         {
+            if (IsStrike)
+            {
+                ShowCoopStrikeResults(victory);
+                return;
+            }
             phase = MissionPhase.Results;
             AsteroidsLevel mission = Mission;
             var result = new MissionResult
@@ -406,6 +578,86 @@ namespace Portfolio.Asteroids
             };
             TransitionState(victory ? BaseGameState.Victory : BaseGameState.GameOver);
             ui?.ShowResults(result);
+        }
+
+
+        /// <summary>
+        /// The results of a shared strike mission. A pilot whose ship landed after the victory banks the working copy with
+        /// the money of the mission (the difficulty of the room does not become theirs); a pilot who was down, and any
+        /// defeat, keep the saved pilot as it was. No stars or records, and no Supply Room from here.
+        /// </summary>
+        private void ShowCoopStrikeResults(bool victory)
+        {
+            phase = MissionPhase.Results;
+            int earned = (int)Mathf.Clamp(score.Score, 0, int.MaxValue);
+            bool landed = victory && ship != null && ship.IsAlive && working != null;
+            if (landed)
+            {
+                BankCoopPilot(earned);
+            }
+            else
+            {
+                DiscardCoopPilot();
+            }
+            AsteroidsLevel mission = Mission;
+            coopStrikeResult = new StrikeResult
+            {
+                Title = mission != null ? mission.Title : "Mission",
+                Victory = victory,
+                Stars = 0,
+                Money = landed ? earned : 0,
+                Wallet = Pilot.Money,
+                HostilesEntered = FollowsSimulator ? Mathf.Max(HostilesEntered, coopWave) : HostilesEntered,
+                HostilesDestroyed = HostilesDestroyed,
+                DamageTaken = DamageTaken,
+                Time = missionTime,
+                HasNext = false,
+                Coop = true,
+                Standings = online != null ? online.DescribeStandings() : string.Empty
+            };
+            // The field stands still from here: no loop of the fight may play on over the results.
+            sounds?.SetBossAlarm(false);
+            sounds?.SetBeam(false);
+            TransitionState(victory ? BaseGameState.Victory : BaseGameState.GameOver);
+            ui?.Strike?.ShowResults(coopStrikeResult.Value);
+        }
+
+
+        /// <summary>The places changed while the strike results show: they show again with the new standings.</summary>
+        private void ShowCoopStrikeStandings(string standings)
+        {
+            if (!coopStrikeResult.HasValue || coopStrikeResult.Value.Standings == standings)
+            {
+                return;
+            }
+            StrikeResult result = coopStrikeResult.Value;
+            result.Standings = standings;
+            coopStrikeResult = result;
+            ui?.Strike?.ShowResults(result);
+        }
+
+
+        /// <summary>The saved pilot becomes the working copy of the won mission plus its money, keeping the pilot's own difficulty.</summary>
+        private void BankCoopPilot(int earned)
+        {
+            if (working == null)
+            {
+                return;
+            }
+            StrikeLoadout saved = Pilot;
+            StrikeDifficulty own = saved.Difficulty;
+            working.Money = StrikeRules.AddToWallet(working.Money, earned);
+            saved.CopyFrom(working);
+            saved.Difficulty = own;
+            progress?.SavePilot(saved);
+            working = null;
+        }
+
+
+        /// <summary>The working copy of a shared strike mission is dropped: the saved pilot stays as it was.</summary>
+        private void DiscardCoopPilot()
+        {
+            working = null;
         }
 
         #endregion

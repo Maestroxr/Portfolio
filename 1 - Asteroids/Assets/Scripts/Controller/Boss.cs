@@ -64,7 +64,7 @@ namespace Portfolio.Asteroids
     /// </summary>
     public class Boss : Shootable
     {
-        private enum State
+        protected enum State
         {
             Entering,
             Fighting,
@@ -89,7 +89,7 @@ namespace Portfolio.Asteroids
         [SerializeField] internal Color explosionTint = new Color(1f, 0.6f, 0.25f);
         [SerializeField] internal float entrySeconds = 2.5f;
 
-        private State state;
+        protected State state;
         private float stateTime;
         private float[] cooldowns = new float[0];
         private float gap;
@@ -104,11 +104,15 @@ namespace Portfolio.Asteroids
 
         public string DisplayName => displayName;
 
-        public int Phase { get; private set; }
+        public int Phase { get; protected set; }
 
         public bool IsDying => state == State.Dying;
 
-        public bool HasEntered => state != State.Entering;
+        /// <summary>Whether the boss has made its entrance (hides <see cref="SpaceBody.HasEntered"/>, which is about the screen).</summary>
+        public new bool HasEntered => state != State.Entering;
+
+        /// <summary>What the boss bar shows, 0 to 1: the hull (a boss with parts counts them too). Phases follow the hull alone.</summary>
+        public virtual float BarFraction => HealthFraction;
 
         /// <summary>What shows of the boss's state, for the puppets that stand for it in a shared mission.</summary>
         internal BodyFlags StateFlags
@@ -139,6 +143,15 @@ namespace Portfolio.Asteroids
         public event Action<Boss> Defeated;
 
         private float PhaseFactor => Phase == 0 ? 1f : Phase == 1 ? 0.78f : 0.6f;
+
+        /// <summary>Seconds in the current state.</summary>
+        protected float StateTime => stateTime;
+
+        /// <summary>
+        /// Whether the phases follow the hull (<see cref="phaseThresholds"/>); a strike boss with parts moves into its next
+        /// phase when a tier of parts is cleared instead.
+        /// </summary>
+        protected virtual bool PhasesFollowHealth => true;
 
 
         public override void OnSpawned()
@@ -236,7 +249,15 @@ namespace Portfolio.Asteroids
         }
 
 
-        private void Enter(float deltaTime)
+        /// <summary>Switches to <paramref name="next"/> and restarts the state's clock.</summary>
+        protected void SetState(State next)
+        {
+            state = next;
+            stateTime = 0f;
+        }
+
+
+        protected virtual void Enter(float deltaTime)
         {
             Playground playground = Field != null ? Field.Playground : null;
             float height = playground != null ? playground.HalfSize.y : 10f;
@@ -259,7 +280,7 @@ namespace Portfolio.Asteroids
         }
 
 
-        private void Move(float deltaTime)
+        protected virtual void Move(float deltaTime)
         {
             Playground playground = Field != null ? Field.Playground : null;
             Vector2 half = playground != null ? playground.HalfSize : new Vector2(17f, 10f);
@@ -290,7 +311,7 @@ namespace Portfolio.Asteroids
         }
 
 
-        private void KeepInside()
+        protected virtual void KeepInside()
         {
             if (wraps || Field == null || Field.Playground == null || state == State.Entering || state == State.Dying)
             {
@@ -315,7 +336,7 @@ namespace Portfolio.Asteroids
         }
 
 
-        private void Attack(float deltaTime)
+        protected virtual void Attack(float deltaTime)
         {
             for (int i = 0; i < cooldowns.Length; i++)
             {
@@ -354,14 +375,14 @@ namespace Portfolio.Asteroids
         }
 
 
-        private void Execute(BossAttack attack)
+        protected virtual void Execute(BossAttack attack)
         {
             SpawnService spawner = Field != null ? Field.Spawner : null;
             if (spawner == null)
             {
                 return;
             }
-            int count = Mathf.Max(1, attack.count + Phase * Mathf.Max(1, attack.count / 4));
+            int count = AttackCount(attack);
             switch (attack.type)
             {
                 case BossAttackType.RingShot:
@@ -423,7 +444,14 @@ namespace Portfolio.Asteroids
         }
 
 
-        private Vector2 AimAtShip(float errorDegrees)
+        /// <summary>Shots, minions or mines of one use of <paramref name="attack"/>: more in the later phases.</summary>
+        protected virtual int AttackCount(BossAttack attack)
+        {
+            return Mathf.Max(1, attack.count + Phase * Mathf.Max(1, attack.count / 4));
+        }
+
+
+        protected Vector2 AimAtShip(float errorDegrees)
         {
             AsteroidsPlayer ship = Field != null ? Field.NearestShip(Position) : null;
             Vector2 direction = ship != null ? (ship.Position - Position).normalized : Vector2.down;
@@ -431,7 +459,7 @@ namespace Portfolio.Asteroids
         }
 
 
-        private void FireShot(EnemyShotKind kind, Vector2 direction, float speed)
+        protected void FireShot(EnemyShotKind kind, Vector2 direction, float speed)
         {
             if (Field == null || Field.Spawner == null)
             {
@@ -449,7 +477,7 @@ namespace Portfolio.Asteroids
                 return false;
             }
             bool destroyed = base.TakeHit(hit);
-            if (destroyed || IsPuppet || phaseThresholds == null || Phase >= phaseThresholds.Length)
+            if (destroyed || IsPuppet || !PhasesFollowHealth || phaseThresholds == null || Phase >= phaseThresholds.Length)
             {
                 return destroyed;
             }
@@ -460,12 +488,19 @@ namespace Portfolio.Asteroids
                 shieldTime = 1.4f;
                 SetShield(true);
                 burstLeft = 0;
-                Field?.Sounds?.BossRoar(1f);
-                Field?.CameraRig?.Shake(0.6f);
-                Field?.Effects?.Shockwave(Position, radius * 3f, explosionTint);
-                PhaseChanged?.Invoke(this, Phase);
+                AnnouncePhase();
             }
             return false;
+        }
+
+
+        /// <summary>The boss moved into <see cref="Phase"/>: a roar, a shake and a shockwave, and <see cref="PhaseChanged"/>.</summary>
+        protected void AnnouncePhase()
+        {
+            Field?.Sounds?.BossRoar(1f);
+            Field?.CameraRig?.Shake(0.6f);
+            Field?.Effects?.Shockwave(Position, radius * 3f, explosionTint);
+            PhaseChanged?.Invoke(this, Phase);
         }
 
 
@@ -510,7 +545,7 @@ namespace Portfolio.Asteroids
             }
             bool shielded = BodyCodec.Has(flags, BodyFlags.Shielded) && !dying;
             invulnerable = shielded || dying;
-            SetShield(shielded);
+            SetShield(ShowsShield(shielded, BodyCodec.Has(flags, BodyFlags.Entering) && !dying));
             int phase = BodyCodec.Phase(flags);
             if (phase > Phase)
             {
@@ -537,7 +572,7 @@ namespace Portfolio.Asteroids
         }
 
 
-        private void Dying(float deltaTime)
+        protected virtual void Dying(float deltaTime)
         {
             Velocity *= Mathf.Clamp01(1f - deltaTime);
             nextBlast -= deltaTime;
@@ -556,21 +591,29 @@ namespace Portfolio.Asteroids
             if (stateTime >= 2.2f && !IsPuppet)
             {
                 FinalBlast();
-                SpawnService spawner = Field != null ? Field.Spawner : null;
-                if (spawner != null)
-                {
-                    for (int i = 0; i < 10; i++)
-                    {
-                        spawner.SpawnCrystal(Position + Random.insideUnitCircle * radius, Random.insideUnitCircle * 4f);
-                    }
-                }
+                DropSpoils();
                 Defeated?.Invoke(this);
                 Despawn();
             }
         }
 
 
-        private void FinalBlast()
+        /// <summary>What the boss leaves when its death sequence ends (the simulator only): ten crystals.</summary>
+        protected virtual void DropSpoils()
+        {
+            SpawnService spawner = Field != null ? Field.Spawner : null;
+            if (spawner == null)
+            {
+                return;
+            }
+            for (int i = 0; i < 10; i++)
+            {
+                spawner.SpawnCrystal(Position + Random.insideUnitCircle * radius, Random.insideUnitCircle * 4f);
+            }
+        }
+
+
+        protected virtual void FinalBlast()
         {
             Field?.Effects?.Explosion(Position, radius * 1.6f, explosionTint);
             Field?.Effects?.Shockwave(Position, radius * 6f, explosionTint);
@@ -579,7 +622,17 @@ namespace Portfolio.Asteroids
         }
 
 
-        private void SetShield(bool on)
+        /// <summary>
+        /// Whether the shield shows on a puppet whose boss is <paramref name="shielded"/> (cannot be hit) and maybe
+        /// <paramref name="entering"/>: the shield is what keeps it from harm.
+        /// </summary>
+        protected virtual bool ShowsShield(bool shielded, bool entering)
+        {
+            return shielded;
+        }
+
+
+        protected void SetShield(bool on)
         {
             if (shield != null)
             {

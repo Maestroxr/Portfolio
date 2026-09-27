@@ -96,8 +96,42 @@ namespace Portfolio.Asteroids
         private SectorTheme pendingPlanet;
         private float planetFade = 1f;
         private bool planetOut;
+        private bool hidden;
 
         public SectorTheme Theme => theme;
+
+        /// <summary>Whether the space quad, the planet and the motes show (the ground of a strike mission covers them).</summary>
+        public bool IsVisible => !hidden;
+
+
+        /// <summary>
+        /// Hides or shows the space quad, the planet and the dust. Showing them again also puts the sector's light back,
+        /// which a strike theme replaced.
+        /// </summary>
+        public void SetVisible(bool visible)
+        {
+            if (visible == !hidden)
+            {
+                return;
+            }
+            hidden = !visible;
+            if (background != null)
+            {
+                background.enabled = visible;
+            }
+            if (planet != null)
+            {
+                planet.gameObject.SetActive(visible && theme != null && theme.PlanetMaterial != null);
+            }
+            if (motes != null)
+            {
+                motes.gameObject.SetActive(visible);
+            }
+            if (visible && theme != null)
+            {
+                Push(current);
+            }
+        }
 
 
         /// <summary>Switches to <paramref name="next"/>; blends over <see cref="blendTime"/> unless <paramref name="instant"/>.</summary>
@@ -142,7 +176,7 @@ namespace Portfolio.Asteroids
                 current = Look.Lerp(from, to, Mathf.SmoothStep(0f, 1f, blend));
                 Push(current);
             }
-            if (planet != null)
+            if (planet != null && !hidden)
             {
                 if (planetOut)
                 {
@@ -182,7 +216,7 @@ namespace Portfolio.Asteroids
                 return;
             }
             bool hasPlanet = next.PlanetMaterial != null;
-            planet.gameObject.SetActive(hasPlanet);
+            planet.gameObject.SetActive(hasPlanet && !hidden);
             if (!hasPlanet)
             {
                 return;

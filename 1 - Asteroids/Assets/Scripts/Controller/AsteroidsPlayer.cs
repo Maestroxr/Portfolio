@@ -19,6 +19,13 @@ namespace Portfolio.Asteroids
     public class AsteroidsPlayer : PlayerBase, ILocalTransformAdapter
     {
         public const int MaxBombs = 3;
+
+        /// <summary>Strike: height of the ship above the bottom edge at the start of a mission (m).</summary>
+        public const float StartHeight = 3f;
+
+        /// <summary>Strike: a continuous hit (an enemy beam) destroys at most one weapon in this many seconds.</summary>
+        public const float ContinuousWeaponLossInterval = 0.3f;
+
         private const float ShieldRegenDelay = 5f;
         private const float ShieldRegenRate = 7f;
 
@@ -33,6 +40,8 @@ namespace Portfolio.Asteroids
         [SerializeField] internal Drone[] drones = new Drone[0];
         [SerializeField] internal float novaDamage = 8f;
         [SerializeField] internal float novaBossDamage = 18f;
+        [Tooltip("The beams and zaps of the strike weapons (found among the children when not set).")]
+        [SerializeField] internal PlayerBeam beam;
 
         public delegate void PointsChanged(int points);
         public delegate void HealthChanged(float health);
@@ -63,6 +72,10 @@ namespace Portfolio.Asteroids
         private float invulnerable;
         private float regenDelay;
         private bool destroyed;
+        private StrikeLoadout strikeLoadout;
+        private float energyClock;
+        private float weaponLossCooldown;
+        private bool beamLookedUp;
 
         public int Points
         {
@@ -97,11 +110,38 @@ namespace Portfolio.Asteroids
             }
         }
 
-        public float MaxShield => PlayerSettings != null ? PlayerSettings.ShieldCapacity : 100f;
+        /// <summary>The shield's capacity: the hull's, or one phase shield (100) in strike.</summary>
+        public float MaxShield => Mode == MissionMode.Strike ? StrikeRules.PhaseShieldPoints : PlayerSettings != null ? PlayerSettings.ShieldCapacity : 100f;
 
         public int Bombs { get; private set; }
 
+        /// <summary>The most bombs the ship carries: nova bombs in the asteroid field (<see cref="MaxBombs"/>), megabombs in strike.</summary>
+        public int BombCapacity => Mode == MissionMode.Strike ? StrikeRules.MaxMegabombs : MaxBombs;
+
+        /// <summary>The kind of mission the ship flies (set by the resets for a mission).</summary>
+        public MissionMode Mode { get; internal set; }
+
+        /// <summary>The strike weapons of the local ship in a strike mission; null otherwise and on the stand-ins of other pilots.</summary>
+        public StrikeGunnery Strike { get; private set; }
+
         public ShipWeapons Weapons { get; } = new ShipWeapons();
+
+        /// <summary>The beams and zaps of the strike weapons on the ship; null when the prefab has none.</summary>
+        public PlayerBeam Beam
+        {
+            get
+            {
+                if (beam == null && !beamLookedUp)
+                {
+                    beamLookedUp = true;
+                    beam = GetComponentInChildren<PlayerBeam>(true);
+                }
+                return beam;
+            }
+        }
+
+        /// <summary>Strike: seconds the megabomb still cools down (0 when ready).</summary>
+        public float MegabombCooldown => Strike != null ? Strike.MegabombCooldown : 0f;
 
         public PlayerSimulation Simulation => simulation ??= new PlayerSimulation(this, PlayerSettings);
 
@@ -189,6 +229,8 @@ namespace Portfolio.Asteroids
         public void ResetForMission(float hullStrength)
         {
             float multiplier = PlayerSettings != null ? PlayerSettings.HullMultiplier : 1f;
+            LeaveStrike();
+            Mode = MissionMode.Field;
             MaxHealth = Mathf.Max(1f, hullStrength * multiplier);
             destroyed = false;
             gameObject.SetActive(true);
@@ -206,6 +248,89 @@ namespace Portfolio.Asteroids
             regenDelay = 0f;
             invulnerable = 1.5f;
             visuals?.ResetVisuals();
+            TouchControls?.ShowMode(MissionMode.Field);
+        }
+
+
+        /// <summary>
+        /// A fresh ship for a strike mission flying <paramref name="working"/> (the working copy of the pilot): 100 energy at
+        /// most, the energy as its hull, the phase shield in use as its shield, the megabombs as its bombs, 1.5 s of
+        /// invulnerability, at the bottom centre of the playfield.
+        /// </summary>
+        public void ResetForStrike(StrikeLoadout working)
+        {
+            LeaveStrike();
+            working ??= StrikeLoadout.NewPilot();
+            Mode = MissionMode.Strike;
+            Strike = new StrikeGunnery(working);
+            strikeLoadout = working;
+            working.Changed += SyncFromLoadout;
+            MaxHealth = StrikeRules.MaxEnergy;
+            destroyed = false;
+            gameObject.SetActive(true);
+            Points = 0;
+            Weapons.Reset();
+            ClearPowerUps();
+            SyncFromLoadout();
+            float bottom = Field != null && Field.Playground != null ? Field.Playground.Middle.y - StrikeRules.HalfSize.y : -StrikeRules.HalfSize.y;
+            Position = new Vector2(0f, bottom + StartHeight);
+            transform.rotation = Quaternion.identity;
+            Simulation.Stop();
+            fireCooldown = 0f;
+            hurtCooldown = 0f;
+            regenDelay = 0f;
+            energyClock = 0f;
+            weaponLossCooldown = 0f;
+            invulnerable = StrikeRules.StartInvulnerability;
+            visuals?.ResetVisuals();
+            PlayerBeam beams = Beam;
+            if (beams != null)
+            {
+                beams.HideAll();
+            }
+            TouchControls?.ShowMode(MissionMode.Strike);
+        }
+
+
+        /// <summary>The loadout changed: the hull, shield and bombs mirror it (the loadout is the source of truth in strike).</summary>
+        internal void SyncFromLoadout()
+        {
+            StrikeLoadout loadout = Strike != null ? Strike.Loadout : null;
+            if (loadout == null)
+            {
+                return;
+            }
+            MaxHealth = StrikeRules.MaxEnergy;
+            if (!destroyed)
+            {
+                Health = Mathf.Clamp(loadout.Energy, 0f, StrikeRules.MaxEnergy);
+            }
+            Shield = loadout.PhaseShields > 0 ? loadout.ShieldPoints : 0f;
+            SetBombs(loadout.Megabombs);
+        }
+
+
+        /// <summary>Drops the strike weapons and stops mirroring the strike loadout (another mission starts).</summary>
+        private void LeaveStrike()
+        {
+            if (strikeLoadout != null)
+            {
+                strikeLoadout.Changed -= SyncFromLoadout;
+                strikeLoadout = null;
+            }
+            if (Strike != null)
+            {
+                Strike.Stop(this);
+                Strike.Detach();
+                Strike = null;
+            }
+        }
+
+
+        /// <summary>Strike: the gunnery counts a volley of <paramref name="shots"/> projectiles (the accuracy statistics).</summary>
+        internal void NoteVolley(int shots)
+        {
+            VolleyFired?.Invoke(shots);
         }
 
 
@@ -235,6 +360,11 @@ namespace Portfolio.Asteroids
         {
             if (!IsAlive)
             {
+                return;
+            }
+            if (Mode == MissionMode.Strike)
+            {
+                SimulateStrike(deltaTime, controls);
                 return;
             }
             PlayerSimulation flight = Simulation;
@@ -290,6 +420,130 @@ namespace Portfolio.Asteroids
             {
                 visuals.Animate(this, thrust, turn, deltaTime);
             }
+        }
+
+
+        /// <summary>
+        /// One frame of a strike mission: direct 8-way flight (nose up, clamped to the screen), the strike weapons, the
+        /// megabomb and the energy regeneration. During the countdown the ship flies and fires, but the invulnerability of
+        /// the mission start waits for GO and the megabomb is not dropped (nothing is on screen yet).
+        /// </summary>
+        private void SimulateStrike(float deltaTime, bool controls)
+        {
+            PlayerSimulation flight = Simulation;
+            IShipInput commands = Input;
+            if (controls)
+            {
+                commands.Read(this, deltaTime);
+            }
+            AsteroidsGameManager manager = Asteroids;
+            bool briefing = manager != null && manager.IsBriefing;
+            if (!briefing)
+            {
+                invulnerable = Mathf.Max(0f, invulnerable - deltaTime);
+            }
+            weaponLossCooldown = Mathf.Max(0f, weaponLossCooldown - deltaTime);
+            Vector2 move = controls ? commands.Move : Vector2.zero;
+            float maxSpeed = StrikeRules.ShipMaxSpeed(PlayerSettings);
+            flight.Fly(move, maxSpeed, deltaTime);
+            flight.StepFree(deltaTime);
+            if (Field != null && Field.Playground != null)
+            {
+                Vector2 before = Position;
+                Vector2 clamped = Field.Playground.Clamp(before, Radius);
+                if (clamped != before)
+                {
+                    // Against an edge the ship stops along it instead of pressing on.
+                    Vector3 velocity = flight.Velocity;
+                    if (!Mathf.Approximately(clamped.x, before.x))
+                    {
+                        velocity.x = 0f;
+                    }
+                    if (!Mathf.Approximately(clamped.y, before.y))
+                    {
+                        velocity.y = 0f;
+                    }
+                    flight.Velocity = velocity;
+                    Position = clamped;
+                }
+            }
+            transform.rotation = Quaternion.identity;
+
+            StrikeGunnery gunnery = Strike;
+            if (gunnery != null)
+            {
+                if (controls && commands.CyclePressed)
+                {
+                    gunnery.Cycle();
+                }
+                gunnery.Update(this, deltaTime, controls && commands.Fire);
+                if (!IsAlive)
+                {
+                    return;
+                }
+                if (controls && commands.BombPressed && !briefing)
+                {
+                    gunnery.Megabomb(this);
+                }
+                RegenerateEnergy(gunnery, deltaTime);
+            }
+            if (visuals != null)
+            {
+                visuals.AnimateStrike(this, move, maxSpeed, deltaTime);
+            }
+            TouchControls?.ShowStrikeState(Bombs, gunnery != null ? gunnery.MegabombCooldown / StrikeRules.MegabombCooldown : 0f);
+        }
+
+
+        /// <summary>
+        /// Strike: +1 energy every <see cref="StrikeRules.EnergyRegenInterval"/> seconds without firing (every volley
+        /// restarts the wait), never on Elite, never outside the running mission (the fly-off) and not while a boss dies.
+        /// </summary>
+        private void RegenerateEnergy(StrikeGunnery gunnery, float deltaTime)
+        {
+            StrikeLoadout loadout = gunnery.Loadout;
+            if (loadout == null || gunnery.FiredThisFrame || !CanRegenerateEnergy(loadout))
+            {
+                energyClock = 0f;
+                return;
+            }
+            energyClock += deltaTime;
+            if (energyClock < StrikeRules.EnergyRegenInterval)
+            {
+                return;
+            }
+            energyClock -= StrikeRules.EnergyRegenInterval;
+            loadout.AddEnergy(StrikeRules.EnergyRegenAmount);
+        }
+
+
+        private bool CanRegenerateEnergy(StrikeLoadout loadout)
+        {
+            if (!StrikeRules.RegeneratesEnergy(loadout.Difficulty) || loadout.Energy >= StrikeRules.MaxEnergy)
+            {
+                return false;
+            }
+            AsteroidsGameManager manager = Asteroids;
+            if (manager != null && !manager.IsMissionActive)
+            {
+                return false;
+            }
+            return Field == null || !IsBossDying(Field);
+        }
+
+
+        /// <summary>Whether a boss is in its death throes (in play with no hull left).</summary>
+        private static bool IsBossDying(SpaceField field)
+        {
+            IReadOnlyList<Shootable> targets = field.Targets;
+            for (int i = 0; i < targets.Count; i++)
+            {
+                if (targets[i] is Boss boss && boss.InPlay && boss.Health <= 0f)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
 
@@ -356,6 +610,10 @@ namespace Portfolio.Asteroids
         /// </summary>
         public bool TakeDamage(DamageInfo hit, bool continuous = false)
         {
+            if (Mode == MissionMode.Strike)
+            {
+                return TakeStrikeDamage(hit, continuous);
+            }
             // What hurts the ship of another pilot is decided on their device.
             if (!IsAlive || IsRemote || IsInvulnerable || (!continuous && hurtCooldown > 0f) || hit.Amount <= 0f)
             {
@@ -387,6 +645,78 @@ namespace Portfolio.Asteroids
         }
 
 
+        /// <summary>
+        /// A hit in strike: the difficulty and hull multipliers, the phase shield first, a weapon lost at low energy, the
+        /// ship destroyed at 0 energy; no hurt cooldown. Returns false when the ship could not be hurt.
+        /// </summary>
+        private bool TakeStrikeDamage(DamageInfo hit, bool continuous)
+        {
+            // What hurts the ship of another pilot is decided on their device. No hurt cooldown in strike: only the
+            // invulnerability of the mission start, and the fly-off of a won mission (the input is locked, the pilot
+            // cannot dodge, and a loss there would throw the win away).
+            StrikeLoadout loadout = Strike != null ? Strike.Loadout : null;
+            if (loadout == null || !IsAlive || IsRemote || invulnerable > 0f || hit.Amount <= 0f)
+            {
+                return false;
+            }
+            AsteroidsGameManager manager = Asteroids;
+            if (manager != null && manager.IsFlyingOff)
+            {
+                return false;
+            }
+            float amount = StrikeDamage(hit.Amount, loadout.Difficulty, PlayerSettings != null ? PlayerSettings.HullMultiplier : 1f);
+            bool shielded = loadout.PhaseShields > 0;
+            int shieldsBefore = loadout.PhaseShields;
+            float taken = loadout.AbsorbDamage(amount);
+            if (shielded)
+            {
+                visuals?.ShieldHit(hit.Direction);
+                Field?.Sounds?.ShieldHit(loadout.PhaseShields < shieldsBefore);
+            }
+            else
+            {
+                Field?.Effects?.Spark(Position - hit.Direction * Radius, new Color(1f, 0.6f, 0.3f), continuous ? 0.6f : 1.4f);
+                Field?.Sounds?.HullHit();
+            }
+            // A hit on the energy (no phase shield took it) that leaves it low also destroys a weapon (the loadout checks
+            // the energy); a beam's burn destroys at most one a while.
+            if (!shielded && loadout.Energy > 0f && loadout.WeaponsAtRisk && (!continuous || weaponLossCooldown <= 0f))
+            {
+                weaponLossCooldown = continuous ? ContinuousWeaponLossInterval : 0f;
+                StrikeItem lost = loadout.LoseWeapon();
+                if (lost != StrikeItem.MachineGun)
+                {
+                    Field?.Sounds?.WeaponLost();
+                    Strike.NotifyWeaponLost(lost);
+                }
+            }
+            if (loadout.PhaseShields <= 0 && loadout.Energy > 0f && loadout.Energy <= StrikeRules.LowEnergy)
+            {
+                Field?.Sounds?.ShieldLow();
+            }
+            SyncFromLoadout();
+            // The listeners hear the damage actually taken, after the multipliers (the damage star counts it).
+            DamageInfo taking = hit;
+            taking.Amount = taken;
+            Damaged?.Invoke(taking);
+            if (loadout.Energy <= 0f)
+            {
+                Explode();
+            }
+            return true;
+        }
+
+
+        /// <summary>
+        /// Strike: the damage a hit of <paramref name="amount"/> does to the pilot on <paramref name="difficulty"/> with a hull
+        /// of <paramref name="hullMultiplier"/> (design 1.1: x0.5 on Rookie, divided by the hull's multiplier).
+        /// </summary>
+        public static float StrikeDamage(float amount, StrikeDifficulty difficulty, float hullMultiplier)
+        {
+            return amount * StrikeRules.DamageTaken(difficulty) / Mathf.Max(0.1f, hullMultiplier);
+        }
+
+
         private void Explode()
         {
             if (destroyed)
@@ -396,6 +726,7 @@ namespace Portfolio.Asteroids
             destroyed = true;
             health = 0f;
             HealthChangedEvent?.Invoke(0f);
+            Strike?.Stop(this);
             Field?.Effects?.ShipExplosion(Position, PlayerSettings != null ? PlayerSettings.EngineColor : Color.cyan);
             Field?.Sounds?.ShipExplode();
             Field?.CameraRig?.Shake(1f);
@@ -508,7 +839,7 @@ namespace Portfolio.Asteroids
 
         private void SetBombs(int count)
         {
-            Bombs = Mathf.Clamp(count, 0, MaxBombs);
+            Bombs = Mathf.Clamp(count, 0, BombCapacity);
             BombsChanged?.Invoke(Bombs);
         }
 

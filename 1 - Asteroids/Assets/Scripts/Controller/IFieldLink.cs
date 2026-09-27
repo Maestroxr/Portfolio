@@ -42,5 +42,8 @@ namespace Portfolio.Asteroids
 
         /// <summary>A new local ship arrived at <paramref name="center"/> and needs a little room.</summary>
         void RoomWanted(Vector2 center);
+
+        /// <summary>The simulator's strike scroll: how far the ground has scrolled and how fast it scrolls now.</summary>
+        void ScrollReported(float distance, float speed);
     }
 }

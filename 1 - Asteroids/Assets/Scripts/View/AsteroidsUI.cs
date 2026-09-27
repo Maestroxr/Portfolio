@@ -140,6 +140,20 @@ namespace Portfolio.Asteroids
         [SerializeField] internal Sprite starFull;
         [SerializeField] internal Sprite starEmpty;
 
+        [Header("Strike")]
+        [Tooltip("The strike mode's screens on the same canvas.")]
+        [SerializeField] internal StrikeUI strike;
+        [Tooltip("The ASTEROID FIELD tab of the mission select.")]
+        [SerializeField] internal Button fieldTab;
+        [Tooltip("The PLANET STRIKE tab of the mission select.")]
+        [SerializeField] internal Button strikeTab;
+        [Tooltip("Parts of the mission select that belong to the asteroid field (hidden on the strike tab).")]
+        [SerializeField] internal GameObject[] fieldMenuParts = new GameObject[0];
+        [Tooltip("Parts of the HUD that belong to the asteroid field (hidden in a strike mission).")]
+        [SerializeField] internal GameObject[] fieldHudParts = new GameObject[0];
+        [Tooltip("The field's results panel (hidden while the strike results show).")]
+        [SerializeField] internal GameObject[] fieldResultParts = new GameObject[0];
+
         private readonly List<MissionSummary> summaries = new List<MissionSummary>();
         private readonly List<HangarShip> ships = new List<HangarShip>();
         private BaseGameState shownState = BaseGameState.Initialization;
@@ -166,7 +180,19 @@ namespace Portfolio.Asteroids
 
         private AsteroidsGameManager Asteroids => Manager as AsteroidsGameManager;
 
+        /// <summary>The strike mode's screens; null in a scene built without them.</summary>
+        public StrikeUI Strike => strike;
+
         private AsteroidsAudio Sounds => Asteroids != null ? Asteroids.sounds : null;
+
+        /// <summary>The manager, for the strike screens.</summary>
+        internal AsteroidsGameManager Game => Asteroids;
+
+        /// <summary>The game's sounds, for the strike screens.</summary>
+        internal AsteroidsAudio Audio => Sounds;
+
+        /// <summary>The mode the mission select and the HUD show.</summary>
+        public MissionMode ShownMode { get; private set; } = MissionMode.Field;
 
 
         protected override void Awake()
@@ -184,6 +210,8 @@ namespace Portfolio.Asteroids
             Listen(nextButton, () => Asteroids?.PlayNextMission());
             Listen(retryButton, () => Asteroids?.RetryMission());
             Listen(missionsButton, () => Asteroids?.ReturnToMissionSelect());
+            Listen(fieldTab, () => Asteroids?.SelectMode(MissionMode.Field));
+            Listen(strikeTab, () => Asteroids?.SelectMode(MissionMode.Strike));
             foreach (MissionNode node in missionNodes)
             {
                 if (node != null)
@@ -233,16 +261,18 @@ namespace Portfolio.Asteroids
             {
                 StartNewGame.onClick.Invoke();
             }
-            if (Input.GetKeyDown(KeyCode.F4) && SaveGame != null)
+            // A strike mission cannot be saved, and the strike tab has nothing to continue.
+            bool strikeShown = ShownMode == MissionMode.Strike || (Asteroids != null && Asteroids.IsStrike);
+            if (Input.GetKeyDown(KeyCode.F4) && SaveGame != null && !strikeShown)
             {
                 SaveGame.onClick.Invoke();
             }
-            if (Input.GetKeyDown(KeyCode.F5) && LoadGame != null)
+            if (Input.GetKeyDown(KeyCode.F5) && LoadGame != null && !strikeShown)
             {
                 LoadGame.onClick.Invoke();
             }
             if (shownState == BaseGameState.Initialization && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)) &&
-                (hangarScreen == null || !hangarScreen.gameObject.activeSelf))
+                (hangarScreen == null || !hangarScreen.gameObject.activeSelf) && (strike == null || !strike.IsSupplyOpen))
             {
                 Asteroids?.LaunchSelectedMission();
             }
@@ -263,6 +293,10 @@ namespace Portfolio.Asteroids
 
         public override void UpdateGameState(GameState state)
         {
+            if (strike != null)
+            {
+                strike.UpdateGameState(state);
+            }
             shownState = state.BaseState;
             switch (state.BaseState)
             {
@@ -277,6 +311,10 @@ namespace Portfolio.Asteroids
                 case BaseGameState.Paused:
                     SetInteractable(ReturnToGame, true);
                     SetInteractable(SaveGame, true);
+                    // A strike mission is neither saved nor loaded in flight.
+                    bool strikeMission = Asteroids != null && Asteroids.IsStrike;
+                    SetVisible(SaveGame, !strikeMission);
+                    SetVisible(LoadGame, !strikeMission);
                     ShowScreen(hudScreen);
                     ShowMenu();
                     break;
@@ -357,6 +395,10 @@ namespace Portfolio.Asteroids
                 HideHangar();
                 return true;
             }
+            if (!IsSettingsShown && strike != null && strike.HandleBack())
+            {
+                return true;
+            }
             return base.HandleBack();
         }
 
@@ -381,6 +423,72 @@ namespace Portfolio.Asteroids
             }
             Sounds?.Click();
             hangarScreen.gameObject.SetActive(false);
+        }
+
+
+        /// <summary>
+        /// Shows the asteroid field or the planet strike: the tab of the mission select, the field's own parts of the
+        /// mission select and the HUD (the strike screens bring their own), and the strike screens' mode.
+        /// </summary>
+        public void ShowMode(MissionMode mode)
+        {
+            ShownMode = mode;
+            bool field = mode == MissionMode.Field;
+            SetActive(fieldMenuParts, field);
+            SetActive(fieldHudParts, field);
+            if (!field && continueButton != null)
+            {
+                continueButton.gameObject.SetActive(false);
+            }
+            SetTab(fieldTab, field, new Color(0.3f, 0.6f, 1f));
+            SetTab(strikeTab, !field, new Color(1f, 0.6f, 0.25f));
+            if (strike != null)
+            {
+                strike.ShowMode(mode);
+            }
+        }
+
+
+        /// <summary>Shows or hides the field's results panel (the strike results lie in its place).</summary>
+        internal void ShowFieldResults(bool visible)
+        {
+            SetActive(fieldResultParts, visible);
+        }
+
+
+        private static void SetTab(Button tab, bool selected, Color color)
+        {
+            if (tab == null || tab.targetGraphic == null)
+            {
+                return;
+            }
+            tab.targetGraphic.color = selected ? color : new Color(0.16f, 0.26f, 0.4f, 0.95f);
+            var label = tab.GetComponentInChildren<TMP_Text>(true);
+            if (label != null)
+            {
+                label.color = selected ? Color.white : new Color(0.7f, 0.8f, 0.92f);
+            }
+        }
+
+
+        private static void SetActive(GameObject[] parts, bool active)
+        {
+            foreach (GameObject part in parts)
+            {
+                if (part != null && part.activeSelf != active)
+                {
+                    part.SetActive(active);
+                }
+            }
+        }
+
+
+        private static void SetVisible(Button button, bool visible)
+        {
+            if (button != null && button.gameObject.activeSelf != visible)
+            {
+                button.gameObject.SetActive(visible);
+            }
         }
 
         #endregion
@@ -872,6 +980,11 @@ namespace Portfolio.Asteroids
 
         public void ShowResults(MissionResult result)
         {
+            ShowFieldResults(true);
+            if (strike != null)
+            {
+                strike.HideResults();
+            }
             // A shared mission goes back to its room, where the host starts the next one.
             SetLabel(missionsLabel, result.Coop ? "Room" : "Missions");
             if (retryButton != null)

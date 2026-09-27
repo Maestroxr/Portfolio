@@ -25,6 +25,18 @@ namespace Portfolio.Asteroids
         public float HalfHeight => halfHeight;
 
         /// <summary>
+        /// Whether the edges wrap around (the asteroid field). A strike mission turns it off: then <see cref="Wrap"/>
+        /// leaves positions as they are, <see cref="Delta"/> is the plain difference and <see cref="WrapPeriod"/> is zero.
+        /// </summary>
+        public bool Wraps { get; set; } = true;
+
+        /// <summary>The y of the top edge of the playfield.</summary>
+        public float Top => Middle.y + HalfSize.y;
+
+        /// <summary>The y of the bottom edge of the playfield.</summary>
+        public float Bottom => Middle.y - HalfSize.y;
+
+        /// <summary>
         /// Half the width and height of the playfield: what the camera shows, or the size it was fixed to for a mission
         /// shared with other pilots, whose screens differ.
         /// </summary>
@@ -63,6 +75,10 @@ namespace Portfolio.Asteroids
         /// </summary>
         public Vector2 Wrap(Vector2 position, float radius)
         {
+            if (!Wraps)
+            {
+                return position;
+            }
             Vector2 half = HalfSize + (Vector2)Margin + Vector2.one * radius;
             Vector2 local = position - (Vector2)Middle;
             if (local.x > half.x)
@@ -100,9 +116,26 @@ namespace Portfolio.Asteroids
             return Mathf.Abs(local.x) <= half.x && Mathf.Abs(local.y) <= half.y;
         }
 
+        /// <summary>
+        /// The nearest place to <paramref name="position"/> where something of <paramref name="radius"/> is wholly on
+        /// screen (the ship of a strike mission cannot leave it).
+        /// </summary>
+        public Vector2 Clamp(Vector2 position, float radius)
+        {
+            Vector2 half = HalfSize - Vector2.one * radius;
+            Vector2 local = position - (Vector2)Middle;
+            local.x = half.x > 0f ? Mathf.Clamp(local.x, -half.x, half.x) : 0f;
+            local.y = half.y > 0f ? Mathf.Clamp(local.y, -half.y, half.y) : 0f;
+            return local + (Vector2)Middle;
+        }
+
         /// <summary>Shortest offset from <paramref name="from"/> to <paramref name="to"/> across the wrapping edges.</summary>
         public Vector2 Delta(Vector2 from, Vector2 to)
         {
+            if (!Wraps)
+            {
+                return to - from;
+            }
             Vector2 size = HalfSize * 2f + (Vector2)Margin * 2f;
             Vector2 delta = to - from;
             if (delta.x > size.x * 0.5f)
@@ -130,6 +163,10 @@ namespace Portfolio.Asteroids
         /// </summary>
         public Vector2 WrapPeriod(float radius)
         {
+            if (!Wraps)
+            {
+                return Vector2.zero;
+            }
             return (HalfSize + (Vector2)Margin + Vector2.one * radius) * 2f;
         }
 

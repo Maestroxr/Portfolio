@@ -155,6 +155,42 @@ namespace Portfolio.Asteroids
         }
 
 
+        /// <summary>
+        /// Strike flight for <paramref name="time"/> seconds: on each axis with input the velocity approaches
+        /// <paramref name="move"/> times <paramref name="maxSpeed"/>, accelerating by the top speed every
+        /// <see cref="StrikeRules.ShipAccelerationTime"/> seconds; an axis without input halves its speed every
+        /// <see cref="StrikeRules.ShipHalfLife"/> seconds. Moves nothing (see <see cref="StepFree"/>).
+        /// </summary>
+        public void Fly(Vector2 move, float maxSpeed, float time)
+        {
+            float acceleration = maxSpeed / StrikeRules.ShipAccelerationTime * time;
+            float decay = Mathf.Pow(0.5f, time / StrikeRules.ShipHalfLife);
+            Vector3 velocity = Velocity;
+            velocity.x = Axis(velocity.x, move.x, maxSpeed, acceleration, decay);
+            velocity.y = Axis(velocity.y, move.y, maxSpeed, acceleration, decay);
+            velocity.z = 0f;
+            Velocity = velocity;
+            IsThrusting = move.sqrMagnitude > 0.0001f;
+        }
+
+
+        private static float Axis(float current, float input, float maxSpeed, float acceleration, float decay)
+        {
+            if (Mathf.Abs(input) < 0.01f)
+            {
+                return current * decay;
+            }
+            return Mathf.MoveTowards(current, Mathf.Clamp(input, -1f, 1f) * maxSpeed, acceleration);
+        }
+
+
+        /// <summary>Strike: moves the ship along its velocity for <paramref name="time"/> seconds (no drag, no turning).</summary>
+        public void StepFree(float time)
+        {
+            transform.LocalPosition += Velocity * time;
+        }
+
+
         /// <summary>Turns the ship by the current turn rate.</summary>
         public void UpdateRotation(float time)
         {

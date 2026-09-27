@@ -4,7 +4,8 @@ namespace Portfolio.Asteroids
 {
     /// <summary>
     /// Plays the pooled effects of the game: explosions and debris, hit sparks, pickup bursts, warp-ins, shockwaves,
-    /// the nova, telegraphs and the floating score numbers.
+    /// the nova, telegraphs and the floating score numbers, and those of the strike mode (ground explosions that move
+    /// with the scroll, the megabomb's flash, muzzle flashes).
     /// </summary>
     public class SpaceEffects : MonoBehaviour
     {
@@ -21,11 +22,18 @@ namespace Portfolio.Asteroids
         [SerializeField] internal EffectPool dashTrail;
         [SerializeField] internal EffectPool telegraph;
         [SerializeField] internal PopupPool popups;
+        [Header("Strike")]
+        [SerializeField] internal EffectPool groundExplosion;
+        [SerializeField] internal EffectPool megabombFlash;
+        [SerializeField] internal EffectPool muzzle;
         [Tooltip("Effects played per frame at most; more are skipped so a chain reaction cannot flood the frame.")]
         [SerializeField] internal int budgetPerFrame = 24;
 
         private int frame;
         private int playedThisFrame;
+
+        /// <summary>The playfield the effects play over (set by the field): ground effects read its scroll.</summary>
+        internal SpaceField Field { get; set; }
 
 
         public void Explosion(Vector2 position, float scale, Color tint)
@@ -109,6 +117,31 @@ namespace Portfolio.Asteroids
         public void Telegraph(Vector2 position, float radius, Color tint)
         {
             Play(telegraph, position, radius, tint);
+        }
+
+
+        /// <summary>An explosion on the ground: it moves down with the scroll.</summary>
+        public void GroundExplosion(Vector2 at, float size)
+        {
+            PooledEffect effect = Play(groundExplosion, at, size, new Color(1f, 0.6f, 0.25f));
+            if (effect != null && Field != null)
+            {
+                effect.Drift = Field.ScrollVelocity;
+            }
+        }
+
+
+        /// <summary>The white flash of a megabomb over the whole screen.</summary>
+        public void MegabombFlash()
+        {
+            Play(megabombFlash, Vector2.zero, 1f, Color.white, true);
+        }
+
+
+        /// <summary>A muzzle flash at <paramref name="at"/>.</summary>
+        public void Muzzle(Vector2 at)
+        {
+            Play(muzzle, at, 1f, new Color(1f, 0.85f, 0.5f));
         }
 
 

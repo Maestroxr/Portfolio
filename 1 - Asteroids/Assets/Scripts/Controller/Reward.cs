@@ -45,9 +45,21 @@ namespace Portfolio.Asteroids
         }
 
 
+        /// <summary>
+        /// A strike mission (the playground does not wrap): the pickup lies on the ground, so its velocity is its own motion
+        /// relative to the ground (it damps to rest), the scroll carries it down, and it has no lifetime.
+        /// </summary>
+        protected bool OnGround => Field != null && Field.Playground != null && !Field.Playground.Wraps;
+
+
         public override void Tick(float deltaTime)
         {
             Attract(deltaTime);
+            bool ground = OnGround;
+            if (ground)
+            {
+                Position += Field.ScrollVelocity * deltaTime;
+            }
             base.Tick(deltaTime);
             if (!InPlay)
             {
@@ -57,7 +69,7 @@ namespace Portfolio.Asteroids
             {
                 visual.localPosition = new Vector3(0f, 0f, -Mathf.Abs(Mathf.Sin(Age * 3f)) * bobHeight);
             }
-            if (lifetime > 0f && lifetime - Age < 3f)
+            if (!ground && lifetime > 0f && lifetime - Age < 3f)
             {
                 float rate = lifetime - Age < 1.2f ? 12f : 6f;
                 SetVisible(Mathf.Sin(Age * rate * Mathf.PI) > -0.3f);
@@ -75,6 +87,9 @@ namespace Portfolio.Asteroids
                 return;
             }
             float range = ship.IsPowerUpActive(PowerUpType.Magnet) ? 14f : attractRange;
+            // The field's pull (the free flight after a strike boss) reaches across the screen and pulls hard.
+            bool fieldPull = Field.PickupPull > range;
+            range = Mathf.Max(range, Field.PickupPull);
             Vector2 toShip = Field.Playground.Delta(Position, ship.Position);
             float distance = toShip.magnitude;
             if (distance > range || distance < 0.001f)
@@ -82,7 +97,7 @@ namespace Portfolio.Asteroids
                 Velocity *= Mathf.Clamp01(1f - deltaTime * 0.8f);
                 return;
             }
-            float pull = Mathf.Lerp(26f, 8f, distance / range);
+            float pull = fieldPull ? 60f : Mathf.Lerp(26f, 8f, distance / range);
             Velocity = Vector2.MoveTowards(Velocity, toShip / distance * Mathf.Max(6f, distance * 3f), pull * deltaTime);
         }
 
@@ -94,10 +109,17 @@ namespace Portfolio.Asteroids
             if (Field != null)
             {
                 Field.Effects?.Pickup(Position, color);
-                Field.Sounds?.Pickup(this);
+                PlayPickupSound();
             }
             Exit = ExitReason.Collected;
             Despawn();
+        }
+
+
+        /// <summary>The sound of collecting it (the strike pickups have their own).</summary>
+        protected virtual void PlayPickupSound()
+        {
+            Field?.Sounds?.Pickup(this);
         }
 
 
@@ -117,6 +139,17 @@ namespace Portfolio.Asteroids
 
         /// <summary>Gives the pickup's effect to <paramref name="player"/>.</summary>
         public abstract void Award(AsteroidsPlayer player);
+
+
+        /// <summary>A pickup lying on the ground of a strike mission never runs out; it leaves with the ground.</summary>
+        protected override void Expire()
+        {
+            if (OnGround)
+            {
+                return;
+            }
+            base.Expire();
+        }
 
 
         private void SetVisible(bool show)

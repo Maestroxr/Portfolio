@@ -45,11 +45,38 @@ namespace Portfolio.Asteroids
         [SerializeField] internal ParticleSystem exhaust;
         [SerializeField] internal Color impactTint = new Color(0.5f, 0.9f, 1f);
 
+        [Header("Strike")]
+        [Tooltip("The layers the shot hits (strike: air, ground or both); its blasts hurt the same layers.")]
+        [SerializeField] internal Altitude reach = Altitude.Both;
+        [Tooltip("Meters per second squared the shot speeds up by along its course.")]
+        [SerializeField] internal float acceleration;
+        [Tooltip("Top speed; zero for none.")]
+        [SerializeField] internal float maxSpeed;
+        [Tooltip("Side-to-side wobble in meters; zero flies straight.")]
+        [SerializeField] internal float wobble;
+        [Tooltip("Bursts into a blast on the ground when its lifetime runs out (bombs).")]
+        [SerializeField] internal bool burstOnExpire;
+        [SerializeField] internal float burstRadius = 2.2f;
+        [SerializeField] internal float burstDamage = 50f;
+
+        /// <summary>Wobbles per second.</summary>
+        private const float WobbleRate = 0.8f;
+
         private readonly List<Shootable> hits = new List<Shootable>(4);
         private Shootable homingTarget;
         private float retarget;
+        private float wobbleOffset;
 
         public bool IsEnemy => enemy;
+
+        /// <summary>
+        /// The layers the shot can hit now. Starts as the prefab's <see cref="reach"/>; a spawner may change it before the
+        /// shot is added to the field, and it goes back to the prefab's when the shot returns to its pool.
+        /// </summary>
+        public Altitude Reach { get; set; } = Altitude.Both;
+
+        /// <summary>Whether the shot ends when it touches the ship; a beam stays and hurts in its own tick instead.</summary>
+        internal virtual bool StopsOnHit => true;
 
         public float Damage
         {
@@ -72,6 +99,20 @@ namespace Portfolio.Asteroids
         public int HitCount => hits.Count;
 
 
+        protected virtual void Awake()
+        {
+            Reach = reach;
+        }
+
+
+        /// <summary>Whether the shot touches a circle of <paramref name="radius"/> at <paramref name="center"/> (the ship).</summary>
+        internal virtual bool Touches(Vector2 center, float radius)
+        {
+            float touch = this.radius + radius;
+            return (Position - center).sqrMagnitude <= touch * touch;
+        }
+
+
         /// <summary>Kept from the original: restarts the lifetime.</summary>
         public void StartTimeAlive()
         {
@@ -86,6 +127,7 @@ namespace Portfolio.Asteroids
             hits.Clear();
             homingTarget = null;
             retarget = 0f;
+            wobbleOffset = 0f;
             Align();
             if (trail != null)
             {
@@ -106,11 +148,49 @@ namespace Portfolio.Asteroids
             {
                 Home(deltaTime);
             }
+            Accelerate(deltaTime);
             base.Tick(deltaTime);
             if (InPlay)
             {
+                Wobble();
                 Align();
             }
+        }
+
+
+        /// <summary>Speeds the shot up along its course toward its top speed (both zero for the field's shots).</summary>
+        private void Accelerate(float deltaTime)
+        {
+            if (acceleration <= 0f && maxSpeed <= 0f)
+            {
+                return;
+            }
+            float speed = Velocity.magnitude;
+            Vector2 direction = speed > 0.001f ? Velocity / speed : (Vector2)transform.up;
+            if (acceleration > 0f)
+            {
+                speed += acceleration * deltaTime;
+            }
+            if (maxSpeed > 0f)
+            {
+                speed = Mathf.Min(speed, maxSpeed);
+            }
+            Velocity = direction * speed;
+        }
+
+
+        /// <summary>Sways the shot across its course by up to <see cref="wobble"/> meters.</summary>
+        private void Wobble()
+        {
+            if (wobble <= 0f || Velocity.sqrMagnitude < 0.0001f)
+            {
+                return;
+            }
+            Vector2 forward = Velocity.normalized;
+            var side = new Vector2(forward.y, -forward.x);
+            float offset = Mathf.Sin(Age * WobbleRate * 2f * Mathf.PI) * wobble;
+            Position += side * (offset - wobbleOffset);
+            wobbleOffset = offset;
         }
 
 
@@ -139,8 +219,9 @@ namespace Portfolio.Asteroids
                     retarget = 0.25f;
                     Vector2 heading = Velocity.sqrMagnitude > 0.01f ? Velocity.normalized : Vector2.up;
                     Vector2 from = Position;
+                    Altitude layers = Reach;
                     homingTarget = Field.NearestTarget(from + heading * homingRange * 0.4f, homingRange,
-                        target => Vector2.Dot((target.Position - from).normalized, heading) > -0.2f);
+                        target => (target.Altitude & layers) != 0 && Vector2.Dot((target.Position - from).normalized, heading) > -0.2f);
                 }
                 if (homingTarget == null)
                 {
@@ -171,10 +252,13 @@ namespace Portfolio.Asteroids
         }
 
 
-        /// <summary>Whether the shot may still hit <paramref name="target"/> (it never hits the same target twice).</summary>
+        /// <summary>
+        /// Whether the shot may still hit <paramref name="target"/>: it reaches the target's layer and never hits the same
+        /// target twice.
+        /// </summary>
         public bool CanHit(Shootable target)
         {
-            return InPlay && hits.Count < pierce && !hits.Contains(target);
+            return InPlay && hits.Count < pierce && (target.Altitude & Reach) != 0 && !hits.Contains(target);
         }
 
 
@@ -208,7 +292,8 @@ namespace Portfolio.Asteroids
                     Push = 2.5f,
                     ByPlayer = true,
                     Source = target,
-                    Tint = impactTint
+                    Tint = impactTint,
+                    Layers = Reach
                 });
             }
             if (hits.Count >= pierce)
@@ -250,11 +335,37 @@ namespace Portfolio.Asteroids
         protected override void Expire()
         {
             ShotHitEvent?.Invoke(this, null);
-            if (blastRadius > 0f && Field != null && Field.Effects != null)
+            if (burstOnExpire && Field != null)
+            {
+                Burst();
+            }
+            else if (blastRadius > 0f && Field != null && Field.Effects != null)
             {
                 Field.Effects.Spark(Position, impactTint, 1.2f);
             }
             Despawn();
+        }
+
+
+        /// <summary>A bomb reaches the ground: a blast that hurts only ground targets (a ghost's only shows).</summary>
+        private void Burst()
+        {
+            if (IsGhost || IsPuppet)
+            {
+                Field.Effects?.Explosion(Position, burstRadius * 0.55f, impactTint);
+                return;
+            }
+            Field.Explode(new Blast
+            {
+                Center = Position,
+                Radius = burstRadius,
+                Damage = burstDamage,
+                PlayerDamage = 0f,
+                Push = 0f,
+                ByPlayer = !enemy,
+                Tint = impactTint,
+                Layers = Altitude.Ground
+            });
         }
 
 
@@ -265,6 +376,8 @@ namespace Portfolio.Asteroids
             FiredBy = null;
             IsGhost = false;
             homingTarget = null;
+            Reach = reach;
+            wobbleOffset = 0f;
             if (trail != null)
             {
                 trail.emitting = false;

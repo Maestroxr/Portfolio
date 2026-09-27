@@ -19,6 +19,8 @@ namespace Portfolio.Asteroids
         public int? Seat;
         public SpaceBody Source;
         public Color Tint;
+        /// <summary>The layers the blast hurts (strike); None means both, so the blasts of the asteroid field hurt everything.</summary>
+        public Altitude Layers;
     }
 
 
@@ -44,6 +46,8 @@ namespace Portfolio.Asteroids
         [SerializeField] internal CameraRig cameraRig;
         [Tooltip("Explosions resolved per frame at most, which bounds a chain reaction's work.")]
         [SerializeField] internal int maxBlastsPerFrame = 120;
+        [Tooltip("The scrolling ground of the strike missions.")]
+        [SerializeField] internal StrikeTerrain terrain;
 
         private readonly List<SpaceBody> bodies = new List<SpaceBody>();
         private readonly List<SpaceBody> added = new List<SpaceBody>();
@@ -56,9 +60,28 @@ namespace Portfolio.Asteroids
         private readonly List<Comet> comets = new List<Comet>();
         private readonly Queue<Blast> blasts = new Queue<Blast>();
         private readonly List<AsteroidsPlayer> ships = new List<AsteroidsPlayer>();
+        private readonly List<Shootable> candidates = new List<Shootable>();
         private int busy;
 
         public Playground Playground => playground;
+
+        /// <summary>The scrolling ground of the strike missions; null in a scene without it.</summary>
+        public StrikeTerrain Terrain => terrain;
+
+        /// <summary>Meters per second the ground scrolls down in a strike mission; zero otherwise.</summary>
+        public float ScrollSpeed { get; set; }
+
+        /// <summary>The motion of the ground: what a parked ground unit or a pickup lying on it moves by.</summary>
+        public Vector2 ScrollVelocity => new Vector2(0f, -ScrollSpeed);
+
+        /// <summary>How far the ground has scrolled in the current strike mission (m).</summary>
+        public float ScrollDistance { get; set; }
+
+        /// <summary>
+        /// Range (m) from which every pickup drifts to the nearest ship, when larger than the pickup's own (the free flight
+        /// after a strike boss dies: <see cref="StrikeRules.EndPickupPull"/>); zero for none.
+        /// </summary>
+        public float PickupPull { get; set; }
         public SpawnService Spawner => spawner;
         public SpaceEffects Effects => effects;
         public AsteroidsAudio Sounds => sounds;
@@ -104,8 +127,20 @@ namespace Portfolio.Asteroids
         /// <summary>One of the ship's shots hit something for the first time.</summary>
         public event Action<Shot> ShotLanded;
 
+        /// <summary>A hostile of a strike mission (an aircraft or a ground unit) came on screen for the first time.</summary>
+        public event Action<SpaceBody> HostileEntered;
+
 
         private bool PlayerAlive => Player != null && Player.IsAlive;
+
+
+        private void Awake()
+        {
+            if (effects != null)
+            {
+                effects.Field = this;
+            }
+        }
 
 
         // ------------------------------------------------------------------ bodies
@@ -323,12 +358,13 @@ namespace Portfolio.Asteroids
                 for (int t = 0; t < targets.Count; t++)
                 {
                     Shootable target = targets[t];
-                    if (!target.IsAlive)
+                    if (target == null || !target.IsAlive)
                     {
                         continue;
                     }
+                    // The cheap distance test first: whether a strike target is on screen is asked only of the few it touches.
                     float reach = shot.Radius + target.Radius;
-                    if ((target.Position - shotPosition).sqrMagnitude > reach * reach || !shot.CanHit(target))
+                    if ((target.Position - shotPosition).sqrMagnitude > reach * reach || !IsTargetable(target) || !shot.CanHit(target))
                     {
                         continue;
                     }
@@ -361,8 +397,8 @@ namespace Portfolio.Asteroids
                 {
                     continue;
                 }
-                float reach = shot.Radius + Player.Radius;
-                if ((shot.Position - shipPosition).sqrMagnitude > reach * reach)
+                // A shot that does not stop on the ship (a beam) hurts it in its own tick while it touches.
+                if (!shot.Touches(shipPosition, Player.Radius) || !shot.StopsOnHit)
                 {
                     continue;
                 }
@@ -377,6 +413,11 @@ namespace Portfolio.Asteroids
         {
             if (!PlayerAlive)
             {
+                return;
+            }
+            if (playground != null && !playground.Wraps)
+            {
+                RamStrike();
                 return;
             }
             for (int t = 0; t < targets.Count; t++)
@@ -434,6 +475,49 @@ namespace Portfolio.Asteroids
                     {
                         return;
                     }
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// Strike ramming: while the ship overlaps an air unit, every <see cref="StrikeRules.RamInterval"/> the unit takes
+        /// <see cref="StrikeRules.RamUnitDamage"/> (by the player) and the ship takes damage by the unit's size. Nothing
+        /// bounces or is pushed; ground units are flown over; boss cores and parts hurt the ship but take nothing.
+        /// </summary>
+        private void RamStrike()
+        {
+            for (int t = 0; t < targets.Count; t++)
+            {
+                Shootable target = targets[t];
+                if (!target.IsAlive || (target.Altitude & Altitude.Air) == 0)
+                {
+                    continue;
+                }
+                Vector2 delta = Player.Position - target.Position;
+                float reach = Player.Radius + target.Radius * 0.9f;
+                if (delta.sqrMagnitude > reach * reach || !target.TakeRamTurn(StrikeRules.RamInterval))
+                {
+                    continue;
+                }
+                float distance = delta.magnitude;
+                Vector2 away = distance > 0.001f ? delta / distance : Vector2.down;
+                Player.TakeDamage(new DamageInfo(StrikeRules.RamPilotDamage(target.Radius * 2f), away, target.Position + away * target.Radius,
+                    DamageSource.Collision, false));
+                if (!(target is Boss) && !(target is BossPart))
+                {
+                    if (target.IsPuppet)
+                    {
+                        Link?.PuppetRammed(target, -away, false);
+                    }
+                    else
+                    {
+                        target.OnRammed(Player, -away, false);
+                    }
+                }
+                if (!PlayerAlive)
+                {
+                    return;
                 }
             }
         }
@@ -512,23 +596,26 @@ namespace Portfolio.Asteroids
                 {
                     Link.BlastSetOff(blast);
                 }
+                Altitude layers = blast.Layers == Altitude.None ? Altitude.Both : blast.Layers;
+                // Nothing is pushed in a strike mission: ground units move with the ground, aircraft on their paths.
+                float push = playground == null || playground.Wraps ? blast.Push : 0f;
                 for (int t = 0; t < targets.Count; t++)
                 {
                     Shootable target = targets[t];
-                    if (target == blast.Source || !target.IsAlive)
+                    if (target == null || target == blast.Source || !target.IsAlive || (target.Altitude & layers) == 0)
                     {
                         continue;
                     }
                     Vector2 delta = target.Position - blast.Center;
                     float reach = blast.Radius + target.Radius;
-                    if (delta.sqrMagnitude > reach * reach)
+                    if (delta.sqrMagnitude > reach * reach || !IsTargetable(target))
                     {
                         continue;
                     }
                     float distance = delta.magnitude;
                     float falloff = 1f - 0.5f * Mathf.Clamp01(distance / reach);
                     Vector2 direction = distance > 0.001f ? delta / distance : UnityEngine.Random.insideUnitCircle.normalized;
-                    target.Velocity += direction * blast.Push * falloff / Mathf.Max(0.6f, target.Radius);
+                    target.Velocity += direction * push * falloff / Mathf.Max(0.6f, target.Radius);
                     target.TakeHit(new DamageInfo(blast.Damage * falloff, direction, target.Position - direction * target.Radius,
                         DamageSource.Explosion, blast.ByPlayer) { Seat = blast.Seat });
                 }
@@ -557,7 +644,8 @@ namespace Portfolio.Asteroids
             float distance = delta.magnitude;
             float falloff = 1f - 0.5f * Mathf.Clamp01(distance / reach);
             Vector2 direction = distance > 0.001f ? delta / distance : Vector2.up;
-            if (Player.TakeDamage(new DamageInfo(blast.PlayerDamage * falloff, direction, blast.Center, DamageSource.Explosion, false)))
+            if (Player.TakeDamage(new DamageInfo(blast.PlayerDamage * falloff, direction, blast.Center, DamageSource.Explosion, false))
+                && (playground == null || playground.Wraps))
             {
                 Player.Push(direction * blast.Push * falloff);
             }
@@ -594,7 +682,8 @@ namespace Portfolio.Asteroids
         /// The ship's nova bomb: a shockwave over the whole playfield that damages everything shootable, wipes out enemy
         /// fire and pushes the rocks away from <paramref name="center"/>. In a shared mission the other clients hear of
         /// the local ship's nova, and the simulator's field takes the damage: there <paramref name="seat"/> names the pilot
-        /// on another device who set it off.
+        /// on another device who set it off. In a strike mission (the playground does not wrap) it is the megabomb: it hits
+        /// only what is on screen and pushes nothing.
         /// </summary>
         public void Nova(Vector2 center, float damage, float bossDamage, int? seat = null)
         {
@@ -604,8 +693,23 @@ namespace Portfolio.Asteroids
             }
             if (IsReplica)
             {
+                if (playground != null && !playground.Wraps)
+                {
+                    // A megabomb clears the screen it was set off on at once: the enemy shots here are puppets that would
+                    // hurt the ship until the simulator's exits come back. They only go (the simulator clears the real ones).
+                    Enter();
+                    for (int i = 0; i < enemyShots.Count; i++)
+                    {
+                        if (enemyShots[i].InPlay)
+                        {
+                            enemyShots[i].PlayImpact();
+                        }
+                    }
+                    Exit();
+                }
                 return;
             }
+            bool push = playground == null || playground.Wraps;
             Enter();
             for (int i = 0; i < enemyShots.Count; i++)
             {
@@ -617,13 +721,16 @@ namespace Portfolio.Asteroids
             for (int t = 0; t < targets.Count; t++)
             {
                 Shootable target = targets[t];
-                if (!target.IsAlive)
+                if (!IsTargetable(target))
                 {
                     continue;
                 }
                 Vector2 delta = target.Position - center;
                 Vector2 direction = delta.sqrMagnitude > 0.001f ? delta.normalized : Vector2.up;
-                target.Velocity += direction * 4f / Mathf.Max(0.6f, target.Radius);
+                if (push)
+                {
+                    target.Velocity += direction * 4f / Mathf.Max(0.6f, target.Radius);
+                }
                 float amount = target is Boss ? bossDamage : damage;
                 target.TakeHit(new DamageInfo(amount, direction, target.Position, DamageSource.Nova, true) { Seat = seat });
             }
@@ -701,9 +808,21 @@ namespace Portfolio.Asteroids
         }
 
 
+        /// <summary>
+        /// A shootable was destroyed (every kind of target and boss tells the field): it notes whether a pilot did it, which
+        /// its exit tells the others, then the listeners hear of it.
+        /// </summary>
         internal void NotifyDestroyed(Shootable target, DamageInfo hit)
         {
+            target.ExitByPlayer = hit.ByPlayer;
             TargetDestroyed?.Invoke(target, hit);
+        }
+
+
+        /// <summary>A strike hostile came on screen for the first time (the units call it once; counts for the kill star).</summary>
+        internal void NoteEntered(SpaceBody body)
+        {
+            HostileEntered?.Invoke(body);
         }
 
 
@@ -717,7 +836,7 @@ namespace Portfolio.Asteroids
             for (int i = 0; i < targets.Count; i++)
             {
                 Shootable target = targets[i];
-                if (!target.IsAlive || (filter != null && !filter(target)))
+                if (!IsTargetable(target) || (filter != null && !filter(target)))
                 {
                     continue;
                 }
@@ -725,6 +844,87 @@ namespace Portfolio.Asteroids
                 if (distance < bestDistance)
                 {
                     bestDistance = distance;
+                    best = target;
+                }
+            }
+            return best;
+        }
+
+
+        /// <summary>
+        /// Whether <paramref name="target"/> can be hit: alive, and in a strike mission (the playground does not wrap) at
+        /// least half on screen, so nothing is shot before it shows. An armoured piece of a strike boss (its core or a part
+        /// of a higher tier) is not a target there either: shots, missiles and beams pass through it to the pieces that
+        /// can be hurt, which may sit behind it.
+        /// </summary>
+        public bool IsTargetable(Shootable target)
+        {
+            if (target == null || !target.IsAlive)
+            {
+                return false;
+            }
+            if (playground == null || playground.Wraps)
+            {
+                return true;
+            }
+            if (target.Invulnerable && (target is StrikeBoss || target is BossPart))
+            {
+                return false;
+            }
+            return playground.IsInside(target.Position, -target.Radius * 0.5f);
+        }
+
+
+        /// <summary>
+        /// A targetable target on a layer of <paramref name="mask"/>, picked by <paramref name="roll"/> (0 to 1) among them
+        /// in field order; null when there is none.
+        /// </summary>
+        public Shootable RandomTarget(Altitude mask, float roll)
+        {
+            candidates.Clear();
+            for (int i = 0; i < targets.Count; i++)
+            {
+                Shootable target = targets[i];
+                if ((target.Altitude & mask) != 0 && IsTargetable(target))
+                {
+                    candidates.Add(target);
+                }
+            }
+            if (candidates.Count == 0)
+            {
+                return null;
+            }
+            int index = Mathf.Clamp(Mathf.FloorToInt(roll * candidates.Count), 0, candidates.Count - 1);
+            Shootable picked = candidates[index];
+            candidates.Clear();
+            return picked;
+        }
+
+
+        /// <summary>
+        /// The first targetable target on a layer of <paramref name="mask"/> up the column of half width
+        /// <paramref name="halfWidth"/> around <paramref name="x"/> from <paramref name="fromY"/> (a beam's): the one with
+        /// the lowest y whose circle meets the column above <paramref name="fromY"/>; null when there is none.
+        /// </summary>
+        public Shootable FirstInColumn(float x, float halfWidth, float fromY, Altitude mask)
+        {
+            Shootable best = null;
+            float bestY = float.MaxValue;
+            for (int i = 0; i < targets.Count; i++)
+            {
+                Shootable target = targets[i];
+                if ((target.Altitude & mask) == 0 || !IsTargetable(target))
+                {
+                    continue;
+                }
+                Vector2 position = target.Position;
+                if (Mathf.Abs(position.x - x) > halfWidth + target.Radius || position.y + target.Radius < fromY)
+                {
+                    continue;
+                }
+                if (position.y < bestY)
+                {
+                    bestY = position.y;
                     best = target;
                 }
             }

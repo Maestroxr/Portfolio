@@ -67,6 +67,29 @@ namespace Portfolio.Asteroids
         [SerializeField] internal AudioClip menuMusic;
         [SerializeField] internal AudioClip battleMusic;
         [SerializeField] internal AudioClip bossMusic;
+
+        [Header("Strike")]
+        [SerializeField] internal AudioClip machineGunClip;
+        [SerializeField] internal AudioClip missileLaunchClip;
+        [SerializeField] internal AudioClip laserZapClip;
+        [SerializeField] internal AudioClip bombDropClip;
+        [SerializeField] internal AudioClip groundBoomClip;
+        [SerializeField] internal AudioClip megabombClip;
+        [SerializeField] internal AudioClip cashClip;
+        [SerializeField] internal AudioClip itemPickupClip;
+        [SerializeField] internal AudioClip shopBuyClip;
+        [SerializeField] internal AudioClip shopSellClip;
+        [SerializeField] internal AudioClip shieldLowClip;
+        [SerializeField] internal AudioClip weaponLostClip;
+        [SerializeField] internal AudioClip flyByClip;
+        [Tooltip("Loops while a beam weapon fires.")]
+        [SerializeField] internal AudioClip beamHumClip;
+        [Tooltip("Loops while a strike boss with an alarm fights.")]
+        [SerializeField] internal AudioClip bossAlarmClip;
+        [SerializeField] internal AudioClip strikeMusicClip;
+        [SerializeField] internal AudioClip strikeBossMusicClip;
+
+        [Header("Mix")]
         [SerializeField] internal float musicVolume = 0.45f;
         [SerializeField] internal float effectsVolume = 0.85f;
         [SerializeField] internal int voices = 16;
@@ -81,10 +104,14 @@ namespace Portfolio.Asteroids
         private float fade = 1f;
         private float duck = 1f;
         private float duckTarget = 1f;
+        private AudioSource beamLoop;
+        private AudioSource alarmLoop;
 
         public AudioClip MenuMusic => menuMusic;
         public AudioClip BattleMusic => battleMusic;
         public AudioClip BossMusic => bossMusic;
+        public AudioClip StrikeMusic => strikeMusicClip;
+        public AudioClip StrikeBossMusic => strikeBossMusicClip;
 
 
         private void Awake()
@@ -97,6 +124,8 @@ namespace Portfolio.Asteroids
             musicA = CreateSource(true);
             musicB = CreateSource(true);
             currentMusic = musicA;
+            beamLoop = CreateSource(true);
+            alarmLoop = CreateSource(true);
         }
 
 
@@ -261,5 +290,53 @@ namespace Portfolio.Asteroids
         public void Star(int index) => Play(star, 0.9f, 1f + index * 0.12f, 0f, 0f);
         public void Click() => Play(click, 0.6f, 1f, 0f, 0.02f);
         public void Combo(int multiplier) => Play(combo, 0.6f, 0.9f + multiplier * 0.1f, 0f, 0.1f);
+
+        // ------------------------------------------------------------------ strike sounds
+
+        public void MachineGun() => Play(machineGunClip, 0.35f, 1f, 0.08f, 0.06f);
+        /// <summary>A strike missile launch (the field's <see cref="MissileLaunch"/> keeps the boss salvo's sound).</summary>
+        public void StrikeMissileLaunch() => Play(missileLaunchClip, 0.5f, 1f, 0.08f, 0.06f);
+        public void LaserZap() => Play(laserZapClip, 0.5f, 1f, 0.06f, 0.05f);
+        public void BombDrop() => Play(bombDropClip, 0.6f);
+        public void GroundBoom(float size) => Play(groundBoomClip, Mathf.Clamp01(0.45f + size * 0.2f), 1.1f - Mathf.Clamp01(size * 0.15f), 0.08f, 0.05f);
+        public void Megabomb() => Play(megabombClip, 1f, 1f, 0f);
+        public void Cash() => Play(cashClip, 0.7f, 1f, 0.04f, 0.04f);
+        public void ItemPickup() => Play(itemPickupClip, 0.85f, 1f, 0f);
+        public void ShopBuy() => Play(shopBuyClip, 0.8f, 1f, 0f, 0.05f);
+        public void ShopSell() => Play(shopSellClip, 0.8f, 1f, 0f, 0.05f);
+        public void ShieldLow() => Play(shieldLowClip, 0.8f, 1f, 0f, 0.5f);
+        public void WeaponLost() => Play(weaponLostClip, 0.9f, 1f, 0f, 0.3f);
+        public void FlyBy() => Play(flyByClip, 0.8f, 1f, 0f);
+
+        /// <summary>Starts or stops the loop of a firing beam weapon.</summary>
+        public void SetBeam(bool on) => SetLoop(beamLoop, beamHumClip, on, 0.45f);
+
+        /// <summary>Starts or stops the boss alarm loop.</summary>
+        public void SetBossAlarm(bool on) => SetLoop(alarmLoop, bossAlarmClip, on, 0.35f);
+
+
+        private void SetLoop(AudioSource source, AudioClip clip, bool on, float volume)
+        {
+            if (source == null)
+            {
+                return;
+            }
+            if (!on || clip == null)
+            {
+                if (source.isPlaying)
+                {
+                    source.Stop();
+                }
+                return;
+            }
+            if (source.isPlaying && source.clip == clip)
+            {
+                return;
+            }
+            source.clip = clip;
+            source.volume = volume * effectsVolume;
+            source.pitch = 1f;
+            source.Play();
+        }
     }
 }

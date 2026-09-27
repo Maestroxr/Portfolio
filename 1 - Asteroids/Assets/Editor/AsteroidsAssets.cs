@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEditor;
@@ -17,6 +18,13 @@ namespace Portfolio.Asteroids.EditorTools
     internal static class AsteroidsAssets
     {
         private static string root;
+
+        /// <summary>
+        /// What the builders could not make right since the build menu last cleared it: a strike level that is not valid, a
+        /// missing strike theme, boss or pool prefab, a prefab that could not be saved. The menu reports them after a build,
+        /// and a batch build with any of them exits with code 1.
+        /// </summary>
+        public static readonly List<string> Problems = new List<string>();
 
         public static string Root
         {
@@ -285,7 +293,18 @@ namespace Portfolio.Asteroids.EditorTools
             EnsureFolderOf(relative);
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(rootObject, Path(relative));
             Object.DestroyImmediate(rootObject);
+            if (prefab == null)
+            {
+                Problem($"{relative} could not be saved.");
+            }
             return prefab;
+        }
+
+        /// <summary>Notes a build problem (see <see cref="Problems"/>) and logs it as a warning.</summary>
+        public static void Problem(string text)
+        {
+            Problems.Add(text);
+            Debug.LogWarning($"Asteroids: {text}");
         }
 
         public static AudioClip SaveAudio(float[] samples, string relative, bool music)

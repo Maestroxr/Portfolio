@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Portfolio.Asteroids
@@ -17,7 +18,13 @@ namespace Portfolio.Asteroids
         GravityWell = 8,
         EnemyShot = 9,
         Reward = 10,
-        Boss = 11
+        Boss = 11,
+        /// <summary>A strike aircraft; variant = (int)StrikeUnit.</summary>
+        StrikeAir = 12,
+        /// <summary>A strike ground unit; variant = (int)StrikeUnit.</summary>
+        StrikeGround = 13,
+        /// <summary>A part of a strike boss; variant = (boss net id &lt;&lt; 8) | part index. Bound to the boss's part, never spawned.</summary>
+        BossPart = 14
     }
 
 
@@ -49,7 +56,9 @@ namespace Portfolio.Asteroids
         /// <summary>A boss going down.</summary>
         Dying = 8,
         /// <summary>The body warped in: the clients play the entrance.</summary>
-        WarpIn = 16
+        WarpIn = 16,
+        /// <summary>A strike unit warns of its next attack (a laser tower's glow, an interceptor at the edge it comes in by).</summary>
+        Warning = 32
     }
 
 
@@ -67,7 +76,9 @@ namespace Portfolio.Asteroids
     public enum FieldSignalKind : byte
     {
         Blast = 0,
-        CometWarning = 1
+        CometWarning = 1,
+        /// <summary>The scroll of a strike mission: X = the distance, Y = the speed.</summary>
+        Scroll = 2
     }
 
 
@@ -88,8 +99,13 @@ namespace Portfolio.Asteroids
         /// <summary>The kind of shot that is a wing drone's bolt, next to the <see cref="WeaponType"/> numbers.</summary>
         public const byte DroneShot = 100;
 
+        /// <summary>The most spawns, moves, exits, signals, shots or hits the server takes in one call.</summary>
+        public const int MaxBatch = 512;
+
         private const int PhaseShift = 8;
         private const uint PhaseMask = 3u << PhaseShift;
+        private const int PartShift = 8;
+        private const int PartMask = 0xFF;
 
         public static int PackAsteroid(AsteroidKind kind, AsteroidSize size, int shape)
         {
@@ -101,6 +117,38 @@ namespace Portfolio.Asteroids
             kind = (AsteroidKind)(variant & 0xF);
             size = (AsteroidSize)((variant >> 4) & 0xF);
             shape = (variant >> 8) & 0xFF;
+        }
+
+        /// <summary>
+        /// The variant of a strike boss part: the net id of its boss above the lowest 8 bits, its index among the boss's
+        /// parts in them. Net ids count from 1 per mission, so they fit the 23 bits left.
+        /// </summary>
+        public static int PackPart(uint bossNetId, int index)
+        {
+            return (int)(((bossNetId & 0x7FFFFFu) << PartShift) | (uint)(index & PartMask));
+        }
+
+        public static void UnpackPart(int variant, out uint bossNetId, out int index)
+        {
+            bossNetId = (uint)variant >> PartShift;
+            index = variant & PartMask;
+        }
+
+        /// <summary>How many calls of at most <see cref="MaxBatch"/> items <paramref name="count"/> items need (none for none).</summary>
+        public static int BatchCount(int count)
+        {
+            return count <= 0 ? 0 : (count + MaxBatch - 1) / MaxBatch;
+        }
+
+        /// <summary>Call <paramref name="index"/>'s share of <paramref name="items"/>: a new list, empty past the end.</summary>
+        public static List<T> Batch<T>(List<T> items, int index)
+        {
+            int start = index * MaxBatch;
+            if (items == null || index < 0 || start >= items.Count)
+            {
+                return new List<T>();
+            }
+            return items.GetRange(start, Math.Min(MaxBatch, items.Count - start));
         }
 
         /// <summary>The flags with the phase of a boss (0 to 2) in them.</summary>

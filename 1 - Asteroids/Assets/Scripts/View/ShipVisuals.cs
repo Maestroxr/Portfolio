@@ -5,7 +5,8 @@ namespace Portfolio.Asteroids
     /// <summary>
     /// How the ship looks in flight: the hull model of the chosen ship, a roll into turns, engine flames and exhaust
     /// that follow the throttle, the shield bubble (brighter where it was hit), a muzzle flash, blinking while it is
-    /// invulnerable after a respawn and smoke when the hull is failing.
+    /// invulnerable after a respawn and smoke when the hull is failing. In a strike mission the nose stays up and the ship
+    /// banks with its sideways speed instead of its turn (<see cref="AnimateStrike"/>).
     /// </summary>
     public class ShipVisuals : MonoBehaviour
     {
@@ -67,6 +68,20 @@ namespace Portfolio.Asteroids
             if (modelRoot != null)
             {
                 modelRoot.localScale = Vector3.one * hull.ModelScale;
+            }
+            // The strike drop shadow is a flattened copy of the model ("Shadow/Flat/Model"): it follows the hull too.
+            Transform shadowModel = transform.Find("Shadow/Flat/Model");
+            if (shadowModel != null)
+            {
+                MeshFilter shadowFilter = shadowModel.GetComponent<MeshFilter>();
+                if (shadowFilter != null && hull.ModelMesh != null)
+                {
+                    shadowFilter.sharedMesh = hull.ModelMesh;
+                }
+                if (modelFilter != null)
+                {
+                    shadowModel.localScale = modelFilter.transform.localScale;
+                }
             }
             engineColor = hull.EngineColor;
             Vector2[] engines = hull.EnginePoints ?? new Vector2[0];
@@ -139,6 +154,34 @@ namespace Portfolio.Asteroids
                 Dashing = ship.IsDashing,
                 Blinking = ship.InvulnerableTime > 0f && !ship.IsDashing,
                 Shield = ship.MaxShield > 0f ? ship.Shield / ship.MaxShield : 0f,
+                Hull = ship.MaxHealth > 0f ? ship.Health / ship.MaxHealth : 1f
+            }, deltaTime);
+        }
+
+
+        /// <summary>
+        /// The turn input that makes the ship bank like a strike ship flying sideways at <paramref name="horizontalSpeed"/>
+        /// with a top speed of <paramref name="maxSpeed"/> (left is positive, like a left turn); for the stand-ins too.
+        /// </summary>
+        public static float StrikeBank(float horizontalSpeed, float maxSpeed)
+        {
+            return maxSpeed > 0.01f ? Mathf.Clamp(-horizontalSpeed / maxSpeed, -1f, 1f) : 0f;
+        }
+
+
+        /// <summary>
+        /// A frame of a strike ship flying along <paramref name="move"/> (-1 to 1 per axis): it banks with its sideways
+        /// speed, the engines burn harder going up, and the phase shield shows only faintly (and flashes when hit).
+        /// </summary>
+        public void AnimateStrike(AsteroidsPlayer ship, Vector2 move, float maxSpeed, float deltaTime)
+        {
+            Animate(new Look
+            {
+                Thrust = Mathf.Clamp01(0.55f + move.y * 0.45f),
+                Turn = StrikeBank(ship.Velocity.x, maxSpeed),
+                Dashing = false,
+                Blinking = ship.InvulnerableTime > 0f,
+                Shield = ship.MaxShield > 0f ? ship.Shield / ship.MaxShield * 0.25f : 0f,
                 Hull = ship.MaxHealth > 0f ? ship.Health / ship.MaxHealth : 1f
             }, deltaTime);
         }

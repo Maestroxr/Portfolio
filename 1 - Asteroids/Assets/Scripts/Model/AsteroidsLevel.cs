@@ -173,6 +173,9 @@ namespace Portfolio.Asteroids
         public float SpeedMultiplier => speedMultiplier;
         public bool IsEndless => objective == LevelObjective.Endless;
 
+        /// <summary>The kind of mission: the asteroid field here, the planet strike for a <see cref="StrikeLevel"/>.</summary>
+        public virtual MissionMode Mode => MissionMode.Field;
+
         /// <summary>The sector theme of the wave <paramref name="waveNumber"/> (1 based): fixed, or rotating when endless.</summary>
         public SectorTheme ThemeForWave(int waveNumber)
         {

@@ -33,6 +33,9 @@ namespace Portfolio.Asteroids
 
         public Camera View => view;
 
+        /// <summary>Distance from the camera to the playfield plane (without the shake): depth-placed things scale by it.</summary>
+        public float Distance => -home.z;
+
 
         private void Awake()
         {
@@ -79,6 +82,7 @@ namespace Portfolio.Asteroids
             view.fieldOfView = fieldOfView;
             float distance = half / Mathf.Tan(fieldOfView * 0.5f * Mathf.Deg2Rad);
             home = new Vector3(0f, 0f, -distance);
+            DepthLayer.Distance = distance;
             view.transform.localPosition = home;
             view.transform.localRotation = Quaternion.identity;
         }

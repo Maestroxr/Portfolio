@@ -22,6 +22,11 @@ namespace Portfolio.Asteroids
         public bool DashPressed { get; private set; }
         public bool BombPressed { get; private set; }
 
+        /// <summary>The asteroid autopilot does not fly strike missions (see <see cref="StrikeAutopilot"/>).</summary>
+        public Vector2 Move => Vector2.zero;
+
+        public bool CyclePressed => false;
+
 
         private void OnEnable()
         {

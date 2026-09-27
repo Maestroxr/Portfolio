@@ -3,7 +3,10 @@ using UnityEngine;
 
 namespace Portfolio.Asteroids
 {
-    /// <summary>Distances on a playfield that wraps around: the short way may lead across an edge.</summary>
+    /// <summary>
+    /// Distances on a playfield that wraps around (the short way may lead across an edge), and where the pilots of a
+    /// shared mission start.
+    /// </summary>
     public static class FieldMath
     {
         /// <summary>
@@ -47,6 +50,20 @@ namespace Portfolio.Asteroids
             }
             float angle = (90f - 360f * slot / pilots) * Mathf.Deg2Rad;
             return new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
+        }
+
+        /// <summary>
+        /// Where pilot <paramref name="slot"/> of <paramref name="pilots"/> starts a strike mission: line abreast near the
+        /// bottom of a playfield of <paramref name="halfSize"/>, <see cref="CoopRules.RowSpacing"/> apart and centred, so
+        /// a pilot alone starts at the bottom centre.
+        /// </summary>
+        public static Vector2 RowPoint(int slot, int pilots, Vector2 halfSize)
+        {
+            int count = Mathf.Max(1, pilots);
+            int place = Mathf.Clamp(slot, 0, count - 1);
+            float x = (place - (count - 1) * 0.5f) * CoopRules.RowSpacing;
+            float y = -halfSize.y + CoopRules.RowHeight;
+            return new Vector2(x, y);
         }
 
         private static float Shortest(float delta, float period)

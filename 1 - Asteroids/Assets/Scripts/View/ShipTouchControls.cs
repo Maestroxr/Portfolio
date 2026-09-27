@@ -10,7 +10,8 @@ namespace Portfolio.Asteroids
     /// The ship's on-screen controls on phones and tablets: a floating stick for the left thumb that the player's
     /// controls turn into steering and thrust (<see cref="PlayerShipInput.Steer"/>), a fire button that shoots while it
     /// is held, and dash and nova bomb buttons that show when they are ready. The <see cref="TouchLayout"/> on the same
-    /// object shows them only when the game is played by touch.
+    /// object shows them only when the game is played by touch. In a strike mission (<see cref="ShowMode"/>) the stick
+    /// moves the ship directly, the dash button becomes WEAPON (the next special) and the nova button MEGA (the megabomb).
     /// </summary>
     public class ShipTouchControls : MonoBehaviour
     {
@@ -24,6 +25,16 @@ namespace Portfolio.Asteroids
         [SerializeField] internal Image dashReady;
         [SerializeField] internal TMP_Text bombCount;
         [SerializeField] internal CanvasGroup bombGroup;
+        [Tooltip("Label under the dash button (WEAPON in strike). Made from the bomb count's text when not set; then shown only in strike.")]
+        [SerializeField] internal TMP_Text dashLabel;
+        [Tooltip("Label under the nova button (MEGA in strike). Made from the bomb count's text when not set; then shown only in strike.")]
+        [SerializeField] internal TMP_Text bombLabel;
+
+        private bool labelsMade;
+        private int shownBombs = -1;
+
+        /// <summary>The kind of mission the controls are laid out for.</summary>
+        public MissionMode Mode { get; private set; }
 
         /// <summary>Whether the controls are on screen and in use.</summary>
         public bool Active => isActiveAndEnabled && MobilePlatform.UsesTouch;
@@ -65,6 +76,92 @@ namespace Portfolio.Asteroids
                 bombGroup.alpha = bombs > 0 ? 1f : 0.4f;
             }
         }
+
+        /// <summary>
+        /// Lays the buttons out for <paramref name="mode"/>: DASH and NOVA in the asteroid field, WEAPON and MEGA in strike
+        /// (no dash recharge ring there).
+        /// </summary>
+        public void ShowMode(MissionMode mode)
+        {
+            Mode = mode;
+            shownBombs = -1;
+            bool strike = mode == MissionMode.Strike;
+            if (strike)
+            {
+                MakeLabels();
+            }
+            SetLabel(dashLabel, strike ? "WEAPON" : "DASH", strike);
+            SetLabel(bombLabel, strike ? "MEGA" : "NOVA", strike);
+            if (dashReady != null)
+            {
+                dashReady.enabled = !strike;
+            }
+        }
+
+
+        /// <summary>Strike: the megabombs left and the cooldown (0 ready, 1 just used) on the MEGA button.</summary>
+        public void ShowStrikeState(int megabombs, float cooldown)
+        {
+            if (bombCount != null && megabombs != shownBombs)
+            {
+                shownBombs = megabombs;
+                bombCount.text = megabombs.ToString();
+            }
+            if (bombGroup != null)
+            {
+                bombGroup.alpha = megabombs > 0 && cooldown <= 0f ? 1f : 0.4f;
+            }
+        }
+
+
+        private void SetLabel(TMP_Text label, string text, bool strike)
+        {
+            if (label == null)
+            {
+                return;
+            }
+            // Labels made here are the strike's own: the asteroid field keeps its buttons as they were.
+            label.gameObject.SetActive(strike || !labelsMade);
+            label.text = text;
+        }
+
+
+        /// <summary>Makes the WEAPON and MEGA labels from the bomb count's text when the builder did not.</summary>
+        private void MakeLabels()
+        {
+            if (labelsMade || bombCount == null || (dashLabel != null && bombLabel != null))
+            {
+                return;
+            }
+            labelsMade = true;
+            if (dashLabel == null && dash != null)
+            {
+                dashLabel = MakeLabel(dash.transform);
+            }
+            if (bombLabel == null && bomb != null)
+            {
+                bombLabel = MakeLabel(bomb.transform);
+            }
+        }
+
+
+        private TMP_Text MakeLabel(Transform button)
+        {
+            TMP_Text label = Instantiate(bombCount, button);
+            label.name = "Label";
+            label.raycastTarget = false;
+            label.fontSize = 24f;
+            label.alignment = TextAlignmentOptions.Center;
+            label.enableAutoSizing = false;
+            RectTransform rect = label.rectTransform;
+            rect.anchorMin = new Vector2(0.5f, 0f);
+            rect.anchorMax = new Vector2(0.5f, 0f);
+            rect.pivot = new Vector2(0.5f, 1f);
+            rect.anchoredPosition = new Vector2(0f, -4f);
+            rect.sizeDelta = new Vector2(180f, 32f);
+            return label;
+        }
+
 
         /// <summary>Shows the icon of the current weapon on the fire button.</summary>
         public void ShowWeapon(Sprite icon)

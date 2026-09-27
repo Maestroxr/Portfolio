@@ -12,9 +12,11 @@ namespace Portfolio.Asteroids
     /// Online controller of the Asteroids module: missions flown together with pilots on other devices, in a room of the
     /// game's SpacetimeDB database. Rooms, ready and start, the poses of the ships and the scores come from the base
     /// <see cref="OnlineGameController"/> and the base server; this class adds what is Asteroids. A room plays a mission
-    /// of the campaign with a number of ships per pilot. When it starts, the client of the host simulates the world and
-    /// the others show it (<see cref="FieldReplication"/>, which this controller owns and feeds from the connection);
-    /// every client flies its own ship, sends its pose, and shows the others as stand-ins (<see cref="RemoteShip"/>).
+    /// of the campaign (an asteroid field mission with a number of ships per pilot, or a planet strike mission at a
+    /// difficulty; both are in one list of missions, by the same index everywhere). When it starts, the client of the
+    /// host simulates the world and the others show it (<see cref="FieldReplication"/>, which this controller owns and
+    /// feeds from the connection); every client flies its own ship, sends its pose, and shows the others as stand-ins
+    /// (<see cref="RemoteShip"/>).
     /// The manager plays the mission in its co-op mode (AsteroidsGameManager.Coop.cs) and hears from here how far the
     /// simulator got and how the server says the mission ended.
     /// </summary>
@@ -37,6 +39,7 @@ namespace Portfolio.Asteroids
         private string reportedStatus;
         private int reportedWave = -1;
         private int reportedCleared = -1;
+        private bool victoryPending;
 
         public AsteroidsGameManager Asteroids => BaseManager as AsteroidsGameManager;
 
@@ -50,8 +53,9 @@ namespace Portfolio.Asteroids
         public override int MinPlayersLimit => CoopRules.MinPilots;
 
         /// <summary>
-        /// The missions the host has unlocked, the endless one included. The list is made when the lobby first asks and
-        /// stays as it is, because the lobby keeps the names it was built with.
+        /// The missions the host has unlocked, the endless one included: the asteroid field missions numbered "1.", the
+        /// planet strike missions after them numbered "Strike 1.". The list is made when the lobby first asks and stays as
+        /// it is, because the lobby keeps the names it was built with.
         /// </summary>
         public override IReadOnlyList<RoomLevelChoice> LevelChoices
         {
@@ -63,6 +67,7 @@ namespace Portfolio.Asteroids
                     return levelChoices;
                 }
                 int number = 0;
+                int strikeNumber = 0;
                 for (int i = 0; i < manager.LevelCount; i++)
                 {
                     AsteroidsLevel mission = manager.AsteroidsCampaign != null ? manager.AsteroidsCampaign.Mission(i) : null;
@@ -70,36 +75,60 @@ namespace Portfolio.Asteroids
                     {
                         continue;
                     }
-                    if (!mission.IsEndless)
+                    bool strike = mission.Mode == MissionMode.Strike;
+                    if (strike)
+                    {
+                        strikeNumber++;
+                    }
+                    else if (!mission.IsEndless)
                     {
                         number++;
                     }
                     if (i == 0 || manager.IsUnlocked(i))
                     {
-                        levelChoices.Add(new RoomLevelChoice(i, mission.IsEndless ? $"{mission.Title} (endless)" : $"{number}. {mission.Title}"));
+                        levelChoices.Add(new RoomLevelChoice(i, CoopRules.LevelTitle(mission, strike ? strikeNumber : number)));
                     }
                 }
                 return levelChoices;
             }
         }
 
+        /// <summary>
+        /// The settings of a room: the ships per pilot (asteroid field missions) and the difficulty (planet strike
+        /// missions). The lobby shows both for every mission, since the settings are the same for all of them.
+        /// </summary>
         public override IReadOnlyList<RoomOptionSpec> OptionSpecs =>
-            optionSpecs ??= new[] { new RoomOptionSpec(CoopRules.LivesKey, "Ships per pilot", CoopRules.LivesChoices, null, 2) };
+            optionSpecs ??= new[]
+            {
+                new RoomOptionSpec(CoopRules.LivesKey, "Ships per pilot", CoopRules.LivesChoices, null, 2),
+                new RoomOptionSpec(CoopRules.DifficultyKey, "Strike difficulty", CoopRules.DifficultyChoices, CoopRules.DifficultyLabels,
+                    (int)CoopRules.DefaultDifficulty)
+            };
 
 
-        /// <summary>The options of a room: the ships the host picked, and how many missions there are for the server to check the level against.</summary>
+        /// <summary>
+        /// The options of a room: the ships and the strike difficulty the host picked, and how many missions there are for
+        /// the server to check the level against.
+        /// </summary>
         public override string ComposeOptions(int level, string picked)
         {
             int lives = CoopRules.Lives(picked);
-            return RoomOptions.Write(CoopRules.LivesKey, lives, CoopRules.MissionsKey, Asteroids != null ? Asteroids.LevelCount : 1);
+            var difficulty = (int)CoopRules.Difficulty(picked);
+            return RoomOptions.Write(CoopRules.LivesKey, lives, CoopRules.DifficultyKey, difficulty, CoopRules.MissionsKey,
+                Asteroids != null ? Asteroids.LevelCount : 1);
         }
 
 
+        /// <summary>A room in the list: its mission and the setting that matters for it (ships for a field mission, the difficulty for a strike).</summary>
         public override string DescribeRoom(RoomInfo room)
         {
             AsteroidsGameManager manager = Asteroids;
             AsteroidsLevel mission = manager != null && manager.AsteroidsCampaign != null ? manager.AsteroidsCampaign.Mission(room.Level) : null;
             string title = mission != null ? mission.Title : $"Mission {room.Level + 1}";
+            if (mission != null && mission.Mode == MissionMode.Strike)
+            {
+                return $"Strike: {title}, {CoopRules.DifficultyTitle(CoopRules.Difficulty(room.Options))}";
+            }
             int lives = CoopRules.Lives(room.Options);
             return $"{title}, {lives} {(lives == 1 ? "ship" : "ships")} each";
         }
@@ -204,9 +233,11 @@ namespace Portfolio.Asteroids
                 Slot = slot,
                 Pilots = Server.Members.Count,
                 HalfSize = new Vector2(mission.HalfWidth, mission.HalfHeight),
-                Lives = (int)mission.Lives
+                Lives = (int)mission.Lives,
+                Difficulty = CoopRules.Difficulty(room.Options)
             });
             missionChanged = false;
+            victoryPending = false;
             reportedScore = -1;
             reportedStatus = null;
             reportedWave = -1;
@@ -273,7 +304,26 @@ namespace Portfolio.Asteroids
                 missionChanged = false;
                 FollowMission(manager);
             }
+            if (manager.IsStrike && manager.IsGameRunning)
+            {
+                // The ground of a strike mission: the simulator reports its scroll (the link keeps the pace), a guest follows.
+                if (replication.Simulates)
+                {
+                    replication.ScrollReported(manager.ScrollDistance, manager.Field != null ? manager.Field.ScrollSpeed : 0f);
+                }
+                else
+                {
+                    manager.FollowCoopScroll(Time.deltaTime);
+                }
+            }
             replication.Tick();
+            if (victoryPending)
+            {
+                // The boss's exit went out with the update before: now the verdict.
+                victoryPending = false;
+                replication.Flush();
+                CompleteMission();
+            }
             SendLocalPose(manager);
             float now = Time.unscaledTime;
             if (now >= nextStatus)
@@ -282,7 +332,9 @@ namespace Portfolio.Asteroids
                 PublishMission(manager);
                 ShowPilots();
             }
-            if (now >= nextScore && IsPlaying && manager.Scoring.Score != reportedScore && Server.LocalMember != null && Server.LocalMember.Playing)
+            // The money of the victory window of a strike mission goes out at once: the room finishes two seconds after the win.
+            bool due = now >= nextScore || manager.InCoopVictoryWindow;
+            if (due && IsPlaying && manager.Scoring.Score != reportedScore && Server.LocalMember != null && Server.LocalMember.Playing)
             {
                 ReportScoreNow(manager.Scoring.Score);
             }
@@ -331,17 +383,21 @@ namespace Portfolio.Asteroids
             {
                 return;
             }
+            StrikeGunnery gunnery = ship.Mode == MissionMode.Strike ? ship.Strike : null;
             var pose = new ShipPose
             {
                 Alive = ship.IsAlive,
-                Thrusting = ship.IsAlive && ship.Simulation.IsThrusting,
+                // A strike ship's engines always burn.
+                Thrusting = ship.IsAlive && (ship.Mode == MissionMode.Strike || ship.Simulation.IsThrusting),
                 Dashing = ship.IsAlive && ship.IsDashing,
                 Invulnerable = ship.IsAlive && ship.InvulnerableTime > 0f,
                 Magnet = ship.IsAlive && ship.IsPowerUpActive(PowerUpType.Magnet),
                 Drones = ship.IsAlive && ship.IsPowerUpActive(PowerUpType.Drones),
                 Hull = manager.LocalHullIndex,
                 Health = ship.MaxHealth > 0f ? Mathf.Clamp01(ship.Health / ship.MaxHealth) : 0f,
-                Shield = ship.MaxShield > 0f ? Mathf.Clamp01(ship.Shield / ship.MaxShield) : 0f
+                Shield = ship.MaxShield > 0f ? Mathf.Clamp01(ship.Shield / ship.MaxShield) : 0f,
+                Beam = ship.IsAlive && gunnery != null && gunnery.BeamHeld,
+                BeamKind = gunnery != null ? gunnery.BeamKind : 0
             };
             SendPose(ship.Position, ship.Velocity, ship.transform.eulerAngles.z, pose.PackState(), pose.PackValue());
         }
@@ -351,8 +407,23 @@ namespace Portfolio.Asteroids
         // For the manager
         // ------------------------------------------------------------------------------------------------
 
-        /// <summary>The simulator's objective is complete: the server declares the victory and finishes the room a moment later.</summary>
+        /// <summary>
+        /// The simulator's objective is complete: the server declares the victory and finishes the room a moment later. In
+        /// a strike mission the verdict waits for the next tick, which first sends the boss's exit (the boss is defeated a
+        /// moment before it leaves the field): a guest's kill of the boss pays on the guest's side too.
+        /// </summary>
         internal void MissionWon()
+        {
+            if (Asteroids != null && Asteroids.IsStrike)
+            {
+                victoryPending = true;
+                return;
+            }
+            CompleteMission();
+        }
+
+
+        private void CompleteMission()
         {
             if (IsPlaying && Client != null && Client.Connection != null)
             {
@@ -424,6 +495,8 @@ namespace Portfolio.Asteroids
             }
             var present = new HashSet<Identity>();
             IReadOnlyList<RoomMemberInfo> members = Server.Members;
+            bool strike = manager.IsStrike;
+            Vector2 halfSize = manager.Playground != null ? manager.Playground.HalfSize : StrikeRules.HalfSize;
             for (int i = 0; i < members.Count; i++)
             {
                 RoomMemberInfo member = members[i];
@@ -438,8 +511,9 @@ namespace Portfolio.Asteroids
                 }
                 AsteroidsPlayer instance = Instantiate(shipPrefab, manager.Ship != null ? manager.Ship.transform.parent : null);
                 var remote = instance.gameObject.AddComponent<RemoteShip>();
-                remote.Setup(manager.Field, member.Seat, NameOf(member), manager.Hangar, manager.MissionHullStrength,
-                    FieldMath.StartPoint(i, members.Count, CoopRules.StartRadius));
+                // Where that pilot starts: on the circle of an asteroid field mission, in the row at the bottom of a strike.
+                Vector2 start = strike ? FieldMath.RowPoint(i, members.Count, halfSize) : FieldMath.StartPoint(i, members.Count, CoopRules.StartRadius);
+                remote.Setup(manager.Field, member.Seat, NameOf(member), manager.Hangar, manager.MissionHullStrength, start);
                 ships[member.Identity] = remote;
                 manager.AddRemoteShip(remote);
                 if (Server.Poses.TryGetValue(member.Identity, out RoomPoseInfo pose))

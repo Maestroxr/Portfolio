@@ -15,7 +15,7 @@ namespace Portfolio.Asteroids.EditorTools
     /// Models are placed under a "Visual" child (which tumbles and flashes) and turned so their nose points up the
     /// screen and their top faces the camera.
     /// </summary>
-    internal static class AsteroidsPrefabBuilder
+    internal static partial class AsteroidsPrefabBuilder
     {
         /// <summary>Turns a model built with +Y up and +Z forward so it faces the camera with its nose up the screen.</summary>
         private static readonly Quaternion FaceCamera = Quaternion.Euler(-90f, 0f, 0f);
@@ -50,9 +50,22 @@ namespace Portfolio.Asteroids.EditorTools
             BuildBosses();
             Progress("Ship", 0.95f);
             BuildShip();
+            Progress("Ground units and terrain", 0.96f);
+            BuildGroundPrefabs();
+            Progress("Strike units", 0.98f);
+            BuildStrikePrefabs();
             AssetDatabase.SaveAssets();
             EditorUtility.ClearProgressBar();
         }
+
+        /// <summary>Ground units, terrain tiles, props and decals (AsteroidsPrefabBuilder.Ground.cs).</summary>
+        static partial void BuildGroundPrefabs();
+
+        /// <summary>
+        /// Air units, bosses, strike shots, the enemy shot kinds 5 to 9, pickups, effects and the ship prefab's strike
+        /// children (AsteroidsPrefabBuilder.Strike.cs).
+        /// </summary>
+        static partial void BuildStrikePrefabs();
 
         private static void Progress(string step, float value)
         {
@@ -959,6 +972,17 @@ namespace Portfolio.Asteroids.EditorTools
             return boss;
         }
 
+        /// <summary>
+        /// The Rock Titan's moonlets' tumbles: fixed (the ones a random roll once gave them), so a rebuild writes the same
+        /// prefab.
+        /// </summary>
+        private static readonly Quaternion[] MoonletTurns =
+        {
+            new Quaternion(-0.5537389f, 0.4455726f, -0.67901623f, 0.18378064f),
+            new Quaternion(0.22368164f, -0.41741303f, -0.58227175f, 0.66082716f),
+            new Quaternion(0.13811243f, 0.4115295f, -0.39724788f, 0.8085559f)
+        };
+
         private static void BuildBosses()
         {
             // Rock Titan: a giant molten asteroid that sheds rocks and shrapnel.
@@ -970,7 +994,7 @@ namespace Portfolio.Asteroids.EditorTools
                 {
                     float angle = i * Mathf.PI * 2f / 3f;
                     Model(orbit, $"Moonlet{i + 1}", AsteroidsArtBuilder.Model($"Rock{i + 1}"), M("Magma"), new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f) * 4.3f,
-                        UnityEngine.Random.rotation, Vector3.one * 0.55f);
+                        MoonletTurns[i], Vector3.one * 0.55f);
                 }
                 var light = Child(boss.transform, "Core", new Vector3(0f, 0f, -4f)).gameObject.AddComponent<Light>();
                 light.type = LightType.Point;
@@ -1179,7 +1203,14 @@ namespace Portfolio.Asteroids.EditorTools
                 AsteroidsAssets.SetAuto(player, nameof(AsteroidsPlayer.PlayerSettings), p => p.objectReferenceValue = hull);
                 visuals.SetModel(hull);
             }
+            AddShipStrikeParts(root);
             Save(root, "Ship");
         }
+
+        /// <summary>
+        /// The ship's strike children, added to the ship before its one save (AsteroidsPrefabBuilder.Strike.cs): saved
+        /// together, the children keep their file IDs from build to build.
+        /// </summary>
+        static partial void AddShipStrikeParts(GameObject root);
     }
 }

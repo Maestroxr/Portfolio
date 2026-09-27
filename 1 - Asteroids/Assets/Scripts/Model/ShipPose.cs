@@ -15,6 +15,8 @@ namespace Portfolio.Asteroids
         private const uint InvulnerableBit = 8;
         private const uint MagnetBit = 16;
         private const uint DronesBit = 32;
+        private const uint BeamBit = 64;
+        private const int BeamKindShift = 24;
 
         public bool Alive;
         public bool Thrusting;
@@ -23,6 +25,12 @@ namespace Portfolio.Asteroids
         /// <summary>The tractor magnet is on: pickups come to this ship from far away.</summary>
         public bool Magnet;
         public bool Drones;
+
+        /// <summary>Strike: a beam weapon is held (the on and off pulse is drawn by each client).</summary>
+        public bool Beam;
+
+        /// <summary>Strike: which beam weapon is held, 0 to 15 (value bits 24 to 27).</summary>
+        public int BeamKind;
 
         /// <summary>Index of the ship in the hangar.</summary>
         public int Hull;
@@ -36,12 +44,12 @@ namespace Portfolio.Asteroids
         public uint PackState()
         {
             return (Alive ? AliveBit : 0u) | (Thrusting ? ThrustingBit : 0u) | (Dashing ? DashingBit : 0u) |
-                   (Invulnerable ? InvulnerableBit : 0u) | (Magnet ? MagnetBit : 0u) | (Drones ? DronesBit : 0u);
+                   (Invulnerable ? InvulnerableBit : 0u) | (Magnet ? MagnetBit : 0u) | (Drones ? DronesBit : 0u) | (Beam ? BeamBit : 0u);
         }
 
         public int PackValue()
         {
-            return (Mathf.Clamp(Hull, 0, 15)) | (Percent(Health) << 8) | (Percent(Shield) << 16);
+            return (Mathf.Clamp(Hull, 0, 15)) | (Percent(Health) << 8) | (Percent(Shield) << 16) | (Mathf.Clamp(BeamKind, 0, 15) << BeamKindShift);
         }
 
         public static ShipPose Unpack(uint state, int value)
@@ -54,6 +62,8 @@ namespace Portfolio.Asteroids
                 Invulnerable = (state & InvulnerableBit) != 0,
                 Magnet = (state & MagnetBit) != 0,
                 Drones = (state & DronesBit) != 0,
+                Beam = (state & BeamBit) != 0,
+                BeamKind = (value >> BeamKindShift) & 0xF,
                 Hull = value & 0xF,
                 Health = ((value >> 8) & 0x7F) / 100f,
                 Shield = ((value >> 16) & 0x7F) / 100f

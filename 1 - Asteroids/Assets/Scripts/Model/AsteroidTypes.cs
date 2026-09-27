@@ -85,7 +85,27 @@ namespace Portfolio.Asteroids
         Shrapnel = 1,
         Shard = 2,
         Missile = 3,
-        Acid = 4
+        Acid = 4,
+        /// <summary>Strike: small aimed shots that speed up.</summary>
+        Flak = 5,
+        /// <summary>Strike: straight bolts that speed up.</summary>
+        Bolt = 6,
+        /// <summary>Strike: rockets with a smoke trail.</summary>
+        Rocket = 7,
+        /// <summary>Strike: a laser tower's beam (<see cref="EnemyBeam"/>).</summary>
+        Beam = 8,
+        /// <summary>Strike: a mine that drifts down with a wobble (a shot: not shootable, the megabomb clears it).</summary>
+        SkyMine = 9
+    }
+
+
+    /// <summary>The two kinds of mission of the campaign (serialized in the sectors): append only.</summary>
+    public enum MissionMode
+    {
+        /// <summary>The asteroid field: a wrapping playfield, waves, lives.</summary>
+        Field = 0,
+        /// <summary>The planet strike: a vertical scroller over the ground with a boss at the end.</summary>
+        Strike = 1
     }
 
 

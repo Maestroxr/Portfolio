@@ -20,7 +20,7 @@ namespace Portfolio.Asteroids.EditorTools
     /// ship, the shared menu (as the pause menu), the game's own interface, and online play (the server client, the
     /// online controller and the shared lobby, through <see cref="OnlineInstaller"/>).
     /// </summary>
-    internal static class AsteroidsSceneBuilder
+    internal static partial class AsteroidsSceneBuilder
     {
         public const string ScenePath = "Scenes/Asteroids.unity";
         /// <summary>The name the module of Server/ is published under (spacetime.json of the game's project).</summary>
@@ -111,8 +111,9 @@ namespace Portfolio.Asteroids.EditorTools
             settingsUi.asteroidSpeed = GameMenuInstaller.AddInputField(menu, "AsteroidSpeed", "Asteroid speed", TMP_InputField.ContentType.DecimalNumber);
             settingsUi.spawnRate = GameMenuInstaller.AddInputField(menu, "SpawnRate", "Rock spawn delay (s)", TMP_InputField.ContentType.DecimalNumber);
             settingsUi.explosionRadius = GameMenuInstaller.AddInputField(menu, "ExplosionRadius", "Explosion radius (m)", TMP_InputField.ContentType.DecimalNumber);
-            int missions = campaign != null ? campaign.Count : 13;
-            int sectors = campaign != null ? campaign.SectorCount : 4;
+            // The field mission select shows the field missions (the endless one included) and sectors only.
+            int missions = campaign != null ? campaign.MissionCountOf(MissionMode.Field) : 13;
+            int sectors = campaign != null ? campaign.SectorCountOf(MissionMode.Field) : 4;
             AsteroidsInterfaceBuilder.Build(ui, menu, camera, missions, sectors, AsteroidsArtBuilder.Hulls.Length);
 
             AsteroidsAssets.SetObject(controller, "UI", ui);
@@ -150,6 +151,9 @@ namespace Portfolio.Asteroids.EditorTools
                 });
             online.shipPrefab = shipPrefab.GetComponent<AsteroidsPlayer>();
             manager.online = online;
+
+            Transform canvas = ui.titleScreen != null ? ui.titleScreen.transform.parent : null;
+            BuildStrikeScene(scene, manager, ui, camera, canvas);
 
             GameMenuInstaller.EnsureUrpCameras();
             string path = AsteroidsAssets.Path(ScenePath);
@@ -378,7 +382,23 @@ namespace Portfolio.Asteroids.EditorTools
             effects.dashTrail = Pool<EffectPool>(pools, "Effects/DashTrail", 4);
             effects.telegraph = Pool<EffectPool>(pools, "Effects/Telegraph", 3);
             effects.popups = Pool<PopupPool>(pools, "Effects/ScorePopup", 36);
+            BuildStrikePools(pools, spawner, effects);
         }
+
+        /// <summary>
+        /// The strike pools: air and ground units, strike shots, the enemy shot kinds 5 to 9 (enemyShotPools grows to 10),
+        /// the strike pickups appended to the reward pools, the strike effects (AsteroidsSceneBuilder.Strike.cs).
+        /// </summary>
+        static partial void BuildStrikePools(Transform pools, SpawnService spawner, SpaceEffects effects);
+
+        /// <summary>The strike clips and music of the audio (AsteroidsSceneBuilder.Strike.cs).</summary>
+        static partial void BuildStrikeAudio(AsteroidsAudio audio);
+
+        /// <summary>
+        /// The strike parts of the scene before it is saved: the terrain object, the field's terrain reference and the strike
+        /// UI through <see cref="AsteroidsInterfaceBuilder"/>.BuildStrike (AsteroidsSceneBuilder.Strike.cs).
+        /// </summary>
+        static partial void BuildStrikeScene(Scene scene, AsteroidsGameManager manager, AsteroidsUI ui, Camera camera, Transform canvas);
 
         private static T Pool<T>(Transform parent, string prefab, int size) where T : MonoBehaviour
         {
@@ -449,6 +469,7 @@ namespace Portfolio.Asteroids.EditorTools
             sounds.bossMusic = S("BossMusic");
             sounds.musicVolume = 0.42f;
             sounds.effectsVolume = 0.85f;
+            BuildStrikeAudio(sounds);
         }
 
         // ------------------------------------------------------------------ fonts

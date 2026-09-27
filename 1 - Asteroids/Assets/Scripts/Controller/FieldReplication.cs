@@ -43,6 +43,12 @@ namespace Portfolio.Asteroids
         /// <summary>Seconds after which a body that flies straight is reported again, which keeps small differences small.</summary>
         private const float Heartbeat = 3f;
 
+        /// <summary>Seconds between two scroll signals of the simulator while the scroll keeps its speed.</summary>
+        private const float ScrollInterval = 0.25f;
+
+        /// <summary>A change of the scroll speed (m/s) this big is signalled at once, as is a stop.</summary>
+        private const float ScrollJump = 0.5f;
+
         /// <summary>What the simulator told the others about a body last.</summary>
         private sealed class Track
         {
@@ -75,14 +81,22 @@ namespace Portfolio.Asteroids
         private readonly List<HitReport> arrivedHits = new List<HitReport>();
         private readonly List<ShipSignal> arrivedShipSignals = new List<ShipSignal>();
 
-        // What the local ship did since the last tick.
+        // Parts of strike bosses announced before their boss arrived here, by net id: bound when it does.
+        private readonly Dictionary<uint, FieldBody> pendingParts = new Dictionary<uint, FieldBody>();
+        private readonly List<uint> boundParts = new List<uint>();
+
+        // What the local ship did since the last report, with the moment each shot was fired.
         private readonly List<ShotInfo> shots = new List<ShotInfo>();
+        private readonly List<float> shotTimes = new List<float>();
         private readonly List<HitInfo> hits = new List<HitInfo>();
 
         private DbConnection connection;
         private ulong roomId;
         private int localSeat;
         private float nextSync;
+        private float nextReport;
+        private float nextScroll;
+        private float signalledScrollSpeed = -1f;
 
         public FieldReplication(AsteroidsGameManager manager)
         {
@@ -115,6 +129,9 @@ namespace Portfolio.Asteroids
             Simulates = simulates;
             IsActive = true;
             nextSync = 0f;
+            nextReport = 0f;
+            nextScroll = 0f;
+            signalledScrollSpeed = -1f;
             field.Link = this;
             if (simulates)
             {
@@ -161,7 +178,9 @@ namespace Portfolio.Asteroids
             arrivedVolleys.Clear();
             arrivedHits.Clear();
             arrivedShipSignals.Clear();
+            pendingParts.Clear();
             shots.Clear();
+            shotTimes.Clear();
             hits.Clear();
         }
 
@@ -181,6 +200,7 @@ namespace Portfolio.Asteroids
             else
             {
                 ApplyArrivals();
+                BindPendingParts();
                 ApplyMoves();
                 ApplyClaims();
                 ApplyExits();
@@ -194,15 +214,25 @@ namespace Portfolio.Asteroids
             {
                 SendField();
             }
-            if (shots.Count > 0)
+            // The guns of a strike ship fire many times a second: what they did goes out a few times a second at most.
+            float now = Time.unscaledTime;
+            if (now >= nextReport && (shots.Count > 0 || hits.Count > 0))
             {
-                connection.Reducers.FireShots(new List<ShotInfo>(shots));
-                shots.Clear();
+                nextReport = now + 1f / SyncRate;
+                SendReports(Time.time);
             }
-            if (hits.Count > 0)
+        }
+
+
+        /// <summary>
+        /// The simulator sends what changed right now instead of at the next update: before it declares the victory, so
+        /// the boss's exit reaches the others before the verdict.
+        /// </summary>
+        public void Flush()
+        {
+            if (IsActive && Simulates && connection != null)
             {
-                connection.Reducers.ReportHits(new List<HitInfo>(hits));
-                hits.Clear();
+                SendField();
             }
         }
 
@@ -306,8 +336,23 @@ namespace Portfolio.Asteroids
                 return;
             }
             tracks.Remove(body);
-            byte seat = body.ExitSeat.HasValue ? (byte)body.ExitSeat.Value : NoSeat;
-            exits.Add(new BodyExit(id, (byte)body.Exit, seat));
+            exits.Add(new BodyExit(id, (byte)body.Exit, ExitSeatOf(body, localSeat, IsStrikeField)));
+        }
+
+
+        /// <summary>
+        /// The seat an exit names: the pilot on another device who destroyed or collected the body, else nobody. In a
+        /// strike mission a kill of the simulator's own pilot names its seat, so the others count it among the hostiles
+        /// destroyed (the seat keeps them from paying for it).
+        /// </summary>
+        internal static byte ExitSeatOf(SpaceBody body, int simulatorSeat, bool strike)
+        {
+            if (body.ExitSeat.HasValue)
+            {
+                return (byte)body.ExitSeat.Value;
+            }
+            bool ownKill = strike && body.Exit == ExitReason.Destroyed && body.ExitByPlayer;
+            return ownKill && simulatorSeat >= 0 && simulatorSeat < NoSeat ? (byte)simulatorSeat : NoSeat;
         }
 
 
@@ -366,6 +411,7 @@ namespace Portfolio.Asteroids
             if (IsActive)
             {
                 shots.Add(new ShotInfo(kind, (byte)Mathf.Clamp(level, 0, 255), shot.Position.x, shot.Position.y, shot.Velocity.x, shot.Velocity.y, shot.Lifetime));
+                shotTimes.Add(Time.time);
             }
         }
 
@@ -385,6 +431,29 @@ namespace Portfolio.Asteroids
             {
                 connection.Reducers.SignalShip((byte)ShipSignalKind.MakeRoom, center.x, center.y, 0f, 0f);
             }
+        }
+
+
+        /// <summary>
+        /// The simulator's scroll, which may be reported every frame: it goes out as a signal four times a second, and at
+        /// once when the speed jumps or the scroll stops or starts.
+        /// </summary>
+        public void ScrollReported(float distance, float speed)
+        {
+            if (!IsActive || !Simulates)
+            {
+                return;
+            }
+            float now = Time.unscaledTime;
+            bool jumped = signalledScrollSpeed < 0f || Mathf.Abs(speed - signalledScrollSpeed) >= ScrollJump ||
+                          (speed <= 0f) != (signalledScrollSpeed <= 0f);
+            if (now < nextScroll && !jumped)
+            {
+                return;
+            }
+            nextScroll = now + ScrollInterval;
+            signalledScrollSpeed = Mathf.Max(0f, speed);
+            signals.Add(new FieldSignal((byte)FieldSignalKind.Scroll, distance, speed, 0f, 0f, 0f, 0f, 0f, 0u));
         }
 
 
@@ -414,7 +483,7 @@ namespace Portfolio.Asteroids
             var spawns = new List<BodySpawn>();
             foreach (SpaceBody body in entering)
             {
-                if (body == null || !body.InPlay || !spawner.Describe(body, out BodyKind kind, out int variant))
+                if (body == null || !body.InPlay || !Announces(body, out BodyKind kind, out int variant))
                 {
                     continue;
                 }
@@ -423,7 +492,7 @@ namespace Portfolio.Asteroids
                 float health = HealthOf(body);
                 float timer = body.Lifetime > 0f ? Mathf.Max(0f, body.Lifetime - body.Age) : 0f;
                 spawns.Add(new BodySpawn(id, (byte)kind, variant, body.Position.x, body.Position.y, body.Velocity.x, body.Velocity.y,
-                    body.transform.eulerAngles.z, health, timer, flags));
+                    HeadingOf(body), health, timer, flags));
                 tracks[body] = new Track { Velocity = body.Velocity, SentAt = now, Flags = FlagsOf(body), Health = health };
             }
             entering.Clear();
@@ -441,12 +510,12 @@ namespace Portfolio.Asteroids
                 float health = HealthOf(body);
                 float since = now - track.SentAt;
                 bool changed = track.Dirty || flags != track.Flags || Mathf.Abs(health - track.Health) > 0.001f;
-                bool steered = (body.Velocity - track.Velocity).sqrMagnitude > tolerance && since >= SteerInterval;
+                bool steered = (body.Velocity - Predicted(body, track.Velocity, since)).sqrMagnitude > tolerance && since >= SteerInterval;
                 if (!changed && !steered && since < Heartbeat)
                 {
                     continue;
                 }
-                moves.Add(new BodyMove(entry.Key, body.Position.x, body.Position.y, body.Velocity.x, body.Velocity.y, body.transform.eulerAngles.z, health, flags));
+                moves.Add(new BodyMove(entry.Key, body.Position.x, body.Position.y, body.Velocity.x, body.Velocity.y, HeadingOf(body), health, flags));
                 track.Velocity = body.Velocity;
                 track.SentAt = now;
                 track.Flags = flags;
@@ -458,14 +527,69 @@ namespace Portfolio.Asteroids
             {
                 return;
             }
-            connection.Reducers.SyncField(spawns, moves, new List<BodyExit>(exits), new List<FieldSignal>(signals));
+            // The server takes at most MaxBatch of each per call and rejects a longer call as a whole, which would leave
+            // the others without these bodies for good: a busy moment of a strike mission goes out in several calls.
+            int calls = Mathf.Max(Mathf.Max(BodyCodec.BatchCount(spawns.Count), BodyCodec.BatchCount(moves.Count)),
+                Mathf.Max(BodyCodec.BatchCount(exits.Count), BodyCodec.BatchCount(signals.Count)));
+            for (int call = 0; call < calls; call++)
+            {
+                connection.Reducers.SyncField(BodyCodec.Batch(spawns, call), BodyCodec.Batch(moves, call), BodyCodec.Batch(exits, call),
+                    BodyCodec.Batch(signals, call));
+            }
             exits.Clear();
             signals.Clear();
             nextSync = now + 1f / SyncRate;
         }
 
 
-        private static uint FlagsOf(SpaceBody body)
+        /// <summary>
+        /// The velocity the others' puppet of <paramref name="body"/> has by itself <paramref name="since"/> seconds after it
+        /// was sent <paramref name="sent"/>: a shot that speeds up does so on every client (along its course, up to its top
+        /// speed), so only a change of course is steering. Everything else keeps the velocity it was sent.
+        /// </summary>
+        internal static Vector2 Predicted(SpaceBody body, Vector2 sent, float since)
+        {
+            if (!(body is Shot shot) || shot.acceleration <= 0f || since <= 0f)
+            {
+                return sent;
+            }
+            float speed = sent.magnitude;
+            if (speed <= 0.001f)
+            {
+                return sent;
+            }
+            float expected = speed + shot.acceleration * since;
+            if (shot.maxSpeed > 0f)
+            {
+                expected = Mathf.Min(expected, shot.maxSpeed);
+            }
+            return sent / speed * expected;
+        }
+
+
+        /// <summary>
+        /// Whether the others are told about <paramref name="body"/>, and as what. A part of a strike boss names its boss by
+        /// net id (the boss gets its id here if it has none yet), so the others can find the part on their boss.
+        /// </summary>
+        private bool Announces(SpaceBody body, out BodyKind kind, out int variant)
+        {
+            if (body is BossPart part)
+            {
+                kind = BodyKind.BossPart;
+                variant = 0;
+                StrikeBoss boss = part.Boss;
+                if (boss == null || !boss.InPlay || !spawner.Describe(boss, out _, out _))
+                {
+                    return false;
+                }
+                variant = BodyCodec.PackPart(bodies.Register(boss), part.Index);
+                return true;
+            }
+            return spawner.Describe(body, out kind, out variant);
+        }
+
+
+        internal static uint FlagsOf(SpaceBody body)
         {
             switch (body)
             {
@@ -473,8 +597,56 @@ namespace Portfolio.Asteroids
                     return (uint)(mine.IsArmed ? BodyFlags.Armed : BodyFlags.None);
                 case Boss boss:
                     return (uint)boss.StateFlags;
+                case Enemy enemy:
+                    // An armoured part of a strike boss (or any enemy that cannot be hurt now) must not look hittable elsewhere,
+                    // and the warning of a strike unit's attack shows everywhere.
+                    return (uint)((enemy.Invulnerable ? BodyFlags.Shielded : BodyFlags.None) |
+                                  (enemy.IsTelegraphing ? BodyFlags.Warning : BodyFlags.None));
                 default:
                     return 0u;
+            }
+        }
+
+
+        /// <summary>Where a body points: a ground unit's heading (its hull may be turned apart from the root), else the root's.</summary>
+        private static float HeadingOf(SpaceBody body)
+        {
+            return body is GroundUnit ground ? ground.Heading : body.transform.eulerAngles.z;
+        }
+
+
+        /// <summary>
+        /// Sends the shots and hits of the local ship. A shot waited for up to one report: it is sent where it has got to
+        /// by now, with the time it has left, so the ghosts elsewhere do not trail behind.
+        /// </summary>
+        private void SendReports(float time)
+        {
+            if (shots.Count > 0)
+            {
+                for (int i = 0; i < shots.Count; i++)
+                {
+                    float age = i < shotTimes.Count ? Mathf.Max(0f, time - shotTimes[i]) : 0f;
+                    ShotInfo shot = shots[i];
+                    if (age > 0f)
+                    {
+                        shots[i] = new ShotInfo(shot.Kind, shot.Level, shot.X + shot.VelocityX * age, shot.Y + shot.VelocityY * age,
+                            shot.VelocityX, shot.VelocityY, shot.Lifetime > 0f ? Mathf.Max(0.01f, shot.Lifetime - age) : shot.Lifetime);
+                    }
+                }
+                for (int call = 0; call < BodyCodec.BatchCount(shots.Count); call++)
+                {
+                    connection.Reducers.FireShots(BodyCodec.Batch(shots, call));
+                }
+                shots.Clear();
+                shotTimes.Clear();
+            }
+            if (hits.Count > 0)
+            {
+                for (int call = 0; call < BodyCodec.BatchCount(hits.Count); call++)
+                {
+                    connection.Reducers.ReportHits(BodyCodec.Batch(hits, call));
+                }
+                hits.Clear();
             }
         }
 
@@ -506,6 +678,12 @@ namespace Portfolio.Asteroids
                     }
                     if (!(body is Shootable target) || !target.IsAlive)
                     {
+                        continue;
+                    }
+                    if ((hit.Source == RamSource || hit.Source == DashRamSource) && IsStrikeField)
+                    {
+                        // Strike: a rammed aircraft takes the ram damage of the tick and is not pushed.
+                        target.TakeHit(new DamageInfo(StrikeRules.RamUnitDamage, direction, target.Position, DamageSource.Collision, true) { Seat = report.Seat });
                         continue;
                     }
                     if (hit.Source == RamSource || hit.Source == DashRamSource)
@@ -563,6 +741,12 @@ namespace Portfolio.Asteroids
                     continue;
                 }
                 var kind = (BodyKind)row.Kind;
+                if (kind == BodyKind.BossPart)
+                {
+                    // Never spawned: the part is already on its boss, which may arrive in this tick or a later one.
+                    pendingParts[row.NetId] = row;
+                    continue;
+                }
                 SpaceBody puppet = spawner.SpawnPuppet(kind, row.Variant, row.Timer);
                 if (puppet == null)
                 {
@@ -571,6 +755,11 @@ namespace Portfolio.Asteroids
                 bodies.Bind(row.NetId, puppet);
                 puppet.Position = new Vector2(row.X, row.Y);
                 puppet.Velocity = new Vector2(row.VelocityX, row.VelocityY);
+                if (puppet is EnemyBeam beam && row.Timer > 0f)
+                {
+                    // A beam burns for the time the simulator's had left, on its own clock: not until its exit arrives.
+                    beam.BurnFor(row.Timer);
+                }
                 ShowState(puppet, row, true);
                 spawner.PlayEntrance(puppet, kind, BodyCodec.Has((BodyFlags)row.Flags, BodyFlags.WarpIn));
                 if (puppet is Boss boss)
@@ -581,20 +770,64 @@ namespace Portfolio.Asteroids
         }
 
 
+        /// <summary>
+        /// Binds the announced parts of strike bosses to the parts of their boss's puppet (the boss put them into the
+        /// field itself). A part whose boss is not here yet waits; its own exit takes it off the list.
+        /// </summary>
+        private void BindPendingParts()
+        {
+            if (pendingParts.Count == 0)
+            {
+                return;
+            }
+            boundParts.Clear();
+            foreach (KeyValuePair<uint, FieldBody> entry in pendingParts)
+            {
+                BodyCodec.UnpackPart(entry.Value.Variant, out uint bossId, out int index);
+                if (!bodies.TryGet(bossId, out SpaceBody body) || !(body is StrikeBoss boss) || !boss.InPlay || index >= boss.Parts.Count)
+                {
+                    continue;
+                }
+                BossPart part = boss.Parts[index];
+                if (part == null || !part.InPlay || !bodies.Bind(entry.Key, part))
+                {
+                    continue;
+                }
+                ShowState(part, entry.Value, true);
+                boundParts.Add(entry.Key);
+            }
+            foreach (uint id in boundParts)
+            {
+                pendingParts.Remove(id);
+            }
+        }
+
+
         private void ApplyMoves()
         {
             foreach (FieldBody row in movedBodies)
             {
                 if (bodies.TryGet(row.NetId, out SpaceBody puppet) && puppet.InPlay)
                 {
-                    puppet.Correct(new Vector2(row.X, row.Y), new Vector2(row.VelocityX, row.VelocityY));
+                    // A boss part sits where its boss holds it: only its hull and armour follow the simulator.
+                    if (!(puppet is BossPart))
+                    {
+                        puppet.Correct(new Vector2(row.X, row.Y), new Vector2(row.VelocityX, row.VelocityY));
+                    }
                     ShowState(puppet, row, false);
+                }
+                else if (pendingParts.ContainsKey(row.NetId))
+                {
+                    pendingParts[row.NetId] = row;
                 }
             }
         }
 
 
-        /// <summary>What shows of a body next to where it is: its hull, its heading where it has one, a tripped mine, the state of a boss.</summary>
+        /// <summary>
+        /// What shows of a body next to where it is: its hull, its heading where it has one, a tripped mine, the state of a
+        /// boss, the armour of an enemy (a strike boss part behind a lower tier), the warning of a strike unit's attack.
+        /// </summary>
         private static void ShowState(SpaceBody puppet, FieldBody row, bool first)
         {
             if (puppet is Shootable shootable)
@@ -621,6 +854,16 @@ namespace Portfolio.Asteroids
                 case Comet comet:
                     comet.transform.rotation = Quaternion.Euler(0f, 0f, row.Heading);
                     break;
+                case GroundUnit ground:
+                    ground.Invulnerable = BodyCodec.Has(flags, BodyFlags.Shielded);
+                    ground.Heading = row.Heading;
+                    ground.transform.rotation = Quaternion.Euler(0f, 0f, row.Heading);
+                    ground.ShowWarning(BodyCodec.Has(flags, BodyFlags.Warning));
+                    break;
+                case Enemy enemy:
+                    enemy.Invulnerable = BodyCodec.Has(flags, BodyFlags.Shielded);
+                    enemy.ShowWarning(BodyCodec.Has(flags, BodyFlags.Warning));
+                    break;
             }
         }
 
@@ -629,7 +872,7 @@ namespace Portfolio.Asteroids
         {
             foreach (BodyExit exit in arrivedExits)
             {
-                if (!bodies.Remove(exit.NetId, out SpaceBody puppet) || !puppet.InPlay)
+                if (pendingParts.Remove(exit.NetId) || !bodies.Remove(exit.NetId, out SpaceBody puppet) || !puppet.InPlay)
                 {
                     continue;
                 }
@@ -656,7 +899,7 @@ namespace Portfolio.Asteroids
             // A row that went without a word (the room was cleared) takes its puppet along.
             foreach (uint id in deletedBodies)
             {
-                if (bodies.Remove(id, out SpaceBody puppet) && puppet.InPlay)
+                if (!pendingParts.Remove(id) && bodies.Remove(id, out SpaceBody puppet) && puppet.InPlay)
                 {
                     puppet.Despawn();
                 }
@@ -683,6 +926,9 @@ namespace Portfolio.Asteroids
                     case FieldSignalKind.CometWarning:
                         spawner.ShowCometWarning(new Vector2(signal.X, signal.Y), new Vector2(signal.DirectionX, signal.DirectionY), signal.Radius);
                         break;
+                    case FieldSignalKind.Scroll:
+                        manager.CoopScrollReported(signal.X, signal.Y);
+                        break;
                 }
             }
         }
@@ -697,6 +943,16 @@ namespace Portfolio.Asteroids
                 var at = new Vector2(signal.X, signal.Y);
                 switch ((ShipSignalKind)signal.Kind)
                 {
+                    case ShipSignalKind.Nova when IsStrikeField:
+                        // Another pilot's megabomb: every screen flashes, since every screen loses its enemy shots.
+                        field.Effects?.MegabombFlash();
+                        field.Sounds?.Megabomb();
+                        field.CameraRig?.Shake(0.3f);
+                        if (Simulates)
+                        {
+                            field.Nova(at, signal.A, signal.B, signal.Seat);
+                        }
+                        break;
                     case ShipSignalKind.Nova:
                         field.Effects?.Nova(at);
                         field.Sounds?.Nova();
@@ -728,9 +984,43 @@ namespace Portfolio.Asteroids
                     if (!sounded && shot.Kind != BodyCodec.DroneShot)
                     {
                         sounded = true;
-                        field.Sounds?.Fire((WeaponType)shot.Kind);
+                        PlayVolley(shot.Kind);
                     }
                 }
+            }
+        }
+
+
+        /// <summary>The sound of another pilot's volley: the weapon of the field, or the kind of a strike projectile.</summary>
+        private void PlayVolley(byte kind)
+        {
+            AsteroidsAudio sounds = field.Sounds;
+            if (sounds == null)
+            {
+                return;
+            }
+            if (kind < SpawnService.StrikeGhostBase)
+            {
+                sounds.Fire((WeaponType)kind);
+                return;
+            }
+            switch ((StrikeShotKind)(kind - SpawnService.StrikeGhostBase))
+            {
+                case StrikeShotKind.Bullet:
+                case StrikeShotKind.MiniGunRound:
+                    sounds.MachineGun();
+                    break;
+                case StrikeShotKind.Bomb:
+                    sounds.BombDrop();
+                    break;
+                case StrikeShotKind.PlasmaBolt:
+                case StrikeShotKind.Pulse:
+                case StrikeShotKind.DisrupterOrb:
+                    sounds.Fire(WeaponType.Blaster);
+                    break;
+                default:
+                    sounds.StrikeMissileLaunch();
+                    break;
             }
         }
 
@@ -756,6 +1046,9 @@ namespace Portfolio.Asteroids
             int enemies = 0;
             int shotCount = 0;
             int pickups = 0;
+            int air = 0;
+            int ground = 0;
+            int parts = 0;
             Vector2 sum = Vector2.zero;
             foreach (KeyValuePair<uint, SpaceBody> entry in bodies.Entries)
             {
@@ -764,6 +1057,15 @@ namespace Portfolio.Asteroids
                     case Asteroid asteroid:
                         rocks++;
                         sum += asteroid.Position;
+                        break;
+                    case StrikeAircraft _:
+                        air++;
+                        break;
+                    case GroundUnit _:
+                        ground++;
+                        break;
+                    case BossPart _:
+                        parts++;
                         break;
                     case Shot _:
                         shotCount++;
@@ -776,7 +1078,16 @@ namespace Portfolio.Asteroids
                         break;
                 }
             }
+            if (IsStrikeField)
+            {
+                return $"bodies {bodies.Count} (aircraft {air}, ground units {ground}, boss parts {parts} + {pendingParts.Count} waiting, " +
+                       $"other enemies {enemies}, enemy shots {shotCount}, pickups {pickups}), scroll {field.ScrollDistance:0.0} m at {field.ScrollSpeed:0.00} m/s";
+            }
             return $"bodies {bodies.Count} (rocks {rocks}, hazards and enemies {enemies}, enemy shots {shotCount}, pickups {pickups}), rocks centre ({sum.x / Mathf.Max(1, rocks):0.0}, {sum.y / Mathf.Max(1, rocks):0.0})";
         }
+
+
+        /// <summary>The playfield is a strike mission's: it does not wrap, rams do not push, a nova is a megabomb.</summary>
+        private bool IsStrikeField => field.Playground != null && !field.Playground.Wraps;
     }
 }

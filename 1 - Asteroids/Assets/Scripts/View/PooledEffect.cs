@@ -36,6 +36,9 @@ namespace Portfolio.Asteroids
 
         public bool Playing => gameObject.activeSelf && age < duration;
 
+        /// <summary>Meters per second the effect moves every frame (a ground explosion goes with the scroll); zero on every play.</summary>
+        public Vector2 Drift { get; set; }
+
 
         private void Awake()
         {
@@ -67,6 +70,7 @@ namespace Portfolio.Asteroids
         {
             transform.position = position;
             transform.rotation = Quaternion.identity;
+            Drift = Vector2.zero;
             age = 0f;
             scale = Mathf.Max(0.05f, size);
             tint = color;
@@ -127,6 +131,10 @@ namespace Portfolio.Asteroids
         private void Update()
         {
             age += Time.deltaTime;
+            if (Drift.sqrMagnitude > 0f)
+            {
+                transform.position += (Vector3)(Drift * Time.deltaTime);
+            }
             if (flash != null && flash.enabled)
             {
                 float t = flashTime > 0f ? Mathf.Clamp01(age / flashTime) : 1f;
