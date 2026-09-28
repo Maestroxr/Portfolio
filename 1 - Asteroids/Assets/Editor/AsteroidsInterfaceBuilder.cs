@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Gamebox;
 using Gamebox.Editor;
 using Gamebox.UI;
 using TMPro;
@@ -16,15 +17,22 @@ namespace Portfolio.Asteroids.EditorTools
     /// </summary>
     internal static partial class AsteroidsInterfaceBuilder
     {
-        private static readonly Color PanelColor = new Color(0.35f, 0.75f, 1f, 0.95f);
-        private static readonly Color Soft = new Color(0.78f, 0.86f, 0.96f);
-        private static readonly Color Dim = new Color(0.55f, 0.65f, 0.8f);
-        private static readonly Color Green = new Color(0.25f, 0.85f, 0.5f);
-        private static readonly Color Blue = new Color(0.3f, 0.6f, 1f);
-        private static readonly Color Orange = new Color(1f, 0.6f, 0.25f);
-        private static readonly Color Red = new Color(1f, 0.35f, 0.35f);
-        private static readonly Color Gold = new Color(1f, 0.82f, 0.3f);
-        private static readonly Color Cyan = new Color(0.35f, 0.9f, 1f);
+        private static AsteroidsTheme.Palette classic;
+
+        /// <summary>
+        /// The colours of the Classic look: the palette's defaults, which a theme's palette replaces at run time. A property,
+        /// so the static colours of every partial file find it whatever order their initialisers run in.
+        /// </summary>
+        private static AsteroidsTheme.Palette Classic => classic ??= new AsteroidsTheme.Palette();
+        private static readonly Color PanelColor = Classic.panel;
+        private static readonly Color Soft = Classic.soft;
+        private static readonly Color Dim = Classic.dim;
+        private static readonly Color Green = Classic.green;
+        private static readonly Color Blue = Classic.blue;
+        private static readonly Color Orange = Classic.orange;
+        private static readonly Color Red = Classic.red;
+        private static readonly Color Gold = Classic.gold;
+        private static readonly Color Cyan = Classic.cyan;
 
         private static Material titleFont;
         private static Material hudFont;
@@ -52,6 +60,20 @@ namespace Portfolio.Asteroids.EditorTools
             BuildTitle(root, ui, missionCount, sectorCount);
             BuildHangar(ui.titleScreen.transform, ui, shipCount);
             BuildResults(root, ui);
+
+            // The overlays of a theme (scan lines, a CRT's dark corners): clear in the Classic look, under the curtain.
+            Sprite clear = AsteroidsArtBuilder.Interface("Clear");
+            Image scanlines = Image(root, "Scanlines", clear, Color.white, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero);
+            StretchFull(scanlines.rectTransform);
+            scanlines.type = UnityEngine.UI.Image.Type.Tiled;
+            scanlines.preserveAspect = false;
+            scanlines.raycastTarget = false;
+            Themed(scanlines, "Interface/Scanlines");
+            Image crt = Image(root, "Crt", clear, Color.white, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero);
+            StretchFull(crt.rectTransform);
+            crt.preserveAspect = false;
+            crt.raycastTarget = false;
+            Themed(crt, "Interface/Crt");
 
             Image curtain = Image(root, "Curtain", null, new Color(0.01f, 0.02f, 0.05f, 0f), Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero);
             StretchFull(curtain.rectTransform);
@@ -120,6 +142,34 @@ namespace Portfolio.Asteroids.EditorTools
                     {
                         rect.anchoredPosition += new Vector2(0f, -60f);
                     }
+                }
+            }
+            // The theme choice's row (GameMenuInstaller.AddThemeChoice) in the look of the input rows.
+            Transform look = GameMenuInstaller.FindChild(root, "ThemeChoice");
+            if (look != null)
+            {
+                TMP_Text lookLabel = GameMenuInstaller.FindChildComponent<TMP_Text>(look, "Label");
+                if (lookLabel != null)
+                {
+                    lookLabel.color = Soft;
+                    lookLabel.fontStyle = FontStyles.Bold;
+                }
+                foreach (Button arrow in look.GetComponentsInChildren<Button>(true))
+                {
+                    if (arrow.TryGetComponent(out Image arrowImage))
+                    {
+                        arrowImage.sprite = button;
+                        arrowImage.type = UnityEngine.UI.Image.Type.Sliced;
+                        arrowImage.color = Blue;
+                    }
+                    arrow.transition = Selectable.Transition.ColorTint;
+                    arrow.colors = ButtonColors();
+                }
+                TMP_Text value = GameMenuInstaller.FindChildComponent<TMP_Text>(look, "Value");
+                if (value != null)
+                {
+                    value.color = Color.white;
+                    value.fontStyle = FontStyles.Bold;
                 }
             }
             SetLabel(GameMenuInstaller.FindChildComponent<TMP_Text>(root, "Header"), "PAUSED", Cyan, titleFont);
@@ -860,7 +910,64 @@ namespace Portfolio.Asteroids.EditorTools
             image.color = color;
             image.type = sliced ? UnityEngine.UI.Image.Type.Sliced : UnityEngine.UI.Image.Type.Simple;
             image.preserveAspect = !sliced && sprite != null;
+            Themed(image, ThemeKeys.SpriteKey(sprite), ColorKey(color));
             return image;
+        }
+
+        // ------------------------------------------------------------------ themes
+
+        /// <summary>
+        /// Makes <paramref name="image"/> follow the theme: its sprite by <paramref name="spriteKey"/> and its colour by
+        /// <paramref name="colorKey"/> (a palette colour); nothing when it has neither.
+        /// </summary>
+        private static void Themed(Image image, string spriteKey, string colorKey = null)
+        {
+            if (spriteKey == null && colorKey == null)
+            {
+                return;
+            }
+            ThemedImage themed = image.GetComponent<ThemedImage>() ?? image.gameObject.AddComponent<ThemedImage>();
+            themed.SpriteKey = spriteKey;
+            themed.ColorKey = colorKey;
+        }
+
+
+        /// <summary>
+        /// Makes <paramref name="text"/> follow the theme's fonts: the title font for a text in the title material, the
+        /// body font for one in the HUD material, the plain body font for one without a material; and its colour when
+        /// it is a palette colour.
+        /// </summary>
+        private static void Themed(TMP_Text text, Material material, Color color)
+        {
+            var themed = text.gameObject.AddComponent<ThemedText>();
+            themed.Role = material == titleFont ? TextRole.Title : TextRole.Body;
+            themed.ColorKey = ColorKey(color);
+            if (material == null)
+            {
+                var serialized = new SerializedObject(themed);
+                serialized.FindProperty("font").stringValue = "plain";
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+            }
+        }
+
+
+        /// <summary>The key of <paramref name="color"/> in the theme's palette ("palette.green"), or null for a colour that is not in it.</summary>
+        private static string ColorKey(Color color)
+        {
+            foreach (System.Reflection.FieldInfo field in typeof(AsteroidsTheme.Palette).GetFields())
+            {
+                if (field.FieldType == typeof(Color) && Same((Color)field.GetValue(Classic), color))
+                {
+                    return "palette." + field.Name;
+                }
+            }
+            return null;
+        }
+
+
+        private static bool Same(Color a, Color b)
+        {
+            return Mathf.Abs(a.r - b.r) < 0.002f && Mathf.Abs(a.g - b.g) < 0.002f && Mathf.Abs(a.b - b.b) < 0.002f && Mathf.Abs(a.a - b.a) < 0.002f;
         }
 
         private static RectTransform Panel(Transform parent, string name, Vector2 anchor, Vector2 pivot, Vector2 position, Vector2 size, Color? color = null)
@@ -886,6 +993,15 @@ namespace Portfolio.Asteroids.EditorTools
             {
                 label.fontSharedMaterial = material;
             }
+            if (material == titleFont)
+            {
+                // A theme's title font can be wider than the default one: the title stays on its line and shrinks (to half).
+                label.textWrappingMode = TextWrappingModes.NoWrap;
+                label.enableAutoSizing = true;
+                label.fontSizeMax = size;
+                label.fontSizeMin = size * 0.5f;
+            }
+            Themed(label, material, color);
             return label;
         }
 
@@ -893,6 +1009,14 @@ namespace Portfolio.Asteroids.EditorTools
         {
             text.enableVertexGradient = true;
             text.colorGradient = new VertexGradient(top, top, bottom, bottom);
+            string topKey = ColorKey(top);
+            string bottomKey = ColorKey(bottom);
+            if (topKey != null && bottomKey != null)
+            {
+                var themed = text.gameObject.AddComponent<ThemedTextGradient>();
+                themed.TopKey = topKey;
+                themed.BottomKey = bottomKey;
+            }
         }
 
         private static Image[] StarRow(Transform parent, string name, Vector2 anchor, Vector2 position, float size, float spacing)
@@ -942,15 +1066,7 @@ namespace Portfolio.Asteroids.EditorTools
 
         private static ColorBlock ButtonColors()
         {
-            ColorBlock colors = ColorBlock.defaultColorBlock;
-            colors.normalColor = Color.white;
-            colors.highlightedColor = new Color(1.15f, 1.15f, 1.15f, 1f);
-            colors.selectedColor = Color.white;
-            colors.pressedColor = new Color(0.75f, 0.75f, 0.8f, 1f);
-            colors.disabledColor = new Color(0.45f, 0.45f, 0.5f, 0.7f);
-            colors.colorMultiplier = 1.2f;
-            colors.fadeDuration = 0.08f;
-            return colors;
+            return AsteroidsUI.ButtonColors;
         }
     }
 }

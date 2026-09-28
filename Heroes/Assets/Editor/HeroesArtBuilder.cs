@@ -19,13 +19,33 @@ namespace Portfolio.Heroes.EditorTools
     internal static class HeroesArtBuilder
     {
         private const string Models = "Art/Models";
-        private const string Generated = "Art/Generated";
+
+        /// <summary>The theme being built; Heroes > Build Art builds the classic one.</summary>
+        private static HeroesThemeSpec Spec => HeroesThemeSpec.Current;
+
+        /// <summary>Where the theme's prefabs, materials, textures and terrain layers go.</summary>
+        private static string Generated => Spec.Generated;
 
         /// <summary>Meters a creature of each tier stands tall. A hexagon is 2.08 m across, so they fit in one.</summary>
         private static readonly float[] TierHeight = { 1.35f, 1.5f, 1.6f, 1.6f, 1.75f, 1.9f, 2.6f };
 
         [MenuItem("Heroes/Build Art", false, 20)]
         public static void Build()
+        {
+            Build(HeroesThemeSpec.Classic);
+        }
+
+        [MenuItem("Heroes/Build Art (Grim Realm)", false, 21)]
+        public static void BuildGrimRealm()
+        {
+            Build(HeroesThemeSpec.GrimRealm);
+        }
+
+        /// <summary>
+        /// Builds the art of one theme into its own HeroesArt asset: the same builders, writing into the folders of
+        /// <paramref name="spec"/> and painting in its colours.
+        /// </summary>
+        public static void Build(HeroesThemeSpec spec)
         {
             var log = new System.Diagnostics.Stopwatch();
             log.Start();
@@ -40,32 +60,37 @@ namespace Portfolio.Heroes.EditorTools
                 AssetDatabase.Refresh();
             }
 
-            HeroesArt art = HeroesAssets.Load<HeroesArt>("Art/HeroesArt.asset");
+            HeroesArt art = HeroesAssets.Load<HeroesArt>(spec.ArtAsset);
             if (art == null)
             {
                 art = ScriptableObject.CreateInstance<HeroesArt>();
-                HeroesAssets.EnsureFolderOf("Art/HeroesArt.asset");
-                AssetDatabase.CreateAsset(art, HeroesAssets.Path("Art/HeroesArt.asset"));
+                HeroesAssets.EnsureFolderOf(spec.ArtAsset);
+                AssetDatabase.CreateAsset(art, HeroesAssets.Path(spec.ArtAsset));
             }
 
-            Staged(() =>
+            spec.Run(() =>
             {
-                Materials(art);
-                TerrainLayers(art);
-                Units(art);
-                Heroes(art);
-                Scatter(art);
-                HeroesObjectArt.Build(art);
-                HeroesBattleArt.Build(art);
-                HeroesPortraits.Build(art);
-                HeroesUIArt.BuildAll(art);
-                Audio(art);
+                ForgetCaches();
+                Staged(() =>
+                {
+                    Materials(art);
+                    TerrainLayers(art);
+                    Units(art);
+                    Heroes(art);
+                    Scatter(art);
+                    HeroesObjectArt.Build(art);
+                    HeroesBattleArt.Build(art);
+                    HeroesSceneBuilder.SiegeArt(art);
+                    HeroesPortraits.Build(art);
+                    HeroesUIArt.BuildAll(art);
+                    Audio(art);
+                });
             });
 
             EditorUtility.SetDirty(art);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            Debug.Log($"Heroes: art built in {log.ElapsedMilliseconds} ms ({art.units.Count} creatures, " +
+            Debug.Log($"Heroes: {spec.DisplayName} art built in {log.ElapsedMilliseconds} ms ({art.units.Count} creatures, " +
                       $"{art.objects.Count} map objects, {art.towns.Count} towns, {art.icons.Count} icons).");
         }
 
@@ -340,10 +365,12 @@ namespace Portfolio.Heroes.EditorTools
                 return cached;
             }
             string name = color == Color.white ? sheet.name : $"{sheet.name}_{ColorUtility.ToHtmlStringRGB(color)}";
+            // A graded theme paints with a graded copy of the sheet; the tint stays as it is, it only picks the sheet's colours.
+            Texture2D map = Spec.Grade != null ? GradedTexture(sheet, Spec.Grade) : sheet;
             Material material = HeroesAssets.Material($"{Generated}/Materials/{name}.mat",
                 Shader.Find("Universal Render Pipeline/Lit"), m =>
                 {
-                    m.SetTexture("_BaseMap", sheet);
+                    m.SetTexture("_BaseMap", map);
                     m.SetColor("_BaseColor", color);
                     m.SetFloat("_Smoothness", 0.1f);
                     m.SetFloat("_Metallic", 0f);
@@ -383,6 +410,18 @@ namespace Portfolio.Heroes.EditorTools
                     ? new Color(baseColor.r * tint.r, baseColor.g * tint.g, baseColor.b * tint.b, 1f)
                     : Recolor(baseColor, tint)
                 : baseColor;
+            if (Spec.Grade != null)
+            {
+                // Graded once: the picture where there is one, else the flat colour.
+                if (map != null)
+                {
+                    map = GradedTexture(map, Spec.Grade);
+                }
+                else
+                {
+                    color = Spec.Grade.Apply(color);
+                }
+            }
             Material material = HeroesAssets.Material($"{Generated}/Materials/{name}.mat",
                 Shader.Find("Universal Render Pipeline/Lit"), m =>
                 {
@@ -420,6 +459,7 @@ namespace Portfolio.Heroes.EditorTools
             }
             string path = HeroesAssets.Path(relative);
             HeroesAssets.EnsureFolderOf(relative);
+            Grade(root);
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
             Object.DestroyImmediate(root);
             return prefab;
@@ -429,6 +469,192 @@ namespace Portfolio.Heroes.EditorTools
         public static GameObject Root(string name)
         {
             return new GameObject(name);
+        }
+
+        // ------------------------------------------------------------------ grading
+
+        private static readonly Dictionary<Material, Material> GradedMaterials = new Dictionary<Material, Material>();
+        private static readonly Dictionary<Texture, Texture2D> GradedTextures = new Dictionary<Texture, Texture2D>();
+
+        /// <summary>Forgets the materials made for the theme built before (they belong to its folder): every build starts afresh.</summary>
+        private static void ForgetCaches()
+        {
+            Skins.Clear();
+            Variants.Clear();
+            GradedMaterials.Clear();
+            GradedTextures.Clear();
+            HeroesBattleArt.ForgetCaches();
+        }
+
+        /// <summary>The pack's own texture a graded copy was made from, or <paramref name="texture"/> itself when it is no copy.</summary>
+        internal static Texture OriginalOf(Texture texture)
+        {
+            foreach (KeyValuePair<Texture, Texture2D> pair in GradedTextures)
+            {
+                if (pair.Value == texture)
+                {
+                    return pair.Key;
+                }
+            }
+            return texture;
+        }
+
+        /// <summary>
+        /// Gives every renderer under <paramref name="root"/> the theme's graded copy of its materials (the pack's sheet
+        /// or flat colour under the theme's <see cref="ColorGrade"/>), so a prefab of a graded theme shows nothing of the
+        /// packs' own colours. Every prefab goes through it on its way to the file; nothing changes for a theme without a
+        /// grade, nor for the transparent materials (water, a scorch) or the theme's own.
+        /// </summary>
+        public static void Grade(GameObject root)
+        {
+            ColorGrade grade = Spec.Grade;
+            if (grade == null || root == null)
+            {
+                return;
+            }
+            foreach (Renderer renderer in root.GetComponentsInChildren<Renderer>(true))
+            {
+                Material[] materials = renderer.sharedMaterials;
+                bool changed = false;
+                for (int i = 0; i < materials.Length; i++)
+                {
+                    Material graded = Graded(materials[i], grade);
+                    if (graded != materials[i])
+                    {
+                        materials[i] = graded;
+                        changed = true;
+                    }
+                }
+                if (changed)
+                {
+                    renderer.sharedMaterials = materials;
+                }
+            }
+        }
+
+        private static Material Graded(Material source, ColorGrade grade)
+        {
+            if (source == null || !source.HasProperty("_BaseColor"))
+            {
+                return source;
+            }
+            if (source.HasProperty("_Surface") && source.GetFloat("_Surface") > 0.5f)
+            {
+                return source;
+            }
+            string path = AssetDatabase.GetAssetPath(source);
+            if (string.IsNullOrEmpty(path) || path.StartsWith(HeroesAssets.Path(Generated) + "/", StringComparison.Ordinal))
+            {
+                // Made for a picture only, or the theme's own already (a repainted obstacle).
+                return source;
+            }
+            if (GradedMaterials.TryGetValue(source, out Material cached) && cached != null)
+            {
+                return cached;
+            }
+            Texture map = source.HasProperty("_BaseMap") ? source.GetTexture("_BaseMap") : null;
+            Texture2D gradedMap = map != null ? GradedTexture(map, grade) : null;
+            // Graded once: the picture where there is one, else the flat colour.
+            Color color = map != null ? source.GetColor("_BaseColor") : grade.Apply(source.GetColor("_BaseColor"));
+            string owner = AssetDatabase.AssetPathToGUID(path);
+            string name = $"{source.name}_{(owner.Length >= 6 ? owner.Substring(0, 6) : "x")}";
+            Material material = HeroesAssets.Material($"{Generated}/Materials/{name}.mat", source.shader, m =>
+            {
+                m.CopyPropertiesFromMaterial(source);
+                m.shaderKeywords = source.shaderKeywords;
+                m.SetTexture("_BaseMap", gradedMap);
+                m.SetColor("_BaseColor", color);
+            });
+            GradedMaterials[source] = material;
+            return material;
+        }
+
+        /// <summary>A copy of a pack's texture with every pixel graded, saved among the theme's textures (once per texture).</summary>
+        private static Texture2D GradedTexture(Texture map, ColorGrade grade)
+        {
+            if (GradedTextures.TryGetValue(map, out Texture2D cached) && cached != null)
+            {
+                return cached;
+            }
+            string source = AssetDatabase.GetAssetPath(map);
+            if (map is Texture2D own && source.StartsWith(HeroesAssets.Path(Generated) + "/", StringComparison.Ordinal))
+            {
+                return own;
+            }
+            Texture2D pixels = Readable(map, source);
+            Color[] colors = pixels.GetPixels();
+            for (int i = 0; i < colors.Length; i++)
+            {
+                colors[i] = grade.Apply(colors[i]);
+            }
+            pixels.SetPixels(colors);
+            pixels.Apply();
+            string owner = AssetDatabase.AssetPathToGUID(source);
+            string name = $"{System.IO.Path.GetFileNameWithoutExtension(source)}_{(owner.Length >= 6 ? owner.Substring(0, 6) : "x")}";
+            TextureWrapMode wrap = map.wrapMode;
+            FilterMode filter = map.filterMode;
+            Texture2D saved = HeroesAssets.SaveTexture(pixels, $"{Generated}/Textures/{name}.png", importer =>
+            {
+                importer.textureType = TextureImporterType.Default;
+                importer.sRGBTexture = true;
+                importer.mipmapEnabled = true;
+                importer.maxTextureSize = 1024;
+                importer.textureCompression = TextureImporterCompression.Uncompressed;
+                importer.wrapMode = wrap;
+                importer.filterMode = filter;
+            });
+            GradedTextures[map] = saved;
+            return saved;
+        }
+
+        /// <summary>The theme's own picture of a ground: the downloaded one with its colours graded (mud, ash, dead grass).</summary>
+        private static Texture2D GradedTerrain(string texture, ColorGrade grade)
+        {
+            Texture2D pixels = Readable(null, HeroesAssets.Path($"Art/Terrain/{texture}.jpg"));
+            Color[] colors = pixels.GetPixels();
+            for (int i = 0; i < colors.Length; i++)
+            {
+                colors[i] = grade.Apply(colors[i]);
+            }
+            pixels.SetPixels(colors);
+            pixels.Apply();
+            return HeroesAssets.SaveTexture(pixels, $"{Generated}/Terrain/{texture}.png", importer =>
+            {
+                importer.textureType = TextureImporterType.Default;
+                importer.sRGBTexture = true;
+                importer.mipmapEnabled = true;
+                importer.maxTextureSize = 1024;
+                importer.wrapMode = TextureWrapMode.Repeat;
+                // No alpha, like the downloaded JPEGs: the terrain reads a diffuse picture's alpha as its smoothness, and
+                // an opaque alpha makes the whole ground shine like wet glass.
+                importer.alphaSource = TextureImporterAlphaSource.None;
+                importer.textureCompression = TextureImporterCompression.Compressed;
+            });
+        }
+
+        /// <summary>
+        /// The pixels of a texture in a texture that can be read: its own file where it is a picture file (whatever its
+        /// import settings), else a copy rendered from it.
+        /// </summary>
+        private static Texture2D Readable(Texture map, string source)
+        {
+            string extension = System.IO.Path.GetExtension(source ?? "").ToLowerInvariant();
+            if (extension == ".png" || extension == ".jpg" || extension == ".jpeg")
+            {
+                var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                texture.LoadImage(System.IO.File.ReadAllBytes(HeroesAssets.FullPath(source)));
+                return texture;
+            }
+            RenderTexture target = RenderTexture.GetTemporary(map.width, map.height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
+            RenderTexture before = RenderTexture.active;
+            Graphics.Blit(map, target);
+            RenderTexture.active = target;
+            var copy = new Texture2D(map.width, map.height, TextureFormat.RGBA32, false);
+            copy.ReadPixels(new Rect(0f, 0f, map.width, map.height), 0, 0);
+            copy.Apply();
+            RenderTexture.active = before;
+            RenderTexture.ReleaseTemporary(target);
+            return copy;
         }
 
         // ------------------------------------------------------------------ materials and terrain
@@ -447,7 +673,7 @@ namespace Portfolio.Heroes.EditorTools
                 : null;
             art.water = HeroesAssets.Material($"{Generated}/Materials/Water.mat", lit, m =>
             {
-                m.SetColor("_BaseColor", new Color(0.09f, 0.32f, 0.46f, 0.78f));
+                m.SetColor("_BaseColor", Spec.Materials.Water);
                 m.SetFloat("_Smoothness", 0.92f);
                 m.SetFloat("_Metallic", 0.1f);
                 Transparent(m);
@@ -455,19 +681,19 @@ namespace Portfolio.Heroes.EditorTools
             art.fog = fog != null
                 ? HeroesAssets.Material($"{Generated}/Materials/FogOfWar.mat", fog, m =>
                 {
-                    m.SetColor("_FogColor", new Color(0.015f, 0.02f, 0.035f, 1f));
-                    m.SetColor("_EdgeColor", new Color(0.16f, 0.19f, 0.28f, 1f));
-                    m.SetFloat("_Outside", 0.55f);
+                    m.SetColor("_FogColor", Spec.Materials.FogInside);
+                    m.SetColor("_EdgeColor", Spec.Materials.FogEdge);
+                    m.SetFloat("_Outside", Spec.Materials.FogOutside);
                 })
                 : null;
             art.marker = HeroesAssets.Material($"{Generated}/Materials/Marker.mat", unlit, m =>
             {
-                m.SetColor("_BaseColor", new Color(1f, 0.92f, 0.6f, 0.75f));
+                m.SetColor("_BaseColor", Spec.Materials.Marker);
                 Transparent(m);
             });
             art.ring = HeroesAssets.Material($"{Generated}/Materials/Ring.mat", unlit, m =>
             {
-                m.SetColor("_BaseColor", new Color(1f, 1f, 1f, 0.9f));
+                m.SetColor("_BaseColor", Spec.Materials.Ring);
                 Transparent(m);
             });
             art.arrow = Projectile("Arrow", "Quaternius/Items/Arrow", 0.55f, new Color(0.75f, 0.6f, 0.4f));
@@ -589,6 +815,11 @@ namespace Portfolio.Heroes.EditorTools
                         importer.maxTextureSize = 1024;
                         importer.wrapMode = TextureWrapMode.Repeat;
                     });
+                    if (Spec.Terrain != null && Spec.Terrain.TryGetValue(texture, out ColorGrade grade))
+                    {
+                        // The theme's own ground: the same picture, graded (the normals are the downloaded ones).
+                        diffuse = GradedTerrain(texture, grade);
+                    }
                 }
                 var terrainLayer = new TerrainLayer
                 {
@@ -1012,6 +1243,11 @@ namespace Portfolio.Heroes.EditorTools
                 ("KayKit/Halloween/tree_dead_large", 3.8f), ("KayKit/Halloween/tree_dead_medium", 3.0f),
                 ("KayKit/Halloween/tree_dead_small", 2.2f)
             });
+            if (Spec.DeadForests)
+            {
+                // A blighted realm: dead trees stand among the living in every wood.
+                art.forestTrees = art.forestTrees.Concat(art.deadTrees).ToArray();
+            }
             // Kept for a map that wants a peak of its own; the terrain raises its own mountains.
             art.mountains = Group("Mountain", new[]
             {

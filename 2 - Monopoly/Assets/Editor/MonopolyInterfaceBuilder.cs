@@ -17,12 +17,17 @@ namespace Portfolio.Monopoly.EditorTools
     /// </summary>
     internal static class MonopolyInterfaceBuilder
     {
-        private static readonly Color Ink = MonopolyStyle.Ink;
-        private static readonly Color Muted = MonopolyStyle.Muted;
+        private static Color Ink => MonopolyStyle.Ink;
+        private static Color Muted => MonopolyStyle.Muted;
         private static readonly Color White = Color.white;
-        private static readonly Color Soft = MonopolyStyle.Hex(0xEEF1F5);
+        private static Color Soft => MonopolyStyle.Soft;
 
-        public static MonopolyUI Build(MonopolyGameManager manager, MonopolyController controller, CameraRig rig, MonopolyAudio audio, Camera camera)
+        /// <summary>
+        /// Builds the interface in the classic look and tags every image, text and outline that shows a colour, a
+        /// shape or a font of <paramref name="classic"/> with its key, so the active theme re-skins them at run time.
+        /// </summary>
+        public static MonopolyUI Build(MonopolyGameManager manager, MonopolyController controller, CameraRig rig, MonopolyAudio audio, Camera camera,
+            MonopolyTheme classic)
         {
             var canvasObject = new GameObject("Interface", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             canvasObject.layer = LayerMask.NameToLayer("UI");
@@ -151,6 +156,8 @@ namespace Portfolio.Monopoly.EditorTools
                 popup.gameObject.SetActive(false);
             }
             actions.gameObject.SetActive(false);
+            int tagged = MonopolyThemeTagger.TagInterface(canvasObject, classic);
+            Debug.Log($"Monopoly interface: {tagged} themed parts.");
             return ui;
         }
 
@@ -1151,11 +1158,16 @@ namespace Portfolio.Monopoly.EditorTools
             word.fontSizeMin = 60f;
             word.fontSizeMax = 150f;
             word.characterSpacing = 4f;
+            MonopolyThemeTagger.Paint(word, "print.logoWord");
             Image ribbon = Rounded(logo, "Edition", White, 0.8f);
             Center(ribbon.rectTransform, new Vector2(0f, -122f), new Vector2(460f, 54f));
-            TextMeshProUGUI edition = Text(ribbon.transform, "Text", "WORLD TOUR EDITION", 26f, MonopolyStyle.Red, Heavy);
+            TextMeshProUGUI edition = Text(ribbon.transform, "Text", MonopolyThemeSpec.Classic.EditionLabel, 26f, MonopolyStyle.Red, Heavy);
             Stretch(edition.rectTransform);
             edition.characterSpacing = 8f;
+            edition.enableAutoSizing = true;
+            edition.fontSizeMin = 14f;
+            edition.fontSizeMax = 26f;
+            MonopolyThemeTagger.Paint(edition, words: "edition");
             parts.logo = logo.gameObject;
 
             parts.pauseTitle = Text(parts.header, "PauseTitle", "PAUSED", 84f, White, Heavy);
@@ -1213,6 +1225,8 @@ namespace Portfolio.Monopoly.EditorTools
             Toggle noRent = Switch(list.transform, "NoRentInJail", "No rent collected from jail", 760f);
             Toggle party = Switch(list.transform, "PartyCards", "Party cards in the decks", 760f);
             Toggle fast = Switch(list.transform, "Fast", "Fast animations", 760f);
+            // The look of the game, among the themes its definition lists (hidden while there is only one).
+            ThemeRow(list.transform, "Look", "Look of the game", 760f);
 
             Button custom = Button(rect, "Custom Settings", "Edit house rules", Icons.Gear, MonopolyStyle.Blue, new Vector2(420f, 62f), 22f);
             Place((RectTransform)custom.transform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 108f), new Vector2(420f, 62f));

@@ -435,7 +435,8 @@ namespace Portfolio.Asteroids
                 }
                 number++;
                 AsteroidsCampaign.Sector sector = sectors != null ? sectors.SectorOf(i) : null;
-                Color accent = mission.Terrain != null ? mission.Terrain.Accent : sector != null && sector.theme != null ? sector.theme.Accent : new Color(1f, 0.6f, 0.25f);
+                Color accent = mission.Terrain != null ? AsteroidsThemes.Accent(mission.Terrain, new Color(1f, 0.6f, 0.25f))
+                    : sector != null && sector.theme != null ? AsteroidsThemes.Accent(sector.theme, new Color(1f, 0.6f, 0.25f)) : new Color(1f, 0.6f, 0.25f);
                 summaries.Add(new StrikeMissionSummary
                 {
                     Index = i,

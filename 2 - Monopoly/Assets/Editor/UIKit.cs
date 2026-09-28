@@ -1,3 +1,4 @@
+using Gamebox;
 using Gamebox.Editor;
 using Gamebox.UI;
 using TMPro;
@@ -73,7 +74,7 @@ namespace Portfolio.Monopoly.EditorTools
             RectTransform rect = Rect(parent, name);
             if (shadow)
             {
-                Image drop = Image(rect, "Shadow", MonopolyArtBuilder.UI("Shadow"), new Color(0f, 0.02f, 0.08f, 0.35f));
+                Image drop = Image(rect, "Shadow", MonopolyArtBuilder.UI("Shadow"), MonopolyStyle.Shadow);
                 drop.pixelsPerUnitMultiplier = 1f / Mathf.Max(0.2f, radius);
                 Stretch(drop.rectTransform, -22f, -30f, -22f, -14f);
                 drop.transform.SetAsFirstSibling();
@@ -228,6 +229,34 @@ namespace Portfolio.Monopoly.EditorTools
             MonopolyAssets.SetObject(knobMover, "knob", knob.rectTransform);
             MonopolyAssets.SetObject(knobMover, "toggle", toggle);
             return toggle;
+        }
+
+        /// <summary>
+        /// A row of the settings panel that picks the look of the game: a label on the left and a button on the right
+        /// that names the theme shown and steps to the next one (a <see cref="ThemeSelector"/> drives it and hides the
+        /// row while the game has fewer than two themes).
+        /// </summary>
+        public static ThemeSelector ThemeRow(Transform parent, string name, string label, float width, float height = 56f)
+        {
+            RectTransform row = Rect(parent, name);
+            row.sizeDelta = new Vector2(width, height);
+            var element = row.gameObject.AddComponent<LayoutElement>();
+            element.preferredHeight = height;
+            element.minHeight = height;
+            TextMeshProUGUI caption = Text(row, "Label", label, 24f, MonopolyStyle.Ink, Body, TextAlignmentOptions.MidlineLeft);
+            Stretch(caption.rectTransform, 8f, 0f, 300f, 0f);
+            Button next = Button(row, "Next", "Classic", Icons.Palette, MonopolyStyle.Soft, new Vector2(280f, height - 8f), 20f);
+            Place((RectTransform)next.transform, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-8f, 0f), new Vector2(280f, height - 8f));
+            TextMeshProUGUI shown = LabelOf(next);
+            shown.enableAutoSizing = true;
+            shown.fontSizeMax = 20f;
+            shown.fontSizeMin = 12f;
+            var selector = row.gameObject.AddComponent<ThemeSelector>();
+            MonopolyAssets.Set(selector, "game", p => p.intValue = (int)Gamebox.GameType.Monopoly);
+            MonopolyAssets.SetObject(selector, "next", next);
+            MonopolyAssets.SetObject(selector, "label", shown);
+            MonopolyAssets.SetString(selector, "prefix", "");
+            return selector;
         }
 
         /// <summary>A number input with a label on the left.</summary>

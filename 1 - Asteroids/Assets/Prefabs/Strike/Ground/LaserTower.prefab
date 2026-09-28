@@ -11,6 +11,8 @@ GameObject:
   - component: {fileID: 3832916619275464244}
   - component: {fileID: 4535387817774520035}
   - component: {fileID: 7678969980693808811}
+  - component: {fileID: 5283841452870382192}
+  - component: {fileID: 5598244347622046023}
   m_Layer: 0
   m_Name: Visual
   m_TagString: Untagged
@@ -92,6 +94,35 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &5283841452870382192
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 267574375854213357}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Ground/Materials/GroundPalette
+  slot: 0
+--- !u!114 &5598244347622046023
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 267574375854213357}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68a8cc4438b7cdf40b6a35c7fa61b5cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedMesh
+  game: 0
+  mesh: Ground/Models/Units/LaserTower
 --- !u!1 &484924396987352483
 GameObject:
   m_ObjectHideFlags: 0
@@ -217,6 +248,7 @@ GameObject:
   - component: {fileID: 8969984850147603713}
   - component: {fileID: 1737820866222771207}
   - component: {fileID: 8389143031494007890}
+  - component: {fileID: 2239050131958256795}
   m_Layer: 0
   m_Name: Telegraph
   m_TagString: Untagged
@@ -296,6 +328,21 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &2239050131958256795
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2972686298040319684}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Ground/Materials/Telegraph
+  slot: 0
 --- !u!1 &4790058622238538474
 GameObject:
   m_ObjectHideFlags: 0
@@ -354,6 +401,7 @@ GameObject:
   - component: {fileID: 7822779912357788327}
   - component: {fileID: 1486581008104564287}
   - component: {fileID: 1860381820074591863}
+  - component: {fileID: 149773904048545883}
   m_Layer: 0
   m_Name: Shadow
   m_TagString: Untagged
@@ -433,3 +481,18 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &149773904048545883
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7848096627648924620}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Ground/Materials/UnitShadow
+  slot: 0

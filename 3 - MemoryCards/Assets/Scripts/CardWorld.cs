@@ -29,6 +29,7 @@ namespace Portfolio.MemoryCards
         public Color skyBottom = new Color(0.72f, 0.93f, 0.6f);
         [Tooltip("Buttons, highlights and the level cards of the world.")]
         public Color accent = new Color(0.98f, 0.62f, 0.2f);
+        [Tooltip("The world's colour for words and icons on the panels (the level numbers, the mode): a dark tone on light panels, a light one on dark panels.")]
         public Color accentDark = new Color(0.78f, 0.38f, 0.1f);
         [Tooltip("Colour of the card backs; the pattern is baked into the card back sprite.")]
         public Color cardColor = new Color(0.3f, 0.7f, 0.35f);

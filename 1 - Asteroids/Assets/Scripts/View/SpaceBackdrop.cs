@@ -93,12 +93,17 @@ namespace Portfolio.Asteroids
         private Look current;
         private float blend = 1f;
         private SectorTheme theme;
+        private SectorTheme requested;
         private SectorTheme pendingPlanet;
         private float planetFade = 1f;
         private bool planetOut;
         private bool hidden;
 
-        public SectorTheme Theme => theme;
+        /// <summary>The sector asked for last (the mission's own; the active theme's counterpart of it is what shows).</summary>
+        public SectorTheme Theme => requested;
+
+        /// <summary>The sector shown: the active theme's counterpart of <see cref="Theme"/>.</summary>
+        public SectorTheme Shown => theme;
 
         /// <summary>Whether the space quad, the planet and the motes show (the ground of a strike mission covers them).</summary>
         public bool IsVisible => !hidden;
@@ -134,7 +139,10 @@ namespace Portfolio.Asteroids
         }
 
 
-        /// <summary>Switches to <paramref name="next"/>; blends over <see cref="blendTime"/> unless <paramref name="instant"/>.</summary>
+        /// <summary>
+        /// Switches to <paramref name="next"/> (shown as the active theme's counterpart of it); blends over
+        /// <see cref="blendTime"/> unless <paramref name="instant"/>.
+        /// </summary>
         public void Apply(SectorTheme next, bool instant)
         {
             if (next == null)
@@ -142,10 +150,12 @@ namespace Portfolio.Asteroids
                 return;
             }
             bool first = theme == null;
-            if (next == theme && !instant)
+            if (next == requested && !instant)
             {
                 return;
             }
+            requested = next;
+            next = AsteroidsThemes.Sector(next) ?? next;
             theme = next;
             to = Look.Of(next);
             if (instant || first)
@@ -164,6 +174,16 @@ namespace Portfolio.Asteroids
             blend = 0f;
             pendingPlanet = next;
             planetOut = true;
+        }
+
+
+        /// <summary>The game's theme changed: shows the sector asked for last again, in the new look, at once.</summary>
+        public void Reapply()
+        {
+            if (requested != null)
+            {
+                Apply(requested, true);
+            }
         }
 
 

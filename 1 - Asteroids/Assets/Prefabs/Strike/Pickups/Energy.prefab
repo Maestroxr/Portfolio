@@ -111,6 +111,8 @@ GameObject:
   - component: {fileID: 2221153169137052311}
   - component: {fileID: 8315489504464783702}
   - component: {fileID: 1815442065801858643}
+  - component: {fileID: 4282015451367154257}
+  - component: {fileID: 6182837804144203700}
   m_Layer: 0
   m_Name: Model
   m_TagString: Untagged
@@ -190,6 +192,35 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &4282015451367154257
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4357560187825210435}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Materials/Palette
+  slot: 0
+--- !u!114 &6182837804144203700
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4357560187825210435}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68a8cc4438b7cdf40b6a35c7fa61b5cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedMesh
+  game: 0
+  mesh: Models/PickupFrame
 --- !u!1 &4596673579430209305
 GameObject:
   m_ObjectHideFlags: 0
@@ -201,6 +232,7 @@ GameObject:
   - component: {fileID: 8973946414037404236}
   - component: {fileID: 6405542263090896490}
   - component: {fileID: 2528441956449255380}
+  - component: {fileID: 717398274379968976}
   m_Layer: 0
   m_Name: Icon
   m_TagString: Untagged
@@ -280,6 +312,21 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &717398274379968976
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4596673579430209305}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Strike/Materials/IconEnergy
+  slot: 0
 --- !u!1 &5708271533616828906
 GameObject:
   m_ObjectHideFlags: 0
@@ -323,6 +370,7 @@ GameObject:
   - component: {fileID: 1790936055108596420}
   - component: {fileID: 4212816019670704621}
   - component: {fileID: 4138242737631629795}
+  - component: {fileID: 6259008134964293020}
   m_Layer: 0
   m_Name: Core
   m_TagString: Untagged
@@ -402,3 +450,18 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &6259008134964293020
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8441845900099733397}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Strike/Materials/StrikeCoreEnergy
+  slot: 0

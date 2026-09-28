@@ -58,6 +58,7 @@ GameObject:
   - component: {fileID: 4307464145253423608}
   - component: {fileID: 967039001429369680}
   - component: {fileID: 2782795357205308560}
+  - component: {fileID: 166500305032490785}
   m_Layer: 0
   m_Name: Shadow
   m_TagString: Untagged
@@ -137,6 +138,21 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &166500305032490785
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1058036290301882813}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Ground/Materials/UnitShadow
+  slot: 0
 --- !u!1 &6838873039879595209
 GameObject:
   m_ObjectHideFlags: 0
@@ -231,6 +247,8 @@ GameObject:
   - component: {fileID: 2863760606006304730}
   - component: {fileID: 1167935085230601173}
   - component: {fileID: 8427139147054881452}
+  - component: {fileID: 5443124346606822075}
+  - component: {fileID: 7336214576970063478}
   m_Layer: 0
   m_Name: Visual
   m_TagString: Untagged
@@ -311,6 +329,35 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &5443124346606822075
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9009724315175234453}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Ground/Materials/GroundPalette
+  slot: 0
+--- !u!114 &7336214576970063478
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9009724315175234453}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68a8cc4438b7cdf40b6a35c7fa61b5cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedMesh
+  game: 0
+  mesh: Ground/Models/Units/Radar
 --- !u!1 &9135410594592921502
 GameObject:
   m_ObjectHideFlags: 0
@@ -322,6 +369,8 @@ GameObject:
   - component: {fileID: 2675209606467912964}
   - component: {fileID: 5784191012420509541}
   - component: {fileID: 6328690427063872050}
+  - component: {fileID: 8484072965335014687}
+  - component: {fileID: 5574024839031695804}
   m_Layer: 0
   m_Name: Spinner
   m_TagString: Untagged
@@ -401,3 +450,32 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &8484072965335014687
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9135410594592921502}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Ground/Materials/GroundPalette
+  slot: 0
+--- !u!114 &5574024839031695804
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9135410594592921502}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68a8cc4438b7cdf40b6a35c7fa61b5cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedMesh
+  game: 0
+  mesh: Ground/Models/Units/RadarSpinner

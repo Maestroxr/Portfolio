@@ -71,7 +71,7 @@ namespace Portfolio.Monopoly
             anyBid = auction.highBidder >= 0;
             if (band != null)
             {
-                band.color = lot.kind == SpaceKind.Street ? MonopolyStyle.GroupColor(lot.group) : MonopolyStyle.Ink;
+                band.color = lot.kind == SpaceKind.Street ? MonopolyStyle.GroupColor(lot.group) : MonopolyStyle.Plate;
             }
             if (lotName != null)
             {
@@ -112,6 +112,7 @@ namespace Portfolio.Monopoly
                 bool inAuction = auction.bidders.Contains(i);
                 slot.badge.color = MonopolyStyle.PlayerColor(match.players[i].color);
                 slot.token.sprite = tokens?.Invoke(player.token);
+                slot.token.color = MonopolyStyle.TextOn(slot.badge.color);
                 slot.name.text = player.name;
                 slot.status.text = player.bankrupt ? "Out of the game" : i == auction.highBidder ? "Leading" : inAuction ? (i == bidder ? "Bidding" : "In") : "Passed";
                 slot.status.color = i == auction.highBidder ? MonopolyStyle.Green : inAuction ? MonopolyStyle.Ink : MonopolyStyle.Muted;

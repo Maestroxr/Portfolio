@@ -23,6 +23,8 @@ namespace Portfolio.MemoryCards
         [SerializeField] internal Image newBadge;
         [SerializeField] internal Sprite endlessIcon;
         [SerializeField] internal Sprite freePlayIcon;
+        [Tooltip("The tint of the back of a locked level.")]
+        [SerializeField] internal Color lockedTint = new Color(0.62f, 0.62f, 0.68f);
 
         private int index = -1;
         private bool selected;
@@ -40,6 +42,18 @@ namespace Portfolio.MemoryCards
             phase = UnityEngine.Random.Range(0f, 6f);
         }
 
+        /// <summary>Takes the icons and colours of <paramref name="look"/>; nothing changes without one.</summary>
+        public void ApplyLook(MemoryCardsTheme look)
+        {
+            if (look == null)
+            {
+                return;
+            }
+            endlessIcon = look.Icons.infinity != null ? look.Icons.infinity : endlessIcon;
+            freePlayIcon = look.Icons.sliders != null ? look.Icons.sliders : freePlayIcon;
+            lockedTint = look.Colors.cardLocked;
+        }
+
         public void Show(LevelSummary level, bool isSelected, Sprite starFull, Sprite starEmpty)
         {
             index = level.Index;
@@ -47,7 +61,7 @@ namespace Portfolio.MemoryCards
             if (back != null)
             {
                 back.sprite = level.CardBack;
-                back.color = level.Unlocked ? Color.white : new Color(0.62f, 0.62f, 0.68f);
+                back.color = level.Unlocked ? Color.white : lockedTint;
             }
             if (outline != null)
             {

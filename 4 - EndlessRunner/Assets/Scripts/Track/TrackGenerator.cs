@@ -35,6 +35,7 @@ namespace Portfolio.EndlessRunner
         private LayoutBuilder builder;
         private TrackLayout layout;
         private RunnerLevel level;
+        private RunnerGameTheme look;
         private int nextTile;
         private int nextPiece;
         private int nextHint;
@@ -49,9 +50,20 @@ namespace Portfolio.EndlessRunner
         /// <summary>Live obstacles. May contain pieces recycled this frame; check <see cref="TrackPiece.Live"/>.</summary>
         public IReadOnlyList<Obstacle> Obstacles => obstacles;
 
-        public PieceCatalog Catalog => catalog;
+        /// <summary>The pieces the track is built from: the active theme's, or the scene's when the game has no theme.</summary>
+        public PieceCatalog Catalog
+        {
+            get
+            {
+                RunnerGameTheme theme = RunnerGameTheme.Active;
+                return theme != null && theme.Pieces != null ? theme.Pieces : catalog;
+            }
+        }
 
         public RunnerLevel Level => level;
+
+        /// <summary>The game theme the track was laid out in: its pieces and worlds, until the track is built again.</summary>
+        public RunnerGameTheme Look => look;
 
         /// <summary>Coin value of the whole level (campaign levels).</summary>
         public int LevelCoins => layout != null ? layout.Coins : 0;
@@ -94,7 +106,9 @@ namespace Portfolio.EndlessRunner
             MapPools();
             Clear();
             level = runLevel;
-            builder = new LayoutBuilder(runLevel, settings, catalog, gravity, seed);
+            // The track keeps the look it is laid out in: a theme picked during a run applies from the next track on.
+            look = RunnerGameTheme.Active;
+            builder = new LayoutBuilder(runLevel, settings, Catalog, gravity, seed, look);
             builder.GenerateUntil(FirstStretch(runLevel));
             layout = builder.Layout;
             nextTile = 0;
@@ -108,11 +122,12 @@ namespace Portfolio.EndlessRunner
         /// </summary>
         public int CoinsOf(RunnerLevel runLevel, RunnerSettings settings, int seed, float gravity)
         {
-            if (runLevel == null || runLevel.IsEndless || settings == null || catalog == null)
+            PieceCatalog pieces = Catalog;
+            if (runLevel == null || runLevel.IsEndless || settings == null || pieces == null)
             {
                 return 0;
             }
-            var measure = new LayoutBuilder(runLevel, settings, catalog, gravity, seed);
+            var measure = new LayoutBuilder(runLevel, settings, pieces, gravity, seed, RunnerGameTheme.Active);
             measure.GenerateUntil(FirstStretch(runLevel));
             return measure.Layout.Coins;
         }
@@ -187,10 +202,10 @@ namespace Portfolio.EndlessRunner
             }
         }
 
-        /// <summary>The theme of the track at <paramref name="z"/>.</summary>
+        /// <summary>The world of the track at <paramref name="z"/>, in the look the track was laid out in.</summary>
         public RunnerTheme ThemeAt(float z)
         {
-            return level != null ? level.ThemeAt(z) : null;
+            return level != null ? level.ThemeAt(z, look) : null;
         }
 
         /// <summary>The chasm gap the runner at <paramref name="z"/> fell into: the last one starting before it.</summary>
@@ -241,7 +256,7 @@ namespace Portfolio.EndlessRunner
 
         /// <summary>
         /// A number for the layout up to <paramref name="untilZ"/> (ids, prefabs and positions to the millimeter): the
-        /// devices of a race log it, to see that they run the same track.
+        /// devices of a race log it, to see that they run the same track. Scenery is left out: it is the theme's.
         /// </summary>
         internal int LayoutHash(float untilZ)
         {
@@ -252,7 +267,7 @@ namespace Portfolio.EndlessRunner
             }
             foreach (PiecePlacement piece in layout.Pieces)
             {
-                if (piece.Position.z >= untilZ)
+                if (piece.Position.z >= untilZ || LayoutBuilder.IsScenery(piece.Id))
                 {
                     continue;
                 }

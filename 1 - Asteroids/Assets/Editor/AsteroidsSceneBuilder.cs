@@ -111,6 +111,11 @@ namespace Portfolio.Asteroids.EditorTools
             settingsUi.asteroidSpeed = GameMenuInstaller.AddInputField(menu, "AsteroidSpeed", "Asteroid speed", TMP_InputField.ContentType.DecimalNumber);
             settingsUi.spawnRate = GameMenuInstaller.AddInputField(menu, "SpawnRate", "Rock spawn delay (s)", TMP_InputField.ContentType.DecimalNumber);
             settingsUi.explosionRadius = GameMenuInstaller.AddInputField(menu, "ExplosionRadius", "Explosion radius (m)", TMP_InputField.ContentType.DecimalNumber);
+            // The themes: a "Look" row of the settings, the menu re-skinned by the theme's MenuSkin, then the game's own touches on top.
+            GameMenuInstaller.AddThemeChoice(menu, null, "Look", GameType.Asteroids);
+            ThemeKeys.StripMissingScripts(menu);
+            GameMenuInstaller.MakeThemed(menu, GameType.Asteroids);
+            GameMenuInstaller.EnsureComponent<AsteroidsMenuLook>(menu).ThemedGame = GameType.Asteroids;
             // The field mission select shows the field missions (the endless one included) and sectors only.
             int missions = campaign != null ? campaign.MissionCountOf(MissionMode.Field) : 13;
             int sectors = campaign != null ? campaign.SectorCountOf(MissionMode.Field) : 4;
@@ -283,6 +288,11 @@ namespace Portfolio.Asteroids.EditorTools
             rim.color = new Color(0.45f, 0.65f, 1f);
             rimObject.AddComponent<UniversalAdditionalLightData>();
 
+            // The space quad, the atmosphere, halo, rings and motes take their materials from the theme; the planet's surface
+            // and clouds take theirs from the sector (SpaceBackdrop), so they only keep a themed mesh.
+            ThemeKeys.Mark(root);
+            Object.DestroyImmediate(surface.GetComponent<ThemedRenderer>());
+            Object.DestroyImmediate(clouds.GetComponent<ThemedRenderer>());
             backdrop.rim = rim;
             backdrop.view = camera;
             backdrop.background = spaceRenderer;

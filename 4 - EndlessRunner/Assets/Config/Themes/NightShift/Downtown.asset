@@ -1,0 +1,109 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3e4b3590a93690f48973c3b10bd9e0e1, type: 3}
+  m_Name: Downtown
+  m_EditorClassIdentifier: Skinnerboxes.EndlessRunner::Portfolio.EndlessRunner.RunnerTheme
+  displayName: Downtown
+  skyTop: {r: 0.02, g: 0.03, b: 0.06, a: 1}
+  skyHorizon: {r: 0.5, g: 0.28, b: 0.2, a: 1}
+  skyBottom: {r: 0.06, g: 0.06, b: 0.08, a: 1}
+  sunDisc: {r: 0.8, g: 0.85, b: 0.95, a: 1}
+  sunSize: 0.03
+  starDensity: 0.25
+  cloudColor: {r: 0.14, g: 0.11, b: 0.15, a: 0.7}
+  cloudCoverage: 0.5
+  mountainFar: {r: 0.1, g: 0.1, b: 0.13, a: 1}
+  mountainNear: {r: 0.04, g: 0.045, b: 0.06, a: 1}
+  mountainHeight: 0.16
+  sunColor: {r: 0.62, g: 0.66, b: 0.85, a: 1}
+  sunIntensity: 0.5
+  sunRotation: {x: 55, y: 140, z: 0}
+  ambientSky: {r: 0.2, g: 0.22, b: 0.3, a: 1}
+  ambientEquator: {r: 0.24, g: 0.2, b: 0.22, a: 1}
+  ambientGround: {r: 0.08, g: 0.08, b: 0.1, a: 1}
+  shadowStrength: 0.5
+  fogColor: {r: 0.1, g: 0.1, b: 0.13, a: 1}
+  fogDensity: 0.012
+  ambientEffect: 6
+  road: {fileID: 2100000, guid: b2e70357c60a70e4791ddae0fbef56e7, type: 2}
+  stripes: {fileID: 2100000, guid: 8a22135357fd3314c92535ce82830566, type: 2}
+  curbs: {fileID: 2100000, guid: cb5777bf8c1454b4581c323b102ada43, type: 2}
+  ground: {fileID: 2100000, guid: 70fcd88a89927af4e8f255ee8ac28d6b, type: 2}
+  cliff: {fileID: 2100000, guid: 878395495f861f946809ab5ea41ba5cd, type: 2}
+  chasmFill: {fileID: 2100000, guid: 9054481e19589ef4185c40bd84f1ec71, type: 2}
+  dustColor: {r: 0.5, g: 0.55, b: 0.65, a: 0.5}
+  scenery:
+  - prefab: {fileID: 7964286108362240703, guid: 87cc1e266ce54304fb672902c0cdb0cf, type: 3}
+    weight: 1.5
+    distance: {x: 13, y: 30}
+    scale: {x: 0.9, y: 1.1}
+    facing: 1
+  - prefab: {fileID: 6362662977012901003, guid: b9a8cdf1e39c54f49bb8f2898e3d2199, type: 3}
+    weight: 1.5
+    distance: {x: 12, y: 32}
+    scale: {x: 0.9, y: 1.15}
+    facing: 1
+  - prefab: {fileID: 6236769265138264495, guid: f41a44d810b44e349b5ccd3100a451b5, type: 3}
+    weight: 1
+    distance: {x: 15, y: 34}
+    scale: {x: 0.9, y: 1.1}
+    facing: 1
+  - prefab: {fileID: 2642186861535743297, guid: 3a1ba794761617c4aba869436c7eadb7, type: 3}
+    weight: 0.8
+    distance: {x: 18, y: 40}
+    scale: {x: 0.9, y: 1.2}
+    facing: 1
+  - prefab: {fileID: 4456267437353010212, guid: 25f5b1c6a8bc97b4680037b91ab5de92, type: 3}
+    weight: 1
+    distance: {x: 9.5, y: 14}
+    scale: {x: 0.95, y: 1.05}
+    facing: 3
+  - prefab: {fileID: 7845866689698872575, guid: d136d07c751e05f4e94ae11f4b5e39dd, type: 3}
+    weight: 1
+    distance: {x: 9.5, y: 14}
+    scale: {x: 0.95, y: 1.05}
+    facing: 3
+  - prefab: {fileID: 4344726668827613287, guid: cf5738359d92ea14794507074796d2e8, type: 3}
+    weight: 1.2
+    distance: {x: 6.2, y: 7.2}
+    scale: {x: 1, y: 1}
+    facing: 2
+  - prefab: {fileID: 6527503961856258137, guid: dc81258ecf68df0489ffdb6b71e85a5e, type: 3}
+    weight: 0.6
+    distance: {x: 6.2, y: 7.2}
+    scale: {x: 1, y: 1}
+    facing: 2
+  - prefab: {fileID: 5159415994278349362, guid: 8c1b9990c62b74945ac45ff8730b54c6, type: 3}
+    weight: 0.8
+    distance: {x: 5.6, y: 6.5}
+    scale: {x: 1, y: 1}
+    facing: 2
+  - prefab: {fileID: 6509736146385839238, guid: 1207a7a2e5f92d441a623955bf2d4a2e, type: 3}
+    weight: 0.7
+    distance: {x: 5.6, y: 6.5}
+    scale: {x: 0.9, y: 1.1}
+    facing: 0
+  - prefab: {fileID: 184029770843988876, guid: 5796b555627a9cd43a9b4c1a3708c4cb, type: 3}
+    weight: 0.8
+    distance: {x: 6, y: 9}
+    scale: {x: 0.9, y: 1.1}
+    facing: 1
+  - prefab: {fileID: 6238163685927620974, guid: 8752cca402220f346bd372d4d6975038, type: 3}
+    weight: 0.3
+    distance: {x: 12, y: 22}
+    scale: {x: 0.9, y: 1.2}
+    facing: 3
+  sceneryPerTile: 7
+  roadsideProp: {fileID: 217451652552151360, guid: 0a2b2d0c074a9da45a693fba9c2ed355, type: 3}
+  roadsideEvery: 2
+  roadsideOffset: 5.2
+  accent: {r: 0.95, g: 0.65, b: 0.2, a: 1}

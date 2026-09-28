@@ -715,7 +715,7 @@ namespace Portfolio.EndlessRunner
             }
             ui?.ShowResults(new RunResult
             {
-                LevelTitle = level != null ? level.Title : string.Empty,
+                LevelTitle = level != null ? RunnerGameTheme.TitleFor(level) : string.Empty,
                 Victory = place == 1,
                 Endless = level != null && level.IsEndless,
                 Coins = coins,

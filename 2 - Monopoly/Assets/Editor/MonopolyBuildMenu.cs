@@ -46,7 +46,7 @@ namespace Portfolio.Monopoly.EditorTools
                 RemoveLegacyAssets();
                 MonopolyArtBuilder.BuildAll();
                 MonopolyContentBuilder.BuildAll();
-                MonopolySceneBuilder.Build();
+                InClassicLook(MonopolySceneBuilder.Build);
                 AssetDatabase.SaveAssets();
                 Debug.Log($"Monopoly built under {MonopolyAssets.Root}.");
             }
@@ -54,6 +54,35 @@ namespace Portfolio.Monopoly.EditorTools
             {
                 EditorUtility.ClearProgressBar();
             }
+        }
+
+        /// <summary>
+        /// Runs a builder with the classic theme pinned as the style's, so the scene is always laid out in the classic
+        /// look (and tagged against it) whatever theme the definition or the editor's play mode currently picks.
+        /// </summary>
+        private static void InClassicLook(Action build)
+        {
+            MonopolyTheme before = MonopolyStyle.Override;
+            MonopolyStyle.Override = MonopolyContentBuilder.ClassicTheme;
+            try
+            {
+                build();
+            }
+            finally
+            {
+                MonopolyStyle.Override = before;
+            }
+        }
+
+        [MenuItem("Monopoly/Rebuild Themes", priority = 23)]
+        public static void RebuildThemes()
+        {
+            foreach (MonopolyThemeSpec spec in MonopolyThemeSpec.All)
+            {
+                MonopolyContentBuilder.BuildTheme(spec);
+            }
+            AssetDatabase.SaveAssets();
+            Debug.Log($"Monopoly: {MonopolyThemeSpec.All.Length} themes rebuilt from the art on disk.");
         }
 
         [MenuItem("Monopoly/Rebuild Art and Sound", priority = 20)]
@@ -80,7 +109,7 @@ namespace Portfolio.Monopoly.EditorTools
         {
             if (Application.isBatchMode || EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
             {
-                MonopolySceneBuilder.Build();
+                InClassicLook(MonopolySceneBuilder.Build);
             }
         }
 

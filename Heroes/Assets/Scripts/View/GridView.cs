@@ -56,7 +56,7 @@ namespace Portfolio.Heroes
             grid.regularHexagonsWidth = layout.Radius * 2f;
             grid.showTerritories = false;
             grid.highlightMode = HighlightMode.None;
-            grid.cellBorderColor = lineColor;
+            grid.cellBorderColor = HeroesTheme.Palette.Active.Accent(lineColor);
             grid.cellCustomBorderThickness = true;
             grid.cellBorderThickness = 1.6f;
             grid.gridElevation = 0.04f;

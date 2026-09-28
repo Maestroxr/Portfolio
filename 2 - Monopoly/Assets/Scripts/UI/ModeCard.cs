@@ -38,6 +38,7 @@ namespace Portfolio.Monopoly
                 return;
             }
             iconBackground.color = mode.Accent;
+            icon.color = MonopolyStyle.TextOn(mode.Accent);
             icon.text = mode.Icon;
             title.text = mode.Title;
             tagline.text = mode.Tagline;
@@ -50,7 +51,7 @@ namespace Portfolio.Monopoly
         public void SetSelected(bool value, Color accent)
         {
             selected = value;
-            frame.color = value ? accent : Color.white;
+            frame.color = value ? accent : MonopolyStyle.Paper;
             if (selectedMark != null)
             {
                 selectedMark.SetActive(value);

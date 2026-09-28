@@ -107,7 +107,7 @@ namespace Portfolio.Monopoly
                     yield return MoveToken(e.player, e.from, e.space, e.value);
                     break;
                 case MatchEventKind.WentToJail:
-                    ui.Banner("GO TO JAIL!", MonopolyStyle.Ink, 0.9f);
+                    ui.Banner("GO TO JAIL!", MonopolyStyle.Plate, 0.9f);
                     sound?.Play(Sfx.Jail);
                     yield return JailToken(e.player);
                     ui.Toast($"{Named(e.player)} {Verb(e.player, "goes")} to jail.", MonopolyStyle.Ink, Icons.Lock);
@@ -278,7 +278,7 @@ namespace Portfolio.Monopoly
                 {
                     PlayerState player = Match.players[e.player];
                     sound?.Play(Sfx.Bankrupt);
-                    ui.Banner($"{player.name.ToUpperInvariant()} {Verb(e.player, "is").ToUpperInvariant()} BANKRUPT", MonopolyStyle.Ink, 1.2f);
+                    ui.Banner($"{player.name.ToUpperInvariant()} {Verb(e.player, "is").ToUpperInvariant()} BANKRUPT", MonopolyStyle.Plate, 1.2f);
                     ui.Toast($"{Named(e.player)} {Verb(e.player, "is")} bankrupt; everything goes to {NamedObject(e.other)}.", MonopolyStyle.Ink, Icons.Flag);
                     yield return tokens[e.player].Topple();
                     shownPosition[e.player] = -1;

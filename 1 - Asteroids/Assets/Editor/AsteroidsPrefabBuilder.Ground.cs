@@ -32,7 +32,9 @@ namespace Portfolio.Asteroids.EditorTools
             {
                 BuildGroundUnit(unit);
             }
-            foreach (GroundTheme theme in AsteroidsArtBuilder.GroundThemes)
+            var themes = new List<GroundTheme>(AsteroidsArtBuilder.GroundThemes);
+            themes.AddRange(AsteroidsArtBuilder.GeneratedGroundThemes);
+            foreach (GroundTheme theme in themes)
             {
                 var sets = new List<StrikeTheme.TileSet>();
                 foreach ((TerrainKind kind, int variants) in theme.Kinds)
@@ -61,13 +63,14 @@ namespace Portfolio.Asteroids.EditorTools
             tile.length = StrikeRules.TileLength;
             tile.width = StrikeRules.TileWidth;
             Model(root.transform, "Ground", AsteroidsAssets.Load<Mesh>("Art/Ground/Models/GroundTile.asset"), AsteroidsArtBuilder.TileMaterial(plan));
-            Mesh props = AsteroidsArtBuilder.TileProps(plan);
+            // A neon world is a bare grid: no props, no night lights.
+            Mesh props = plan.Theme.Neon == null ? AsteroidsArtBuilder.TileProps(plan) : null;
             if (props != null)
             {
                 Model(root.transform, "Props", props, GroundPalette);
             }
             tile.decalRoot = Child(root.transform, "Decals", new Vector3(0f, 0f, -0.02f));
-            if (plan.Lights.Count > 0)
+            if (plan.Lights.Count > 0 && plan.Theme.Neon == null)
             {
                 Transform lights = Child(root.transform, "Lights");
                 for (int i = 0; i < plan.Lights.Count; i++)
@@ -76,7 +79,7 @@ namespace Portfolio.Asteroids.EditorTools
                     Quad(lights, $"Light{i}", LightMaterial(color), position, Vector2.one * size);
                 }
             }
-            GameObject prefab = Save(root, $"Strike/Terrain/{plan.Theme.Name}/{plan.Name}");
+            GameObject prefab = Save(root, $"{plan.Theme.PrefabFolder}/{plan.Name}");
             return prefab.GetComponent<TerrainTile>();
         }
 
@@ -102,7 +105,7 @@ namespace Portfolio.Asteroids.EditorTools
 
         private static void BuildThemeAsset(GroundTheme theme, StrikeTheme.TileSet[] sets)
         {
-            AsteroidsAssets.SaveScriptable<StrikeTheme>(ThemePath(theme.Name), asset =>
+            AsteroidsAssets.SaveScriptable<StrikeTheme>(theme.AssetPath, asset =>
             {
                 asset.title = theme.Name.ToUpperInvariant();
                 asset.accent = theme.Accent;

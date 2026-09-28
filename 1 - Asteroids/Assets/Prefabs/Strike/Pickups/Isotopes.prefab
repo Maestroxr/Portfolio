@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 7007932554558737108}
   - component: {fileID: 5179098035901115504}
   - component: {fileID: 6235817782436051732}
+  - component: {fileID: 8116754676433369011}
   m_Layer: 0
   m_Name: Halo
   m_TagString: Untagged
@@ -90,6 +91,21 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &8116754676433369011
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 59524430049882037}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Strike/Materials/StrikeHaloIsotopes
+  slot: 0
 --- !u!1 &184490480274904729
 GameObject:
   m_ObjectHideFlags: 0
@@ -133,6 +149,8 @@ GameObject:
   - component: {fileID: 300382448063893894}
   - component: {fileID: 6278098599418127685}
   - component: {fileID: 1055647441756166642}
+  - component: {fileID: 2638156745463775352}
+  - component: {fileID: 5435362471321064173}
   m_Layer: 0
   m_Name: Model
   m_TagString: Untagged
@@ -212,6 +230,35 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &2638156745463775352
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2089201293238922235}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Strike/Materials/StrikePalette
+  slot: 0
+--- !u!114 &5435362471321064173
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2089201293238922235}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68a8cc4438b7cdf40b6a35c7fa61b5cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedMesh
+  game: 0
+  mesh: Strike/Models/IsotopeCanister
 --- !u!1 &2888227821670260387
 GameObject:
   m_ObjectHideFlags: 0

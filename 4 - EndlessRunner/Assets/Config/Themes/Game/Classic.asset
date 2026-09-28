@@ -1,0 +1,157 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b3f22cde396483fa0a312556e991f56, type: 3}
+  m_Name: Classic
+  m_EditorClassIdentifier: Skinnerboxes.EndlessRunner::Portfolio.EndlessRunner.RunnerGameTheme
+  displayName: Classic
+  description: 'The bright cartoon runner: five sunny, snowy, moonlit and fiery worlds, a kid in a hoodie and gold coins.'
+  preview: {fileID: 21300000, guid: ff0f2497ed1c95744a62c6ef5b8f771c, type: 3}
+  fonts:
+    body: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+    bodyMaterial: {fileID: 2100000, guid: 4ea317a7d7c90804d8e520c3fe793d14, type: 2}
+    title: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+    titleMaterial: {fileID: 2100000, guid: 816fc2f2b81892a4ca111ad304504bd5, type: 2}
+  menu:
+    backdrop: {fileID: 21300000, guid: f96a6649801c56a4eb81c563dd983894, type: 3}
+    backdropColor: {r: 0.06, g: 0.08, b: 0.2, a: 0.86}
+    window: {fileID: 21300000, guid: f1114c4144525d94d8f3d26a8eb20257, type: 3}
+    windowColor: {r: 0.1, g: 0.12, b: 0.27, a: 0.97}
+    tileWindow: 0
+    settingsWindow: {fileID: 21300000, guid: f1114c4144525d94d8f3d26a8eb20257, type: 3}
+    headerBanner: {fileID: 21300000, guid: f1114c4144525d94d8f3d26a8eb20257, type: 3}
+    rowsBackground: {fileID: 21300000, guid: f1114c4144525d94d8f3d26a8eb20257, type: 3}
+    rowsColor: {r: 0.04, g: 0.05, b: 0.14, a: 0.5}
+    rowBackground: {fileID: 21300000, guid: f1114c4144525d94d8f3d26a8eb20257, type: 3}
+    rowColor: {r: 0.1, g: 0.12, b: 0.27, a: 0.5}
+    button: {fileID: 21300000, guid: 6e235f3200219e3459e6a4ff7088ab8f, type: 3}
+    buttonHover: {fileID: 21300000, guid: 140cd94e19f792044829cfbd717a0eb1, type: 3}
+    buttonPressed: {fileID: 21300000, guid: 7d442ea7b18d7f04fbabfcafebff1094, type: 3}
+    buttonDisabled: {fileID: 21300000, guid: 704782ec40aa74c44ba8859bc6487e90, type: 3}
+    arrowButton: {fileID: 21300000, guid: 6e235f3200219e3459e6a4ff7088ab8f, type: 3}
+    track: {fileID: 21300000, guid: f1114c4144525d94d8f3d26a8eb20257, type: 3}
+    fill: {fileID: 21300000, guid: 6e235f3200219e3459e6a4ff7088ab8f, type: 3}
+    fillColor: {r: 1, g: 0.83, b: 0.26, a: 1}
+    knob: {fileID: 21300000, guid: f1510c375d0f7ed419616e446fa13953, type: 3}
+    checkBox: {fileID: 21300000, guid: f1114c4144525d94d8f3d26a8eb20257, type: 3}
+    checkMark: {fileID: 21300000, guid: 0749a30d5a3eb384b9859940612350fa, type: 3}
+    headerColor: {r: 1, g: 0.83, b: 0.26, a: 1}
+    textColor: {r: 1, g: 1, b: 1, a: 1}
+    valueColor: {r: 1, g: 0.83, b: 0.26, a: 1}
+    buttonTextColor: {r: 1, g: 1, b: 1, a: 1}
+    errorColor: {r: 1, g: 0.45, b: 0.4, a: 1}
+  slots:
+    sprites: []
+    materials: []
+    textures: []
+    prefabs: []
+    meshes: []
+    fonts: []
+    clips: []
+    colors: []
+  biomes:
+  - {fileID: 11400000, guid: 2d7ce6a2ec940ec49b78f510f98e4bc5, type: 2}
+  - {fileID: 11400000, guid: 3bd4324cb60ad9a40b5851d975691fa2, type: 2}
+  - {fileID: 11400000, guid: 3f8cdd6a97343f64e988ea20efa14789, type: 2}
+  - {fileID: 11400000, guid: 05772d5083e4efb47923b6158fd8838e, type: 2}
+  - {fileID: 11400000, guid: c2bb0c1ce51284346a8510c18415444d, type: 2}
+  pieces: {fileID: 11400000, guid: 7e892a895eee8174a91d300018dd5a25, type: 2}
+  runner:
+    torso: {fileID: 4300000, guid: 08a5d5c5d0f9a4d4985c7d38f3f2ea8d, type: 2}
+    head: {fileID: 4300000, guid: bd3c91046daee144abf5264367fe6864, type: 2}
+    upperArm: {fileID: 4300000, guid: 8cbf2f25f1ef0cf4d920e519d0a78877, type: 2}
+    forearm: {fileID: 4300000, guid: ca8dd6a92661ced459ddce0ad5f93e5d, type: 2}
+    thigh: {fileID: 4300000, guid: 3a87d1058c3d8c947b9861044ad384eb, type: 2}
+    shin: {fileID: 4300000, guid: 664b479be52025640819fb207a99b59f, type: 2}
+    material: {fileID: 2100000, guid: ac3d367e1dfccf04ab421c576e735e3b, type: 2}
+    hipsHeight: 0.78
+    neck: {x: 0, y: 0.54, z: 0}
+    shoulder: {x: 0.265, y: 0.46, z: 0}
+    elbow: -0.25
+    hip: 0.11
+    knee: -0.36
+  materials:
+    palette: {fileID: 2100000, guid: ac3d367e1dfccf04ab421c576e735e3b, type: 2}
+    coin: {fileID: 2100000, guid: f96bda66ae17bb0429ff05b76a525c8a, type: 2}
+    haloGem: {fileID: 2100000, guid: 578d881577393f14faf18a23606c6f4a, type: 2}
+    haloMagnet: {fileID: 2100000, guid: d375022edaa1cea4294b1561e6a67ee3, type: 2}
+    haloShield: {fileID: 2100000, guid: e771b4fdbed44fb4f9f321b06ab9819e, type: 2}
+    haloMultiplier: {fileID: 2100000, guid: 134ddbc78f85c0448a4948246ee11b3b, type: 2}
+    haloSuperJump: {fileID: 2100000, guid: f59395ba954097143b37b5b31240e881, type: 2}
+    shieldRing: {fileID: 2100000, guid: 328caaca2bf14d648aa9fbb34267698c, type: 2}
+  particles:
+    sparkle: {fileID: 2100000, guid: d8d06660d0fe087478f20addc24d31c9, type: 2}
+    glow: {fileID: 2100000, guid: 5a4950e8a287e344784e813e4ae07f44, type: 2}
+    soft: {fileID: 2100000, guid: 10a9e3404add90443802272d44969cf0, type: 2}
+    smoke: {fileID: 2100000, guid: 7e9e23224383d3647a91bcdd72bfb164, type: 2}
+    confetti: {fileID: 2100000, guid: 4042a1102d7d28c4f989f148650cd4db, type: 2}
+    debris: {fileID: 2100000, guid: 47aa4ee47831a6440820313256f4eed7, type: 2}
+  sky: {fileID: 2100000, guid: 2e09abcc64a55754dbde047fe24c1e78, type: 2}
+  sprites:
+    coin: {fileID: 21300000, guid: bc6c2370f35cfc849867096165268609, type: 3}
+    gem: {fileID: 21300000, guid: 7f987d7b796315441b989c4c60405f62, type: 3}
+    heart: {fileID: 21300000, guid: 975e4d7286c47404e9a7496d3b2f09ae, type: 3}
+    heartEmpty: {fileID: 21300000, guid: ff7e2502d19124f4f89aca1c999c9140, type: 3}
+    star: {fileID: 21300000, guid: d7b146db04b1f214e832feb9de160272, type: 3}
+    starEmpty: {fileID: 21300000, guid: 2f0f53a18ddb8e044abbba5e755d619f, type: 3}
+    lockIcon: {fileID: 21300000, guid: efbc0de04d0e2674db2fed7ea656bc02, type: 3}
+    magnet: {fileID: 21300000, guid: f3bd417b03f83e04180e7f194dc24a20, type: 3}
+    shield: {fileID: 21300000, guid: 6629f6805cad6934a8c26c260ed960dd, type: 3}
+    multiplier: {fileID: 21300000, guid: f851aa572d154e74b8f1623d5734193b, type: 3}
+    spring: {fileID: 21300000, guid: 062d7f80b001c18448719fe14e40acb7, type: 3}
+    pause: {fileID: 21300000, guid: 2242d22e078cf974fbf783c33cf14f6c, type: 3}
+    flag: {fileID: 21300000, guid: 956962a71daed2c4794f7602d4c68746, type: 3}
+    runner: {fileID: 21300000, guid: ff0f2497ed1c95744a62c6ef5b8f771c, type: 3}
+    infinity: {fileID: 21300000, guid: 3fd7ac54ef9234248affe31a1c2be8bf, type: 3}
+    play: {fileID: 21300000, guid: 6be5b349be13be5448c9561d1bf24980, type: 3}
+    retry: {fileID: 21300000, guid: 7cd41d5b0c9f51045a4116b910da5104, type: 3}
+    levels: {fileID: 21300000, guid: a329dc2597cbdeb41a01728f689e4bee, type: 3}
+    settings: {fileID: 21300000, guid: ea0efe5818be22f498904aeea7de4641, type: 3}
+    exit: {fileID: 21300000, guid: 686062d4fc729fe498a3949dc1d4284c, type: 3}
+    check: {fileID: 21300000, guid: 0749a30d5a3eb384b9859940612350fa, type: 3}
+    panel: {fileID: 21300000, guid: f1114c4144525d94d8f3d26a8eb20257, type: 3}
+    button: {fileID: 21300000, guid: 6e235f3200219e3459e6a4ff7088ab8f, type: 3}
+    buttonHover: {fileID: 21300000, guid: 140cd94e19f792044829cfbd717a0eb1, type: 3}
+    buttonPressed: {fileID: 21300000, guid: 7d442ea7b18d7f04fbabfcafebff1094, type: 3}
+    buttonDisabled: {fileID: 21300000, guid: 704782ec40aa74c44ba8859bc6487e90, type: 3}
+    fade: {fileID: 21300000, guid: a094b71bf21002f479bc6ff004cc7fb2, type: 3}
+    vignette: {fileID: 21300000, guid: 5b6bbb5cf67750c4e8682b3e83a86c61, type: 3}
+    glow: {fileID: 21300000, guid: f1510c375d0f7ed419616e446fa13953, type: 3}
+    ring: {fileID: 21300000, guid: 6d55946666bbea34abeb577af6bd0b3f, type: 3}
+    grain: {fileID: 21300000, guid: e93ff9486e31cd5448e5a35fa33cd803, type: 3}
+    backdrop: {fileID: 21300000, guid: f96a6649801c56a4eb81c563dd983894, type: 3}
+  colors:
+    panel: {r: 0.06, g: 0.08, b: 0.2, a: 0.86}
+    accent: {r: 1, g: 0.83, b: 0.26, a: 1}
+    play: {r: 0.3, g: 0.76, b: 0.34, a: 1}
+    warning: {r: 0.98, g: 0.58, b: 0.2, a: 1}
+    info: {r: 0.26, g: 0.55, b: 0.95, a: 1}
+    danger: {r: 0.9, g: 0.32, b: 0.32, a: 1}
+    soft: {r: 0.84, g: 0.87, b: 0.95, a: 1}
+    badge: {r: 0.55, g: 0.25, b: 0.9, a: 0.95}
+    hint: {r: 0.7, g: 0.74, b: 0.85, a: 1}
+    locked: {r: 0.36, g: 0.38, b: 0.45, a: 1}
+    goals: {r: 1, g: 0.93, b: 0.7, a: 1}
+    logoEndlessTop: {r: 1, g: 0.97, b: 0.55, a: 1}
+    logoEndlessBottom: {r: 1, g: 0.62, b: 0.12, a: 1}
+    logoRunnerTop: {r: 0.55, g: 0.95, b: 1, a: 1}
+    logoRunnerBottom: {r: 0.15, g: 0.5, b: 1, a: 1}
+    overlay: {r: 0, g: 0, b: 0, a: 0}
+    grain: {r: 1, g: 1, b: 1, a: 0}
+    curtain: {r: 0.02, g: 0.03, b: 0.08, a: 1}
+    magnet: {r: 1, g: 0.35, b: 0.35, a: 1}
+    shield: {r: 0.35, g: 0.75, b: 1, a: 1}
+    multiplier: {r: 0.75, g: 0.45, b: 1, a: 1}
+    superJump: {r: 0.4, g: 1, b: 0.45, a: 1}
+    menuResume: {r: 0.3, g: 0.76, b: 0.34, a: 1}
+    menuRestart: {r: 0.98, g: 0.58, b: 0.2, a: 1}
+    menuSettings: {r: 0.26, g: 0.55, b: 0.95, a: 1}
+    menuQuit: {r: 0.9, g: 0.32, b: 0.32, a: 1}

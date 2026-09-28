@@ -229,7 +229,7 @@ namespace Portfolio.Heroes
             {
                 yield return ui.Bar.Fade(1f, 0.35f);
                 BattlefieldScene loaded = null;
-                yield return BattlefieldScene.Load(art, made => loaded = made);
+                yield return BattlefieldScene.Load(Art, made => loaded = made);
                 if (Game == null)
                 {
                     SceneManager.SetActiveScene(gameObject.scene);

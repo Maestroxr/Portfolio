@@ -61,6 +61,12 @@ namespace Portfolio.EndlessRunner
         public const float GapStart = 1.25f;
         public const float GapEnd = 4.75f;
         public const int FirstTile = -16;
+        /// <summary>
+        /// Scenery placements are numbered from here, in a range of their own: a theme brings its own scenery, so the
+        /// ids of the obstacles and coins (which a race shares between devices) must not depend on how much of it
+        /// there is.
+        /// </summary>
+        public const int SceneryIdBase = 1 << 24;
         private const float ContentStart = 36f;
 
         private delegate float Pattern(float z, float difficulty);
@@ -83,6 +89,7 @@ namespace Portfolio.EndlessRunner
         };
 
         private readonly RunnerLevel level;
+        private readonly RunnerGameTheme look;
         private readonly RunnerSettings settings;
         private readonly PieceCatalog catalog;
         private readonly Random rng;
@@ -99,6 +106,7 @@ namespace Portfolio.EndlessRunner
         private float cursor = ContentStart;
         private int nextTile = FirstTile;
         private int nextId;
+        private int nextSceneryId = SceneryIdBase;
         private float nextPowerUp;
         private PatternDef last;
         private TrackFeatures introduced;
@@ -106,8 +114,10 @@ namespace Portfolio.EndlessRunner
 
         public TrackLayout Layout => layout;
 
-        public LayoutBuilder(RunnerLevel level, RunnerSettings settings, PieceCatalog catalog, float gravity, int seed)
+        /// <param name="look">The game theme whose worlds the tiles and the scenery are laid out in; the level's own worlds without one.</param>
+        public LayoutBuilder(RunnerLevel level, RunnerSettings settings, PieceCatalog catalog, float gravity, int seed, RunnerGameTheme look = null)
         {
+            this.look = look;
             this.level = level;
             this.settings = settings;
             this.catalog = catalog;
@@ -147,7 +157,9 @@ namespace Portfolio.EndlessRunner
             {
                 AddTile(nextTile++);
             }
-            batch.Sort((a, b) => a.Position.z.CompareTo(b.Position.z));
+            // By z, and by id where the z is the same: List.Sort is not stable, and the order of the pieces of the track
+            // must not depend on how much scenery (the theme's) lies between them.
+            batch.Sort((a, b) => a.Position.z != b.Position.z ? a.Position.z.CompareTo(b.Position.z) : a.Id.CompareTo(b.Id));
             layout.Pieces.AddRange(batch);
             batch.Clear();
             layout.GeneratedUntil = nextTile * TileLength;
@@ -675,7 +687,7 @@ namespace Portfolio.EndlessRunner
         private void AddTile(int index)
         {
             float z = index * TileLength;
-            RunnerTheme theme = level.ThemeAt(z);
+            RunnerTheme theme = level.ThemeAt(z, look);
             bool gap = gapTiles.Contains(index);
             layout.Tiles.Add(new TilePlacement { Prefab = gap ? catalog.chasmTile : catalog.roadTile, Z = z, Theme = theme });
             if (theme != null)
@@ -704,20 +716,35 @@ namespace Portfolio.EndlessRunner
                 float sceneryZ = z + Range(sceneryRng, 0f, TileLength);
                 float side = sceneryRng.NextDouble() < 0.5 ? -1f : 1f;
                 float x = side * Range(sceneryRng, item.distance.x, item.distance.y);
-                float yaw = Range(sceneryRng, 0f, 360f);
+                float yaw = item.Yaw(Range(sceneryRng, 0f, 360f), x);
                 float scale = Range(sceneryRng, item.scale.x, item.scale.y);
                 if (gap && sceneryZ > z + GapStart - 1.5f && sceneryZ < z + GapEnd + 1.5f)
                 {
                     continue;
                 }
-                AddPiece(item.prefab, new Vector3(x, 0f, sceneryZ), yaw, scale);
+                AddScenery(item.prefab, new Vector3(x, 0f, sceneryZ), yaw, scale);
             }
             if (theme.roadsideProp != null && !gap && theme.roadsideEvery > 0 && (index % theme.roadsideEvery + theme.roadsideEvery) % theme.roadsideEvery == 0)
             {
                 float propLength = theme.roadsideProp.Length;
-                AddPiece(theme.roadsideProp, new Vector3(-theme.roadsideOffset, 0f, z));
-                AddPiece(theme.roadsideProp, new Vector3(theme.roadsideOffset, 0f, z + propLength), 180f);
+                AddScenery(theme.roadsideProp, new Vector3(-theme.roadsideOffset, 0f, z), 0f, 1f);
+                AddScenery(theme.roadsideProp, new Vector3(theme.roadsideOffset, 0f, z + propLength), 180f, 1f);
             }
+        }
+
+        /// <summary>A piece of scenery: numbered in the scenery range, see <see cref="SceneryIdBase"/>.</summary>
+        private void AddScenery(TrackPiece prefab, Vector3 position, float yaw, float scale)
+        {
+            if (prefab != null)
+            {
+                batch.Add(new PiecePlacement { Prefab = prefab, Position = position, Yaw = yaw, Scale = scale, Id = nextSceneryId++, ParentId = -1 });
+            }
+        }
+
+        /// <summary>Whether a placement id names scenery rather than a piece of the track.</summary>
+        public static bool IsScenery(int id)
+        {
+            return id >= SceneryIdBase;
         }
 
         private SceneryItem PickScenery(SceneryItem[] items, float total)

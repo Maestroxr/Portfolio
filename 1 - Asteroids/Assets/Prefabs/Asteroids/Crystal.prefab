@@ -111,6 +111,7 @@ GameObject:
   - component: {fileID: 7069900569356775316}
   - component: {fileID: 6334956779854170030}
   - component: {fileID: 1915179185729680027}
+  - component: {fileID: 1306581179537088776}
   m_Layer: 0
   m_Name: Model
   m_TagString: Untagged
@@ -190,3 +191,18 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &1306581179537088776
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7368470803288119969}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Materials/CrystalPalette
+  slot: 0

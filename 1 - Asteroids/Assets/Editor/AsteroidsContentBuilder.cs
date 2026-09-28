@@ -51,6 +51,10 @@ namespace Portfolio.Asteroids.EditorTools
             BuildHulls();
             Progress("Sectors", 0.2f);
             BuildThemes();
+            foreach (ThemeSpec spec in AsteroidsArtBuilder.GeneratedThemes)
+            {
+                BuildThemeSectors(spec);
+            }
             Progress("Drop tables", 0.35f);
             BuildLoot();
             Progress("Missions", 0.5f);

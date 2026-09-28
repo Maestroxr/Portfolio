@@ -43,6 +43,7 @@ GameObject:
   - component: {fileID: 4913855887628151777}
   - component: {fileID: 1763385392119715698}
   - component: {fileID: 1422644177287923810}
+  - component: {fileID: 6377691856499978366}
   m_Layer: 0
   m_Name: Decal
   m_TagString: Untagged
@@ -122,3 +123,18 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &6377691856499978366
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7983386886872070860}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Strike/Materials/Crater
+  slot: 0

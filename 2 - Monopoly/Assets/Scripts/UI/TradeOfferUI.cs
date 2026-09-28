@@ -39,6 +39,7 @@ namespace Portfolio.Monopoly
             if (fromToken != null)
             {
                 fromToken.sprite = token;
+                fromToken.color = fromBadge != null ? MonopolyStyle.TextOn(fromBadge.color) : Color.white;
             }
             if (title != null)
             {
@@ -69,7 +70,7 @@ namespace Portfolio.Monopoly
             foreach (int space in spaces.OrderBy(s => s))
             {
                 SpaceData data = match.Space(space);
-                string mortgaged = match.Deed(space).mortgaged ? " <size=80%><color=#E4002B>(mortgaged)</color></size>" : "";
+                string mortgaged = match.Deed(space).mortgaged ? $" <size=80%><color={MonopolyStyle.RedTag}>(mortgaged)</color></size>" : "";
                 text.Append($"<color={MonopolyStyle.ColorTag(MonopolyStyle.GroupColor(data.group))}>{Icons.Square}</color> {data.name}{mortgaged}\n");
             }
             if (cash > 0)

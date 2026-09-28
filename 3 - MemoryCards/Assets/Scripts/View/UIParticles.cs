@@ -38,6 +38,12 @@ namespace Portfolio.MemoryCards
         [SerializeField] internal Sprite circle;
         [SerializeField] internal Sprite confetti;
         [SerializeField] internal Sprite shard;
+        [Tooltip("The colours of the burst of a wild card.")]
+        [SerializeField] internal Color[] rainbow =
+        {
+            new Color(1f, 0.35f, 0.35f), new Color(1f, 0.7f, 0.2f), new Color(1f, 0.95f, 0.3f),
+            new Color(0.4f, 0.9f, 0.4f), new Color(0.35f, 0.7f, 1f), new Color(0.75f, 0.45f, 1f)
+        };
 
         private readonly List<Particle> pool = new List<Particle>();
         private readonly List<Particle> live = new List<Particle>();
@@ -51,6 +57,24 @@ namespace Portfolio.MemoryCards
             {
                 template.gameObject.SetActive(false);
                 template.raycastTarget = false;
+            }
+        }
+
+        /// <summary>Takes the shapes of <paramref name="look"/>; nothing changes without one.</summary>
+        public void ApplyLook(MemoryCardsTheme.ParticleLook look)
+        {
+            if (look == null)
+            {
+                return;
+            }
+            spark = look.spark != null ? look.spark : spark;
+            star = look.star != null ? look.star : star;
+            circle = look.circle != null ? look.circle : circle;
+            confetti = look.confetti != null ? look.confetti : confetti;
+            shard = look.shard != null ? look.shard : shard;
+            if (look.wildColors != null && look.wildColors.Count > 0)
+            {
+                rainbow = look.wildColors.ToArray();
             }
         }
 
@@ -90,15 +114,10 @@ namespace Portfolio.MemoryCards
             Burst(position, 6, spark, new[] { Color.white }, 300f, 22f, 0.45f);
         }
 
-        /// <summary>A rainbow burst for the wild card.</summary>
+        /// <summary>A rainbow burst (in the colours of the theme) for the wild card.</summary>
         public void Rainbow(Vector2 position)
         {
-            var colors = new[]
-            {
-                new Color(1f, 0.35f, 0.35f), new Color(1f, 0.7f, 0.2f), new Color(1f, 0.95f, 0.3f),
-                new Color(0.4f, 0.9f, 0.4f), new Color(0.35f, 0.7f, 1f), new Color(0.75f, 0.45f, 1f)
-            };
-            Burst(position, 34, star != null ? star : spark, colors, 900f, 34f, 1f, -500f, 1.2f);
+            Burst(position, 34, star != null ? star : spark, rainbow, 900f, 34f, 1f, -500f, 1.2f);
         }
 
         /// <summary>Smoke and sparks of a bomb.</summary>

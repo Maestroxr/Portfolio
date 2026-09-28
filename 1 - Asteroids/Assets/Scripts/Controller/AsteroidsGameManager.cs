@@ -195,6 +195,62 @@ namespace Portfolio.Asteroids
         partial void OnDestroyStrike();
 
 
+        /// <summary>
+        /// The game's theme changed (a pick in the settings, the launcher's button, the command line): the ship shows its
+        /// hull in the new look, the backdrop and the ground of a strike preview are drawn again, and the mission select
+        /// is redrawn a frame later, once every themed part of the interface has taken its new sprites and fonts. The
+        /// materials of the bodies in play follow at once (their themed renderers), the rocks take the new theme's shapes
+        /// here; everything else takes the new look as it spawns.
+        /// </summary>
+        protected override void OnThemeChanged(GameTheme theme)
+        {
+            base.OnThemeChanged(theme);
+            AsteroidsThemes.Forget();
+            if (ship != null && ship.visuals != null && ship.visuals.Hull != null)
+            {
+                ship.visuals.SetModel(ship.visuals.Hull);
+            }
+            if (field != null)
+            {
+                foreach (SpaceBody body in field.Bodies)
+                {
+                    if (body is Asteroid rock)
+                    {
+                        rock.ApplyTheme();
+                    }
+                }
+            }
+            backdrop?.Reapply();
+            if (field != null && field.Terrain != null)
+            {
+                field.Terrain.Refresh();
+            }
+            if (isActiveAndEnabled)
+            {
+                StartCoroutine(RedrawForTheme());
+            }
+        }
+
+
+        private System.Collections.IEnumerator RedrawForTheme()
+        {
+            yield return null;
+            if (phase != MissionPhase.Menu)
+            {
+                yield break;
+            }
+            if (menuMode == MissionMode.Strike)
+            {
+                ShowStrikeMenu();
+            }
+            else
+            {
+                ui?.ShowMode(MissionMode.Field);
+                ui?.ShowMissionSelect(BuildSummaries(), LevelIndex, FieldStars, FieldMaxStars, BuildHangar(), DoesSaveGameExist());
+            }
+        }
+
+
         protected override void Start()
         {
             progress = new AsteroidsProgress(Disk, Type);
@@ -633,7 +689,7 @@ namespace Portfolio.Asteroids
                     Objective = objectiveInfo.Briefing,
                     Sector = mission.Sector,
                     SectorTitle = sector != null && !string.IsNullOrEmpty(sector.title) ? sector.title : theme != null ? theme.Title : string.Empty,
-                    Accent = theme != null ? theme.Accent : Color.cyan,
+                    Accent = AsteroidsThemes.Accent(theme, Color.cyan),
                     Unlocked = IsUnlocked(i),
                     LockReason = LockReason(i),
                     Stars = progress != null ? progress.Stars(i) : 0,
@@ -1148,7 +1204,7 @@ namespace Portfolio.Asteroids
             string subtitle = director.WaveCount > 0 && Mission.Objective == LevelObjective.ClearWaves ? $"{wave} of {director.WaveCount}" : string.Empty;
             if (wave > 1 || !string.IsNullOrEmpty(spec.title))
             {
-                ui?.Announce(title, subtitle, Mission.Theme != null ? Mission.Theme.Accent : Color.cyan);
+                ui?.Announce(title, subtitle, AsteroidsThemes.Accent(Mission.Theme, Color.cyan));
                 sounds?.WaveStart();
             }
             if (Mission.IsEndless)
@@ -1157,7 +1213,7 @@ namespace Portfolio.Asteroids
                 if (backdrop != null && theme != backdrop.Theme)
                 {
                     backdrop.Apply(theme, false);
-                    ui?.Toast($"ENTERING {theme.Title.ToUpperInvariant()}", theme.Accent);
+                    ui?.Toast($"ENTERING {theme.Title.ToUpperInvariant()}", AsteroidsThemes.Accent(theme, theme.Accent));
                 }
             }
         }

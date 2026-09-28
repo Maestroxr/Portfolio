@@ -36,7 +36,10 @@ namespace Portfolio.EndlessRunner
                 Material[] themed = theme.TileMaterials;
                 for (int i = 0; i < themed.Length && i < materials.Length; i++)
                 {
-                    materials[i] = themed[i];
+                    if (themed[i] != null)
+                    {
+                        materials[i] = themed[i];
+                    }
                 }
                 surface.sharedMaterials = materials;
             }

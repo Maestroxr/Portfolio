@@ -16,6 +16,11 @@ namespace Portfolio.MemoryCards
         [SerializeField] internal TMP_Text subtitle;
         [SerializeField] internal Image lockIcon;
         [SerializeField] internal Image starIcon;
+        [SerializeField] internal Color textColor = new Color(0.2f, 0.22f, 0.3f);
+        [SerializeField] internal Color textSelected = Color.white;
+        [Tooltip("What the accent of the world blends towards while the tab is not selected.")]
+        [SerializeField] internal Color idleBlend = Color.white;
+        [SerializeField] internal Color lockedColor = new Color(0.7f, 0.72f, 0.78f);
 
         private int index;
         private bool selected;
@@ -32,13 +37,26 @@ namespace Portfolio.MemoryCards
             }
         }
 
+        /// <summary>Takes the colours of <paramref name="palette"/>; nothing changes without one.</summary>
+        public void ApplyLook(MemoryCardsTheme.Palette palette)
+        {
+            if (palette == null)
+            {
+                return;
+            }
+            textColor = palette.tabText;
+            textSelected = palette.tabTextSelected;
+            idleBlend = palette.tabIdle;
+            lockedColor = palette.tabLocked;
+        }
+
         public void Show(WorldSummary world, bool isSelected)
         {
             index = world.Index;
             selected = isSelected;
             if (background != null)
             {
-                background.color = world.Unlocked ? (isSelected ? world.Accent : Color.Lerp(world.Accent, Color.white, 0.55f)) : new Color(0.7f, 0.72f, 0.78f);
+                background.color = world.Unlocked ? (isSelected ? world.Accent : Color.Lerp(world.Accent, idleBlend, 0.55f)) : lockedColor;
             }
             if (mascot != null)
             {
@@ -48,12 +66,13 @@ namespace Portfolio.MemoryCards
             if (title != null)
             {
                 title.text = world.Title;
-                title.color = isSelected && world.Unlocked ? Color.white : new Color(0.2f, 0.22f, 0.3f);
+                title.color = isSelected && world.Unlocked ? textSelected : textColor;
             }
             if (subtitle != null)
             {
                 subtitle.text = world.Unlocked ? (world.MaxStars > 0 ? $"{world.Stars}/{world.MaxStars}" : "Bonus") : $"{world.StarsRequired} needed";
-                subtitle.color = isSelected && world.Unlocked ? new Color(1f, 1f, 1f, 0.9f) : new Color(0.25f, 0.27f, 0.36f, 0.9f);
+                Color words = isSelected && world.Unlocked ? textSelected : textColor;
+                subtitle.color = new Color(words.r, words.g, words.b, 0.9f);
             }
             if (lockIcon != null)
             {

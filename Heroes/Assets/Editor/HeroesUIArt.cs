@@ -21,40 +21,38 @@ namespace Portfolio.Heroes.EditorTools
     /// </summary>
     internal static partial class HeroesUIArt
     {
-        // The colors of the interface: old gold on dark leather and stone, with parchment for what is read.
-        public static readonly Color Gold = new Color(0.85f, 0.71f, 0.36f);
-        public static readonly Color GoldDark = new Color(0.44f, 0.33f, 0.14f);
-        public static readonly Color GoldLight = new Color(0.98f, 0.91f, 0.65f);
-        public static readonly Color Leather = new Color(0.17f, 0.11f, 0.08f);
-        public static readonly Color LeatherLight = new Color(0.27f, 0.18f, 0.12f);
-        public static readonly Color Stone = new Color(0.28f, 0.26f, 0.23f);
-        public static readonly Color Parchment = new Color(0.90f, 0.82f, 0.64f);
-        public static readonly Color ParchmentDark = new Color(0.72f, 0.62f, 0.44f);
-        public static readonly Color Ink = new Color(0.16f, 0.11f, 0.06f);
+        /// <summary>The colours and manner of the kit being drawn: the current theme's (Heroes > Build Art draws the classic one).</summary>
+        private static KitStyle Style => HeroesThemeSpec.Current.Kit;
 
-        private const string Out = "UI/Generated";
+        // The colors of the interface the other builders refer to: old gold on dark leather and stone, with parchment for what is read.
+        public static Color Gold => Style.Gold;
+        public static Color GoldDark => Style.GoldDark;
+        public static Color GoldLight => Style.GoldLight;
+        public static Color Leather => Style.Leather;
+        public static Color LeatherLight => Style.LeatherLight;
+        public static Color Stone => Style.Stone;
+        public static Color Parchment => Style.Parchment;
+        public static Color ParchmentDark => Style.ParchmentDark;
+        public static Color Ink => Style.Ink;
+
+        /// <summary>Where the sprites of the kit go.</summary>
+        private static string Out => HeroesThemeSpec.Current.KitFolder;
 
         /// <summary>Where the light comes from: the top left, as in every old game.</summary>
         private static readonly Vector2 Light = new Vector2(-0.5f, 0.866f);
 
-        /// <summary>The near black of the lines between gold and leather.</summary>
-        private static readonly Color Edge = new Color(0.07f, 0.045f, 0.025f, 0.95f);
+        /// <summary>The near black of the lines between metal and leather.</summary>
+        private static Color Edge => Style.Edge;
 
-        private static readonly Ramp GoldRamp = new Ramp(
-            (0f, new Color(0.2f, 0.12f, 0.04f)), (0.28f, new Color(0.46f, 0.3f, 0.1f)), (0.52f, new Color(0.76f, 0.56f, 0.24f)),
-            (0.74f, new Color(0.93f, 0.78f, 0.44f)), (0.9f, new Color(1f, 0.92f, 0.64f)), (1f, new Color(1f, 0.98f, 0.86f)));
+        // The metals: the bright one of the rims and bosses, the darker one of the lesser rims, and iron for what is off.
+        private static Ramp GoldRamp => Style.Metal;
+        private static Ramp BronzeRamp => Style.MetalDark;
+        private static Ramp IronRamp => Style.Iron;
 
-        private static readonly Ramp BronzeRamp = new Ramp(
-            (0f, new Color(0.12f, 0.07f, 0.03f)), (0.3f, new Color(0.3f, 0.19f, 0.08f)), (0.55f, new Color(0.56f, 0.39f, 0.17f)),
-            (0.8f, new Color(0.78f, 0.6f, 0.3f)), (1f, new Color(0.95f, 0.82f, 0.52f)));
-
-        private static readonly Ramp IronRamp = new Ramp(
-            (0f, new Color(0.08f, 0.08f, 0.08f)), (0.35f, new Color(0.24f, 0.23f, 0.22f)), (0.6f, new Color(0.42f, 0.41f, 0.39f)),
-            (0.85f, new Color(0.62f, 0.61f, 0.58f)), (1f, new Color(0.8f, 0.79f, 0.76f)));
-
-        private static readonly Color LeatherDark = new Color(0.085f, 0.052f, 0.035f);
-        private static readonly Color LeatherMid = new Color(0.25f, 0.155f, 0.1f);
-        private static readonly Color Crimson = new Color(0.62f, 0.07f, 0.08f);
+        private static Color LeatherDark => Style.LeatherDark;
+        private static Color LeatherMid => Style.LeatherMid;
+        /// <summary>The cloth of the ribbon.</summary>
+        private static Color Crimson => Style.Ribbon;
 
         [MenuItem("Heroes/Art/Interface", false, 42)]
         public static void BuildMenu()
@@ -186,11 +184,18 @@ namespace Portfolio.Heroes.EditorTools
             Sdf band = p => Mathf.Max(outer(p), -inner(p));
             Metal(raster, band, all, 4.5f, GoldRamp, 0.6f, 0.45f);
             // A line engraved along the middle of the band.
-            raster.Fill(p => Sd.Outline(Box(7f, 4f)(p), 1f), new Color(0.28f, 0.17f, 0.05f, 0.6f), all);
-            raster.Fill(p => Sd.Outline(Box(7.9f, 4f)(p), 0.6f), new Color(1f, 0.93f, 0.7f, 0.35f), all);
+            raster.Fill(p => Sd.Outline(Box(7f, 4f)(p), 1f), Style.EngravedDark, all);
+            raster.Fill(p => Sd.Outline(Box(7.9f, 4f)(p), 0.6f), Style.EngravedLight, all);
             raster.Fill(p => Sd.Outline(outer(p), 1.6f), Edge, all);
             raster.Fill(p => Sd.Outline(inner(p), 1.6f), Edge, all);
-            Fretwork(raster, s, 17f, 0.9f, all);
+            if (Style.Ornaments)
+            {
+                Fretwork(raster, s, 17f, 0.9f, all);
+            }
+            else
+            {
+                Rivets(raster, s, 17f, all);
+            }
             return Save(art, raster, "Frame", All(b), All(18f));
         }
 
@@ -206,7 +211,7 @@ namespace Portfolio.Heroes.EditorTools
             Sdf Box(float inset, float radius) => p => Sd.Box(p, c, new Vector2(s / 2f - inset, s / 2f - inset), radius);
             Sdf outer = Box(1f, 4f);
             Sdf inner = Box(7f, 2f);
-            raster.Fill(Box(5f, 2f), LeatherShader(new Color(0.06f, 0.04f, 0.03f), new Color(0.17f, 0.11f, 0.075f), n, new Vector2(b, b), 0.8f), all);
+            raster.Fill(Box(5f, 2f), LeatherShader(Style.PanelDark, Style.PanelLight, n, new Vector2(b, b), 0.8f), all);
             InnerShadow(raster, inner, 10f, 0.7f, all);
             Metal(raster, p => Mathf.Max(outer(p), -inner(p)), all, 2.5f, BronzeRamp, 0.62f, 0.45f);
             raster.Fill(p => Sd.Outline(outer(p), 1.4f), Edge, all);
@@ -241,15 +246,21 @@ namespace Portfolio.Heroes.EditorTools
                 float tone = (paper.Height(x, y) - 0.5f) * 1.6f + (fibre.Height(x, y) - 0.5f) * 1.2f;
                 float stain = Periodic(x, y, n, 3, 21) * 0.55f + Periodic(x, y, n, 7, 22) * 0.3f;
                 float slope = -(fibre.Height(x + 1f, y) - fibre.Height(x - 1f, y)) * Light.x - (fibre.Height(x, y + 1f) - fibre.Height(x, y - 1f)) * Light.y;
-                Color color = Color.Lerp(new Color(0.8f, 0.68f, 0.48f), new Color(0.95f, 0.88f, 0.7f), Mathf.Clamp01(0.62f + tone * 0.35f + stain * 0.22f));
+                Color color = Color.Lerp(Style.PaperDark, Style.PaperLight, Mathf.Clamp01(0.62f + tone * 0.35f + stain * 0.22f));
                 color *= 1f + slope * 1.6f;
+                if (Style.Stains > 0f)
+                {
+                    // Blotches where something was spilt long ago, and a mildew in the low places of the paper.
+                    float blot = Mathf.Clamp01((Periodic(x, y, n, 5, 31) - 0.3f) * 2.2f) * Mathf.Clamp01(Periodic(x, y, n, 9, 32) + 0.7f);
+                    color = Color.Lerp(color, Style.Stain, blot * Style.Stains);
+                }
                 // Burnt toward the edge.
                 float burn = Mathf.Clamp01(1f + shape(p) / 22f);
-                color = Color.Lerp(color, new Color(0.45f, 0.3f, 0.16f), burn * burn * 0.75f);
+                color = Color.Lerp(color, Style.PaperBurn, burn * burn * 0.75f);
                 color.a = 1f;
                 return color;
             }, all);
-            raster.Fill(p => Sd.Outline(shape(p), 1.5f), new Color(0.3f, 0.19f, 0.09f, 0.95f), all);
+            raster.Fill(p => Sd.Outline(shape(p), 1.5f), Style.PaperLine, all);
             // Printed corners: the key of Kenney's border, in brown ink.
             bool[,] key = Pattern("panel-border-019", 32);
             if (key != null)
@@ -258,7 +269,7 @@ namespace Portfolio.Heroes.EditorTools
                 {
                     Vector2 inward = new Vector2(Mathf.Sign(c.x - corner.x), Mathf.Sign(c.y - corner.y));
                     Sdf ink = Stencil(key, corner + inward * 4f, inward, 1f);
-                    raster.Fill(ink, new Color(0.36f, 0.22f, 0.1f, 0.78f), Sd.Around(corner + inward * 20f, 19f));
+                    raster.Fill(ink, Style.PaperInk, Sd.Around(corner + inward * 20f, 19f));
                 }
             }
             return Save(art, raster, "Parchment", All(b), All(20f));
@@ -284,7 +295,7 @@ namespace Portfolio.Heroes.EditorTools
                 float x = p.x - side;
                 float y = p.y - band;
                 float v = wood.Height(x, y);
-                Color color = Color.Lerp(new Color(0.05f, 0.03f, 0.02f), new Color(0.3f, 0.19f, 0.11f), Mathf.Clamp01((v - 0.2f) * 1.6f));
+                Color color = Color.Lerp(Style.WoodDark, Style.WoodLight, Mathf.Clamp01((v - 0.2f) * 1.6f));
                 color.a = 1f;
                 return color;
             }, all);
@@ -307,14 +318,15 @@ namespace Portfolio.Heroes.EditorTools
             Sdf Box(float inset, float radius) => p => Sd.Box(p, c, new Vector2(s / 2f - inset, s / 2f - inset), radius);
             Sdf outer = Box(1f, 4f);
             Sdf inner = Box(6f, 2.5f);
-            Color dark = state == 0 ? new Color(0.09f, 0.06f, 0.045f) : state == 1 ? new Color(0.13f, 0.09f, 0.06f) : new Color(0.15f, 0.1f, 0.06f);
-            Color light = state == 0 ? new Color(0.22f, 0.145f, 0.1f) : state == 1 ? new Color(0.3f, 0.2f, 0.13f) : new Color(0.32f, 0.21f, 0.12f);
+            Color dark = Style.CardDark[state];
+            Color light = Style.CardLight[state];
             raster.Fill(Box(4f, 2f), LeatherShader(dark, light, n, new Vector2(b, b), 0.8f), all);
             InnerShadow(raster, inner, 8f, 0.6f, all);
             if (state == 2)
             {
-                // The warm light of a picked card, inside its rim.
-                raster.Fill(inner, p => new Color(1f, 0.78f, 0.35f, 0.55f * Mathf.Pow(1f - Mathf.Clamp01(-inner(p) / 11f), 2f)), all);
+                // The light of a picked card, inside its rim.
+                Color glow = Style.CardGlow;
+                raster.Fill(inner, p => new Color(glow.r, glow.g, glow.b, glow.a * Mathf.Pow(1f - Mathf.Clamp01(-inner(p) / 11f), 2f)), all);
             }
             Metal(raster, p => Mathf.Max(outer(p), -inner(p)), all, 2.2f, state == 0 ? BronzeRamp : GoldRamp,
                 state == 0 ? 0.64f : state == 1 ? 0.6f : 0.72f, 0.42f);
@@ -363,10 +375,8 @@ namespace Portfolio.Heroes.EditorTools
             var c = new Vector2(w / 2f, h / 2f);
             Sdf outer = p => Sd.Box(p, c, new Vector2(w / 2f - 1f, h / 2f - 1f), 8f);
             Sdf inner = p => Sd.Box(p, c, new Vector2(w / 2f - 6f, h / 2f - 6f), 4.5f);
-            Color top = state == 1 ? new Color(0.58f, 0.21f, 0.12f) : state == 2 ? new Color(0.2f, 0.07f, 0.045f)
-                : state == 3 ? new Color(0.24f, 0.22f, 0.2f) : new Color(0.44f, 0.15f, 0.09f);
-            Color bottom = state == 1 ? new Color(0.3f, 0.1f, 0.06f) : state == 2 ? new Color(0.32f, 0.11f, 0.07f)
-                : state == 3 ? new Color(0.13f, 0.12f, 0.11f) : new Color(0.21f, 0.065f, 0.04f);
+            Color top = Style.ButtonTop[state];
+            Color bottom = Style.ButtonBottom[state];
             Swatch grain = Texture("Leather037_Displacement", 128);
             raster.Fill(outer, p =>
             {
@@ -382,11 +392,13 @@ namespace Portfolio.Heroes.EditorTools
             }
             else
             {
-                // A gloss over the upper half, and a warm light along the rim when hovered.
-                raster.Fill(p => Mathf.Max(inner(p), -(p.y - h * 0.52f)), p => new Color(1f, 0.92f, 0.8f, 0.1f + 0.08f * Mathf.Clamp01((p.y - h * 0.52f) / (h * 0.4f))), all);
+                // A gloss over the upper half, and a light along the rim when hovered.
+                Color gloss = Style.ButtonGloss;
+                raster.Fill(p => Mathf.Max(inner(p), -(p.y - h * 0.52f)), p => new Color(gloss.r, gloss.g, gloss.b, 0.1f + 0.08f * Mathf.Clamp01((p.y - h * 0.52f) / (h * 0.4f))), all);
                 if (state == 1)
                 {
-                    raster.Fill(inner, p => new Color(1f, 0.75f, 0.35f, 0.45f * Mathf.Pow(1f - Mathf.Clamp01(-inner(p) / 8f), 2f)), all);
+                    Color warm = Style.ButtonHoverLight;
+                    raster.Fill(inner, p => new Color(warm.r, warm.g, warm.b, warm.a * Mathf.Pow(1f - Mathf.Clamp01(-inner(p) / 8f), 2f)), all);
                 }
             }
             Ramp ramp = state == 3 ? IronRamp : GoldRamp;
@@ -406,8 +418,8 @@ namespace Portfolio.Heroes.EditorTools
             var c = new Vector2(size / 2f, size / 2f);
             Sdf disc = p => Sd.Circle(p, c, size / 2f - 1.5f);
             Sdf hole = p => Sd.Circle(p, c, size / 2f - 7.5f);
-            Color dark = state == 1 ? new Color(0.14f, 0.09f, 0.06f) : state == 2 ? new Color(0.04f, 0.03f, 0.02f) : new Color(0.08f, 0.055f, 0.04f);
-            Color light = state == 1 ? new Color(0.38f, 0.25f, 0.16f) : state == 2 ? new Color(0.14f, 0.1f, 0.07f) : new Color(0.27f, 0.18f, 0.12f);
+            Color dark = Style.RoundDark[state];
+            Color light = Style.RoundLight[state];
             raster.Fill(disc, p =>
             {
                 float t = Mathf.Clamp01(0.5f + Vector2.Dot((p - c) / (size * 0.5f), Light) * 0.6f);
@@ -443,7 +455,8 @@ namespace Portfolio.Heroes.EditorTools
             }, all);
             if (state == 2)
             {
-                raster.Fill(inner, p => new Color(1f, 0.8f, 0.36f, 0.7f * Mathf.Pow(1f - Mathf.Clamp01(-inner(p) / 12f), 2.2f)), all);
+                Color glow = Style.SlotGlow;
+                raster.Fill(inner, p => new Color(glow.r, glow.g, glow.b, glow.a * Mathf.Pow(1f - Mathf.Clamp01(-inner(p) / 12f), 2.2f)), all);
             }
             Metal(raster, p => Mathf.Max(outer(p), -inner(p)), all, 2.2f, state == 0 ? BronzeRamp : GoldRamp,
                 state == 0 ? 0.6f : state == 1 ? 0.64f : 0.8f, 0.45f);
@@ -515,7 +528,7 @@ namespace Portfolio.Heroes.EditorTools
             var c = new Vector2(s / 2f, s / 2f);
             Sdf outer = p => Sd.Box(p, c, new Vector2(s / 2f - 1f, s / 2f - 1f), 6f);
             Sdf inner = p => Sd.Box(p, c, new Vector2(s / 2f - 4.5f, s / 2f - 4.5f), 3.5f);
-            raster.Fill(outer, p => Color.Lerp(new Color(0.06f, 0.04f, 0.03f, 0.96f), new Color(0.15f, 0.1f, 0.07f, 0.96f), Mathf.Clamp01(p.y / s)), all);
+            raster.Fill(outer, p => Color.Lerp(Style.TooltipDark, Style.TooltipLight, Mathf.Clamp01(p.y / s)), all);
             Metal(raster, p => Mathf.Max(outer(p), -inner(p)), all, 1.6f, GoldRamp, 0.62f, 0.45f);
             raster.Fill(p => Sd.Outline(outer(p), 1.2f), Edge, all);
             raster.Fill(p => Sd.Outline(inner(p), 1f), Edge, all);
@@ -574,11 +587,11 @@ namespace Portfolio.Heroes.EditorTools
                     new Vector2(x0, bandHigh - 14f), new Vector2(x0 - side * 16f, (bandLow + bandHigh) * 0.5f - 13f)
                 };
                 Sdf tailShape = p => Sd.Polygon(p, tail);
-                raster.Fill(tailShape, p => Color.Lerp(new Color(0.22f, 0.02f, 0.03f), new Color(0.4f, 0.05f, 0.06f), (p.y - bandLow + 12f) / (bandHigh - bandLow)), all);
+                raster.Fill(tailShape, p => Color.Lerp(Style.RibbonTailDark, Style.RibbonTailLight, (p.y - bandLow + 12f) / (bandHigh - bandLow)), all);
                 raster.Fill(p => Sd.Outline(tailShape(p), 1.4f), Edge, all);
                 // The fold where the tail turns under the band.
                 var fold = new[] { new Vector2(x1, bandLow - 12f), new Vector2(x1 + side * 12f, bandLow), new Vector2(x1, bandLow) };
-                raster.Fill(p => Sd.Polygon(p, fold), new Color(0.12f, 0.01f, 0.015f), all);
+                raster.Fill(p => Sd.Polygon(p, fold), Style.RibbonFold, all);
             }
             Sdf bandShape = p => Sd.Box(p, new Vector2(w / 2f, (bandLow + bandHigh) * 0.5f), new Vector2(w / 2f - end + 12f, (bandHigh - bandLow) * 0.5f), 1.5f);
             raster.Fill(bandShape, p =>
@@ -650,7 +663,7 @@ namespace Portfolio.Heroes.EditorTools
             raster.Fill(shape, p =>
             {
                 float r = (p - new Vector2(s * 0.5f, s * 0.6f)).magnitude / (s * 0.7f);
-                Color color = Color.Lerp(new Color(0.3f, 0.23f, 0.17f), new Color(0.07f, 0.055f, 0.045f), Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(r)));
+                Color color = Color.Lerp(Style.PortraitBackCenter, Style.PortraitBackEdge, Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(r)));
                 color.a = 1f;
                 return color;
             }, all);
@@ -777,7 +790,7 @@ namespace Portfolio.Heroes.EditorTools
             raster.Shadow(p => Sd.Circle(p, c, s / 2f - 5f), new Color(0f, 0f, 0f, 0.6f), 3f, new Vector2(1.5f, -2f), all);
             Metal(raster, p => Sd.Circle(p, c, s / 2f - 4f), all, 5f, GoldRamp, 0.6f, 0.45f);
             raster.Fill(p => Sd.Outline(Sd.Circle(p, c, s / 2f - 4f), 1.3f), Edge, all);
-            Gem(raster, c, 5f, Crimson);
+            Gem(raster, c, 5f, Style.Gem);
             return Save(raster, "Knob", Vector4.zero);
         }
 
@@ -813,8 +826,8 @@ namespace Portfolio.Heroes.EditorTools
             }
             else
             {
-                raster.Fill(star, new Color(0.08f, 0.06f, 0.04f, 0.6f), all);
-                raster.Fill(p => Sd.Outline(star(p), 2.2f), new Color(0.5f, 0.4f, 0.24f, 0.9f), all);
+                raster.Fill(star, Style.StarEmptyFill, all);
+                raster.Fill(p => Sd.Outline(star(p), 2.2f), Style.StarEmptyLine, all);
             }
             return Save(raster, filled ? "Star" : "StarEmpty", Vector4.zero);
         }
@@ -831,7 +844,7 @@ namespace Portfolio.Heroes.EditorTools
                 new Vector2(width / 2f, 4), new Vector2(4, 14)
             };
             Sdf shape = p => Sd.Polygon(p, points);
-            raster.Fill(shape, p => Color.Lerp(new Color(0.35f, 0.08f, 0.08f), new Color(0.55f, 0.14f, 0.12f), p.y / height), all);
+            raster.Fill(shape, p => Color.Lerp(Style.BannerDark, Style.BannerLight, p.y / height), all);
             raster.Grain(all, 0.03f, 99);
             raster.Fill(p => Sd.Outline(shape(p), 2f), Gold, all);
             return Save(raster, "Banner", new Vector4(12, 20, 12, 12));
@@ -891,7 +904,7 @@ namespace Portfolio.Heroes.EditorTools
             foreach (Vector2 corner in Corners(size))
             {
                 Vector2 inward = new Vector2(Mathf.Sign(c.x - corner.x), Mathf.Sign(c.y - corner.y));
-                Gem(raster, corner + inward * (inset + 16f * scale), 4f, Crimson);
+                Gem(raster, corner + inward * (inset + 16f * scale), 4f, Style.Gem);
             }
         }
 
@@ -920,28 +933,27 @@ namespace Portfolio.Heroes.EditorTools
 
         // ------------------------------------------------------------------ materials
 
-        /// <summary>A gradient of colors over 0..1.</summary>
-        private sealed class Ramp
+        /// <summary>
+        /// The corners of a riveted frame, for a kit without ornaments: a plate of the darker metal in every corner with
+        /// a boss in its middle and a rivet a little way along the band on either side of it. The straight runs of the
+        /// band are left as they are, so the edges of the sprite still tile.
+        /// </summary>
+        private static void Rivets(Raster raster, int size, float inset, Rect bounds)
         {
-            private readonly (float t, Color color)[] stops;
-
-            public Ramp(params (float t, Color color)[] stops)
+            const float plate = 22f;
+            var c = new Vector2(size / 2f, size / 2f);
+            foreach (Vector2 corner in Corners(size))
             {
-                this.stops = stops;
-            }
-
-            public Color At(float t)
-            {
-                t = Mathf.Clamp01(t);
-                for (int i = 1; i < stops.Length; i++)
+                var inward = new Vector2(Mathf.Sign(c.x - corner.x), Mathf.Sign(c.y - corner.y));
+                Vector2 center = corner + inward * (inset + plate * 0.5f);
+                Sdf shape = p => Sd.Box(p, center, new Vector2(plate * 0.5f, plate * 0.5f), 2f);
+                raster.Fill(p => shape(p) - 1.2f, Edge, bounds);
+                Metal(raster, shape, bounds, 2.5f, BronzeRamp, 0.55f, 0.45f);
+                Stud(raster, center, 3.4f, GoldRamp);
+                foreach (Vector2 along in new[] { new Vector2(inward.x, 0f), new Vector2(0f, inward.y) })
                 {
-                    if (t <= stops[i].t)
-                    {
-                        float k = (t - stops[i - 1].t) / Mathf.Max(0.0001f, stops[i].t - stops[i - 1].t);
-                        return Color.Lerp(stops[i - 1].color, stops[i].color, k);
-                    }
+                    Stud(raster, center + along * (plate * 0.5f + 12f), 2.4f, GoldRamp);
                 }
-                return stops[stops.Length - 1].color;
             }
         }
 

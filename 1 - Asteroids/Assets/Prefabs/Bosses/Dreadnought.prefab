@@ -11,6 +11,8 @@ GameObject:
   - component: {fileID: 2081316375046658437}
   - component: {fileID: 2347996466704272906}
   - component: {fileID: 3295020498193577900}
+  - component: {fileID: 7567022698116479800}
+  - component: {fileID: 2055426853154207679}
   m_Layer: 0
   m_Name: EngineR
   m_TagString: Untagged
@@ -90,6 +92,35 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &7567022698116479800
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1102451186667929}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Materials/BossFlame
+  slot: 0
+--- !u!114 &2055426853154207679
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1102451186667929}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68a8cc4438b7cdf40b6a35c7fa61b5cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedMesh
+  game: 0
+  mesh: Models/FlameQuad
 --- !u!1 &2431617144402301692
 GameObject:
   m_ObjectHideFlags: 0
@@ -101,6 +132,8 @@ GameObject:
   - component: {fileID: 1484392577473019680}
   - component: {fileID: 7557013436333430523}
   - component: {fileID: 2538515353117822331}
+  - component: {fileID: 6911568815805919018}
+  - component: {fileID: 8522570907069778745}
   m_Layer: 0
   m_Name: EngineL
   m_TagString: Untagged
@@ -180,6 +213,35 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &6911568815805919018
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2431617144402301692}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Materials/BossFlame
+  slot: 0
+--- !u!114 &8522570907069778745
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2431617144402301692}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68a8cc4438b7cdf40b6a35c7fa61b5cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedMesh
+  game: 0
+  mesh: Models/FlameQuad
 --- !u!1 &2913012144438829033
 GameObject:
   m_ObjectHideFlags: 0
@@ -191,6 +253,7 @@ GameObject:
   - component: {fileID: 5939921371914923835}
   - component: {fileID: 493209070906568620}
   - component: {fileID: 5445067126932617549}
+  - component: {fileID: 4551022344470341001}
   m_Layer: 0
   m_Name: Shield
   m_TagString: Untagged
@@ -270,6 +333,21 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &4551022344470341001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2913012144438829033}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Materials/BossShield
+  slot: 0
 --- !u!1 &7043809267554319638
 GameObject:
   m_ObjectHideFlags: 0
@@ -281,6 +359,8 @@ GameObject:
   - component: {fileID: 3178819736852306735}
   - component: {fileID: 11476235914337741}
   - component: {fileID: 2499486928780348679}
+  - component: {fileID: 4895662618771232044}
+  - component: {fileID: 1458768530853191600}
   m_Layer: 0
   m_Name: Hull
   m_TagString: Untagged
@@ -360,6 +440,35 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &4895662618771232044
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7043809267554319638}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: StarSparrow/Materials/StarSparrow Red
+  slot: 0
+--- !u!114 &1458768530853191600
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7043809267554319638}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68a8cc4438b7cdf40b6a35c7fa61b5cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedMesh
+  game: 0
+  mesh: StarSparrow/Meshes/StarSparrowExamples2#StarSparrow8
 --- !u!1 &7809753427984006367
 GameObject:
   m_ObjectHideFlags: 0
@@ -537,6 +646,7 @@ GameObject:
   - component: {fileID: 2201796351780423287}
   - component: {fileID: 6637526297197801970}
   - component: {fileID: 7492613347555967634}
+  - component: {fileID: 5100209121272919031}
   m_Layer: 0
   m_Name: Glow
   m_TagString: Untagged
@@ -616,3 +726,18 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &5100209121272919031
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8970322426652445347}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Materials/DreadnoughtGlow
+  slot: 0

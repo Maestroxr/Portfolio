@@ -153,8 +153,10 @@ namespace Portfolio.Asteroids.EditorTools
             return source;
         }
 
+        /// <summary>Saves a built prefab, its renderers and meshes marked for the themes (<see cref="ThemeKeys.Mark"/>).</summary>
         private static GameObject Save(GameObject root, string relative)
         {
+            ThemeKeys.Mark(root);
             return AsteroidsAssets.SavePrefab(root, $"Prefabs/{relative}.prefab");
         }
 

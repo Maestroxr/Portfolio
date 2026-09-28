@@ -21,7 +21,9 @@ namespace Portfolio.Heroes.EditorTools
             try
             {
                 EditorUtility.DisplayProgressBar("Heroes", "Art and sound...", 0.1f);
-                HeroesArtBuilder.Build();
+                HeroesArtBuilder.Build(HeroesThemeSpec.Classic);
+                EditorUtility.DisplayProgressBar("Heroes", "The Grim Realm...", 0.4f);
+                HeroesArtBuilder.Build(HeroesThemeSpec.GrimRealm);
                 EditorUtility.DisplayProgressBar("Heroes", "Scenarios...", 0.6f);
                 HeroesContentBuilder.BuildAll();
                 EditorUtility.DisplayProgressBar("Heroes", "Scene...", 0.85f);
@@ -32,6 +34,29 @@ namespace Portfolio.Heroes.EditorTools
                 EditorUtility.ClearProgressBar();
             }
             Debug.Log("Heroes: everything built.");
+        }
+
+        /// <summary>
+        /// The art of the second theme and the theme assets (with the definition's list of them), without the classic art
+        /// or the scenes, which do not change with it. In batch mode
+        /// -executeMethod Portfolio.Heroes.EditorTools.HeroesBuildMenu.BuildGrimRealmAndThemes.
+        /// </summary>
+        [MenuItem("Heroes/Build Grim Realm and Themes", false, 2)]
+        public static void BuildGrimRealmAndThemes()
+        {
+            try
+            {
+                EditorUtility.DisplayProgressBar("Heroes", "The Grim Realm...", 0.1f);
+                HeroesArtBuilder.Build(HeroesThemeSpec.GrimRealm);
+                EditorUtility.DisplayProgressBar("Heroes", "Themes...", 0.9f);
+                HeroesThemeBuilder.BuildAll();
+                AssetDatabase.SaveAssets();
+            }
+            finally
+            {
+                EditorUtility.ClearProgressBar();
+            }
+            Debug.Log("Heroes: the Grim Realm and the themes built.");
         }
 
         [MenuItem("Heroes/Debug/Reset Progress", false, 100)]

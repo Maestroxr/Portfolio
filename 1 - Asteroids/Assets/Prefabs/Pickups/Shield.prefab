@@ -11,6 +11,8 @@ GameObject:
   - component: {fileID: 1927558710579640414}
   - component: {fileID: 480793662815492069}
   - component: {fileID: 6969711498827311663}
+  - component: {fileID: 8244870717326274829}
+  - component: {fileID: 6317973846047332064}
   m_Layer: 0
   m_Name: Model
   m_TagString: Untagged
@@ -90,6 +92,35 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &8244870717326274829
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 588196835797262481}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Materials/Palette
+  slot: 0
+--- !u!114 &6317973846047332064
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 588196835797262481}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68a8cc4438b7cdf40b6a35c7fa61b5cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedMesh
+  game: 0
+  mesh: Models/PickupFrame
 --- !u!1 &1357822827608486063
 GameObject:
   m_ObjectHideFlags: 0
@@ -199,6 +230,7 @@ GameObject:
   - component: {fileID: 2234981877817996953}
   - component: {fileID: 3890927259862267941}
   - component: {fileID: 8016793814824783408}
+  - component: {fileID: 5654691439533820894}
   m_Layer: 0
   m_Name: Icon
   m_TagString: Untagged
@@ -278,6 +310,21 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &5654691439533820894
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3604485501397395190}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Materials/IconShield
+  slot: 0
 --- !u!1 &4341083426151536509
 GameObject:
   m_ObjectHideFlags: 0
@@ -289,6 +336,7 @@ GameObject:
   - component: {fileID: 8004770396650256476}
   - component: {fileID: 689681313002451248}
   - component: {fileID: 6895738307765068422}
+  - component: {fileID: 489022721312770719}
   m_Layer: 0
   m_Name: Core
   m_TagString: Untagged
@@ -368,6 +416,21 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &489022721312770719
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4341083426151536509}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Materials/CoreShield
+  slot: 0
 --- !u!1 &6564983808030524025
 GameObject:
   m_ObjectHideFlags: 0

@@ -346,7 +346,7 @@ namespace Portfolio.Heroes.UI
             // The stack whose turn it is stands on a lit plate, a size bigger than the rest.
             HeroesArt art = UIKit.Art;
             Sprite lit = art != null ? art.slotSelected != null ? art.slotSelected : art.slot : null;
-            chip.halo = UIKit.Sprite(rect, "Turn", lit, new Color(1f, 0.9f, 0.55f, 1f));
+            chip.halo = UIKit.Sprite(rect, "Turn", lit, HeroesTheme.Palette.Active.Accent(new Color(1f, 0.9f, 0.55f, 1f)));
             chip.halo.type = Image.Type.Sliced;
             chip.halo.pixelsPerUnitMultiplier = 2f;
             UIKit.Pin((RectTransform)chip.halo.transform, new Vector2(0.5f, 1f), new Vector2(0f, 6f), new Vector2(86f, 104f));

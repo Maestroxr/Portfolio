@@ -1,0 +1,1435 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3197295745424f45ae0199e6f698596f, type: 3}
+  m_Name: Classic
+  m_EditorClassIdentifier: Skinnerboxes.Asteroids::Portfolio.Asteroids.AsteroidsTheme
+  displayName: Classic
+  description: 'The game as built: painted hulls, textured rocks, nebulae and planets, the six worlds of the strike mode.'
+  preview: {fileID: 21300000, guid: d77d12b0161e4c84dacd143dc334acb6, type: 3}
+  fonts:
+    body: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+    bodyMaterial: {fileID: 2100000, guid: c4ecd147d3376a544b7d93f88b0d6b5e, type: 2}
+    title: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+    titleMaterial: {fileID: 2100000, guid: e9947ccdcad6a4c489b8fe0ec6247363, type: 2}
+  menu:
+    backdrop: {fileID: 21300000, guid: 8e90349d1d231e942b51c4ac03922e40, type: 3}
+    backdropColor: {r: 0.35, g: 0.75, b: 1, a: 0.95}
+    window: {fileID: 21300000, guid: 8e90349d1d231e942b51c4ac03922e40, type: 3}
+    windowColor: {r: 0.4, g: 0.8, b: 1, a: 1}
+    tileWindow: 0
+    settingsWindow: {fileID: 21300000, guid: 8e90349d1d231e942b51c4ac03922e40, type: 3}
+    headerBanner: {fileID: 21300000, guid: dc510e8d7cb92d84c9938f24417819ce, type: 3}
+    rowsBackground: {fileID: 21300000, guid: 8e90349d1d231e942b51c4ac03922e40, type: 3}
+    rowsColor: {r: 0.03, g: 0.08, b: 0.16, a: 0.92}
+    rowBackground: {fileID: 21300000, guid: dc510e8d7cb92d84c9938f24417819ce, type: 3}
+    rowColor: {r: 1, g: 1, b: 1, a: 1}
+    button: {fileID: 21300000, guid: cda9c1b271038724ab4d6b07e857e02b, type: 3}
+    buttonHover: {fileID: 21300000, guid: cda9c1b271038724ab4d6b07e857e02b, type: 3}
+    buttonPressed: {fileID: 21300000, guid: cda9c1b271038724ab4d6b07e857e02b, type: 3}
+    buttonDisabled: {fileID: 21300000, guid: cda9c1b271038724ab4d6b07e857e02b, type: 3}
+    arrowButton: {fileID: 21300000, guid: cda9c1b271038724ab4d6b07e857e02b, type: 3}
+    inputBox: {fileID: 21300000, guid: cda9c1b271038724ab4d6b07e857e02b, type: 3}
+    inputColor: {r: 0.14, g: 0.3, b: 0.5, a: 1}
+    inputTextColor: {r: 1, g: 1, b: 1, a: 1}
+    track: {fileID: 21300000, guid: dc510e8d7cb92d84c9938f24417819ce, type: 3}
+    fill: {fileID: 21300000, guid: dc510e8d7cb92d84c9938f24417819ce, type: 3}
+    fillColor: {r: 0, g: 0, b: 0, a: 0}
+    knob: {fileID: 21300000, guid: dc510e8d7cb92d84c9938f24417819ce, type: 3}
+    checkBox: {fileID: 21300000, guid: dc510e8d7cb92d84c9938f24417819ce, type: 3}
+    checkMark: {fileID: 21300000, guid: dc510e8d7cb92d84c9938f24417819ce, type: 3}
+    headerColor: {r: 0.35, g: 0.9, b: 1, a: 1}
+    textColor: {r: 0.78, g: 0.86, b: 0.96, a: 1}
+    valueColor: {r: 1, g: 1, b: 1, a: 1}
+    buttonTextColor: {r: 1, g: 1, b: 1, a: 1}
+    errorColor: {r: 1, g: 0.35, b: 0.35, a: 1}
+  lobby:
+    font: {fileID: 0}
+    bodyFont: {fileID: 0}
+    dim: {r: 0, g: 0, b: 0, a: 0}
+    window: {r: 0, g: 0, b: 0, a: 0}
+    row: {r: 0, g: 0, b: 0, a: 0}
+    accent: {r: 0, g: 0, b: 0, a: 0}
+    good: {r: 0, g: 0, b: 0, a: 0}
+    warn: {r: 0, g: 0, b: 0, a: 0}
+    text: {r: 0, g: 0, b: 0, a: 0}
+    muted: {r: 0, g: 0, b: 0, a: 0}
+    buttonText: {r: 0, g: 0, b: 0, a: 0}
+    windowSprite: {fileID: 0}
+    rowSprite: {fileID: 0}
+    buttonSprite: {fileID: 0}
+    inputSprite: {fileID: 0}
+    tileSprites: 0
+    spriteTint: -1
+  slots:
+    sprites:
+    - key: Icons/Arrow
+      value: {fileID: 21300000, guid: 336840aff76b6bb4a9edf842c4d10bff, type: 3}
+    - key: Icons/Asteroid
+      value: {fileID: 21300000, guid: ba79bf6ac1457ee49923272813f149f0, type: 3}
+    - key: Icons/Blaster
+      value: {fileID: 21300000, guid: 0ad5f72348112d24e97f1cc97417cbf5, type: 3}
+    - key: Icons/Check
+      value: {fileID: 21300000, guid: 70fc0b84f8779ac47a811ef9e93b3483, type: 3}
+    - key: Icons/Chrono
+      value: {fileID: 21300000, guid: 7cb577592281d9142bf5c969b7381f42, type: 3}
+    - key: Icons/Crystal
+      value: {fileID: 21300000, guid: f9e086ff3cb31404c9bafb9e40e910f6, type: 3}
+    - key: Icons/Dash
+      value: {fileID: 21300000, guid: 983c6053ae0be7647b56c82283c02dc1, type: 3}
+    - key: Icons/Drones
+      value: {fileID: 21300000, guid: d0fe910533706424a80293853a95ece7, type: 3}
+    - key: Icons/Exit
+      value: {fileID: 21300000, guid: 551c788f85603634bb6f84755f91391b, type: 3}
+    - key: Icons/GameIcon
+      value: {fileID: 21300000, guid: 43cf11e63e82a3c47bd9794efea99b95, type: 3}
+    - key: Icons/Hangar
+      value: {fileID: 21300000, guid: 5d2b0ce2fd2262b4a878650908bb219e, type: 3}
+    - key: Icons/Infinity
+      value: {fileID: 21300000, guid: f061d0e002827ad49a7dd7bfec33056b, type: 3}
+    - key: Icons/Laser
+      value: {fileID: 21300000, guid: 8c807707d25d3264681b187654cee47e, type: 3}
+    - key: Icons/Levels
+      value: {fileID: 21300000, guid: 3138a16f4917418409e23a49d92c60e4, type: 3}
+    - key: Icons/Lock
+      value: {fileID: 21300000, guid: b3e00ead7acae42468462f95aea26d68, type: 3}
+    - key: Icons/Magnet
+      value: {fileID: 21300000, guid: 2227fe7ad1f86e0418475518efd7fa4f, type: 3}
+    - key: Icons/Missile
+      value: {fileID: 21300000, guid: af966380ee469324da8f0781e33e0ce6, type: 3}
+    - key: Icons/Nova
+      value: {fileID: 21300000, guid: bfa44cdff6a42e349ab9298166d8940f, type: 3}
+    - key: Icons/Overdrive
+      value: {fileID: 21300000, guid: 90f10f2a340db3d40b8ba2d8595ad58b, type: 3}
+    - key: Icons/Pause
+      value: {fileID: 21300000, guid: 79e1877ea2787134383d601ac3af8365, type: 3}
+    - key: Icons/Play
+      value: {fileID: 21300000, guid: d231027bf6d14224fb0f28c13086bfbd, type: 3}
+    - key: Icons/Repair
+      value: {fileID: 21300000, guid: adaeae01f92cff84685cff44388b9ce5, type: 3}
+    - key: Icons/Retry
+      value: {fileID: 21300000, guid: f95a3038df7987e48ba8b6114f92bcce, type: 3}
+    - key: Icons/Scatter
+      value: {fileID: 21300000, guid: 8fe2a569c162ac649a11d56a30016479, type: 3}
+    - key: Icons/Settings
+      value: {fileID: 21300000, guid: 0d1695ad4a5df9c49bcf15cb52caa6af, type: 3}
+    - key: Icons/Shield
+      value: {fileID: 21300000, guid: 0fe2cd2abb2f97645b9c17d4e89b30cc, type: 3}
+    - key: Icons/Ship
+      value: {fileID: 21300000, guid: 349c93cad454dd44eb9f5f3a759721d8, type: 3}
+    - key: Icons/Skull
+      value: {fileID: 21300000, guid: a0c3bb81775a3434faefab5ad17e0476, type: 3}
+    - key: Icons/Star
+      value: {fileID: 21300000, guid: f3d6635408ae9304cbc276a9a74d881f, type: 3}
+    - key: Icons/StarEmpty
+      value: {fileID: 21300000, guid: 4e9787d25894823439161fa32d74106c, type: 3}
+    - key: Icons/Warning
+      value: {fileID: 21300000, guid: 43446318556a94e4cb960d7621124d2f, type: 3}
+    - key: Interface/Bar
+      value: {fileID: 21300000, guid: 851de4cf0a1803c4da848483822adfd1, type: 3}
+    - key: Interface/Button
+      value: {fileID: 21300000, guid: cda9c1b271038724ab4d6b07e857e02b, type: 3}
+    - key: Interface/Clear
+      value: {fileID: 21300000, guid: dc510e8d7cb92d84c9938f24417819ce, type: 3}
+    - key: Interface/Fade
+      value: {fileID: 21300000, guid: 56e35702c6d29d84aa34892999baa655, type: 3}
+    - key: Interface/Frame
+      value: {fileID: 21300000, guid: 647824c853f00034da231330523135f6, type: 3}
+    - key: Interface/Glow
+      value: {fileID: 21300000, guid: bf688cc5d709ac647bd7a3db525599f3, type: 3}
+    - key: Interface/Hexagon
+      value: {fileID: 21300000, guid: 35edbd1c8542ddb428f3b02801175bf4, type: 3}
+    - key: Interface/HexagonFrame
+      value: {fileID: 21300000, guid: 4e7e44505cc912d41b39712125cd03e7, type: 3}
+    - key: Interface/Lane
+      value: {fileID: 21300000, guid: fed29de6139eabd4b910000b5c18979c, type: 3}
+    - key: Interface/Panel
+      value: {fileID: 21300000, guid: 8e90349d1d231e942b51c4ac03922e40, type: 3}
+    - key: Interface/TimerRing
+      value: {fileID: 21300000, guid: 033be7c7cc3a5c0409297e9b479cf13d, type: 3}
+    - key: Interface/Vignette
+      value: {fileID: 21300000, guid: de78323666b036241b5ec86ba595521d, type: 3}
+    - key: Previews/Bulwark
+      value: {fileID: 21300000, guid: d4cc9b54daba8414d8a1fb7479c5dded, type: 3}
+    - key: Previews/Hornet
+      value: {fileID: 21300000, guid: 6b0661d9416a2ef4cbdd26c336e12eaa, type: 3}
+    - key: Previews/Phantom
+      value: {fileID: 21300000, guid: b26d636c976a1314f9373f684c774ea4, type: 3}
+    - key: Previews/Sparrow
+      value: {fileID: 21300000, guid: d77d12b0161e4c84dacd143dc334acb6, type: 3}
+    - key: Strike/Icons/AirMissiles
+      value: {fileID: 21300000, guid: ce104825f888c9443b13131b4f2a9328, type: 3}
+    - key: Strike/Icons/Bombs
+      value: {fileID: 21300000, guid: 4f1ae2d4e7edb4744b9c3095b6f8bddb, type: 3}
+    - key: Strike/Icons/CreditOrb
+      value: {fileID: 21300000, guid: df06bbc8ab9ff9b499e53595ceb66174, type: 3}
+    - key: Strike/Icons/Deathray
+      value: {fileID: 21300000, guid: 71709d784f1cd1244944bd0c037eb3e2, type: 3}
+    - key: Strike/Icons/Dumbfire
+      value: {fileID: 21300000, guid: c3ba083ec291ae3489156a40ce5b81dd, type: 3}
+    - key: Strike/Icons/Elite
+      value: {fileID: 21300000, guid: 7dc0a7add8f35d9468c398bdb15067ea, type: 3}
+    - key: Strike/Icons/Energy
+      value: {fileID: 21300000, guid: e109cb00f8fb143488a1fd8ea7f8a330, type: 3}
+    - key: Strike/Icons/EnergyModule
+      value: {fileID: 21300000, guid: 1e871c6cf31dda740a1a0bb2b3f51749, type: 3}
+    - key: Strike/Icons/FreyliumOre
+      value: {fileID: 21300000, guid: 8df6417674d2bd04283c3b9545696ac0, type: 3}
+    - key: Strike/Icons/FusionCore
+      value: {fileID: 21300000, guid: 10ccc5a3edebc5b4295953511b2efdb9, type: 3}
+    - key: Strike/Icons/GroundMissiles
+      value: {fileID: 21300000, guid: 4a85eac44bf43c540afa89c235f4fd3c, type: 3}
+    - key: Strike/Icons/IonScanner
+      value: {fileID: 21300000, guid: c6aea8277be26e140b2b772eb9e96e06, type: 3}
+    - key: Strike/Icons/Isotopes
+      value: {fileID: 21300000, guid: 8f09122450767d54a9c1b8ee57ec634e, type: 3}
+    - key: Strike/Icons/LaserTurret
+      value: {fileID: 21300000, guid: f3612b778b440d84494994507e368659, type: 3}
+    - key: Strike/Icons/MachineGun
+      value: {fileID: 21300000, guid: cf5b8df788208e2459c4973d5ed21de6, type: 3}
+    - key: Strike/Icons/MegaBomb
+      value: {fileID: 21300000, guid: 0a90eda3917329941bc18fba74bc5615, type: 3}
+    - key: Strike/Icons/MicroMissiles
+      value: {fileID: 21300000, guid: c20a826cb5012194298ad9c4f7ac77d4, type: 3}
+    - key: Strike/Icons/MiniGun
+      value: {fileID: 21300000, guid: 4fa324c0a942bc64cad599aacf94f73f, type: 3}
+    - key: Strike/Icons/MissilePods
+      value: {fileID: 21300000, guid: 23c9d6d1c182d2c41b423a38deabe7f0, type: 3}
+    - key: Strike/Icons/Money
+      value: {fileID: 21300000, guid: 1d1a2d6d8e92f094a866355036391173, type: 3}
+    - key: Strike/Icons/PhaseShield
+      value: {fileID: 21300000, guid: fb2ffdf5072751a41ac299aa6adf0341, type: 3}
+    - key: Strike/Icons/PlasmaCannon
+      value: {fileID: 21300000, guid: 29e844fb4c9f75c4495d04860f70e57e, type: 3}
+    - key: Strike/Icons/PowerDisrupter
+      value: {fileID: 21300000, guid: e4a0f3d2afe9b4a4eafac2206a60bc3e, type: 3}
+    - key: Strike/Icons/PulseCannon
+      value: {fileID: 21300000, guid: d84ab9b3e0e45cf4da0f68f1991f1fc2, type: 3}
+    - key: Strike/Icons/Rookie
+      value: {fileID: 21300000, guid: 543041f542bb45e469c2037a3eb43d04, type: 3}
+    - key: Strike/Icons/Scanner
+      value: {fileID: 21300000, guid: e5cab1237939fae4f92c367ed2f767d4, type: 3}
+    - key: Strike/Icons/SmallArms
+      value: {fileID: 21300000, guid: 5317b902c93cbc04db04b31f1d0f2cf1, type: 3}
+    - key: Strike/Icons/Strike
+      value: {fileID: 21300000, guid: cbda2a3858757f446993a023f3c2856b, type: 3}
+    - key: Strike/Icons/SupplyRoom
+      value: {fileID: 21300000, guid: cd4ef4c374aaa754cbd4a18efc8f9841, type: 3}
+    - key: Strike/Icons/Target
+      value: {fileID: 21300000, guid: 6c4b8d57ea0de3147bdd4096277b5b75, type: 3}
+    - key: Strike/Icons/Thaelite
+      value: {fileID: 21300000, guid: 12c5acee8903f17469bc9cb825993b95, type: 3}
+    - key: Strike/Icons/TwinLaser
+      value: {fileID: 21300000, guid: 14f1f397d4512a447ae5200a5f33c47e, type: 3}
+    - key: Strike/Icons/Veteran
+      value: {fileID: 21300000, guid: c9ac0002f06a8e241af500f1df4a967c, type: 3}
+    - key: Interface/Scanlines
+      value: {fileID: 21300000, guid: dc510e8d7cb92d84c9938f24417819ce, type: 3}
+    - key: Interface/Crt
+      value: {fileID: 21300000, guid: dc510e8d7cb92d84c9938f24417819ce, type: 3}
+    materials:
+    - key: Ground/Materials/GroundPalette
+      value: {fileID: 2100000, guid: effbab91411e1f24b9f1e4a98bf936dd, type: 2}
+    - key: Ground/Materials/LampGlow
+      value: {fileID: 2100000, guid: 37af8eb141b35674cb5d94f5c0e600de, type: 2}
+    - key: Ground/Materials/Light66E6FF4C
+      value: {fileID: 2100000, guid: 55ab88078578e184482004054fb67e84, type: 2}
+    - key: Ground/Materials/Light66E6FF80
+      value: {fileID: 2100000, guid: e66202ff813f1884ea73a93ea69ff3d6, type: 2}
+    - key: Ground/Materials/LightFF661A40
+      value: {fileID: 2100000, guid: 5aba73580f9c4d9488c87fe33b361b11, type: 2}
+    - key: Ground/Materials/LightFFCC8059
+      value: {fileID: 2100000, guid: 5153196afa1e70b45ad4c83a56eb2e95, type: 2}
+    - key: Ground/Materials/LightFFD99959
+      value: {fileID: 2100000, guid: 20e0af084044a1c41a519fdb10563ef8, type: 2}
+    - key: Ground/Materials/Telegraph
+      value: {fileID: 2100000, guid: 651bf8044c8b8b244b0a00b9a63d818e, type: 2}
+    - key: Ground/Materials/UnitShadow
+      value: {fileID: 2100000, guid: 6f89eec0658fdc24c9f875ceb108d684, type: 2}
+    - key: Materials/Accretion
+      value: {fileID: 2100000, guid: 5548c5d4d3528674bb85dd4133cee2bd, type: 2}
+    - key: Materials/Acid
+      value: {fileID: 2100000, guid: fded0076adf621a43b9c55a17e9b5aac, type: 2}
+    - key: Materials/Atmosphere
+      value: {fileID: 2100000, guid: d514b637256b85b4797a1a86de28845c, type: 2}
+    - key: Materials/AtmosphereHalo
+      value: {fileID: 2100000, guid: a4165aabd8a45084aae7cfa082258d50, type: 2}
+    - key: Materials/Beacon
+      value: {fileID: 2100000, guid: 2f0bb7446e11f0b40bd5675d86750c74, type: 2}
+    - key: Materials/BlackHole
+      value: {fileID: 2100000, guid: 96d7f0b7a30db964a82c97c925644ddb, type: 2}
+    - key: Materials/Bolt
+      value: {fileID: 2100000, guid: 6296fac5ec0fb2d4e91e407ce3da8307, type: 2}
+    - key: Materials/BossFlame
+      value: {fileID: 2100000, guid: 5a8a9e560d6dd0946a0eb68d39e402a3, type: 2}
+    - key: Materials/BossShield
+      value: {fileID: 2100000, guid: 00d8ba8af7e18204490deb73025168a9, type: 2}
+    - key: Materials/CometGlow
+      value: {fileID: 2100000, guid: 52e6aec5080784643a2edcef8fa28677, type: 2}
+    - key: Materials/CoreExtraShip
+      value: {fileID: 2100000, guid: 68d9e5ac32f1c734490a4fb46ad08d04, type: 2}
+    - key: Materials/CoreNovaBomb
+      value: {fileID: 2100000, guid: f478e9642ea9d4445a0ca3bcef6c31ab, type: 2}
+    - key: Materials/CorePowerUpChrono
+      value: {fileID: 2100000, guid: 844960d91d63152419fe97550bc8eac7, type: 2}
+    - key: Materials/CorePowerUpDrones
+      value: {fileID: 2100000, guid: aa8c84325ddfe2643895966244313c98, type: 2}
+    - key: Materials/CorePowerUpMagnet
+      value: {fileID: 2100000, guid: 61e2339798c29844c8316c59a21dcedb, type: 2}
+    - key: Materials/CorePowerUpOverdrive
+      value: {fileID: 2100000, guid: 4e5596184f814044081b6540aa1c773d, type: 2}
+    - key: Materials/CoreRepair
+      value: {fileID: 2100000, guid: 9e765ecb020114941b8ee4a24409af52, type: 2}
+    - key: Materials/CoreShield
+      value: {fileID: 2100000, guid: 58511cf37764e4949be675f928103a54, type: 2}
+    - key: Materials/CoreWeaponBlaster
+      value: {fileID: 2100000, guid: 0631bfcd9f45eea4ab634cb70bd2d7fd, type: 2}
+    - key: Materials/CoreWeaponLaser
+      value: {fileID: 2100000, guid: 1015bd55936fba24bb8ae3dc4609dad3, type: 2}
+    - key: Materials/CoreWeaponMissiles
+      value: {fileID: 2100000, guid: 614311f3c04c7094ea3d7f2095290835, type: 2}
+    - key: Materials/CoreWeaponScatter
+      value: {fileID: 2100000, guid: edb5e44538126804fa0228757d84f022, type: 2}
+    - key: Materials/CrystalGlow
+      value: {fileID: 2100000, guid: f32c38e357660004ea8207cae5ff4d6b, type: 2}
+    - key: Materials/CrystalPalette
+      value: {fileID: 2100000, guid: 953e50debf8e39442b6926cca85171be, type: 2}
+    - key: Materials/DangerRing
+      value: {fileID: 2100000, guid: 929cdce1da6275847b8d45fbc7e0d872, type: 2}
+    - key: Materials/Debris
+      value: {fileID: 2100000, guid: 755426ffc08feee439e07424d089ee91, type: 2}
+    - key: Materials/DreadnoughtGlow
+      value: {fileID: 2100000, guid: 2a18e0e56f4f62e469f88807aa509826, type: 2}
+    - key: Materials/DroneBolt
+      value: {fileID: 2100000, guid: ca2065054f7aaee428fbd091d8d183c0, type: 2}
+    - key: Materials/DroneGlow
+      value: {fileID: 2100000, guid: 70a3f2571f854484c8c8bf9c74be511a, type: 2}
+    - key: Materials/EnemyMissileGlow
+      value: {fileID: 2100000, guid: 77accd4126dab9141b8aacd22e90ffbb, type: 2}
+    - key: Materials/EnemyPlasma
+      value: {fileID: 2100000, guid: fe9b36d94a17e2749ae6257c06cebd98, type: 2}
+    - key: Materials/EngineFlame
+      value: {fileID: 2100000, guid: 02d3eca7918173f4ca247864dd002fc1, type: 2}
+    - key: Materials/Flare
+      value: {fileID: 2100000, guid: 1c887079dd931324a879706db97cd35f, type: 2}
+    - key: Materials/Glow
+      value: {fileID: 2100000, guid: 21d476cf6551dfd45ae091a6bad51410, type: 2}
+    - key: Materials/HiveQueen
+      value: {fileID: 2100000, guid: 82a828c5d2d2eec44b815cff03606ad9, type: 2}
+    - key: Materials/IcePalette
+      value: {fileID: 2100000, guid: c36ac936b5de4a248954e14e5a74f187, type: 2}
+    - key: Materials/IconBlaster
+      value: {fileID: 2100000, guid: 465a92f50f53219498ff29cdfed4d246, type: 2}
+    - key: Materials/IconChrono
+      value: {fileID: 2100000, guid: 6941d4aafe59d8a4ea0b5ed16d21cdd8, type: 2}
+    - key: Materials/IconDrones
+      value: {fileID: 2100000, guid: 3b7f47c14432f73458309b566a3226a9, type: 2}
+    - key: Materials/IconLaser
+      value: {fileID: 2100000, guid: a7013a923c2a1974b8be821a180c9163, type: 2}
+    - key: Materials/IconMagnet
+      value: {fileID: 2100000, guid: 6d6c9a5eb1e6f54459cb38eeaa405f81, type: 2}
+    - key: Materials/IconMissile
+      value: {fileID: 2100000, guid: 459fd47d38c41ea46bce6e7600a40c3f, type: 2}
+    - key: Materials/IconNova
+      value: {fileID: 2100000, guid: 72d31fc24bbc03141afd85e29210941f, type: 2}
+    - key: Materials/IconOverdrive
+      value: {fileID: 2100000, guid: 0e24989a08ea5a14e95d5596c860ad0e, type: 2}
+    - key: Materials/IconRepair
+      value: {fileID: 2100000, guid: 809b152ba55e73e4f827a057402e13a6, type: 2}
+    - key: Materials/IconScatter
+      value: {fileID: 2100000, guid: 80336192d5a451947898d7e8338a7818, type: 2}
+    - key: Materials/IconShield
+      value: {fileID: 2100000, guid: 5b72d0200424b044a903d4c793142eaf, type: 2}
+    - key: Materials/IconShip
+      value: {fileID: 2100000, guid: 5b2258cbb1f48a84e9bb0155d593810d, type: 2}
+    - key: Materials/Laser
+      value: {fileID: 2100000, guid: 00281d5d4b3b3ad42a0158b9deaa7f5d, type: 2}
+    - key: Materials/Magma
+      value: {fileID: 2100000, guid: b4f35d50ebf2c8149be81206995da3a6, type: 2}
+    - key: Materials/MothershipGlow
+      value: {fileID: 2100000, guid: 1a0b4fb4b1dfd984faa6164e154efb6c, type: 2}
+    - key: Materials/Muzzle
+      value: {fileID: 2100000, guid: 34a499f3ae964354385abdc907d6c7ec, type: 2}
+    - key: Materials/Ore
+      value: {fileID: 2100000, guid: 0ddf8e5dc46afb745839536132873629, type: 2}
+    - key: Materials/Palette
+      value: {fileID: 2100000, guid: 265e8d2c34f339844bd5492237cfb4f2, type: 2}
+    - key: Materials/ParticleAdd
+      value: {fileID: 2100000, guid: 92d8ee26ba327d14683c5a8d65b4d96e, type: 2}
+    - key: Materials/ParticleFlare
+      value: {fileID: 2100000, guid: 9f313af0bb25c294cb6fc488b9f300ff, type: 2}
+    - key: Materials/ParticleRing
+      value: {fileID: 2100000, guid: c3e57ce1f9d2d9b4ab39b709d276dd58, type: 2}
+    - key: Materials/ParticleShard
+      value: {fileID: 2100000, guid: 5f13f9908f5b3774ba2eb15e0de36f0f, type: 2}
+    - key: Materials/ParticleSmoke
+      value: {fileID: 2100000, guid: 8104765cc5a6e754b9caa1c9bae74cce, type: 2}
+    - key: Materials/ParticleSpark
+      value: {fileID: 2100000, guid: eef3330287ed8d64484f68265e66e193, type: 2}
+    - key: Materials/Pellet
+      value: {fileID: 2100000, guid: ad55566cd2697494496b8060757df806, type: 2}
+    - key: Materials/PlanetFrost
+      value: {fileID: 2100000, guid: 5a09bcf261441fc4289f4b6225fe5dda, type: 2}
+    - key: Materials/PlanetKepler
+      value: {fileID: 2100000, guid: bb9859491aa212044ae736a944234394, type: 2}
+    - key: Materials/PlanetRing
+      value: {fileID: 2100000, guid: 8704b4d9536c93244bd8b8f83f708977, type: 2}
+    - key: Materials/PlanetVoid
+      value: {fileID: 2100000, guid: 8f37ad99689ca9c4799a0628b6e9c126, type: 2}
+    - key: Materials/PlayerMissileGlow
+      value: {fileID: 2100000, guid: 57ce04876cb954c44af0562247eaa678, type: 2}
+    - key: Materials/QueenGlow
+      value: {fileID: 2100000, guid: 1e9a26a9e54ecc243b42de124807833d, type: 2}
+    - key: Materials/Ring
+      value: {fileID: 2100000, guid: 93f4e8925b03ac042a35a01c570716ce, type: 2}
+    - key: Materials/Rock
+      value: {fileID: 2100000, guid: 52603866b14ff0c41bbcb416e609b4c4, type: 2}
+    - key: Materials/SaucerGlow
+      value: {fileID: 2100000, guid: 12bbe648c4978ea4187365171376cbfe, type: 2}
+    - key: Materials/ScoutGlow
+      value: {fileID: 2100000, guid: 683bdce854c9f5843840150edf27ac45, type: 2}
+    - key: Materials/ShipHalo
+      value: {fileID: 2100000, guid: 8547ee8380432bd46a01e443ae239618, type: 2}
+    - key: Materials/ShipShield
+      value: {fileID: 2100000, guid: 07d5e0b88b2ab074eb52a8cd364c7217, type: 2}
+    - key: Materials/Shrapnel
+      value: {fileID: 2100000, guid: ae73fd345f290304b86938f746a836ec, type: 2}
+    - key: Materials/Solid
+      value: {fileID: 2100000, guid: 58d1227b59252134a9d74ad5c6f19362, type: 2}
+    - key: Materials/Space
+      value: {fileID: 2100000, guid: 8dca3d952e260494784cd7a507cb7b18, type: 2}
+    - key: Materials/TitanRock
+      value: {fileID: 2100000, guid: 68afba8ace46bca41bd540fd42c61c1c, type: 2}
+    - key: Materials/VoidShard
+      value: {fileID: 2100000, guid: 1dde66ffc5975f44d9860e89a16421fd, type: 2}
+    - key: Materials/Wasp
+      value: {fileID: 2100000, guid: 6171b0aef5b3b5c489bf9a96cf0dde73, type: 2}
+    - key: Materials/WellHalo
+      value: {fileID: 2100000, guid: d976185eb6b17d34dac386e5563929e6, type: 2}
+    - key: Strike/Materials/AirBlack
+      value: {fileID: 2100000, guid: f9307b47c197f8e429a2c4d1d24459ef, type: 2}
+    - key: Strike/Materials/AirCrimson
+      value: {fileID: 2100000, guid: d9015697d198ecd4188ed12c0dae8cec, type: 2}
+    - key: Strike/Materials/AirOlive
+      value: {fileID: 2100000, guid: 128ad24a177287243b3447fcb95caf86, type: 2}
+    - key: Strike/Materials/AirRust
+      value: {fileID: 2100000, guid: 7f022221205841e41aba0501798e22eb, type: 2}
+    - key: Strike/Materials/AirSand
+      value: {fileID: 2100000, guid: 92fba3fd3a5216e429ea2c75d76fa03f, type: 2}
+    - key: Strike/Materials/AirSteel
+      value: {fileID: 2100000, guid: a1399faf4e695be46a8071969de210ff, type: 2}
+    - key: Strike/Materials/AirViolet
+      value: {fileID: 2100000, guid: 1dc2c62a9ff8dc14bb5461b40bce5dd6, type: 2}
+    - key: Strike/Materials/Bullet
+      value: {fileID: 2100000, guid: 8271b7f30ea9fee43b49171c605a7c54, type: 2}
+    - key: Strike/Materials/Crater
+      value: {fileID: 2100000, guid: 8c4c9ead9b2425f4e9ace0ddfef726b6, type: 2}
+    - key: Strike/Materials/DisrupterOrb
+      value: {fileID: 2100000, guid: c5d04cde7d28195449c5f790868207bb, type: 2}
+    - key: Strike/Materials/EnemyBeam
+      value: {fileID: 2100000, guid: 06ce94eab0a385c44894dc1fed39c953, type: 2}
+    - key: Strike/Materials/EnemyBeamTelegraph
+      value: {fileID: 2100000, guid: 04bcd1997a316054b96bc22be15f2b3b, type: 2}
+    - key: Strike/Materials/EnemyBolt
+      value: {fileID: 2100000, guid: 24c2087bb10c9fd41b12ba646cce0cc1, type: 2}
+    - key: Strike/Materials/EnemyFlak
+      value: {fileID: 2100000, guid: 8105e4c1f94c1274491cc925cfe20251, type: 2}
+    - key: Strike/Materials/EnemyMineGlow
+      value: {fileID: 2100000, guid: 56a4722a105266247b977cd852596fd8, type: 2}
+    - key: Strike/Materials/EnemyRocketFlame
+      value: {fileID: 2100000, guid: 3a4f7f624e610464ab87f22e847cc106, type: 2}
+    - key: Strike/Materials/EngineRed
+      value: {fileID: 2100000, guid: 564be3eb70260ed4cb2f0eb4cf48355e, type: 2}
+    - key: Strike/Materials/IconAirMissiles
+      value: {fileID: 2100000, guid: bc1b613fb315ae04c92daccaf4763b13, type: 2}
+    - key: Strike/Materials/IconBombs
+      value: {fileID: 2100000, guid: 45ea43c975c1715438ab1da83887b5ab, type: 2}
+    - key: Strike/Materials/IconCreditOrb
+      value: {fileID: 2100000, guid: 5d0f3f97b0e005840a72bcafbc561733, type: 2}
+    - key: Strike/Materials/IconDeathray
+      value: {fileID: 2100000, guid: 0a79bfb7611479c4ab681423b78f7f3c, type: 2}
+    - key: Strike/Materials/IconDumbfire
+      value: {fileID: 2100000, guid: a6ef50dcc1b6bbf47ab7de7160925e0a, type: 2}
+    - key: Strike/Materials/IconElite
+      value: {fileID: 2100000, guid: 53ca6c8c3efcd6e48aee4d8e94daa8fc, type: 2}
+    - key: Strike/Materials/IconEnergy
+      value: {fileID: 2100000, guid: 9cc4b5aaa98246f4d9154efe2312f9fe, type: 2}
+    - key: Strike/Materials/IconEnergyModule
+      value: {fileID: 2100000, guid: 6eb61eaf05079914e887cc349036ea7e, type: 2}
+    - key: Strike/Materials/IconFreyliumOre
+      value: {fileID: 2100000, guid: 0720f912ef01f3346aa5fdbfed59e9eb, type: 2}
+    - key: Strike/Materials/IconFusionCore
+      value: {fileID: 2100000, guid: 456d973239f659a4bb1a381fc310c051, type: 2}
+    - key: Strike/Materials/IconGroundMissiles
+      value: {fileID: 2100000, guid: bca6f77fb7218e0488f7c7ecab077e26, type: 2}
+    - key: Strike/Materials/IconIonScanner
+      value: {fileID: 2100000, guid: 3981691c3cd54d74592db313b0943aa6, type: 2}
+    - key: Strike/Materials/IconIsotopes
+      value: {fileID: 2100000, guid: 2166c25987365b94995e0c3d701b249e, type: 2}
+    - key: Strike/Materials/IconLaserTurret
+      value: {fileID: 2100000, guid: 4bd9b4008a7954d469efb37f54eed089, type: 2}
+    - key: Strike/Materials/IconMachineGun
+      value: {fileID: 2100000, guid: 1b53edbb33e9af7428efcc776f154862, type: 2}
+    - key: Strike/Materials/IconMegaBomb
+      value: {fileID: 2100000, guid: 929a36f4d8c7e1e488601b96876b87e6, type: 2}
+    - key: Strike/Materials/IconMicroMissiles
+      value: {fileID: 2100000, guid: bdd61882e36bb9940b30d9bcadff7b9d, type: 2}
+    - key: Strike/Materials/IconMiniGun
+      value: {fileID: 2100000, guid: 408c7e32f2300a84da1252c841449dd8, type: 2}
+    - key: Strike/Materials/IconMissilePods
+      value: {fileID: 2100000, guid: e01fe0fa53a8ec94fb02ec3bf41abf0e, type: 2}
+    - key: Strike/Materials/IconMoney
+      value: {fileID: 2100000, guid: ec1ece52aa42ed940914134ed8d9db02, type: 2}
+    - key: Strike/Materials/IconPhaseShield
+      value: {fileID: 2100000, guid: 7e965cf0450b965469777e0daee5c0fd, type: 2}
+    - key: Strike/Materials/IconPlasmaCannon
+      value: {fileID: 2100000, guid: d962af9d44621414780ae175ce6fa36d, type: 2}
+    - key: Strike/Materials/IconPowerDisrupter
+      value: {fileID: 2100000, guid: 0e24fd16f3f7e8748b88757650799e15, type: 2}
+    - key: Strike/Materials/IconPulseCannon
+      value: {fileID: 2100000, guid: 1cf7a2caeedf9af4399c9b8e6b8584ad, type: 2}
+    - key: Strike/Materials/IconRookie
+      value: {fileID: 2100000, guid: 8dc8404533c7fe04880544ab9bbcd967, type: 2}
+    - key: Strike/Materials/IconScanner
+      value: {fileID: 2100000, guid: b0aeb2701ee58914a8b861b603713ac9, type: 2}
+    - key: Strike/Materials/IconSmallArms
+      value: {fileID: 2100000, guid: c1395cd625a726f4990a294c6641b7e9, type: 2}
+    - key: Strike/Materials/IconStrike
+      value: {fileID: 2100000, guid: 61b5084684533e24a9c8eb41f0472234, type: 2}
+    - key: Strike/Materials/IconSupplyRoom
+      value: {fileID: 2100000, guid: 73398d1306c1b2d4caa1fb59fb92ea89, type: 2}
+    - key: Strike/Materials/IconTarget
+      value: {fileID: 2100000, guid: a0d743581bbe40a4d9061d1b9c374bcd, type: 2}
+    - key: Strike/Materials/IconThaelite
+      value: {fileID: 2100000, guid: 119de23c594391e44851e1a10fd459e9, type: 2}
+    - key: Strike/Materials/IconTwinLaser
+      value: {fileID: 2100000, guid: 13518f9612ae2484f9cc64e9dd0337d0, type: 2}
+    - key: Strike/Materials/IconVeteran
+      value: {fileID: 2100000, guid: 98c656feffe99e84a9185eb5ffd049d4, type: 2}
+    - key: Strike/Materials/MegabombFlash
+      value: {fileID: 2100000, guid: c36ee431a9cae154daba22c4d3406df4, type: 2}
+    - key: Strike/Materials/MiniGunRound
+      value: {fileID: 2100000, guid: 6ff61c485f788e1418ea53eb9882bc16, type: 2}
+    - key: Strike/Materials/MissileFlame
+      value: {fileID: 2100000, guid: cfa17887e9aedbf42ac47512dc9f9854, type: 2}
+    - key: Strike/Materials/PlasmaBolt
+      value: {fileID: 2100000, guid: 36c36cb04a362af498fedd42a5fd3727, type: 2}
+    - key: Strike/Materials/PlayerBeam
+      value: {fileID: 2100000, guid: 8d3c8fc7947fb1c41b936d895570b5bb, type: 2}
+    - key: Strike/Materials/PlayerBeamTwin
+      value: {fileID: 2100000, guid: 05aa2a7c65a0a8649ada1432dd6d97fe, type: 2}
+    - key: Strike/Materials/PlayerZap
+      value: {fileID: 2100000, guid: f0c83c38f2c2fb640812f873ceccf527, type: 2}
+    - key: Strike/Materials/Pulse
+      value: {fileID: 2100000, guid: c5a954afb021fe04fbc21b989032f60d, type: 2}
+    - key: Strike/Materials/Rotor
+      value: {fileID: 2100000, guid: df2e0e340e4181b40b2f654a5d78c594, type: 2}
+    - key: Strike/Materials/Shadow
+      value: {fileID: 2100000, guid: 266487a85daa5ae41955d2c0f89d546c, type: 2}
+    - key: Strike/Materials/StrikeBasalt
+      value: {fileID: 2100000, guid: ff60ec9f61a16b4449270e21e001413b, type: 2}
+    - key: Strike/Materials/StrikeBeamFlare
+      value: {fileID: 2100000, guid: 53adb8ffa8607b24fa86249c83023939, type: 2}
+    - key: Strike/Materials/StrikeBeamFlareGun
+      value: {fileID: 2100000, guid: ddb929a51a8da99489077069e0aac5b8, type: 2}
+    - key: Strike/Materials/StrikeBeamTip
+      value: {fileID: 2100000, guid: 81afeddc26ca708438433341d0c8d99b, type: 2}
+    - key: Strike/Materials/StrikeBeamTipTwin
+      value: {fileID: 2100000, guid: 0f49c0969cf93794aae0fe1d9d5d5878, type: 2}
+    - key: Strike/Materials/StrikeBombGlow
+      value: {fileID: 2100000, guid: a47e7881db9faf349b036610483a49cf, type: 2}
+    - key: Strike/Materials/StrikeCoreAirMissiles
+      value: {fileID: 2100000, guid: 274941d2eeca0634ba2bd104b72cc840, type: 2}
+    - key: Strike/Materials/StrikeCoreBombs
+      value: {fileID: 2100000, guid: 6ba04f9a9cf7ece438b9399de16f427f, type: 2}
+    - key: Strike/Materials/StrikeCoreDumbfire
+      value: {fileID: 2100000, guid: 982b0684ab3e1594792d753489178df9, type: 2}
+    - key: Strike/Materials/StrikeCoreEnergy
+      value: {fileID: 2100000, guid: b8c34e20709b0df42ac6de228fb7ac20, type: 2}
+    - key: Strike/Materials/StrikeCoreGroundMissiles
+      value: {fileID: 2100000, guid: 81498ab2ffba452499aa9cc7621ec204, type: 2}
+    - key: Strike/Materials/StrikeCoreIonScanner
+      value: {fileID: 2100000, guid: a3c3dbecd154f644086a6dab1a21148b, type: 2}
+    - key: Strike/Materials/StrikeCoreMegaBomb
+      value: {fileID: 2100000, guid: eff1e7cc937b5f44cb7f40f5294d2226, type: 2}
+    - key: Strike/Materials/StrikeCorePhaseShield
+      value: {fileID: 2100000, guid: 2cfd020d32878b3488a4934a43e0b647, type: 2}
+    - key: Strike/Materials/StrikeCorePlasmaCannon
+      value: {fileID: 2100000, guid: 960399f3425d54f4dbfdb57e74e461f4, type: 2}
+    - key: Strike/Materials/StrikeCrimson
+      value: {fileID: 2100000, guid: 69093bee5c1e61548abb0636446fae0a, type: 2}
+    - key: Strike/Materials/StrikeHaloCreditOrb
+      value: {fileID: 2100000, guid: cac14a125e4c892479cf212d181b5fb3, type: 2}
+    - key: Strike/Materials/StrikeHaloFreyliumOre
+      value: {fileID: 2100000, guid: b73a45870cd992c4b9febc3b5a2b8256, type: 2}
+    - key: Strike/Materials/StrikeHaloFusionCore
+      value: {fileID: 2100000, guid: 4144ee514b9c47a47aa25bfa0ab6a6d3, type: 2}
+    - key: Strike/Materials/StrikeHaloIsotopes
+      value: {fileID: 2100000, guid: 73b5686725caa374788673f3e767afdf, type: 2}
+    - key: Strike/Materials/StrikeHaloSmallArms
+      value: {fileID: 2100000, guid: f20fdaae5403af44fb1d48fab49b82ce, type: 2}
+    - key: Strike/Materials/StrikeHaloThaelite
+      value: {fileID: 2100000, guid: 2f33f6ebb903b174f8aa16da50a2a93f, type: 2}
+    - key: Strike/Materials/StrikeNight
+      value: {fileID: 2100000, guid: 4dfc40cfb572f4840bc728207cf3e3fe, type: 2}
+    - key: Strike/Materials/StrikeOlive
+      value: {fileID: 2100000, guid: 7cd865134db39164eb0951669514cb0a, type: 2}
+    - key: Strike/Materials/StrikePalette
+      value: {fileID: 2100000, guid: b9e4ae47076d927469c2dbd5533dd71c, type: 2}
+    - key: Strike/Materials/StrikeSand
+      value: {fileID: 2100000, guid: 5457231297207444b889e266e63b92c4, type: 2}
+    - key: StarSparrow/Materials/StarSparrow Red
+      value: {fileID: 2100000, guid: 3574d5733ac60b941b175932e0a1aa2e, type: 2}
+    - key: StarSparrow/Materials/BonusContent/Mine Sample 2
+      value: {fileID: 2100000, guid: 7da0d403d4fb0da40ac018d557c6db89, type: 2}
+    - key: StarSparrow/Materials/BonusContent/AsteroidsLava_Red
+      value: {fileID: 2100000, guid: 816eca2bca813da4883bad3b376c4dbc, type: 2}
+    - key: StarSparrow/Materials/BonusContent/Mine Sample 1
+      value: {fileID: 2100000, guid: 82c97815f01775d4899d78255a373dfe, type: 2}
+    - key: StarSparrow/Materials/StarSparrow Blue
+      value: {fileID: 2100000, guid: ca28c97d23f98024fb31e22662eb58e7, type: 2}
+    - key: StarSparrow/Materials/BonusContent/Missile
+      value: {fileID: 2100000, guid: 30d351457dfac9d40a8b07e6426fd177, type: 2}
+    - key: Ground/Desert/Crater
+      value: {fileID: 2100000, guid: fe2b6ee87d1960248a75de93d1250d63, type: 2}
+    - key: Ground/Desert/Rubble
+      value: {fileID: 2100000, guid: c1560c86a6d4fff49b16bbd22b386c9a, type: 2}
+    - key: Ground/City/Tiles/Base0
+      value: {fileID: 2100000, guid: 5779fcdbf40a89f45877291389768f06, type: 2}
+    - key: Ground/City/Tiles/Base1
+      value: {fileID: 2100000, guid: e07e2f649e71ab04391a9feece14e6a4, type: 2}
+    - key: Ground/City/Tiles/City0
+      value: {fileID: 2100000, guid: f98294dd2d17d8d44ad2ff11f19de692, type: 2}
+    - key: Ground/City/Tiles/City1
+      value: {fileID: 2100000, guid: faeb2377a13ff734081cb0b033373954, type: 2}
+    - key: Ground/City/Tiles/Plain0
+      value: {fileID: 2100000, guid: 7c00f3d6c44d6694db440a30b57d3b75, type: 2}
+    - key: Ground/City/Tiles/Plain1
+      value: {fileID: 2100000, guid: 6ff1eb6281bbe784dbd33f23d04bc461, type: 2}
+    - key: Ground/City/Tiles/Plain2
+      value: {fileID: 2100000, guid: 97f40bdc8bc9fa841acf9d71423f1d76, type: 2}
+    - key: Ground/City/Tiles/River0
+      value: {fileID: 2100000, guid: 13f9689d465a1ab46b3104f21ebd97a6, type: 2}
+    - key: Ground/City/Tiles/River1
+      value: {fileID: 2100000, guid: 8bfa67efb07e53748b5aa1eedf80a51d, type: 2}
+    - key: Ground/City/Tiles/Road0
+      value: {fileID: 2100000, guid: 13ce4260500697942b0e6bbbecc39e5c, type: 2}
+    - key: Ground/City/Tiles/Road1
+      value: {fileID: 2100000, guid: 16a838eacaba4be4ab8d2ef1d6548106, type: 2}
+    - key: Ground/City/Tiles/Road2
+      value: {fileID: 2100000, guid: 3112de084f548994cae02a0026a5454f, type: 2}
+    - key: Ground/Desert/Tiles/Base0
+      value: {fileID: 2100000, guid: fea47add5cddacc48830ebbb51187bf4, type: 2}
+    - key: Ground/Desert/Tiles/Base1
+      value: {fileID: 2100000, guid: 1086f80a6440c494f8b935a3c1aedf50, type: 2}
+    - key: Ground/Desert/Tiles/Coast0
+      value: {fileID: 2100000, guid: 8206cba3b86e5ac4ca9a9c4c600ff022, type: 2}
+    - key: Ground/Desert/Tiles/Coast1
+      value: {fileID: 2100000, guid: 8adaacb7339676a499ff8853a8f49a73, type: 2}
+    - key: Ground/Desert/Tiles/Plain0
+      value: {fileID: 2100000, guid: c0fb8791fa8245044b9b7c9398c4271e, type: 2}
+    - key: Ground/Desert/Tiles/Plain1
+      value: {fileID: 2100000, guid: c8cd2ebfd2dd7c24987be2f425656cc3, type: 2}
+    - key: Ground/Desert/Tiles/Plain2
+      value: {fileID: 2100000, guid: 901b6782b84b3f84094a4d67f9aa8aa8, type: 2}
+    - key: Ground/Desert/Tiles/Road0
+      value: {fileID: 2100000, guid: 0df727096543ffb46889664af8f82029, type: 2}
+    - key: Ground/Desert/Tiles/Road1
+      value: {fileID: 2100000, guid: 561404504ff7c60408fc1a7da4a147b2, type: 2}
+    - key: Ground/Desert/Tiles/Road2
+      value: {fileID: 2100000, guid: 17ab24a8308567949a606d6d7e472a87, type: 2}
+    - key: Ground/Desert/Tiles/Rough0
+      value: {fileID: 2100000, guid: 2d58f20950a30cc4ca1c7bf34f196704, type: 2}
+    - key: Ground/Desert/Tiles/Rough1
+      value: {fileID: 2100000, guid: 4b8143db6b6ad9b4b8b40fd1233f8018, type: 2}
+    - key: Ground/Desert/Tiles/Sea0
+      value: {fileID: 2100000, guid: 5408977e12d8b714f956a6d66b1342a6, type: 2}
+    - key: Ground/Desert/Tiles/Sea1
+      value: {fileID: 2100000, guid: 94cf20c76d355774c9ecc169cb20e5b0, type: 2}
+    - key: Ground/Jungle/Tiles/Base0
+      value: {fileID: 2100000, guid: f5d44ea790101254ca8d7d36897deb22, type: 2}
+    - key: Ground/Jungle/Tiles/Base1
+      value: {fileID: 2100000, guid: 590637e564ce08a48bf7a2024f65f5b1, type: 2}
+    - key: Ground/Jungle/Tiles/Field0
+      value: {fileID: 2100000, guid: 1fb25acf96780c840a3dc0aae08d41ee, type: 2}
+    - key: Ground/Jungle/Tiles/Field1
+      value: {fileID: 2100000, guid: 707e5e26a6e1e0743ab1f7678cba26a2, type: 2}
+    - key: Ground/Jungle/Tiles/Lake0
+      value: {fileID: 2100000, guid: 179eb974c8556bf43bd6f72e69114e4b, type: 2}
+    - key: Ground/Jungle/Tiles/Lake1
+      value: {fileID: 2100000, guid: f00acf34454b1934b827d2a26e701a2b, type: 2}
+    - key: Ground/Jungle/Tiles/Plain0
+      value: {fileID: 2100000, guid: d2215ab6f1d540d468e8008e74d0e083, type: 2}
+    - key: Ground/Jungle/Tiles/Plain1
+      value: {fileID: 2100000, guid: 9e1b2c44f31547c43920594636d0687f, type: 2}
+    - key: Ground/Jungle/Tiles/Plain2
+      value: {fileID: 2100000, guid: 7823fb02d6ac57c4181859c165a3fc55, type: 2}
+    - key: Ground/Jungle/Tiles/River0
+      value: {fileID: 2100000, guid: 5b35341f4efabe340999ae54cfbc6ebc, type: 2}
+    - key: Ground/Jungle/Tiles/River1
+      value: {fileID: 2100000, guid: cb1d3dd203a77c544806b2877447aab7, type: 2}
+    - key: Ground/Jungle/Tiles/Road0
+      value: {fileID: 2100000, guid: 18bf984e914108246a69a2774a9e9398, type: 2}
+    - key: Ground/Jungle/Tiles/Road1
+      value: {fileID: 2100000, guid: 86e59b8b7e7aaa844a2675009b2d31fb, type: 2}
+    - key: Ground/Jungle/Tiles/Road2
+      value: {fileID: 2100000, guid: 887548b7261290b49b0ade82aa4c52f4, type: 2}
+    - key: Ground/Jungle/Tiles/Rough0
+      value: {fileID: 2100000, guid: 61d64de7399a01a4ab15846d14f454b2, type: 2}
+    - key: Ground/Jungle/Tiles/Rough1
+      value: {fileID: 2100000, guid: ec9ae4e466f94914d8baafa75d9184a6, type: 2}
+    - key: Ground/Moon/Tiles/Base0
+      value: {fileID: 2100000, guid: 6729a18c3228c2840b437e6195567386, type: 2}
+    - key: Ground/Moon/Tiles/Base1
+      value: {fileID: 2100000, guid: 369bf4d7217e5d3499052d1f7416d0cd, type: 2}
+    - key: Ground/Moon/Tiles/Plain0
+      value: {fileID: 2100000, guid: a3b3bca12368c984e98dd702cebb491e, type: 2}
+    - key: Ground/Moon/Tiles/Plain1
+      value: {fileID: 2100000, guid: 5c75588ca912a034e9590d415b396aa3, type: 2}
+    - key: Ground/Moon/Tiles/Plain2
+      value: {fileID: 2100000, guid: 5324346e8f166624882bb9c1ae43f40c, type: 2}
+    - key: Ground/Moon/Tiles/Rough0
+      value: {fileID: 2100000, guid: 9a06837adbc9bfb4d8a7d6d3ced63f52, type: 2}
+    - key: Ground/Moon/Tiles/Rough1
+      value: {fileID: 2100000, guid: 6c0dbaeea80989644baa339746a7d0ad, type: 2}
+    - key: Ground/Station/Tiles/Base0
+      value: {fileID: 2100000, guid: 9c9e6e99a07734948b66e95c2b86560b, type: 2}
+    - key: Ground/Station/Tiles/Base1
+      value: {fileID: 2100000, guid: 2ef302458ee652243ace43cb5fc0c5a2, type: 2}
+    - key: Ground/Station/Tiles/Plain0
+      value: {fileID: 2100000, guid: 55cb427198538ce458674cf1ec843cf0, type: 2}
+    - key: Ground/Station/Tiles/Plain1
+      value: {fileID: 2100000, guid: 1fb215a3b5247b3448dda364a3b65640, type: 2}
+    - key: Ground/Station/Tiles/Plain2
+      value: {fileID: 2100000, guid: 48fafcebb9c251d4eab156e2bc6b47c9, type: 2}
+    - key: Ground/Station/Tiles/Rough0
+      value: {fileID: 2100000, guid: 9e7e29acabccaaa4bad9758d4d8c1313, type: 2}
+    - key: Ground/Station/Tiles/Rough1
+      value: {fileID: 2100000, guid: 218f703af725a5a418afe220d3346749, type: 2}
+    - key: Ground/Volcanic/Tiles/Base0
+      value: {fileID: 2100000, guid: 035e91f9212dbcc4d9104664eaef15e0, type: 2}
+    - key: Ground/Volcanic/Tiles/Base1
+      value: {fileID: 2100000, guid: 4c458aa99c0af7a4b9874d49fdf5a3f3, type: 2}
+    - key: Ground/Volcanic/Tiles/Lake0
+      value: {fileID: 2100000, guid: 54f5c85266f9b454d89d0f0647fc8ec0, type: 2}
+    - key: Ground/Volcanic/Tiles/Lake1
+      value: {fileID: 2100000, guid: 214e549259bbae143a9bea0cc8eeb821, type: 2}
+    - key: Ground/Volcanic/Tiles/Plain0
+      value: {fileID: 2100000, guid: 292348d6b24e56d4fb51547a92b946e3, type: 2}
+    - key: Ground/Volcanic/Tiles/Plain1
+      value: {fileID: 2100000, guid: 2f3e6338fa757ac4ba0776c7fd8a2a48, type: 2}
+    - key: Ground/Volcanic/Tiles/Plain2
+      value: {fileID: 2100000, guid: 949cee3c7a9fa604199f4c25c9627cc5, type: 2}
+    - key: Ground/Volcanic/Tiles/Rough0
+      value: {fileID: 2100000, guid: 0f10c89f3b713124f937b86cd2931847, type: 2}
+    - key: Ground/Volcanic/Tiles/Rough1
+      value: {fileID: 2100000, guid: 9e38da2f9a2ac8a4886405c1568b7997, type: 2}
+    - key: StarSparrow/Materials/BonusContent/CloudsRed
+      value: {fileID: 2100000, guid: 191ced9846689714398ed909c5e9284a, type: 2}
+    textures: []
+    prefabs: []
+    meshes:
+    - key: StarSparrow/Meshes/StarSparrowExamples2#StarSparrow8
+      value: {fileID: 4300010, guid: 21c6d0bb8170cae4f9d49bb728b3f524, type: 3}
+    - key: Models/FlameQuad
+      value: {fileID: 4300000, guid: adf0f750045e93b4fb31013aebba35ca, type: 2}
+    - key: StarSparrow/Meshes/BonusContent/FlyingInsects3#FlyingInsect3
+      value: {fileID: 4300000, guid: b2359fd8578c87649ad70d6001527479, type: 3}
+    - key: StarSparrow/Meshes/BonusContent/FlyingInsects3_Wing1#FlyingInsect3_Wing1
+      value: {fileID: 4300000, guid: c121b1640d073a14382ea0f68499c85e, type: 3}
+    - key: StarSparrow/Meshes/BonusContent/FlyingInsects3_Wing2#FlyingInsect3_Wing2
+      value: {fileID: 4300000, guid: a48942f1defa105409300c6ae5ade981, type: 3}
+    - key: StarSparrow/Meshes/BonusContent/FlyingInsects3_Wing3#FlyingInsect3_Wing3
+      value: {fileID: 4300000, guid: b194a334c875d914aa66569a0a81be6c, type: 3}
+    - key: StarSparrow/Meshes/BonusContent/FlyingInsects3_Wing4#FlyingInsect3_Wing4
+      value: {fileID: 4300000, guid: bb401a4b2f241b54f904ccba8227557f, type: 3}
+    - key: Models/Saucer
+      value: {fileID: 4300000, guid: 6cee65c92e2c0ee40be635e22a653063, type: 2}
+    - key: Models/SaucerLights
+      value: {fileID: 4300000, guid: 39d118fff4c30d7439991168a68bc3b5, type: 2}
+    - key: Models/ScoutLights
+      value: {fileID: 4300000, guid: ab071d3f0ff24df4da49e72b50214168, type: 2}
+    - key: Models/TitanRock
+      value: {fileID: 4300000, guid: ec40e1c8cb856eb40b9292b2f67e4c2d, type: 2}
+    - key: Models/Rock1
+      value: {fileID: 4300000, guid: aeb82eb7131677b48b75a42be3ed8336, type: 2}
+    - key: Models/Rock2
+      value: {fileID: 4300000, guid: c3a497d01bb75de4f866a1c8dfb337d9, type: 2}
+    - key: Models/Rock3
+      value: {fileID: 4300000, guid: e3c60f1207b22d448aaacc19ebbc71ca, type: 2}
+    - key: Models/Scout
+      value: {fileID: 4300000, guid: 87edd0a4e1ac6894aa0bd31f40b04813, type: 2}
+    - key: StarSparrow/Meshes/BonusContent/MinesSample#SpaceMine11
+      value: {fileID: 4300002, guid: 6ed599d7224ee9943b11064add7ed981, type: 3}
+    - key: Models/Comet
+      value: {fileID: 4300000, guid: bdc24c210fcb9704180df403d653d03e, type: 2}
+    - key: StarSparrow/Meshes/BonusContent/MinesSample#SpaceMine1
+      value: {fileID: 4300000, guid: 6ed599d7224ee9943b11064add7ed981, type: 3}
+    - key: Models/SupplyPod
+      value: {fileID: 4300000, guid: 31e80655ea13a3e48a3313e7a9d48a6e, type: 2}
+    - key: Models/Crystal
+      value: {fileID: 4300000, guid: 3b8003a2a50fed841a5e6d7a330c18d2, type: 2}
+    - key: Models/PickupFrame
+      value: {fileID: 4300000, guid: 8bb8962b9a5fd8e4b835d5b9afedba07, type: 2}
+    - key: Models/Drone
+      value: {fileID: 4300000, guid: 39bd574cd8566a549956ecd098795220, type: 2}
+    - key: StarSparrow/Meshes/BonusContent/MissilesSample#MissileViking
+      value: {fileID: 4300002, guid: afbbf42a35d3ca347aea29a1457035cc, type: 3}
+    - key: StarSparrow/Meshes/StarSparrowExamples1#StarSparrow5
+      value: {fileID: 4300010, guid: e0f90ad78680d6145b082ac69f7fc504, type: 3}
+    - key: StarSparrow/Meshes/StarSparrowExamples2#StarSparrow13
+      value: {fileID: 4300000, guid: 21c6d0bb8170cae4f9d49bb728b3f524, type: 3}
+    - key: Strike/Models/Gunship
+      value: {fileID: 4300000, guid: 5fd1849b05d6efe4d9541c21405dc1c9, type: 2}
+    - key: StarSparrow/Meshes/StarSparrowExamples2#StarSparrow9
+      value: {fileID: 4300008, guid: 21c6d0bb8170cae4f9d49bb728b3f524, type: 3}
+    - key: StarSparrow/Meshes/StarSparrowExamples1#StarSparrow3
+      value: {fileID: 4300002, guid: e0f90ad78680d6145b082ac69f7fc504, type: 3}
+    - key: StarSparrow/Meshes/StarSparrowExamples1#StarSparrow1
+      value: {fileID: 4300008, guid: e0f90ad78680d6145b082ac69f7fc504, type: 3}
+    - key: StarSparrow/Meshes/StarSparrowExamples2#StarSparrow10
+      value: {fileID: 4300004, guid: 21c6d0bb8170cae4f9d49bb728b3f524, type: 3}
+    - key: Strike/Models/Bastion
+      value: {fileID: 4300000, guid: 2c933a2fe9023774783c25ccc3f91974, type: 2}
+    - key: Strike/Models/Dome
+      value: {fileID: 4300000, guid: b73147f52cb74c049ab2238446cc3d12, type: 2}
+    - key: Strike/Models/TurretBase
+      value: {fileID: 4300000, guid: ca359f22c676ad4498dc9f0f7d88676a, type: 2}
+    - key: Strike/Models/TwinTurret
+      value: {fileID: 4300000, guid: 6caeb0de594c70046bfd8100de3383a3, type: 2}
+    - key: Strike/Models/FoundryHull
+      value: {fileID: 4300000, guid: 1ed91101b26e985428e93d2d05c6be75, type: 2}
+    - key: Strike/Models/MainCannon
+      value: {fileID: 4300000, guid: d67a3ded84f77924f825906b94b4c6df, type: 2}
+    - key: Strike/Models/FlameVent
+      value: {fileID: 4300000, guid: 33bac222a66368549abbf369997e7588, type: 2}
+    - key: Strike/Models/PumpStation
+      value: {fileID: 4300000, guid: a4b1c8653dfdb394f910556b9e90b3fe, type: 2}
+    - key: Strike/Models/Reactor
+      value: {fileID: 4300000, guid: a840355bfd0557944912c00315de67e5, type: 2}
+    - key: Strike/Models/FlakTurret
+      value: {fileID: 4300000, guid: 46eb2e6bba02048468678cf838afa201, type: 2}
+    - key: Strike/Models/CrawlerHull
+      value: {fileID: 4300000, guid: 9ecf18cbf58c3f6438708b24b170e1bc, type: 2}
+    - key: Strike/Models/RigPlatform
+      value: {fileID: 4300000, guid: 9de366c5a8771674195e1d20c453c89f, type: 2}
+    - key: Strike/Models/LaserCore
+      value: {fileID: 4300000, guid: cf89912326764ba40a89adc050439b4d, type: 2}
+    - key: Strike/Models/Launcher
+      value: {fileID: 4300000, guid: 16c79b9b4ffa2234e8866f3b6819a35e, type: 2}
+    - key: Strike/Models/ModulePod
+      value: {fileID: 4300000, guid: ee7255ee25fae4f4b92f1abc00ef08f3, type: 2}
+    - key: Strike/Models/ModulePodRed
+      value: {fileID: 4300000, guid: f16fcc49ef352b041a6a883d75ec1754, type: 2}
+    - key: Strike/Models/StationCore
+      value: {fileID: 4300000, guid: f75edf0940ea9bd43b06d4148e62f621, type: 2}
+    - key: Strike/Models/StationOuterRing
+      value: {fileID: 4300000, guid: 8dbd675016fe98b43b25d1c1011a081a, type: 2}
+    - key: Strike/Models/StationInnerRing
+      value: {fileID: 4300000, guid: bde3c0c62d447974ba2dfe20262d9e38, type: 2}
+    - key: Strike/Models/LaserEmitter
+      value: {fileID: 4300000, guid: 7b405db2fd3fde647837ab17a0495349, type: 2}
+    - key: Strike/Models/RotorLarge
+      value: {fileID: 4300000, guid: f06ff5268151b794893cbe1716925c9f, type: 2}
+    - key: Strike/Models/SideCannon
+      value: {fileID: 4300000, guid: eb1bfaee76eea8141b2b83ac0731efd6, type: 2}
+    - key: Strike/Models/SiloPad
+      value: {fileID: 4300000, guid: e4ed454e50d511441b83faaaf66a2ee7, type: 2}
+    - key: Strike/Models/Silo
+      value: {fileID: 4300000, guid: 4d32a96e67fab3b44a29a2ab01f6e9a4, type: 2}
+    - key: Ground/Models/Units/Bunker
+      value: {fileID: 4300000, guid: 73e0210bc91d2f94087bd824a33b07ee, type: 2}
+    - key: Ground/Models/Units/Crate
+      value: {fileID: 4300000, guid: 5aacaf60b3f52da45aa1a95130df38ab, type: 2}
+    - key: Ground/Models/Units/Depot
+      value: {fileID: 4300000, guid: 59cbe0dd5c0024a479c0a98004a00f75, type: 2}
+    - key: Ground/Models/Units/Flak
+      value: {fileID: 4300000, guid: a377e9da6aa2e594a8eff98762e9f716, type: 2}
+    - key: Ground/Models/Units/FlakTurret
+      value: {fileID: 4300000, guid: a60bde8092c4e4144b4d3ce004e1bb14, type: 2}
+    - key: Ground/Models/Units/FuelTank
+      value: {fileID: 4300000, guid: 2e9d9abc9b816f34b80833e34ae45690, type: 2}
+    - key: Ground/Models/Units/Gunboat
+      value: {fileID: 4300000, guid: 235d82a269e3b96439d5ea9aca105a99, type: 2}
+    - key: Ground/Models/Units/GunboatTurret
+      value: {fileID: 4300000, guid: 825a89eec5e07604d82853d9c71968e1, type: 2}
+    - key: Ground/Models/Units/Hut
+      value: {fileID: 4300000, guid: fde6523e95d822a4ea4f9cb331722d39, type: 2}
+    - key: Ground/Models/Units/LaserTower
+      value: {fileID: 4300000, guid: abd64fa58be60594a900357b0e8db28e, type: 2}
+    - key: Ground/Models/Units/Radar
+      value: {fileID: 4300000, guid: 7996707c8ac0a1f4b9e3d0b5d35d174d, type: 2}
+    - key: Ground/Models/Units/RadarSpinner
+      value: {fileID: 4300000, guid: be0034d7b8ea2e441970ee1345170a20, type: 2}
+    - key: Ground/Models/Units/Tank
+      value: {fileID: 4300000, guid: 20550b9cb7a1ad64f9169ec1bdbbee5c, type: 2}
+    - key: Ground/Models/Units/TankTurret
+      value: {fileID: 4300000, guid: 3d5abb0d9530e124fb222125e922bc3f, type: 2}
+    - key: Ground/Models/Units/Truck
+      value: {fileID: 4300000, guid: f764ab1e33fcbbb49b0c7c425514021f, type: 2}
+    - key: Ground/Models/Units/Turret
+      value: {fileID: 4300000, guid: dc4172f690e266b4fa096a79c9e3b048, type: 2}
+    - key: Ground/Models/Units/TurretTurret
+      value: {fileID: 4300000, guid: d55e0c8cb961a1645a7ae5d55fb34958, type: 2}
+    - key: Strike/Models/CreditCoin
+      value: {fileID: 4300000, guid: d94787f051efe3843b8639ddb8763879, type: 2}
+    - key: Strike/Models/FreyliumOre
+      value: {fileID: 4300000, guid: 34f4d02e9c97a9c48bd6fb324741dd90, type: 2}
+    - key: Strike/Models/FusionCore
+      value: {fileID: 4300000, guid: 28c0ce2c0c282a84c986afd43e7fdc71, type: 2}
+    - key: Strike/Models/IsotopeCanister
+      value: {fileID: 4300000, guid: d2d4fae8abe2a1a43bbe36940928919f, type: 2}
+    - key: Strike/Models/AmmoCrate
+      value: {fileID: 4300000, guid: 6445b0220dbb423449cd174b09f2e97e, type: 2}
+    - key: Strike/Models/ThaeliteCluster
+      value: {fileID: 4300000, guid: bc9538def63b29541957be85c134f70e, type: 2}
+    - key: Ground/Models/Props/Boulders
+      value: {fileID: 4300000, guid: d24c41bfa21562f4e813d7c9364f5555, type: 2}
+    - key: Ground/Models/Props/Building
+      value: {fileID: 4300000, guid: f40b9e000bb306142a0f562fe85aa0ec, type: 2}
+    - key: Ground/Models/Props/CoolingTower
+      value: {fileID: 4300000, guid: 80031cebe3065c84e93e1382e70ed7be, type: 2}
+    - key: Ground/Models/Props/Dome
+      value: {fileID: 4300000, guid: 6913ac9d81c322d46a2f02fc107c149c, type: 2}
+    - key: Ground/Models/Props/Hangar
+      value: {fileID: 4300000, guid: b50efa0c5e41a3b4cafe0fb7704082b0, type: 2}
+    - key: Ground/Models/Props/Palm
+      value: {fileID: 4300000, guid: a4559c694896ea14ea52733f10e0567d, type: 2}
+    - key: Ground/Models/Props/Pipe
+      value: {fileID: 4300000, guid: 8f7a9fdc8db702542b62d0ce9ba20da6, type: 2}
+    - key: Ground/Models/Props/Sandbags
+      value: {fileID: 4300000, guid: bb28b377b836dcd418a63d33f22318f3, type: 2}
+    - key: Ground/Models/Props/StorageTank
+      value: {fileID: 4300000, guid: 171d4af61ebfb9643b2401e8d44d9bc1, type: 2}
+    - key: Ground/Models/Props/Tree
+      value: {fileID: 4300000, guid: df6cd61ee50ce2340ad38ec4fc272e08, type: 2}
+    - key: StarSparrow/Meshes/BonusContent/MissilesSample#MissileBomb
+      value: {fileID: 4300000, guid: afbbf42a35d3ca347aea29a1457035cc, type: 3}
+    - key: Ground/Models/GroundTile
+      value: {fileID: 4300000, guid: 5a3f4a6e4b578f344966c06d1f33b273, type: 2}
+    - key: Ground/City/Tiles/Base0Props
+      value: {fileID: 4300000, guid: 9ad0e11f562a50a488a5d2d20d15e95e, type: 2}
+    - key: Ground/City/Tiles/Base1Props
+      value: {fileID: 4300000, guid: ad557bb1f309a764eac6340cdb3e6909, type: 2}
+    - key: Ground/City/Tiles/City0Props
+      value: {fileID: 4300000, guid: 23809968a626e2e4caedc02f0d78989c, type: 2}
+    - key: Ground/City/Tiles/City1Props
+      value: {fileID: 4300000, guid: a5b679be561308743b0d3fc8371e83f7, type: 2}
+    - key: Ground/City/Tiles/Plain0Props
+      value: {fileID: 4300000, guid: ddfcb69f4c2735d4c92e211a69ebcd77, type: 2}
+    - key: Ground/City/Tiles/Plain1Props
+      value: {fileID: 4300000, guid: f466ed836f6b3e14ab15908fa3785044, type: 2}
+    - key: Ground/City/Tiles/Plain2Props
+      value: {fileID: 4300000, guid: edde0015a948be542b11ef81a127899f, type: 2}
+    - key: Ground/City/Tiles/River0Props
+      value: {fileID: 4300000, guid: 49d83cca1bef3d845abb0975cdaf64af, type: 2}
+    - key: Ground/City/Tiles/River1Props
+      value: {fileID: 4300000, guid: 552a870b6b523c144acdc1da6e3e2d9d, type: 2}
+    - key: Ground/City/Tiles/Road0Props
+      value: {fileID: 4300000, guid: 37ea07f06f7b17b418222712fb36116e, type: 2}
+    - key: Ground/City/Tiles/Road1Props
+      value: {fileID: 4300000, guid: 7588920edd9b2c047a454d8c99140352, type: 2}
+    - key: Ground/City/Tiles/Road2Props
+      value: {fileID: 4300000, guid: 535bbaea3b686fc418514acd3e410cf4, type: 2}
+    - key: Ground/Desert/Tiles/Base0Props
+      value: {fileID: 4300000, guid: 9357caea4e764354babcab392d7999d8, type: 2}
+    - key: Ground/Desert/Tiles/Base1Props
+      value: {fileID: 4300000, guid: e78a7e48aaaa51e418ffe21cb51fd94e, type: 2}
+    - key: Ground/Desert/Tiles/Coast0Props
+      value: {fileID: 4300000, guid: 4f9e8ea32cb16e04d94b7c5da387e7a8, type: 2}
+    - key: Ground/Desert/Tiles/Coast1Props
+      value: {fileID: 4300000, guid: eb4e6526beeee484f8c419db7eff3db8, type: 2}
+    - key: Ground/Desert/Tiles/Plain0Props
+      value: {fileID: 4300000, guid: 3a5539cc5900f5441bbb783b3209bc23, type: 2}
+    - key: Ground/Desert/Tiles/Plain1Props
+      value: {fileID: 4300000, guid: ae110c37f09362645bc06ef16896073d, type: 2}
+    - key: Ground/Desert/Tiles/Plain2Props
+      value: {fileID: 4300000, guid: f7f17e6397494b24688f249682fc57a0, type: 2}
+    - key: Ground/Desert/Tiles/Road0Props
+      value: {fileID: 4300000, guid: 67dd4722fe6b19c4e87f11326679a6d5, type: 2}
+    - key: Ground/Desert/Tiles/Road1Props
+      value: {fileID: 4300000, guid: 1938f1071df64c94bbea619dcef4c532, type: 2}
+    - key: Ground/Desert/Tiles/Road2Props
+      value: {fileID: 4300000, guid: 70743b7b07a232c4a8b51e15d5ce7cfd, type: 2}
+    - key: Ground/Desert/Tiles/Rough0Props
+      value: {fileID: 4300000, guid: efacdee5970dc8747aaaa7e827b547c1, type: 2}
+    - key: Ground/Desert/Tiles/Rough1Props
+      value: {fileID: 4300000, guid: 5156a2712ebe0df4ca44e76256c5e381, type: 2}
+    - key: Ground/Jungle/Tiles/Base0Props
+      value: {fileID: 4300000, guid: f2f94d6cb1e95484998d4c44d894d200, type: 2}
+    - key: Ground/Jungle/Tiles/Base1Props
+      value: {fileID: 4300000, guid: 7b27c31bb0c13bb448274367e1f634a9, type: 2}
+    - key: Ground/Jungle/Tiles/Field0Props
+      value: {fileID: 4300000, guid: e1fcbe5600d008e4db083534856561c0, type: 2}
+    - key: Ground/Jungle/Tiles/Field1Props
+      value: {fileID: 4300000, guid: 49dea145b6ce7af47b408ac1cbf75e98, type: 2}
+    - key: Ground/Jungle/Tiles/Lake0Props
+      value: {fileID: 4300000, guid: 03eed3d04a3dfb44694e80342662d8fe, type: 2}
+    - key: Ground/Jungle/Tiles/Lake1Props
+      value: {fileID: 4300000, guid: 987b13c37c8c60a46a8239bc614ff6f5, type: 2}
+    - key: Ground/Jungle/Tiles/Plain0Props
+      value: {fileID: 4300000, guid: 97c09147d8075f2498789bd7becb426b, type: 2}
+    - key: Ground/Jungle/Tiles/Plain1Props
+      value: {fileID: 4300000, guid: 42dd77ba775207942a1f8d2836ee643c, type: 2}
+    - key: Ground/Jungle/Tiles/Plain2Props
+      value: {fileID: 4300000, guid: f6185ea9f5e427b49b50f7ef339565b9, type: 2}
+    - key: Ground/Jungle/Tiles/River0Props
+      value: {fileID: 4300000, guid: 944ea804c73c414469bdbfc90540515b, type: 2}
+    - key: Ground/Jungle/Tiles/River1Props
+      value: {fileID: 4300000, guid: bfb8bb33fb0db1e4593cc46ebab9d20c, type: 2}
+    - key: Ground/Jungle/Tiles/Road0Props
+      value: {fileID: 4300000, guid: a0df0baa481f8114cb21373ec2d14ec3, type: 2}
+    - key: Ground/Jungle/Tiles/Road1Props
+      value: {fileID: 4300000, guid: 4caa4f3dea4445e4698099f7f1981b05, type: 2}
+    - key: Ground/Jungle/Tiles/Road2Props
+      value: {fileID: 4300000, guid: 3c4e91750cec8b84197272d4bc54d0cd, type: 2}
+    - key: Ground/Jungle/Tiles/Rough0Props
+      value: {fileID: 4300000, guid: ee094492261a94e4a840abcabddb5014, type: 2}
+    - key: Ground/Jungle/Tiles/Rough1Props
+      value: {fileID: 4300000, guid: 3ba68d1ae98ebfd4d8445e93240e68a5, type: 2}
+    - key: Ground/Moon/Tiles/Base0Props
+      value: {fileID: 4300000, guid: 8d51973c2fd37544c91e3393122dc6af, type: 2}
+    - key: Ground/Moon/Tiles/Base1Props
+      value: {fileID: 4300000, guid: bcc33ee207af41e4daf0becb9cddd867, type: 2}
+    - key: Ground/Moon/Tiles/Plain0Props
+      value: {fileID: 4300000, guid: 44dabb30c71d6f448b92bdd503fb2a54, type: 2}
+    - key: Ground/Moon/Tiles/Plain1Props
+      value: {fileID: 4300000, guid: ff0131b862d80f04ea09ab1a13593239, type: 2}
+    - key: Ground/Moon/Tiles/Plain2Props
+      value: {fileID: 4300000, guid: 4563c98f4ac5f094ab14f0573f5d25b8, type: 2}
+    - key: Ground/Moon/Tiles/Rough0Props
+      value: {fileID: 4300000, guid: 5f55c8a67e0441645ad686c736dc5fb4, type: 2}
+    - key: Ground/Moon/Tiles/Rough1Props
+      value: {fileID: 4300000, guid: 2b99b617fd02c884b8040382f7c69e20, type: 2}
+    - key: Ground/Station/Tiles/Base0Props
+      value: {fileID: 4300000, guid: 9a5652e4f817915429db31aaa233fe9e, type: 2}
+    - key: Ground/Station/Tiles/Base1Props
+      value: {fileID: 4300000, guid: cbbad5323c101204a8efee209b256d4c, type: 2}
+    - key: Ground/Station/Tiles/Plain0Props
+      value: {fileID: 4300000, guid: db1a1e2ec6d5f2543b6760ce0a438919, type: 2}
+    - key: Ground/Station/Tiles/Plain1Props
+      value: {fileID: 4300000, guid: 776412a04374e8145857c0372c999955, type: 2}
+    - key: Ground/Station/Tiles/Plain2Props
+      value: {fileID: 4300000, guid: cb0b07af7675d564e94d3ea1ce53100f, type: 2}
+    - key: Ground/Station/Tiles/Rough0Props
+      value: {fileID: 4300000, guid: 0baabac4af4207d4384257087380574b, type: 2}
+    - key: Ground/Station/Tiles/Rough1Props
+      value: {fileID: 4300000, guid: 770cc5882e7699047b081c01f6121c4c, type: 2}
+    - key: Ground/Volcanic/Tiles/Base0Props
+      value: {fileID: 4300000, guid: e70766b96bc052946aacaffa8c62b460, type: 2}
+    - key: Ground/Volcanic/Tiles/Base1Props
+      value: {fileID: 4300000, guid: d3c74d46ee2d8724cb98869a4970192b, type: 2}
+    - key: Ground/Volcanic/Tiles/Lake0Props
+      value: {fileID: 4300000, guid: a50926ef15544ea4f91fcdeb34c39f1b, type: 2}
+    - key: Ground/Volcanic/Tiles/Lake1Props
+      value: {fileID: 4300000, guid: 8e5f3275d9b8f8c4b93450ef4b2c4917, type: 2}
+    - key: Ground/Volcanic/Tiles/Plain0Props
+      value: {fileID: 4300000, guid: d1ab80e5463aea842b7df9e6ffcb7a64, type: 2}
+    - key: Ground/Volcanic/Tiles/Plain1Props
+      value: {fileID: 4300000, guid: 691a3eedf6633754aa610b6f1bf9156e, type: 2}
+    - key: Ground/Volcanic/Tiles/Plain2Props
+      value: {fileID: 4300000, guid: f11feba9181af6341af023a3c8511897, type: 2}
+    - key: Ground/Volcanic/Tiles/Rough0Props
+      value: {fileID: 4300000, guid: 3d3ecad1bb7b1a1408f27c08a325e738, type: 2}
+    - key: Ground/Volcanic/Tiles/Rough1Props
+      value: {fileID: 4300000, guid: 0494706b25ffe0847b263f39e1b0f572, type: 2}
+    - key: StarSparrow/Meshes/BonusContent/Planet#Planet
+      value: {fileID: 4300000, guid: 614d5d16c663aaf4e8a724ee026d8cf0, type: 3}
+    - key: StarSparrow/Meshes/BonusContent/Clouds#Clouds
+      value: {fileID: 4300000, guid: 39cdb5f1ef2da0b4aa187d9779c3a6e8, type: 3}
+    - key: Models/PlanetRing
+      value: {fileID: 4300000, guid: 3b125b4827e5f854c98aeec821b95232, type: 2}
+    - key: StarSparrow/Meshes/StarSparrowExamples1#StarSparrow2
+      value: {fileID: 4300000, guid: e0f90ad78680d6145b082ac69f7fc504, type: 3}
+    - key: StarSparrow/Meshes/StarSparrowExamples2#StarSparrow11
+      value: {fileID: 4300006, guid: 21c6d0bb8170cae4f9d49bb728b3f524, type: 3}
+    - key: StarSparrow/Meshes/StarSparrowExamples2#StarSparrow12
+      value: {fileID: 4300002, guid: 21c6d0bb8170cae4f9d49bb728b3f524, type: 3}
+    - key: Models/Ice1
+      value: {fileID: 4300000, guid: 721bbda85960e814ab6560d2ee8decf2, type: 2}
+    - key: Models/Ice2
+      value: {fileID: 4300000, guid: ed8ea61c05f22f14ba4d9d24c8589424, type: 2}
+    - key: Models/Ice3
+      value: {fileID: 4300000, guid: 4ee271dc70becec44bd10168155444e7, type: 2}
+    - key: Models/Crystal1
+      value: {fileID: 4300000, guid: b602e1c5ddda32a4b90b4ec0eb8dd67f, type: 2}
+    - key: Models/Crystal2
+      value: {fileID: 4300000, guid: c578f87fa80ea1e45bcaafd8f1f736b2, type: 2}
+    - key: Models/Crystal3
+      value: {fileID: 4300000, guid: 9caae61818b360f4faf25ee3aa96070a, type: 2}
+    fonts:
+    - key: plain
+      value: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+    clips: []
+    colors: []
+  ships:
+  - hull: Sparrow
+    mesh: {fileID: 4300000, guid: e0f90ad78680d6145b082ac69f7fc504, type: 3}
+    material: {fileID: 2100000, guid: ca28c97d23f98024fb31e22662eb58e7, type: 2}
+    scale: 0.17971478
+    engineColor: {r: 0.4, g: 0.8, b: 1, a: 1}
+    preview: {fileID: 21300000, guid: d77d12b0161e4c84dacd143dc334acb6, type: 3}
+  - hull: Hornet
+    mesh: {fileID: 4300006, guid: 21c6d0bb8170cae4f9d49bb728b3f524, type: 3}
+    material: {fileID: 2100000, guid: 5953a6e817e87be4195c31da8fdce334, type: 2}
+    scale: 0.14865394
+    engineColor: {r: 1, g: 0.75, b: 0.3, a: 1}
+    preview: {fileID: 21300000, guid: 6b0661d9416a2ef4cbdd26c336e12eaa, type: 3}
+  - hull: Bulwark
+    mesh: {fileID: 4300010, guid: 21c6d0bb8170cae4f9d49bb728b3f524, type: 3}
+    material: {fileID: 2100000, guid: f221e96cfbb5d6040b82a97d3d5ff1d0, type: 2}
+    scale: 0.14969774
+    engineColor: {r: 0.55, g: 1, b: 0.7, a: 1}
+    preview: {fileID: 21300000, guid: d4cc9b54daba8414d8a1fb7479c5dded, type: 3}
+  - hull: Phantom
+    mesh: {fileID: 4300002, guid: 21c6d0bb8170cae4f9d49bb728b3f524, type: 3}
+    material: {fileID: 2100000, guid: b172b3eb38b7df64eb5c8a08420eea34, type: 2}
+    scale: 0.14086604
+    engineColor: {r: 0.85, g: 0.5, b: 1, a: 1}
+    preview: {fileID: 21300000, guid: b26d636c976a1314f9373f684c774ea4, type: 3}
+  asteroids:
+  - kind: 0
+    meshes:
+    - {fileID: 4300000, guid: aeb82eb7131677b48b75a42be3ed8336, type: 2}
+    - {fileID: 4300000, guid: c3a497d01bb75de4f866a1c8dfb337d9, type: 2}
+    - {fileID: 4300000, guid: e3c60f1207b22d448aaacc19ebbc71ca, type: 2}
+    material: {fileID: 2100000, guid: 52603866b14ff0c41bbcb416e609b4c4, type: 2}
+    flash: {r: 1, g: 0.8, b: 0.6, a: 1}
+  - kind: 1
+    meshes:
+    - {fileID: 4300000, guid: aeb82eb7131677b48b75a42be3ed8336, type: 2}
+    - {fileID: 4300000, guid: c3a497d01bb75de4f866a1c8dfb337d9, type: 2}
+    - {fileID: 4300000, guid: e3c60f1207b22d448aaacc19ebbc71ca, type: 2}
+    material: {fileID: 2100000, guid: 0ddf8e5dc46afb745839536132873629, type: 2}
+    flash: {r: 1, g: 0.85, b: 0.4, a: 1}
+  - kind: 2
+    meshes:
+    - {fileID: 4300000, guid: aeb82eb7131677b48b75a42be3ed8336, type: 2}
+    - {fileID: 4300000, guid: c3a497d01bb75de4f866a1c8dfb337d9, type: 2}
+    - {fileID: 4300000, guid: e3c60f1207b22d448aaacc19ebbc71ca, type: 2}
+    material: {fileID: 2100000, guid: b4f35d50ebf2c8149be81206995da3a6, type: 2}
+    flash: {r: 1, g: 0.55, b: 0.2, a: 1}
+  - kind: 3
+    meshes:
+    - {fileID: 4300000, guid: 721bbda85960e814ab6560d2ee8decf2, type: 2}
+    - {fileID: 4300000, guid: ed8ea61c05f22f14ba4d9d24c8589424, type: 2}
+    - {fileID: 4300000, guid: 4ee271dc70becec44bd10168155444e7, type: 2}
+    material: {fileID: 2100000, guid: c36ac936b5de4a248954e14e5a74f187, type: 2}
+    flash: {r: 0.6, g: 0.9, b: 1, a: 1}
+  - kind: 4
+    meshes:
+    - {fileID: 4300000, guid: b602e1c5ddda32a4b90b4ec0eb8dd67f, type: 2}
+    - {fileID: 4300000, guid: c578f87fa80ea1e45bcaafd8f1f736b2, type: 2}
+    - {fileID: 4300000, guid: 9caae61818b360f4faf25ee3aa96070a, type: 2}
+    material: {fileID: 2100000, guid: 953e50debf8e39442b6926cca85171be, type: 2}
+    flash: {r: 1, g: 0.5, b: 1, a: 1}
+  shots:
+  - name: DroneBolt
+    material: {fileID: 2100000, guid: ca2065054f7aaee428fbd091d8d183c0, type: 2}
+  - name: EnemyAcid
+    material: {fileID: 2100000, guid: fded0076adf621a43b9c55a17e9b5aac, type: 2}
+  - name: EnemyMissile
+    material: {fileID: 2100000, guid: 30d351457dfac9d40a8b07e6426fd177, type: 2}
+  - name: EnemyPlasma
+    material: {fileID: 2100000, guid: fe9b36d94a17e2749ae6257c06cebd98, type: 2}
+  - name: EnemyShrapnel
+    material: {fileID: 2100000, guid: ae73fd345f290304b86938f746a836ec, type: 2}
+  - name: PlayerBolt
+    material: {fileID: 2100000, guid: 92d8ee26ba327d14683c5a8d65b4d96e, type: 2}
+  - name: PlayerLaser
+    material: {fileID: 2100000, guid: 00281d5d4b3b3ad42a0158b9deaa7f5d, type: 2}
+  - name: PlayerMissile
+    material: {fileID: 2100000, guid: 30d351457dfac9d40a8b07e6426fd177, type: 2}
+  - name: PlayerPellet
+    material: {fileID: 2100000, guid: ad55566cd2697494496b8060757df806, type: 2}
+  - name: VoidShard
+    material: {fileID: 2100000, guid: 1dde66ffc5975f44d9860e89a16421fd, type: 2}
+  enemies:
+  - name: Saucer
+    material: {fileID: 2100000, guid: 265e8d2c34f339844bd5492237cfb4f2, type: 2}
+  - name: Scout
+    material: {fileID: 2100000, guid: 265e8d2c34f339844bd5492237cfb4f2, type: 2}
+  - name: Wasp
+    material: {fileID: 2100000, guid: 6171b0aef5b3b5c489bf9a96cf0dde73, type: 2}
+  - name: ClusterBomb
+    material: {fileID: 2100000, guid: 7da0d403d4fb0da40ac018d557c6db89, type: 2}
+  - name: Comet
+    material: {fileID: 2100000, guid: 816eca2bca813da4883bad3b376c4dbc, type: 2}
+  - name: GravityWell
+    material: {fileID: 2100000, guid: 96d7f0b7a30db964a82c97c925644ddb, type: 2}
+  - name: Mine
+    material: {fileID: 2100000, guid: 82c97815f01775d4899d78255a373dfe, type: 2}
+  - name: SupplyPod
+    material: {fileID: 2100000, guid: 265e8d2c34f339844bd5492237cfb4f2, type: 2}
+  - name: Dreadnought
+    material: {fileID: 2100000, guid: 3574d5733ac60b941b175932e0a1aa2e, type: 2}
+  - name: HiveQueen
+    material: {fileID: 2100000, guid: 82a828c5d2d2eec44b815cff03606ad9, type: 2}
+  - name: Mothership
+    material: {fileID: 2100000, guid: 265e8d2c34f339844bd5492237cfb4f2, type: 2}
+  - name: RockTitan
+    material: {fileID: 2100000, guid: 68afba8ace46bca41bd540fd42c61c1c, type: 2}
+  effects:
+    particleAdd: {fileID: 2100000, guid: 92d8ee26ba327d14683c5a8d65b4d96e, type: 2}
+    particleSpark: {fileID: 2100000, guid: eef3330287ed8d64484f68265e66e193, type: 2}
+    particleFlare: {fileID: 2100000, guid: 9f313af0bb25c294cb6fc488b9f300ff, type: 2}
+    particleShard: {fileID: 2100000, guid: 5f13f9908f5b3774ba2eb15e0de36f0f, type: 2}
+    particleSmoke: {fileID: 2100000, guid: 8104765cc5a6e754b9caa1c9bae74cce, type: 2}
+    particleRing: {fileID: 2100000, guid: c3e57ce1f9d2d9b4ab39b709d276dd58, type: 2}
+    glow: {fileID: 2100000, guid: 21d476cf6551dfd45ae091a6bad51410, type: 2}
+    flare: {fileID: 2100000, guid: 1c887079dd931324a879706db97cd35f, type: 2}
+    ring: {fileID: 2100000, guid: 93f4e8925b03ac042a35a01c570716ce, type: 2}
+    dangerRing: {fileID: 2100000, guid: 929cdce1da6275847b8d45fbc7e0d872, type: 2}
+    muzzle: {fileID: 2100000, guid: 34a499f3ae964354385abdc907d6c7ec, type: 2}
+    engineFlame: {fileID: 2100000, guid: 02d3eca7918173f4ca247864dd002fc1, type: 2}
+    bossFlame: {fileID: 2100000, guid: 5a8a9e560d6dd0946a0eb68d39e402a3, type: 2}
+    shipShield: {fileID: 2100000, guid: 07d5e0b88b2ab074eb52a8cd364c7217, type: 2}
+    bossShield: {fileID: 2100000, guid: 00d8ba8af7e18204490deb73025168a9, type: 2}
+    shipHalo: {fileID: 2100000, guid: 8547ee8380432bd46a01e443ae239618, type: 2}
+  pickups:
+  - name: Crystal
+    core: {fileID: 2100000, guid: 265e8d2c34f339844bd5492237cfb4f2, type: 2}
+    icon: {fileID: 2100000, guid: 265e8d2c34f339844bd5492237cfb4f2, type: 2}
+    sprite: {fileID: 21300000, guid: f9e086ff3cb31404c9bafb9e40e910f6, type: 3}
+  - name: ExtraShip
+    core: {fileID: 2100000, guid: 68d9e5ac32f1c734490a4fb46ad08d04, type: 2}
+    icon: {fileID: 2100000, guid: 5b2258cbb1f48a84e9bb0155d593810d, type: 2}
+    sprite: {fileID: 21300000, guid: 349c93cad454dd44eb9f5f3a759721d8, type: 3}
+  - name: NovaBomb
+    core: {fileID: 2100000, guid: f478e9642ea9d4445a0ca3bcef6c31ab, type: 2}
+    icon: {fileID: 2100000, guid: 72d31fc24bbc03141afd85e29210941f, type: 2}
+    sprite: {fileID: 21300000, guid: bfa44cdff6a42e349ab9298166d8940f, type: 3}
+  - name: PowerUpChrono
+    core: {fileID: 2100000, guid: 844960d91d63152419fe97550bc8eac7, type: 2}
+    icon: {fileID: 2100000, guid: 6941d4aafe59d8a4ea0b5ed16d21cdd8, type: 2}
+    sprite: {fileID: 21300000, guid: 7cb577592281d9142bf5c969b7381f42, type: 3}
+  - name: PowerUpDrones
+    core: {fileID: 2100000, guid: aa8c84325ddfe2643895966244313c98, type: 2}
+    icon: {fileID: 2100000, guid: 3b7f47c14432f73458309b566a3226a9, type: 2}
+    sprite: {fileID: 21300000, guid: d0fe910533706424a80293853a95ece7, type: 3}
+  - name: PowerUpMagnet
+    core: {fileID: 2100000, guid: 61e2339798c29844c8316c59a21dcedb, type: 2}
+    icon: {fileID: 2100000, guid: 6d6c9a5eb1e6f54459cb38eeaa405f81, type: 2}
+    sprite: {fileID: 21300000, guid: 2227fe7ad1f86e0418475518efd7fa4f, type: 3}
+  - name: PowerUpOverdrive
+    core: {fileID: 2100000, guid: 4e5596184f814044081b6540aa1c773d, type: 2}
+    icon: {fileID: 2100000, guid: 0e24989a08ea5a14e95d5596c860ad0e, type: 2}
+    sprite: {fileID: 21300000, guid: 90f10f2a340db3d40b8ba2d8595ad58b, type: 3}
+  - name: Repair
+    core: {fileID: 2100000, guid: 9e765ecb020114941b8ee4a24409af52, type: 2}
+    icon: {fileID: 2100000, guid: 809b152ba55e73e4f827a057402e13a6, type: 2}
+    sprite: {fileID: 21300000, guid: adaeae01f92cff84685cff44388b9ce5, type: 3}
+  - name: Shield
+    core: {fileID: 2100000, guid: 58511cf37764e4949be675f928103a54, type: 2}
+    icon: {fileID: 2100000, guid: 5b72d0200424b044a903d4c793142eaf, type: 2}
+    sprite: {fileID: 21300000, guid: 0fe2cd2abb2f97645b9c17d4e89b30cc, type: 3}
+  - name: WeaponBlaster
+    core: {fileID: 2100000, guid: 0631bfcd9f45eea4ab634cb70bd2d7fd, type: 2}
+    icon: {fileID: 2100000, guid: 465a92f50f53219498ff29cdfed4d246, type: 2}
+    sprite: {fileID: 21300000, guid: 0ad5f72348112d24e97f1cc97417cbf5, type: 3}
+  - name: WeaponLaser
+    core: {fileID: 2100000, guid: 1015bd55936fba24bb8ae3dc4609dad3, type: 2}
+    icon: {fileID: 2100000, guid: a7013a923c2a1974b8be821a180c9163, type: 2}
+    sprite: {fileID: 21300000, guid: 8c807707d25d3264681b187654cee47e, type: 3}
+  - name: WeaponMissiles
+    core: {fileID: 2100000, guid: 614311f3c04c7094ea3d7f2095290835, type: 2}
+    icon: {fileID: 2100000, guid: 459fd47d38c41ea46bce6e7600a40c3f, type: 2}
+    sprite: {fileID: 21300000, guid: af966380ee469324da8f0781e33e0ce6, type: 3}
+  - name: WeaponScatter
+    core: {fileID: 2100000, guid: edb5e44538126804fa0228757d84f022, type: 2}
+    icon: {fileID: 2100000, guid: 80336192d5a451947898d7e8338a7818, type: 2}
+    sprite: {fileID: 21300000, guid: 8fe2a569c162ac649a11d56a30016479, type: 3}
+  backdrop:
+    space: {fileID: 2100000, guid: 8dca3d952e260494784cd7a507cb7b18, type: 2}
+    atmosphere: {fileID: 2100000, guid: d514b637256b85b4797a1a86de28845c, type: 2}
+    halo: {fileID: 2100000, guid: a4165aabd8a45084aae7cfa082258d50, type: 2}
+    rings: {fileID: 2100000, guid: 8704b4d9536c93244bd8b8f83f708977, type: 2}
+    motes: {fileID: 2100000, guid: 92d8ee26ba327d14683c5a8d65b4d96e, type: 2}
+  sectors:
+  - {fileID: 11400000, guid: e8b5ed969170b89419e36b0b81c5ff8c, type: 2}
+  - {fileID: 11400000, guid: b9c43084b72c9ff4d8804d6653ae841e, type: 2}
+  - {fileID: 11400000, guid: f0c8ff538a1918b49990cd7c00e166f7, type: 2}
+  - {fileID: 11400000, guid: 9a9ff548805707043b700b1ba546a47e, type: 2}
+  strikeThemes:
+  - {fileID: 11400000, guid: f5f794ceeaa25d7418375fcade4d471c, type: 2}
+  - {fileID: 11400000, guid: 807edeab39dd34443a542a1197921f1d, type: 2}
+  - {fileID: 11400000, guid: 3bf486f276e99ee4c8834fc4666faf26, type: 2}
+  - {fileID: 11400000, guid: 96ccb6af40cbe6b45b12bc9e7a90343e, type: 2}
+  - {fileID: 11400000, guid: caf288bc6cc9db9428a7dda6120785ec, type: 2}
+  - {fileID: 11400000, guid: eeb7fb3136797e0409b724a2140b0669, type: 2}
+  ui:
+    panel: {fileID: 21300000, guid: 8e90349d1d231e942b51c4ac03922e40, type: 3}
+    button: {fileID: 21300000, guid: cda9c1b271038724ab4d6b07e857e02b, type: 3}
+    frame: {fileID: 21300000, guid: 647824c853f00034da231330523135f6, type: 3}
+    hexagon: {fileID: 21300000, guid: 35edbd1c8542ddb428f3b02801175bf4, type: 3}
+    hexagonFrame: {fileID: 21300000, guid: 4e7e44505cc912d41b39712125cd03e7, type: 3}
+    bar: {fileID: 21300000, guid: 851de4cf0a1803c4da848483822adfd1, type: 3}
+    timerRing: {fileID: 21300000, guid: 033be7c7cc3a5c0409297e9b479cf13d, type: 3}
+    vignette: {fileID: 21300000, guid: de78323666b036241b5ec86ba595521d, type: 3}
+    fade: {fileID: 21300000, guid: 56e35702c6d29d84aa34892999baa655, type: 3}
+    lane: {fileID: 21300000, guid: fed29de6139eabd4b910000b5c18979c, type: 3}
+    glow: {fileID: 21300000, guid: bf688cc5d709ac647bd7a3db525599f3, type: 3}
+    scanlines: {fileID: 21300000, guid: dc510e8d7cb92d84c9938f24417819ce, type: 3}
+    crt: {fileID: 21300000, guid: dc510e8d7cb92d84c9938f24417819ce, type: 3}
+    starFull: {fileID: 21300000, guid: f3d6635408ae9304cbc276a9a74d881f, type: 3}
+    starEmpty: {fileID: 21300000, guid: 4e9787d25894823439161fa32d74106c, type: 3}
+    weapons:
+    - {fileID: 21300000, guid: 0ad5f72348112d24e97f1cc97417cbf5, type: 3}
+    - {fileID: 21300000, guid: 8c807707d25d3264681b187654cee47e, type: 3}
+    - {fileID: 21300000, guid: 8fe2a569c162ac649a11d56a30016479, type: 3}
+    - {fileID: 21300000, guid: af966380ee469324da8f0781e33e0ce6, type: 3}
+  icons:
+  - name: Arrow
+    sprite: {fileID: 21300000, guid: 336840aff76b6bb4a9edf842c4d10bff, type: 3}
+  - name: Asteroid
+    sprite: {fileID: 21300000, guid: ba79bf6ac1457ee49923272813f149f0, type: 3}
+  - name: Blaster
+    sprite: {fileID: 21300000, guid: 0ad5f72348112d24e97f1cc97417cbf5, type: 3}
+  - name: Check
+    sprite: {fileID: 21300000, guid: 70fc0b84f8779ac47a811ef9e93b3483, type: 3}
+  - name: Chrono
+    sprite: {fileID: 21300000, guid: 7cb577592281d9142bf5c969b7381f42, type: 3}
+  - name: Crystal
+    sprite: {fileID: 21300000, guid: f9e086ff3cb31404c9bafb9e40e910f6, type: 3}
+  - name: Dash
+    sprite: {fileID: 21300000, guid: 983c6053ae0be7647b56c82283c02dc1, type: 3}
+  - name: Drones
+    sprite: {fileID: 21300000, guid: d0fe910533706424a80293853a95ece7, type: 3}
+  - name: Exit
+    sprite: {fileID: 21300000, guid: 551c788f85603634bb6f84755f91391b, type: 3}
+  - name: GameIcon
+    sprite: {fileID: 21300000, guid: 43cf11e63e82a3c47bd9794efea99b95, type: 3}
+  - name: Hangar
+    sprite: {fileID: 21300000, guid: 5d2b0ce2fd2262b4a878650908bb219e, type: 3}
+  - name: Infinity
+    sprite: {fileID: 21300000, guid: f061d0e002827ad49a7dd7bfec33056b, type: 3}
+  - name: Laser
+    sprite: {fileID: 21300000, guid: 8c807707d25d3264681b187654cee47e, type: 3}
+  - name: Levels
+    sprite: {fileID: 21300000, guid: 3138a16f4917418409e23a49d92c60e4, type: 3}
+  - name: Lock
+    sprite: {fileID: 21300000, guid: b3e00ead7acae42468462f95aea26d68, type: 3}
+  - name: Magnet
+    sprite: {fileID: 21300000, guid: 2227fe7ad1f86e0418475518efd7fa4f, type: 3}
+  - name: Missile
+    sprite: {fileID: 21300000, guid: af966380ee469324da8f0781e33e0ce6, type: 3}
+  - name: Nova
+    sprite: {fileID: 21300000, guid: bfa44cdff6a42e349ab9298166d8940f, type: 3}
+  - name: Overdrive
+    sprite: {fileID: 21300000, guid: 90f10f2a340db3d40b8ba2d8595ad58b, type: 3}
+  - name: Pause
+    sprite: {fileID: 21300000, guid: 79e1877ea2787134383d601ac3af8365, type: 3}
+  - name: Play
+    sprite: {fileID: 21300000, guid: d231027bf6d14224fb0f28c13086bfbd, type: 3}
+  - name: Repair
+    sprite: {fileID: 21300000, guid: adaeae01f92cff84685cff44388b9ce5, type: 3}
+  - name: Retry
+    sprite: {fileID: 21300000, guid: f95a3038df7987e48ba8b6114f92bcce, type: 3}
+  - name: Scatter
+    sprite: {fileID: 21300000, guid: 8fe2a569c162ac649a11d56a30016479, type: 3}
+  - name: Settings
+    sprite: {fileID: 21300000, guid: 0d1695ad4a5df9c49bcf15cb52caa6af, type: 3}
+  - name: Shield
+    sprite: {fileID: 21300000, guid: 0fe2cd2abb2f97645b9c17d4e89b30cc, type: 3}
+  - name: Ship
+    sprite: {fileID: 21300000, guid: 349c93cad454dd44eb9f5f3a759721d8, type: 3}
+  - name: Skull
+    sprite: {fileID: 21300000, guid: a0c3bb81775a3434faefab5ad17e0476, type: 3}
+  - name: Star
+    sprite: {fileID: 21300000, guid: f3d6635408ae9304cbc276a9a74d881f, type: 3}
+  - name: StarEmpty
+    sprite: {fileID: 21300000, guid: 4e9787d25894823439161fa32d74106c, type: 3}
+  - name: Warning
+    sprite: {fileID: 21300000, guid: 43446318556a94e4cb960d7621124d2f, type: 3}
+  strikeIcons:
+  - name: AirMissiles
+    sprite: {fileID: 21300000, guid: ce104825f888c9443b13131b4f2a9328, type: 3}
+  - name: Bombs
+    sprite: {fileID: 21300000, guid: 4f1ae2d4e7edb4744b9c3095b6f8bddb, type: 3}
+  - name: CreditOrb
+    sprite: {fileID: 21300000, guid: df06bbc8ab9ff9b499e53595ceb66174, type: 3}
+  - name: Deathray
+    sprite: {fileID: 21300000, guid: 71709d784f1cd1244944bd0c037eb3e2, type: 3}
+  - name: Dumbfire
+    sprite: {fileID: 21300000, guid: c3ba083ec291ae3489156a40ce5b81dd, type: 3}
+  - name: Elite
+    sprite: {fileID: 21300000, guid: 7dc0a7add8f35d9468c398bdb15067ea, type: 3}
+  - name: Energy
+    sprite: {fileID: 21300000, guid: e109cb00f8fb143488a1fd8ea7f8a330, type: 3}
+  - name: EnergyModule
+    sprite: {fileID: 21300000, guid: 1e871c6cf31dda740a1a0bb2b3f51749, type: 3}
+  - name: FreyliumOre
+    sprite: {fileID: 21300000, guid: 8df6417674d2bd04283c3b9545696ac0, type: 3}
+  - name: FusionCore
+    sprite: {fileID: 21300000, guid: 10ccc5a3edebc5b4295953511b2efdb9, type: 3}
+  - name: GroundMissiles
+    sprite: {fileID: 21300000, guid: 4a85eac44bf43c540afa89c235f4fd3c, type: 3}
+  - name: IonScanner
+    sprite: {fileID: 21300000, guid: c6aea8277be26e140b2b772eb9e96e06, type: 3}
+  - name: Isotopes
+    sprite: {fileID: 21300000, guid: 8f09122450767d54a9c1b8ee57ec634e, type: 3}
+  - name: LaserTurret
+    sprite: {fileID: 21300000, guid: f3612b778b440d84494994507e368659, type: 3}
+  - name: MachineGun
+    sprite: {fileID: 21300000, guid: cf5b8df788208e2459c4973d5ed21de6, type: 3}
+  - name: MegaBomb
+    sprite: {fileID: 21300000, guid: 0a90eda3917329941bc18fba74bc5615, type: 3}
+  - name: MicroMissiles
+    sprite: {fileID: 21300000, guid: c20a826cb5012194298ad9c4f7ac77d4, type: 3}
+  - name: MiniGun
+    sprite: {fileID: 21300000, guid: 4fa324c0a942bc64cad599aacf94f73f, type: 3}
+  - name: MissilePods
+    sprite: {fileID: 21300000, guid: 23c9d6d1c182d2c41b423a38deabe7f0, type: 3}
+  - name: Money
+    sprite: {fileID: 21300000, guid: 1d1a2d6d8e92f094a866355036391173, type: 3}
+  - name: PhaseShield
+    sprite: {fileID: 21300000, guid: fb2ffdf5072751a41ac299aa6adf0341, type: 3}
+  - name: PlasmaCannon
+    sprite: {fileID: 21300000, guid: 29e844fb4c9f75c4495d04860f70e57e, type: 3}
+  - name: PowerDisrupter
+    sprite: {fileID: 21300000, guid: e4a0f3d2afe9b4a4eafac2206a60bc3e, type: 3}
+  - name: PulseCannon
+    sprite: {fileID: 21300000, guid: d84ab9b3e0e45cf4da0f68f1991f1fc2, type: 3}
+  - name: Rookie
+    sprite: {fileID: 21300000, guid: 543041f542bb45e469c2037a3eb43d04, type: 3}
+  - name: Scanner
+    sprite: {fileID: 21300000, guid: e5cab1237939fae4f92c367ed2f767d4, type: 3}
+  - name: SmallArms
+    sprite: {fileID: 21300000, guid: 5317b902c93cbc04db04b31f1d0f2cf1, type: 3}
+  - name: Strike
+    sprite: {fileID: 21300000, guid: cbda2a3858757f446993a023f3c2856b, type: 3}
+  - name: SupplyRoom
+    sprite: {fileID: 21300000, guid: cd4ef4c374aaa754cbd4a18efc8f9841, type: 3}
+  - name: Target
+    sprite: {fileID: 21300000, guid: 6c4b8d57ea0de3147bdd4096277b5b75, type: 3}
+  - name: Thaelite
+    sprite: {fileID: 21300000, guid: 12c5acee8903f17469bc9cb825993b95, type: 3}
+  - name: TwinLaser
+    sprite: {fileID: 21300000, guid: 14f1f397d4512a447ae5200a5f33c47e, type: 3}
+  - name: Veteran
+    sprite: {fileID: 21300000, guid: c9ac0002f06a8e241af500f1df4a967c, type: 3}
+  palette:
+    panel: {r: 0.35, g: 0.75, b: 1, a: 0.95}
+    soft: {r: 0.78, g: 0.86, b: 0.96, a: 1}
+    dim: {r: 0.55, g: 0.65, b: 0.8, a: 1}
+    green: {r: 0.25, g: 0.85, b: 0.5, a: 1}
+    blue: {r: 0.3, g: 0.6, b: 1, a: 1}
+    orange: {r: 1, g: 0.6, b: 0.25, a: 1}
+    red: {r: 1, g: 0.35, b: 0.35, a: 1}
+    gold: {r: 1, g: 0.82, b: 0.3, a: 1}
+    cyan: {r: 0.35, g: 0.9, b: 1, a: 1}
+    strikeAccent: {r: 1, g: 0.6, b: 0.25, a: 1}
+    tabIdle: {r: 0.16, g: 0.26, b: 0.4, a: 0.95}
+    inputField: {r: 0.14, g: 0.3, b: 0.5, a: 1}
+    logoTop: {r: 0.75, g: 0.97, b: 1, a: 1}
+    logoBottom: {r: 0.25, g: 0.6, b: 1, a: 1}
+    settingsWindow: {r: 0.4, g: 0.8, b: 1, a: 1}
+    settingsRows: {r: 0.03, g: 0.08, b: 0.16, a: 0.92}

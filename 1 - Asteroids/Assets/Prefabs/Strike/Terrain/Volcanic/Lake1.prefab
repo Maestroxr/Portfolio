@@ -64,6 +64,8 @@ GameObject:
   - component: {fileID: 3032526281692362000}
   - component: {fileID: 7422584640371115112}
   - component: {fileID: 7138710557844018601}
+  - component: {fileID: 575224605042448430}
+  - component: {fileID: 330941340486721762}
   m_Layer: 0
   m_Name: Props
   m_TagString: Untagged
@@ -143,6 +145,35 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &575224605042448430
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3268289665377865568}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Ground/Materials/GroundPalette
+  slot: 0
+--- !u!114 &330941340486721762
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3268289665377865568}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68a8cc4438b7cdf40b6a35c7fa61b5cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedMesh
+  game: 0
+  mesh: Ground/Volcanic/Tiles/Lake1Props
 --- !u!1 &6830499436137278922
 GameObject:
   m_ObjectHideFlags: 0
@@ -186,6 +217,7 @@ GameObject:
   - component: {fileID: 7646661849177373301}
   - component: {fileID: 3634705495833451919}
   - component: {fileID: 1145274209427045192}
+  - component: {fileID: 778717275446061475}
   m_Layer: 0
   m_Name: Light0
   m_TagString: Untagged
@@ -265,6 +297,21 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &778717275446061475
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7525504879448055722}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Ground/Materials/LightFF661A40
+  slot: 0
 --- !u!1 &9092848400891180071
 GameObject:
   m_ObjectHideFlags: 0
@@ -276,6 +323,8 @@ GameObject:
   - component: {fileID: 4248130068239133312}
   - component: {fileID: 7028733161054337611}
   - component: {fileID: 7842241422466335414}
+  - component: {fileID: 8089634636473006082}
+  - component: {fileID: 2198426050395927593}
   m_Layer: 0
   m_Name: Ground
   m_TagString: Untagged
@@ -355,6 +404,35 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &8089634636473006082
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9092848400891180071}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Ground/Volcanic/Tiles/Lake1
+  slot: 0
+--- !u!114 &2198426050395927593
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9092848400891180071}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68a8cc4438b7cdf40b6a35c7fa61b5cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedMesh
+  game: 0
+  mesh: Ground/Models/GroundTile
 --- !u!1 &9179309059533818740
 GameObject:
   m_ObjectHideFlags: 0

@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 1630299153129347685}
   - component: {fileID: 2163468789363405901}
   - component: {fileID: 3004855725546960189}
+  - component: {fileID: 7328663451268247969}
   m_Layer: 0
   m_Name: Light5
   m_TagString: Untagged
@@ -90,6 +91,21 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &7328663451268247969
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 10887472519863901}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Ground/Materials/LightFFCC8059
+  slot: 0
 --- !u!1 &320905393879119635
 GameObject:
   m_ObjectHideFlags: 0
@@ -101,6 +117,7 @@ GameObject:
   - component: {fileID: 4358563616717715194}
   - component: {fileID: 7861165137581578709}
   - component: {fileID: 273928534477543273}
+  - component: {fileID: 8288072646882689115}
   m_Layer: 0
   m_Name: Light3
   m_TagString: Untagged
@@ -180,6 +197,21 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &8288072646882689115
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 320905393879119635}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Ground/Materials/LightFFCC8059
+  slot: 0
 --- !u!1 &2332743608075079248
 GameObject:
   m_ObjectHideFlags: 0
@@ -191,6 +223,7 @@ GameObject:
   - component: {fileID: 1108054465104885624}
   - component: {fileID: 923348466229000461}
   - component: {fileID: 4493831297819466757}
+  - component: {fileID: 4543143840616242998}
   m_Layer: 0
   m_Name: Light2
   m_TagString: Untagged
@@ -270,6 +303,21 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &4543143840616242998
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2332743608075079248}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Ground/Materials/LightFFCC8059
+  slot: 0
 --- !u!1 &2787934047396950022
 GameObject:
   m_ObjectHideFlags: 0
@@ -281,6 +329,8 @@ GameObject:
   - component: {fileID: 2897504141979963940}
   - component: {fileID: 9095718664815143918}
   - component: {fileID: 2384954189364533319}
+  - component: {fileID: 6470335660723416898}
+  - component: {fileID: 4960696668212909749}
   m_Layer: 0
   m_Name: Props
   m_TagString: Untagged
@@ -360,6 +410,35 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &6470335660723416898
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2787934047396950022}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Ground/Materials/GroundPalette
+  slot: 0
+--- !u!114 &4960696668212909749
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2787934047396950022}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68a8cc4438b7cdf40b6a35c7fa61b5cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedMesh
+  game: 0
+  mesh: Ground/City/Tiles/City0Props
 --- !u!1 &3709801980538406488
 GameObject:
   m_ObjectHideFlags: 0
@@ -371,6 +450,7 @@ GameObject:
   - component: {fileID: 2486844386196324512}
   - component: {fileID: 8581535348597329618}
   - component: {fileID: 8862407150296267430}
+  - component: {fileID: 4036310056813493985}
   m_Layer: 0
   m_Name: Light0
   m_TagString: Untagged
@@ -450,6 +530,21 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &4036310056813493985
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3709801980538406488}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Ground/Materials/LightFFCC8059
+  slot: 0
 --- !u!1 &3807981640438182801
 GameObject:
   m_ObjectHideFlags: 0
@@ -461,6 +556,8 @@ GameObject:
   - component: {fileID: 3884524876292647839}
   - component: {fileID: 5577504205517041344}
   - component: {fileID: 6257987163771933948}
+  - component: {fileID: 9207944538956304993}
+  - component: {fileID: 3034474474015689259}
   m_Layer: 0
   m_Name: Ground
   m_TagString: Untagged
@@ -540,6 +637,35 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &9207944538956304993
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3807981640438182801}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Ground/City/Tiles/City0
+  slot: 0
+--- !u!114 &3034474474015689259
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3807981640438182801}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68a8cc4438b7cdf40b6a35c7fa61b5cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedMesh
+  game: 0
+  mesh: Ground/Models/GroundTile
 --- !u!1 &5879019026182447601
 GameObject:
   m_ObjectHideFlags: 0
@@ -551,6 +677,7 @@ GameObject:
   - component: {fileID: 143311749932458447}
   - component: {fileID: 1795860325550507574}
   - component: {fileID: 7680911367202182132}
+  - component: {fileID: 6496895067198519608}
   m_Layer: 0
   m_Name: Light4
   m_TagString: Untagged
@@ -630,6 +757,21 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &6496895067198519608
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5879019026182447601}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Ground/Materials/LightFFCC8059
+  slot: 0
 --- !u!1 &6012271965181087207
 GameObject:
   m_ObjectHideFlags: 0
@@ -672,6 +814,7 @@ GameObject:
   - component: {fileID: 7792737908767163839}
   - component: {fileID: 8630525133590524867}
   - component: {fileID: 3040844984422288610}
+  - component: {fileID: 8710696832134386633}
   m_Layer: 0
   m_Name: Light1
   m_TagString: Untagged
@@ -751,6 +894,21 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &8710696832134386633
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7669703342973267343}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Ground/Materials/LightFFCC8059
+  slot: 0
 --- !u!1 &8386054461639088872
 GameObject:
   m_ObjectHideFlags: 0

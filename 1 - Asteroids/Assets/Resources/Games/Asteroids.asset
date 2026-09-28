@@ -14,8 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   type: 1
   displayName: Asteroids
-  description: 'Fly through four sectors of space: split asteroids, dodge mines, comets and black holes, fight saucers, wasps and four bosses, and upgrade your guns. Twelve missions with three stars each, plus an endless mode.'
+  description: 'Fly through four sectors of space: split asteroids, dodge mines, comets and black holes, fight saucers, wasps and four bosses, and upgrade your guns. Then take the war to the planets in SHADOW STRIKE: nine missions of vertical scrolling air and ground combat, a Supply Room to spend your earnings in, and nine bosses. Co-op for up to four pilots.'
   icon: {fileID: 21300000, guid: 43cf11e63e82a3c47bd9794efea99b95, type: 3}
   sortOrder: 1
-  scenePath: Packages/com.skinnerboxes.asteroids/Scenes/Asteroids.unity
+  scenePath: Assets/Scenes/Asteroids.unity
+  extraScenePaths: []
+  theme: {fileID: 11400000, guid: 960c283ad36f2024c9250d0451d98986, type: 2}
+  themes:
+  - {fileID: 11400000, guid: 960c283ad36f2024c9250d0451d98986, type: 2}
+  - {fileID: 11400000, guid: 841800b646dff0f48967087adb339a3a, type: 2}
   scene: {fileID: 102900000, guid: 9fc0d4010bbf28b4594072e72b8655ab, type: 3}
+  extraScenes: []

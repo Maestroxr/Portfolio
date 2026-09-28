@@ -86,7 +86,7 @@ namespace Portfolio.MemoryCards
         private MemoryCardsPlayer Acting => versus != null && actingSeat >= 0 && actingSeat < seatPlayers.Count ? seatPlayers[actingSeat] : player;
 
         /// <summary>The colour points pop up in: the acting seat's in a versus game.</summary>
-        private Color PointsColor => versus != null && gameUI != null ? gameUI.VersusSeatColor(actingSeat) : gold;
+        private Color PointsColor => versus != null && gameUI != null ? gameUI.VersusSeatColor(actingSeat) : Gold;
 
         private bool CanPlayVersus(MemoryCardsLevel level)
         {
@@ -378,7 +378,7 @@ namespace Portfolio.MemoryCards
             }
             unflipTimer = -1f;
             sounds?.Play(sounds.mismatch, 0.7f, 0.85f);
-            gameUI?.ShowBanner("TIME'S UP!", $"{versus.CurrentSeat.Name} ran out of time", badColor, 1.1f);
+            gameUI?.ShowBanner("TIME'S UP!", $"{versus.CurrentSeat.Name} ran out of time", Bad, 1.1f);
             versus.PassTurn();
             After(1.1f, AnnounceTurn);
         }
@@ -440,7 +440,7 @@ namespace Portfolio.MemoryCards
                 {
                     sounds?.Play(sounds.mismatch, 0.7f, 0.85f);
                     string who = flip.Seat == localSeat ? "You" : versus.Seats[flip.Seat].Name;
-                    gameUI?.ShowBanner("TIME'S UP!", $"{who} ran out of time", badColor, 1.1f);
+                    gameUI?.ShowBanner("TIME'S UP!", $"{who} ran out of time", Bad, 1.1f);
                     bannerBusyUntil = Time.time + 1.1f;
                 }
                 return;
@@ -536,8 +536,7 @@ namespace Portfolio.MemoryCards
             }
             else
             {
-                int special = (int)shown.Kind - 1;
-                face = specialFaces != null && special >= 0 && special < specialFaces.Length ? specialFaces[special] : null;
+                face = SpecialFace(shown.Kind);
             }
             ViewOf(card)?.SetFace(face);
         }
@@ -612,7 +611,7 @@ namespace Portfolio.MemoryCards
             sounds?.Play(sounds.victory);
             List<VersusSeat> winners = versus.Winners();
             string title = winners.Count > 1 ? "IT'S A DRAW!" : winners[0].Seat == localSeat ? "YOU WIN!" : $"{winners[0].Name.ToUpperInvariant()} WINS!";
-            Color color = winners.Count > 1 ? gold : gameUI != null ? gameUI.VersusSeatColor(winners[0].Seat) : gold;
+            Color color = winners.Count > 1 ? Gold : gameUI != null ? gameUI.VersusSeatColor(winners[0].Seat) : Gold;
             gameUI?.ShowBanner(title, null, color, 1.6f);
             yield return new WaitForSeconds(1.9f);
 
@@ -641,10 +640,10 @@ namespace Portfolio.MemoryCards
             progress.RecordGame(sets, bestCombo);
             gameUI?.ShowResults(new RoundResult
             {
-                LevelTitle = level.IsCampaign ? $"{CampaignNumber(LevelIndex)}. {level.Title}" : level.Title,
+                LevelTitle = level.IsCampaign ? $"{CampaignNumber(LevelIndex)}. {TitleOf(LevelIndex)}" : TitleOf(LevelIndex),
                 Kind = level.Kind,
                 Victory = localWon,
-                Accent = winners.Count > 1 ? gold : color,
+                Accent = winners.Count > 1 ? Gold : color,
                 Versus = true,
                 Online = IsOnlineVersus,
                 VersusTitle = title,

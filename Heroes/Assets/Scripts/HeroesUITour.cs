@@ -95,10 +95,33 @@ namespace Portfolio.Heroes
             yield return new WaitForSecondsRealtime(2.5f);
             Write($"Back on the title: HUD shown {UI.Hud.IsShown}, title shown {UI.Title.IsShown}.");
             yield return Shot("title_back");
+            yield return OtherLook();
             Write("Tour over.");
             yield return new WaitForSeconds(0.5f);
             log?.Flush();
             Application.Quit();
+        }
+
+        /// <summary>
+        /// Steps to the next look the game lists while the title shows, as the settings row does (not remembered), shoots
+        /// the title redrawn in it without a reload, and goes back to the look the tour started with.
+        /// </summary>
+        private IEnumerator OtherLook()
+        {
+            if (GameThemes.Available(GameType.Heroes).Count < 2)
+            {
+                Write("One look only: no theme switch.");
+                yield break;
+            }
+            GameTheme before = GameThemes.Active(GameType.Heroes);
+            GameTheme other = GameThemes.SelectNext(GameType.Heroes, 1, false);
+            yield return new WaitForSecondsRealtime(1.5f);
+            Write($"Look switched from {before?.DisplayName} to {other?.DisplayName}: title shown {UI.Title.IsShown}, " +
+                  $"art {manager.Art?.name}, body font {UIKit.Art?.bodyFont?.name}.");
+            yield return Shot("title_other_look");
+            GameThemes.Select(GameType.Heroes, before, false);
+            yield return new WaitForSecondsRealtime(1f);
+            Write($"Look back to {GameThemes.Active(GameType.Heroes)?.DisplayName}: body font {UIKit.Art?.bodyFont?.name}.");
         }
 
         // ------------------------------------------------------------------ before a game

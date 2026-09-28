@@ -50,40 +50,53 @@ namespace Portfolio.Asteroids
         private Color shieldColor = new Color(0.35f, 0.8f, 1.6f);
 
 
-        /// <summary>Shows the model of <paramref name="hull"/> and moves the flames and gun to its engines and nose.</summary>
+        /// <summary>The hull shown last (a theme change shows it again in the new look).</summary>
+        public PlayerSettings Hull { get; private set; }
+
+
+        /// <summary>
+        /// Shows the model of <paramref name="hull"/> and moves the flames and gun to its engines and nose. The model, its
+        /// paint, its size and the engine colour come from the active theme's look of the hull when it has one
+        /// (<see cref="AsteroidsTheme.ShipLook"/>), else from the hull itself.
+        /// </summary>
         public void SetModel(PlayerSettings hull)
         {
             if (hull == null)
             {
                 return;
             }
-            if (modelFilter != null && hull.ModelMesh != null)
+            Hull = hull;
+            AsteroidsTheme.ShipLook look = AsteroidsThemes.Ship(hull.DisplayName);
+            Mesh mesh = look != null && look.mesh != null ? look.mesh : hull.ModelMesh;
+            Material paint = look != null && look.material != null ? look.material : hull.ModelMaterial;
+            float scale = look != null && look.scale > 0f ? look.scale : hull.ModelScale;
+            if (modelFilter != null && mesh != null)
             {
-                modelFilter.sharedMesh = hull.ModelMesh;
+                modelFilter.sharedMesh = mesh;
             }
-            if (modelRenderer != null && hull.ModelMaterial != null)
+            if (modelRenderer != null && paint != null)
             {
-                modelRenderer.sharedMaterial = hull.ModelMaterial;
+                modelRenderer.sharedMaterial = paint;
             }
             if (modelRoot != null)
             {
-                modelRoot.localScale = Vector3.one * hull.ModelScale;
+                modelRoot.localScale = Vector3.one * scale;
             }
             // The strike drop shadow is a flattened copy of the model ("Shadow/Flat/Model"): it follows the hull too.
             Transform shadowModel = transform.Find("Shadow/Flat/Model");
             if (shadowModel != null)
             {
                 MeshFilter shadowFilter = shadowModel.GetComponent<MeshFilter>();
-                if (shadowFilter != null && hull.ModelMesh != null)
+                if (shadowFilter != null && mesh != null)
                 {
-                    shadowFilter.sharedMesh = hull.ModelMesh;
+                    shadowFilter.sharedMesh = mesh;
                 }
                 if (modelFilter != null)
                 {
                     shadowModel.localScale = modelFilter.transform.localScale;
                 }
             }
-            engineColor = hull.EngineColor;
+            engineColor = look != null && look.engineColor.a > 0f ? look.engineColor : hull.EngineColor;
             Vector2[] engines = hull.EnginePoints ?? new Vector2[0];
             for (int i = 0; i < flames.Length; i++)
             {

@@ -57,7 +57,7 @@ namespace Portfolio.Heroes.EditorTools
                 Color color = bit.Tint.a > 0f ? bit.Tint * tint : tint;
                 HeroesArtBuilder.Piece(root.transform, bit.Model, new Vector3(bit.X, 0f, bit.Z), bit.Yaw, 1f, bit.Height, color);
             }
-            return HeroesArtBuilder.Save(root, $"Art/Generated/{folder}/{name}.prefab");
+            return HeroesArtBuilder.Save(root, $"{HeroesThemeSpec.Current.Generated}/{folder}/{name}.prefab");
         }
 
         private static GameObject Cluster(string name, string folder, params Bit[] bits)

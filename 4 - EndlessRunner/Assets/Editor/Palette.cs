@@ -20,7 +20,13 @@ namespace Portfolio.EndlessRunner.EditorTools
         HazardYellow, HazardBlack, FlagRed, FlagWhite,
         FlowerRed, FlowerYellow, FlowerPink, FlowerPurple, FlowerWhite, MushroomRed,
         Roof, RoofDark, Wall, Window,
-        GlowYellow, GlowWarm, GlowCyan, GlowMagenta, GlowOrange, GlowLava, GlowWhite, GlowGreen, GlowPurple, GlowRed, GlowBlue
+        GlowYellow, GlowWarm, GlowCyan, GlowMagenta, GlowOrange, GlowLava, GlowWhite, GlowGreen, GlowPurple, GlowRed, GlowBlue,
+        // The city at night (the Night Shift theme): muted concrete, steel and streetwear, and the neon that lights them.
+        Asphalt, AsphaltWet, Concrete, ConcreteDark, ConcreteLight, Steel, SteelDark, SteelLight, Iron, Tar,
+        Brick, BrickDark, Glass, WindowDark, WindowLit, NeonPink, NeonCyan, NeonAmber, NeonGreen, NeonRed, LampWhite,
+        TaxiYellow, TaxiDark, ConeOrange, ConeWhite, SignGreen, SignWhite, Gravel, TileWhite, TileGreen, Cable, Tarp,
+        Container1, Container2, Container3, Container4, ContainerDark, Chip, ChipRim,
+        Denim, DenimDark, Jacket, JacketDark, Sneaker, SneakerSole, Bag, BagStrap, Beard, Beanie
     }
 
 
@@ -71,7 +77,25 @@ namespace Portfolio.EndlessRunner.EditorTools
             { Swatch.GlowYellow, ("FFE066", 1f) }, { Swatch.GlowWarm, ("FFC266", 1f) }, { Swatch.GlowCyan, ("5CF2FF", 1f) },
             { Swatch.GlowMagenta, ("FF5CE1", 1f) }, { Swatch.GlowOrange, ("FF9A2E", 1f) }, { Swatch.GlowLava, ("FF5A14", 1.4f) },
             { Swatch.GlowWhite, ("FFFFFF", 1f) }, { Swatch.GlowGreen, ("6CFF7A", 1f) }, { Swatch.GlowPurple, ("B36CFF", 1f) },
-            { Swatch.GlowRed, ("FF4545", 1f) }, { Swatch.GlowBlue, ("59A8FF", 1f) }
+            { Swatch.GlowRed, ("FF4545", 1f) }, { Swatch.GlowBlue, ("59A8FF", 1f) },
+            { Swatch.Asphalt, ("2B2D31", 0f) }, { Swatch.AsphaltWet, ("1F2226", 0f) }, { Swatch.Concrete, ("8A8A86", 0f) },
+            { Swatch.ConcreteDark, ("5E5F5C", 0f) }, { Swatch.ConcreteLight, ("A9A8A2", 0f) }, { Swatch.Steel, ("6E7378", 0f) },
+            { Swatch.SteelDark, ("3C4045", 0f) }, { Swatch.SteelLight, ("9AA0A6", 0f) }, { Swatch.Iron, ("2A2C30", 0f) },
+            { Swatch.Tar, ("141517", 0f) }, { Swatch.Brick, ("6E3A30", 0f) }, { Swatch.BrickDark, ("4A2620", 0f) },
+            { Swatch.Glass, ("1E2A38", 0f) }, { Swatch.WindowDark, ("2A3442", 0f) }, { Swatch.WindowLit, ("FFC978", 0.45f) },
+            { Swatch.NeonPink, ("FF3F8E", 1.2f) }, { Swatch.NeonCyan, ("33E6FF", 1.2f) }, { Swatch.NeonAmber, ("FFB020", 1.1f) },
+            { Swatch.NeonGreen, ("5AFF7A", 1f) }, { Swatch.NeonRed, ("FF2E2E", 1.2f) }, { Swatch.LampWhite, ("F3F6FF", 1f) },
+            { Swatch.TaxiYellow, ("E8B923", 0f) }, { Swatch.TaxiDark, ("8F6F0F", 0f) }, { Swatch.ConeOrange, ("FF6A1F", 0f) },
+            { Swatch.ConeWhite, ("F2F2F2", 0.3f) }, { Swatch.SignGreen, ("1E6B3C", 0f) }, { Swatch.SignWhite, ("F5F5F5", 0.35f) },
+            { Swatch.Gravel, ("6F6A63", 0f) }, { Swatch.TileWhite, ("D8D4C8", 0f) }, { Swatch.TileGreen, ("3F6F63", 0f) },
+            { Swatch.Cable, ("1A1A1A", 0f) }, { Swatch.Tarp, ("3E5A8A", 0f) },
+            { Swatch.Container1, ("B03A2E", 0f) }, { Swatch.Container2, ("2F5F8F", 0f) }, { Swatch.Container3, ("3F7A4A", 0f) },
+            { Swatch.Container4, ("C7862B", 0f) }, { Swatch.ContainerDark, ("2A2A2A", 0f) }, { Swatch.Chip, ("5B6068", 0f) },
+            { Swatch.ChipRim, ("C9CED6", 0f) },
+            { Swatch.Denim, ("2F3A57", 0f) }, { Swatch.DenimDark, ("222B42", 0f) }, { Swatch.Jacket, ("23252B", 0f) },
+            { Swatch.JacketDark, ("16171B", 0f) }, { Swatch.Sneaker, ("2B2B2E", 0f) }, { Swatch.SneakerSole, ("DCDCD6", 0f) },
+            { Swatch.Bag, ("4A4E3A", 0f) }, { Swatch.BagStrap, ("2B2D24", 0f) }, { Swatch.Beard, ("3A2A22", 0f) },
+            { Swatch.Beanie, ("3B3B45", 0f) }
         };
 
         public static Color Color(Swatch swatch)

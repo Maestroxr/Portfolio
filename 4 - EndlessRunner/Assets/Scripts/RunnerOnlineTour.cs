@@ -16,7 +16,8 @@ namespace Portfolio.EndlessRunner
     /// takes the autopilot away after a while, which ends an endless run, and <c>-runner-races &lt;n&gt;</c> runs several
     /// races in the room. The log says who got which coins and what the track looked like, to compare between the
     /// players: no coin may count twice, and together they cannot have more than the track holds.
-    /// <c>-runner-online solo &lt;folder&gt;</c> plays the first level alone and offline the same way. Run the players with
+    /// <c>-runner-online solo &lt;folder&gt;</c> plays the first level (or the one after <c>-runner-level</c>) alone and
+    /// offline the same way, after a picture of every world of the campaign behind the level select. Run the players with
     /// <c>-gamebox-identity</c> to tell them apart, and <c>-gamebox-server</c> / <c>-gamebox-database</c> for a test server.
     /// </summary>
     public class RunnerOnlineTour : OnlineTour
@@ -194,11 +195,38 @@ namespace Portfolio.EndlessRunner
             Note($"in a race: {manager.InRace}; in a session: {manager.InSession}; in a room: {Server.InRoom}");
         }
 
-        /// <summary>The first level alone and offline: the game for one has to play as it always did.</summary>
+        /// <summary>A level alone and offline: the game for one has to play as it always did.</summary>
         private IEnumerator Solo()
         {
-            manager.SelectLevel(0);
-            manager.PlaySelectedLevel();
+            // Another look picked on the level select redraws it at once, without loading the scene again.
+            GameTheme look = GameThemes.Active(GameType.EndlessRunner);
+            if (look != null && GameThemes.Available(GameType.EndlessRunner).Count > 1)
+            {
+                GameTheme other = GameThemes.SelectNext(GameType.EndlessRunner, 1, false);
+                yield return new WaitForSeconds(1.5f);
+                yield return Shot("00_level_select_switched");
+                GameThemes.Select(GameType.EndlessRunner, look, false);
+                yield return new WaitForSeconds(1.5f);
+                yield return Shot("00_level_select_back");
+                Note($"switched the look to {other.DisplayName} on the level select and back to {look.DisplayName}");
+            }
+            // Every world of the campaign behind the level select, in the theme this player shows.
+            RunnerTheme shown = null;
+            for (int i = 0; i < manager.LevelCount; i++)
+            {
+                if (!(manager.Campaign[i] is RunnerLevel candidate) || candidate.IsEndless || candidate.Theme == shown)
+                {
+                    continue;
+                }
+                shown = candidate.Theme;
+                manager.SelectLevel(i);
+                yield return new WaitForSeconds(1.5f);
+                yield return Shot($"01_world_{i + 1}");
+            }
+            int level = Mathf.Clamp(NumberArgument(LevelArgument, 0), 0, Mathf.Max(0, manager.LevelCount - 1));
+            manager.SelectLevel(level);
+            yield return new WaitForSeconds(0.5f);
+            manager.PlayLevel(level);
             yield return WaitFor(() => manager.IsGameRunning, 10f, "the run");
             Note($"running alone: in a session {manager.InSession}, in a race {manager.InRace}; the track holds {manager.track.LevelCoins} coins; "
                 + $"layout of the first 250 m: {manager.track.LayoutHash(250f):X8}");

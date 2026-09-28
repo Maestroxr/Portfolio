@@ -138,6 +138,46 @@ namespace Portfolio.MemoryCards
             rect = (RectTransform)transform;
         }
 
+        /// <summary>Gives the card the sprites and colours of <paramref name="look"/>; nothing changes without one.</summary>
+        public void ApplyLook(MemoryCardsTheme look)
+        {
+            if (look == null)
+            {
+                return;
+            }
+            MemoryCardsTheme.CardLook card = look.Card;
+            Swap(shadow, card.shadow);
+            Swap(front, card.front);
+            Swap(glow, card.glow);
+            Swap(badge, card.badge);
+            iceSprite = card.ice != null ? card.ice : iceSprite;
+            crackedIceSprite = card.crackedIce != null ? card.crackedIce : crackedIceSprite;
+            if (ice != null && ice.gameObject.activeSelf)
+            {
+                ice.sprite = frozen ? iceSprite : crackedIceSprite;
+            }
+            matchGlow = look.Colors.matchGlow;
+            mistakeTint = look.Colors.mistakeTint;
+            wiltTint = look.Colors.wiltTint;
+        }
+
+        /// <summary>Changes the back of the card (the theme changed during a round).</summary>
+        public void SetBack(Sprite backSprite)
+        {
+            if (back != null && backSprite != null)
+            {
+                back.sprite = backSprite;
+            }
+        }
+
+        private static void Swap(Image image, Sprite sprite)
+        {
+            if (image != null && sprite != null)
+            {
+                image.sprite = sprite;
+            }
+        }
+
         /// <summary>Puts the card face down at <paramref name="slotPosition"/> with its sprites and ice, every animation stopped.</summary>
         public void Setup(int index, Sprite backSprite, Sprite faceSprite, bool isFrozen, Vector2 size, Vector2 slotPosition)
         {

@@ -52,6 +52,12 @@ namespace Portfolio.Heroes
         [SerializeField] private GameObject[] banners = new GameObject[0];
 
         private readonly HexGrid field = new HexGrid(BattleState.FieldColumns, BattleState.FieldRows);
+
+        // The props of a siege: the art's (the theme's own), else the ones the scene was built with.
+        private GameObject Gate => art != null && art.siegeGate != null ? art.siegeGate : gate;
+        private GameObject Ruin => art != null && art.siegeRuin != null ? art.siegeRuin : ruin;
+        private GameObject Stones => art != null && art.siegeStones != null ? art.siegeStones : stones;
+        private GameObject[] Banners => art != null && art.siegeBanners != null && art.siegeBanners.Length > 0 ? art.siegeBanners : banners;
         private Vector2 size;
         private Terrain terrain;
         private TerrainData ground;
@@ -149,7 +155,8 @@ namespace Portfolio.Heroes
                 SceneManager.MoveGameObjectToScene(root, made);
                 found = root.AddComponent<BattlefieldScene>();
             }
-            if (found.art == null)
+            // The art of the game's theme, over the one the scene was built with, so a battle is fought in the theme's look.
+            if (art != null)
             {
                 found.art = art;
             }
@@ -372,8 +379,8 @@ namespace Portfolio.Heroes
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.Linear;
             RenderSettings.fogColor = sky != null ? sky.fog : new Color(0.62f, 0.68f, 0.75f);
-            RenderSettings.fogStartDistance = 75f;
-            RenderSettings.fogEndDistance = 290f;
+            RenderSettings.fogStartDistance = sky != null && sky.fogEnd > sky.fogStart ? sky.fogStart : 75f;
+            RenderSettings.fogEndDistance = sky != null && sky.fogEnd > sky.fogStart ? sky.fogEnd : 290f;
             view.backgroundColor = RenderSettings.fogColor;
             DynamicGI.UpdateEnvironment();
         }
@@ -569,7 +576,7 @@ namespace Portfolio.Heroes
         /// <summary>A breach in the wall at <paramref name="z"/>: loose stones of the wall on its ground, either side of the line.</summary>
         private void Breach(float z, float half, System.Random rubble)
         {
-            if (stones == null)
+            if (Stones == null)
             {
                 return;
             }
@@ -577,7 +584,7 @@ namespace Portfolio.Heroes
             {
                 var at = new Vector3(wallLine + side * (0.55f + (float)rubble.NextDouble() * 0.6f), 0f, z + Spread(rubble, half * 0.7f));
                 at.y = HeightAt(at.x, at.z);
-                GameObject piece = Instantiate(stones, props);
+                GameObject piece = Instantiate(Stones, props);
                 piece.transform.SetPositionAndRotation(at, Quaternion.Euler(0f, rubble.Next(360), 0f));
             }
         }
@@ -589,11 +596,11 @@ namespace Portfolio.Heroes
         /// </summary>
         private void Gatehouse(float z)
         {
-            if (gate == null)
+            if (Gate == null)
             {
                 return;
             }
-            GameObject house = OnLine(gate, z);
+            GameObject house = OnLine(Gate, z);
             house.name = "Gate";
             Transform bridge = house.transform.Find("Drawbridge");
             if (!Measure(house, out Bounds bounds, bridge))
@@ -601,7 +608,8 @@ namespace Portfolio.Heroes
                 return;
             }
             int color = townColor >= 0 && townColor < 4 ? townColor : 4;
-            GameObject banner = color < banners.Length ? banners[color] : null;
+            GameObject[] hung = Banners;
+            GameObject banner = hung != null && color < hung.Length ? hung[color] : null;
             if (banner != null)
             {
                 for (int end = -1; end <= 1; end += 2)
@@ -632,12 +640,12 @@ namespace Portfolio.Heroes
         /// <summary>A heap of the wall's stones on the ground at <paramref name="at"/> (its height is found there).</summary>
         private void Heap(Vector3 at, float scale, System.Random rubble)
         {
-            if (ruin == null)
+            if (Ruin == null)
             {
                 return;
             }
             at.y = HeightAt(at.x, at.z) - 0.05f;
-            GameObject heap = Instantiate(ruin, props);
+            GameObject heap = Instantiate(Ruin, props);
             heap.transform.SetPositionAndRotation(at, Quaternion.Euler(0f, rubble.Next(360), 0f));
             heap.transform.localScale *= scale;
         }

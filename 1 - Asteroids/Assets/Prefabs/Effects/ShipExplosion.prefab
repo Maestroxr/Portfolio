@@ -78,6 +78,7 @@ GameObject:
   - component: {fileID: 2246115449663482009}
   - component: {fileID: 3726006736401482478}
   - component: {fileID: 8103675351394244347}
+  - component: {fileID: 4464329599163988299}
   m_Layer: 0
   m_Name: Ring
   m_TagString: Untagged
@@ -157,6 +158,21 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &4464329599163988299
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1314921623695896730}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Materials/ParticleRing
+  slot: 0
 --- !u!1 &2552080865714440740
 GameObject:
   m_ObjectHideFlags: 0
@@ -265,6 +281,7 @@ GameObject:
   - component: {fileID: 7233749162844815351}
   - component: {fileID: 4779414873540569786}
   - component: {fileID: 3747694697160861256}
+  - component: {fileID: 8921108744413975180}
   m_Layer: 0
   m_Name: Hull
   m_TagString: Untagged
@@ -2574,6 +2591,21 @@ ParticleSystemRenderer:
   m_MeshWeighting1: 1
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
+--- !u!114 &8921108744413975180
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2787500444542779127}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Materials/Debris
+  slot: 0
 --- !u!1 &3354360454901963855
 GameObject:
   m_ObjectHideFlags: 0
@@ -2585,6 +2617,7 @@ GameObject:
   - component: {fileID: 2888142269561863761}
   - component: {fileID: 5793077123777049684}
   - component: {fileID: 8810686429321807183}
+  - component: {fileID: 4077094295141574773}
   m_Layer: 0
   m_Name: Fire
   m_TagString: Untagged
@@ -4894,6 +4927,21 @@ ParticleSystemRenderer:
   m_MeshWeighting1: 1
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
+--- !u!114 &4077094295141574773
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3354360454901963855}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Materials/ParticleAdd
+  slot: 0
 --- !u!1 &6001588536079831888
 GameObject:
   m_ObjectHideFlags: 0
@@ -4905,6 +4953,7 @@ GameObject:
   - component: {fileID: 7700617939981630722}
   - component: {fileID: 7181262475518911962}
   - component: {fileID: 8527672301678948834}
+  - component: {fileID: 907905191263058896}
   m_Layer: 0
   m_Name: Sparks
   m_TagString: Untagged
@@ -7214,6 +7263,21 @@ ParticleSystemRenderer:
   m_MeshWeighting1: 1
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
+--- !u!114 &907905191263058896
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6001588536079831888}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Materials/ParticleSpark
+  slot: 0
 --- !u!1 &6391625434166778945
 GameObject:
   m_ObjectHideFlags: 0
@@ -7225,6 +7289,7 @@ GameObject:
   - component: {fileID: 2321578650022962981}
   - component: {fileID: 2604090351130994801}
   - component: {fileID: 701516939631329581}
+  - component: {fileID: 5722282178541574583}
   m_Layer: 0
   m_Name: Flare
   m_TagString: Untagged
@@ -9534,6 +9599,21 @@ ParticleSystemRenderer:
   m_MeshWeighting1: 1
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
+--- !u!114 &5722282178541574583
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6391625434166778945}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Materials/ParticleFlare
+  slot: 0
 --- !u!1 &8849322058291968624
 GameObject:
   m_ObjectHideFlags: 0
@@ -9545,6 +9625,7 @@ GameObject:
   - component: {fileID: 1039878063215251032}
   - component: {fileID: 4988772330856319533}
   - component: {fileID: 2950616243859174111}
+  - component: {fileID: 331683148647299965}
   m_Layer: 0
   m_Name: Smoke
   m_TagString: Untagged
@@ -11854,3 +11935,18 @@ ParticleSystemRenderer:
   m_MeshWeighting1: 1
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
+--- !u!114 &331683148647299965
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8849322058291968624}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Materials/ParticleSmoke
+  slot: 0

@@ -53,8 +53,17 @@ namespace Portfolio.Asteroids.EditorTools
         public Action<TilePlan, System.Random, float> Scatter;
         /// <summary>Buildings beside a base pad.</summary>
         public Action<TilePlan, System.Random> BaseDressing;
+        /// <summary>The generated theme this is the neon grid world of: no detail layers, no props, tiles on the NeonGround shader.</summary>
+        public ThemeSpec Neon;
 
-        public string Folder => $"Art/Ground/{Name}";
+        /// <summary>Where the world's art goes.</summary>
+        public string Folder => Neon != null ? $"{Neon.ArtFolder}/Ground" : $"Art/Ground/{Name}";
+
+        /// <summary>Where the world's tile prefabs go, under Prefabs/.</summary>
+        public string PrefabFolder => Neon != null ? $"Themes/{Neon.Name}/Terrain" : $"Strike/Terrain/{Name}";
+
+        /// <summary>Where the world's StrikeTheme asset goes.</summary>
+        public string AssetPath => Neon != null ? $"{Neon.ConfigFolder}/{Name}.asset" : $"Config/Strike/Themes/{Name}.asset";
     }
 
 
@@ -215,6 +224,10 @@ namespace Portfolio.Asteroids.EditorTools
             {
                 BuildTheme(theme);
             }
+            foreach (GroundTheme theme in GeneratedGroundThemes)
+            {
+                BuildTheme(theme);
+            }
             BuildGroundUnitMeshes();
         }
 
@@ -242,6 +255,11 @@ namespace Portfolio.Asteroids.EditorTools
 
         private static void BuildTheme(GroundTheme theme)
         {
+            if (theme.Neon != null)
+            {
+                BuildNeonTheme(theme);
+                return;
+            }
             var layers = new Texture2D[LayerNames.Length];
             for (int i = 0; i < LayerNames.Length; i++)
             {

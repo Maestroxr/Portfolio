@@ -11,7 +11,25 @@ namespace Portfolio.EndlessRunner
         Dust,
         Snow,
         Fireflies,
-        Embers
+        Embers,
+        Rain,
+        Ash
+    }
+
+
+    /// <summary>How a piece of scenery is turned where it stands.</summary>
+    public enum SceneryFacing
+    {
+        /// <summary>Any way: trees, rocks, bushes.</summary>
+        Any,
+        /// <summary>Square to the road (a quarter turn at a time): buildings, containers.</summary>
+        Square,
+        /// <summary>Along the road, one way or the other: parked cars, walls, things that span the road.</summary>
+        Along,
+        /// <summary>Its front (the -z side of the model) toward the road: shops, billboards, lights over the road.</summary>
+        Road,
+        /// <summary>Its front (the -z side of the model) toward the runner coming down the road: signs and signals.</summary>
+        Oncoming
     }
 
 
@@ -24,6 +42,20 @@ namespace Portfolio.EndlessRunner
         [Tooltip("Distance from the middle of the road, in meters.")]
         public Vector2 distance = new Vector2(7f, 30f);
         public Vector2 scale = new Vector2(0.8f, 1.3f);
+        public SceneryFacing facing = SceneryFacing.Any;
+
+        /// <summary>The turn of a piece standing at <paramref name="x"/>, from a random angle (so every facing draws the same random numbers).</summary>
+        public float Yaw(float random, float x)
+        {
+            switch (facing)
+            {
+                case SceneryFacing.Square: return Mathf.Round(random / 90f) % 4 * 90f;
+                case SceneryFacing.Along: return random < 180f ? 0f : 180f;
+                case SceneryFacing.Road: return x < 0f ? 270f : 90f;
+                case SceneryFacing.Oncoming: return 0f;
+                default: return random;
+            }
+        }
     }
 
 
@@ -68,6 +100,8 @@ namespace Portfolio.EndlessRunner
         public Material stripes;
         public Material curbs;
         public Material ground;
+        [Tooltip("The rock walls of a chasm.")]
+        public Material cliff;
         public Material chasmFill;
         public Color dustColor = new Color(0.8f, 0.72f, 0.55f, 0.6f);
 
@@ -84,14 +118,14 @@ namespace Portfolio.EndlessRunner
 
         [NonSerialized] private Material[] tileMaterials;
 
-        /// <summary>Materials of a road tile's submeshes: road, stripes, curbs, ground.</summary>
+        /// <summary>Materials of a road tile's submeshes: road, stripes, curbs, ground, and the cliffs of a chasm tile.</summary>
         public Material[] TileMaterials
         {
             get
             {
-                if (tileMaterials == null || tileMaterials.Length != 4)
+                if (tileMaterials == null || tileMaterials.Length != 5)
                 {
-                    tileMaterials = new[] { road, stripes, curbs, ground };
+                    tileMaterials = new[] { road, stripes, curbs, ground, cliff };
                 }
                 return tileMaterials;
             }

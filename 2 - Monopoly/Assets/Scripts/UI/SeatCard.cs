@@ -113,23 +113,26 @@ namespace Portfolio.Monopoly
                 return;
             }
             Color color = MonopolyStyle.PlayerColor(index);
+            band.color = color;
+            badge.color = color;
             token.sprite = tokens?.Invoke(seat.token);
+            token.color = MonopolyStyle.TextOn(color);
             tokenName.text = MonopolyStyle.TokenNames[Mathf.Clamp(seat.token, 0, MonopolyStyle.TokenCount - 1)];
             for (int i = 0; i < kindBackgrounds.Length; i++)
             {
                 bool on = (int)seat.kind == i;
-                kindBackgrounds[i].color = on ? (i == 2 ? MonopolyStyle.Muted : color) : Color.white;
+                kindBackgrounds[i].color = on ? (i == 2 ? MonopolyStyle.Muted : color) : MonopolyStyle.Paper;
                 TMP_Text label = kinds[i].GetComponentInChildren<TMP_Text>();
                 if (label != null)
                 {
-                    label.color = on ? Color.white : MonopolyStyle.Ink;
+                    label.color = on ? MonopolyStyle.TextOn(kindBackgrounds[i].color) : MonopolyStyle.Ink;
                 }
             }
             levelRow.SetActive(seat.kind == SeatKind.Computer);
             for (int i = 0; i < levelBackgrounds.Length; i++)
             {
                 bool on = (int)seat.level == i;
-                levelBackgrounds[i].color = on ? MonopolyStyle.Ink : Color.white;
+                levelBackgrounds[i].color = on ? MonopolyStyle.Plate : MonopolyStyle.Paper;
                 TMP_Text label = levels[i].GetComponentInChildren<TMP_Text>();
                 if (label != null)
                 {

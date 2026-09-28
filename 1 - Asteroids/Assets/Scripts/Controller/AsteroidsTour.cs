@@ -137,6 +137,15 @@ namespace Portfolio.Asteroids
                     case "menu":
                         yield return Menu();
                         break;
+                    case "hangar":
+                        yield return Hangar();
+                        break;
+                    case "settings":
+                        yield return Settings();
+                        break;
+                    case "theme":
+                        yield return SwitchTheme();
+                        break;
                     case "shop":
                         yield return Shop();
                         break;
@@ -227,6 +236,64 @@ namespace Portfolio.Asteroids
                 manager.SelectMission(strikes[0]);
                 yield return Wait(0.5f);
             }
+        }
+
+
+        /// <summary>The hangar over the field tab of the mission select: opened, pictured and closed again.</summary>
+        private IEnumerator Hangar()
+        {
+            yield return ToMenu();
+            manager.SelectMode(MissionMode.Field);
+            yield return Wait(0.8f);
+            var screens = manager.UI as AsteroidsUI;
+            if (screens == null)
+            {
+                Note("hangar: no AsteroidsUI");
+                yield break;
+            }
+            screens.ShowHangar();
+            yield return Wait(1f);
+            yield return Shot("hangar");
+            screens.HideHangar();
+            yield return Wait(0.3f);
+        }
+
+
+        /// <summary>The settings panel of the shared menu (with the theme choice), opened from the mission select and closed again.</summary>
+        private IEnumerator Settings()
+        {
+            yield return ToMenu();
+            var screens = manager.UI as AsteroidsUI;
+            if (screens == null)
+            {
+                Note("settings: no AsteroidsUI");
+                yield break;
+            }
+            screens.ShowSettings();
+            yield return Wait(0.8f);
+            yield return Shot("settings");
+            screens.HideSettings();
+            yield return Wait(0.3f);
+        }
+
+
+        /// <summary>
+        /// Switches the game to its next theme while the mission select shows (not remembered), pictures the redrawn
+        /// mission select, and switches back: the live redraw of a theme change.
+        /// </summary>
+        private IEnumerator SwitchTheme()
+        {
+            yield return ToMenu();
+            manager.SelectMode(MissionMode.Field);
+            yield return Wait(0.5f);
+            GameTheme before = GameThemes.Active(GameType.Asteroids);
+            GameTheme next = GameThemes.SelectNext(GameType.Asteroids, 1, false);
+            Note($"theme: {(before != null ? before.DisplayName : "none")} -> {(next != null ? next.DisplayName : "none")}");
+            yield return Wait(1.2f);
+            yield return Shot("theme_switched");
+            GameThemes.Select(GameType.Asteroids, before, false);
+            yield return Wait(0.8f);
+            yield return Shot("theme_back");
         }
 
 

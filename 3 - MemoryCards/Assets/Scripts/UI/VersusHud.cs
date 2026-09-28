@@ -40,6 +40,20 @@ namespace Portfolio.MemoryCards
         private int count;
         private int current = -1;
 
+        /// <summary>Takes the seat colours of <paramref name="palette"/>; nothing changes without one.</summary>
+        public void ApplyLook(MemoryCardsTheme.Palette palette)
+        {
+            if (palette == null)
+            {
+                return;
+            }
+            if (palette.seats != null && palette.seats.Count > 0)
+            {
+                seatColors = palette.seats.ToArray();
+            }
+            hurryColor = palette.hurry;
+        }
+
         public Color SeatColor(int seat)
         {
             return seatColors != null && seatColors.Length > 0 ? seatColors[Mathf.Abs(seat) % seatColors.Length] : Color.white;

@@ -44,6 +44,8 @@ GameObject:
   - component: {fileID: 1289772059769580579}
   - component: {fileID: 4561849692270890721}
   - component: {fileID: 4235791076556084676}
+  - component: {fileID: 7556304866936438883}
+  - component: {fileID: 5085793584261519113}
   m_Layer: 0
   m_Name: Model
   m_TagString: Untagged
@@ -123,6 +125,35 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &7556304866936438883
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1850478422558677040}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: StarSparrow/Materials/BonusContent/Missile
+  slot: 0
+--- !u!114 &5085793584261519113
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1850478422558677040}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68a8cc4438b7cdf40b6a35c7fa61b5cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedMesh
+  game: 0
+  mesh: StarSparrow/Meshes/BonusContent/MissilesSample#MissileBomb
 --- !u!1 &3653944749289852137
 GameObject:
   m_ObjectHideFlags: 0
@@ -207,6 +238,7 @@ GameObject:
   - component: {fileID: 5768447491239493790}
   - component: {fileID: 2430177919507234293}
   - component: {fileID: 912543422272697939}
+  - component: {fileID: 3862133980512722668}
   m_Layer: 0
   m_Name: Glow
   m_TagString: Untagged
@@ -286,3 +318,18 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &3862133980512722668
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8390821328430024931}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Strike/Materials/StrikeBombGlow
+  slot: 0

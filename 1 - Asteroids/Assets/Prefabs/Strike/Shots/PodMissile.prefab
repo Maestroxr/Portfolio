@@ -85,6 +85,7 @@ GameObject:
   - component: {fileID: 5690379830482612784}
   - component: {fileID: 1893186178007659551}
   - component: {fileID: 7923494557385728237}
+  - component: {fileID: 344017642603271705}
   m_Layer: 0
   m_Name: Exhaust
   m_TagString: Untagged
@@ -2372,6 +2373,21 @@ ParticleSystemRenderer:
   m_MeshWeighting1: 1
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
+--- !u!114 &344017642603271705
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2532469437528469747}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Materials/ParticleSmoke
+  slot: 0
 --- !u!1 &4549319279574485776
 GameObject:
   m_ObjectHideFlags: 0
@@ -2416,6 +2432,7 @@ GameObject:
   - component: {fileID: 8097714732257478160}
   - component: {fileID: 1432690667573268249}
   - component: {fileID: 4560940804802879872}
+  - component: {fileID: 3180730161036486841}
   m_Layer: 0
   m_Name: Glow
   m_TagString: Untagged
@@ -2495,6 +2512,21 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &3180730161036486841
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4660636887351912025}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Strike/Materials/MissileFlame
+  slot: 0
 --- !u!1 &5327922773640024237
 GameObject:
   m_ObjectHideFlags: 0
@@ -2506,6 +2538,8 @@ GameObject:
   - component: {fileID: 2393095416984975843}
   - component: {fileID: 1049541977052533721}
   - component: {fileID: 104726879649460070}
+  - component: {fileID: 8699062269622694150}
+  - component: {fileID: 5989541274440934652}
   m_Layer: 0
   m_Name: Model
   m_TagString: Untagged
@@ -2585,3 +2619,32 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &8699062269622694150
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5327922773640024237}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: StarSparrow/Materials/BonusContent/Missile
+  slot: 0
+--- !u!114 &5989541274440934652
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5327922773640024237}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68a8cc4438b7cdf40b6a35c7fa61b5cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedMesh
+  game: 0
+  mesh: StarSparrow/Meshes/BonusContent/MissilesSample#MissileViking

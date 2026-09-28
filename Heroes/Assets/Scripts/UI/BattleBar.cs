@@ -29,7 +29,7 @@ namespace Portfolio.Heroes.UI
         /// <summary>The width of the clock at the start of the round's line, which the round's number leaves free while it shows.</summary>
         private const float ClockWidth = 76f;
 
-        private static readonly Color AutoOn = new Color(1f, 0.82f, 0.35f, 0.9f);
+        private static Color AutoOn => HeroesTheme.Palette.Active.Accent(new Color(1f, 0.82f, 0.35f, 0.9f));
 
         private HeroesGameManager manager;
         private RectTransform root;

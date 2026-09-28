@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Portfolio.MemoryCards.EditorTools
 {
-    /// <summary>What the generators need to know about one world: names, colours, card back pattern and animals.</summary>
+    /// <summary>What the generators need to know about one world: names, colours, card back pattern and emblem, and the faces dealt there.</summary>
     internal sealed class WorldSpec
     {
         public string Id;
@@ -15,6 +15,8 @@ namespace Portfolio.MemoryCards.EditorTools
         public string Card;
         public string CardDark;
         public CardPattern Pattern;
+        /// <summary>The emblem in the medallion of the card back.</summary>
+        public CardEmblem Emblem;
         public string Ambient;
         public Color AmbientColor;
         public AmbientMotion Motion;
@@ -25,7 +27,7 @@ namespace Portfolio.MemoryCards.EditorTools
     }
 
 
-    /// <summary>The four worlds of the campaign and the thirty animals of the game.</summary>
+    /// <summary>The four worlds of the original campaign and the thirty animals of the game (the Classic theme).</summary>
     internal static class WorldSpecs
     {
         /// <summary>Every animal (the renders in Art/Animals), in the order save games refer to them.</summary>

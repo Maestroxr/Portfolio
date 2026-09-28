@@ -1,0 +1,234 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 20384e3089784a978676af9d46ed4d51, type: 3}
+  m_Name: Classic
+  m_EditorClassIdentifier: Skinnerboxes.Monopoly::Portfolio.Monopoly.MonopolyTheme
+  displayName: Classic
+  description: 'The World Tour edition: a mint board on a wooden table, pewter figures and white title deeds.'
+  preview: {fileID: 21300000, guid: 7436435c30eeaf643bc6ade01b5ccc18, type: 3}
+  fonts:
+    body: {fileID: 11400000, guid: 4c55c6c999e3b9e4e98bdf5f18f43761, type: 2}
+    bodyMaterial: {fileID: 5004319148839848670, guid: 4c55c6c999e3b9e4e98bdf5f18f43761, type: 2}
+    title: {fileID: 11400000, guid: 5a4fa5257a95ba14c87191285b0af298, type: 2}
+    titleMaterial: {fileID: 2100000, guid: 7689543524adc5b47ac336c3663a00ef, type: 2}
+  menu:
+    backdrop: {fileID: 21300000, guid: 9ee66034d15bad04da16f65cbdd32e55, type: 3}
+    backdropColor: {r: 0.105882354, g: 0.13725491, b: 0.1882353, a: 0.35}
+    window: {fileID: 21300000, guid: a2f430e843c8e8c4cbb93691f0a9df57, type: 3}
+    windowColor: {r: 1, g: 1, b: 1, a: 1}
+    tileWindow: 0
+    settingsWindow: {fileID: 21300000, guid: a2f430e843c8e8c4cbb93691f0a9df57, type: 3}
+    headerBanner: {fileID: 21300000, guid: 7436435c30eeaf643bc6ade01b5ccc18, type: 3}
+    rowsBackground: {fileID: 21300000, guid: a2f430e843c8e8c4cbb93691f0a9df57, type: 3}
+    rowsColor: {r: 0.96862745, g: 0.972549, b: 0.98039216, a: 1}
+    rowBackground: {fileID: 21300000, guid: a2f430e843c8e8c4cbb93691f0a9df57, type: 3}
+    rowColor: {r: 1, g: 1, b: 1, a: 1}
+    button: {fileID: 21300000, guid: a2f430e843c8e8c4cbb93691f0a9df57, type: 3}
+    buttonHover: {fileID: 21300000, guid: a2f430e843c8e8c4cbb93691f0a9df57, type: 3}
+    buttonPressed: {fileID: 21300000, guid: a2f430e843c8e8c4cbb93691f0a9df57, type: 3}
+    buttonDisabled: {fileID: 21300000, guid: a2f430e843c8e8c4cbb93691f0a9df57, type: 3}
+    arrowButton: {fileID: 21300000, guid: aa9327a4696f14b4085494b472d6f41a, type: 3}
+    track: {fileID: 21300000, guid: a2f430e843c8e8c4cbb93691f0a9df57, type: 3}
+    fill: {fileID: 21300000, guid: a2f430e843c8e8c4cbb93691f0a9df57, type: 3}
+    fillColor: {r: 0.09019608, g: 0.6392157, b: 0.2901961, a: 1}
+    knob: {fileID: 21300000, guid: aa9327a4696f14b4085494b472d6f41a, type: 3}
+    checkBox: {fileID: 21300000, guid: a2f430e843c8e8c4cbb93691f0a9df57, type: 3}
+    checkMark: {fileID: 21300000, guid: aa9327a4696f14b4085494b472d6f41a, type: 3}
+    headerColor: {r: 0.105882354, g: 0.13725491, b: 0.1882353, a: 1}
+    textColor: {r: 0.105882354, g: 0.13725491, b: 0.1882353, a: 1}
+    valueColor: {r: 0.54901963, g: 0.5882353, b: 0.64705884, a: 1}
+    buttonTextColor: {r: 0.105882354, g: 0.13725491, b: 0.1882353, a: 1}
+    errorColor: {r: 0.89411765, g: 0, b: 0.16862746, a: 1}
+  slots:
+    sprites: []
+    materials: []
+    textures: []
+    prefabs: []
+    meshes: []
+    fonts: []
+    clips: []
+    colors: []
+  editionLabel: WORLD TOUR EDITION
+  palette:
+    red: {r: 0.89411765, g: 0, b: 0.16862746, a: 1}
+    darkRed: {r: 0.65882355, g: 0, b: 0.12156863, a: 1}
+    ink: {r: 0.105882354, g: 0.13725491, b: 0.1882353, a: 1}
+    paper: {r: 1, g: 1, b: 1, a: 1}
+    panel: {r: 0.96862745, g: 0.972549, b: 0.98039216, a: 1}
+    soft: {r: 0.93333334, g: 0.94509804, b: 0.9607843, a: 1}
+    mint: {r: 0.83137256, g: 0.91764706, b: 0.8352941, a: 1}
+    green: {r: 0.09019608, g: 0.6392157, b: 0.2901961, a: 1}
+    blue: {r: 0.11372549, g: 0.43529412, b: 0.84705883, a: 1}
+    gold: {r: 0.9607843, g: 0.7019608, b: 0.003921569, a: 1}
+    muted: {r: 0.54901963, g: 0.5882353, b: 0.64705884, a: 1}
+    chanceOrange: {r: 0.9607843, g: 0.50980395, b: 0.1254902, a: 1}
+    chestBlue: {r: 0.12156863, g: 0.5411765, b: 0.79607844, a: 1}
+    shadow: {r: 0, g: 0.02, b: 0.08, a: 0.35}
+  print:
+    ink: {r: 0.105882354, g: 0.13725491, b: 0.1882353, a: 1}
+    city: {r: 0.37411764, g: 0.41294116, b: 0.37588236, a: 1}
+    utilityIcon: {r: 0.12156863, g: 0.43529412, b: 0.69803923, a: 1}
+    taxIcon: {r: 0.81666666, g: 0.5966667, b: 0.0033333336, a: 1}
+    go: {r: 0.89411765, g: 0, b: 0.16862746, a: 1}
+    officer: {r: 0.11372549, g: 0.43529412, b: 0.84705883, a: 1}
+    chanceMark: {r: 0.9607843, g: 0.50980395, b: 0.1254902, a: 1}
+    chestIcon: {r: 0.12156863, g: 0.5411765, b: 0.79607844, a: 1}
+    mortgaged: {r: 1, g: 0.3019608, b: 0.36862746, a: 1}
+    deckWords: {r: 1, g: 1, b: 1, a: 1}
+    logoWord: {r: 1, g: 1, b: 1, a: 1}
+    edition: {r: 0.105882354, g: 0.13725491, b: 0.1882353, a: 1}
+  groups:
+  - name: Brown
+    color: {r: 0.5568628, g: 0.3529412, b: 0.23529412, a: 1}
+    textColor: {r: 1, g: 1, b: 1, a: 1}
+  - name: Light Blue
+    color: {r: 0.62352943, g: 0.84705883, b: 0.9607843, a: 1}
+    textColor: {r: 0.105882354, g: 0.13725491, b: 0.1882353, a: 1}
+  - name: Pink
+    color: {r: 0.8392157, g: 0.20784314, b: 0.5568628, a: 1}
+    textColor: {r: 1, g: 1, b: 1, a: 1}
+  - name: Orange
+    color: {r: 0.96862745, g: 0.5803922, b: 0.11372549, a: 1}
+    textColor: {r: 1, g: 1, b: 1, a: 1}
+  - name: Red
+    color: {r: 0.89411765, g: 0.1254902, b: 0.18039216, a: 1}
+    textColor: {r: 1, g: 1, b: 1, a: 1}
+  - name: Yellow
+    color: {r: 0.99607843, g: 0.85882354, b: 0, a: 1}
+    textColor: {r: 0.105882354, g: 0.13725491, b: 0.1882353, a: 1}
+  - name: Green
+    color: {r: 0.12156863, g: 0.6392157, b: 0.33333334, a: 1}
+    textColor: {r: 1, g: 1, b: 1, a: 1}
+  - name: Dark Blue
+    color: {r: 0.043137256, g: 0.36078432, b: 0.6784314, a: 1}
+    textColor: {r: 1, g: 1, b: 1, a: 1}
+  - name: Stations
+    color: {r: 0.22745098, g: 0.24705882, b: 0.2784314, a: 1}
+    textColor: {r: 1, g: 1, b: 1, a: 1}
+  - name: Utilities
+    color: {r: 0.47843137, g: 0.5254902, b: 0.6, a: 1}
+    textColor: {r: 1, g: 1, b: 1, a: 1}
+  seats:
+  - name: Red
+    color: {r: 0.8980392, g: 0.22352941, b: 0.20784314, a: 1}
+    baseMaterial: {fileID: 2100000, guid: bfe92453500fccd4bbcf205633222e68, type: 2}
+    ringMaterial: {fileID: 2100000, guid: 1108667f4014e6248a01714352cf3ade, type: 2}
+  - name: Blue
+    color: {r: 0.11764706, g: 0.53333336, b: 0.8980392, a: 1}
+    baseMaterial: {fileID: 2100000, guid: 12de5c7977358fc46a82e36f04939353, type: 2}
+    ringMaterial: {fileID: 2100000, guid: 9314c9c8bd2b01942841961f69dcfd5c, type: 2}
+  - name: Green
+    color: {r: 0.18039216, g: 0.6666667, b: 0.30980393, a: 1}
+    baseMaterial: {fileID: 2100000, guid: f306224e9c6317f4a818ca19d13a51d8, type: 2}
+    ringMaterial: {fileID: 2100000, guid: 2097bcb0d3714644c9e2b51f491cdb55, type: 2}
+  - name: Yellow
+    color: {r: 0.9764706, g: 0.65882355, b: 0.14509805, a: 1}
+    baseMaterial: {fileID: 2100000, guid: 9874c53eb4b30884e99ec99646e40d91, type: 2}
+    ringMaterial: {fileID: 2100000, guid: aab8221016e2d1340b698e730ec4554f, type: 2}
+  boardMaterial: {fileID: 2100000, guid: 1fb4a9ad10fc8154dae299b194c7ae81, type: 2}
+  boardSlabMaterial: {fileID: 2100000, guid: 4247963c8626b394aa0808ea57072e66, type: 2}
+  tableMaterial: {fileID: 2100000, guid: 6f44dd5748201fe46b017df54c8728fb, type: 2}
+  boardTexture: {fileID: 2800000, guid: e2dfec976adfba64bbb80ff0ab4ca24b, type: 3}
+  tableTexture: {fileID: 2800000, guid: 4b4843e45a146ae478bb6399866ff658, type: 3}
+  boardTopMesh: {fileID: 4300000, guid: 7e7926d93497f04489c2e659d959ab4b, type: 2}
+  boardSlabMesh: {fileID: 4300000, guid: 2cc46acf20ef6ce4eb1f42f37dc1fa21, type: 2}
+  tableMesh: {fileID: 4300000, guid: 326c2725d197c7f4d9a51d94146052e7, type: 2}
+  highlightMaterial: {fileID: 2100000, guid: d66c83f9364bd0040ae049550bb70ecb, type: 2}
+  mortgagedMaterial: {fileID: 2100000, guid: bbef6d76d5090834f80c284c5ce81975, type: 2}
+  contactShadowMaterial: {fileID: 2100000, guid: 4b970332d647e8849af40e152acb5eaa, type: 2}
+  ownerTagMesh: {fileID: 4300000, guid: 25d6514d80a5d2645a614ae7ae28af39, type: 2}
+  chanceBackMaterial: {fileID: 2100000, guid: 39571b86a397e17479e933caef621fee, type: 2}
+  chestBackMaterial: {fileID: 2100000, guid: f90c976e80fc29d48aaf64b2b69a80bc, type: 2}
+  cardEdgeMaterial: {fileID: 2100000, guid: 8745a1426b904bb45833ac958d660edc, type: 2}
+  chanceBackTexture: {fileID: 2800000, guid: df6dea2064b3f6349b177c02098036e8, type: 3}
+  chestBackTexture: {fileID: 2800000, guid: 837f7845d2f1ebd479d0b55f40448327, type: 3}
+  cardStackMesh: {fileID: 4300000, guid: c7f5d02d8a6365a43a0a72b6115516ce, type: 2}
+  logoMaterial: {fileID: 2100000, guid: 311a28fe761e61b45ba213233a8bdece, type: 2}
+  logoTexture: {fileID: 2800000, guid: a69b078680ffcbf43ac20f6af19038ec, type: 3}
+  tokens:
+  - name: Race Car
+    mesh: {fileID: 4300000, guid: 7640eb4b1288e15418984a9cf50d3fa7, type: 2}
+    badge: {fileID: 21300000, guid: 835ea02eda312b34c8de8f79e183e3a1, type: 3}
+    tint: {r: 0.78039217, g: 0.79607844, b: 0.81960785, a: 1}
+  - name: Top Hat
+    mesh: {fileID: 4300000, guid: affa7a08590623f49ab7b3b4f710697a, type: 2}
+    badge: {fileID: 21300000, guid: 4f32ceb703e32fa4d8e2913cb0bc42e3, type: 3}
+    tint: {r: 0.78039217, g: 0.79607844, b: 0.81960785, a: 1}
+  - name: Scottie Dog
+    mesh: {fileID: 4300000, guid: fc6046e97c52f2e4d9db066f96a3feb0, type: 2}
+    badge: {fileID: 21300000, guid: 7baf01df892116f40a5aada724c9f095, type: 3}
+    tint: {r: 0.78039217, g: 0.79607844, b: 0.81960785, a: 1}
+  - name: Battleship
+    mesh: {fileID: 4300000, guid: 68bab420554164f4a9e3e837f94959a8, type: 2}
+    badge: {fileID: 21300000, guid: 7ef76ab3ef8ba7b44b94cb3f5139482c, type: 3}
+    tint: {r: 0.78039217, g: 0.79607844, b: 0.81960785, a: 1}
+  - name: Cat
+    mesh: {fileID: 4300000, guid: b6c8d26ed5debc049a6f70adb51f5d0a, type: 2}
+    badge: {fileID: 21300000, guid: ea04f8d5dc2fd8948b8b5b5f10350f51, type: 3}
+    tint: {r: 0.78039217, g: 0.79607844, b: 0.81960785, a: 1}
+  - name: Rubber Duck
+    mesh: {fileID: 4300000, guid: e164ea54ff93cb4419c06a739f03c2eb, type: 2}
+    badge: {fileID: 21300000, guid: 2c2674c981a1c2a43960cc4ec029f094, type: 3}
+    tint: {r: 0.78039217, g: 0.79607844, b: 0.81960785, a: 1}
+  - name: Penguin
+    mesh: {fileID: 4300000, guid: efe69534ad10f7f48ab810a1308911f2, type: 2}
+    badge: {fileID: 21300000, guid: d5fc12e98b3df2b408e3e2e36c69bdf8, type: 3}
+    tint: {r: 0.78039217, g: 0.79607844, b: 0.81960785, a: 1}
+  - name: T-Rex
+    mesh: {fileID: 4300000, guid: 0590d742f6ccc8d4bab153c06160418e, type: 2}
+    badge: {fileID: 21300000, guid: 97966320c65a9204c90b1c97dff7d881, type: 3}
+    tint: {r: 0.78039217, g: 0.79607844, b: 0.81960785, a: 1}
+  tokenMaterial: {fileID: 2100000, guid: 9a444f7e9f9ef584ca11fe07e5ed129d, type: 2}
+  tokenBaseMesh: {fileID: 4300000, guid: 9234e98a7bfa79741a22069908f474a9, type: 2}
+  turnRingMesh: {fileID: 4300000, guid: 9e0e3b1ec4975fa478d7e30429e5688f, type: 2}
+  houseMesh: {fileID: 4300000, guid: 2217bb351ab00a049bc4ebfc25302305, type: 2}
+  hotelMesh: {fileID: 4300000, guid: 126f921cb44811746ae5493ab9539cba, type: 2}
+  houseMaterial: {fileID: 2100000, guid: 64d1479f6638d26438fbf8e5979876f1, type: 2}
+  hotelMaterial: {fileID: 2100000, guid: 0c78f746cc8f5c14088625b77c5fbff4, type: 2}
+  dieMesh: {fileID: 4300000, guid: 73d1f1136cc1c684cabcb58897e1c59d, type: 2}
+  dieMaterial: {fileID: 2100000, guid: 4f4ca2d97d66a4540b0d6ce8ffb878a2, type: 2}
+  speedDieMaterial: {fileID: 2100000, guid: 3b64073e1ab663646b12ed1b3412af28, type: 2}
+  diceTexture: {fileID: 2800000, guid: 655fee0217da1394aad3477fbdc0856f, type: 3}
+  speedDieTexture: {fileID: 2800000, guid: a9681441b886f5846a54b87ab2905aa9, type: 3}
+  ui:
+    rounded: {fileID: 21300000, guid: a2f430e843c8e8c4cbb93691f0a9df57, type: 3}
+    circle: {fileID: 21300000, guid: aa9327a4696f14b4085494b472d6f41a, type: 3}
+    ring: {fileID: 21300000, guid: a4f2a2f5bdea65a4a849434e034edb08, type: 3}
+    glow: {fileID: 21300000, guid: 9ee66034d15bad04da16f65cbdd32e55, type: 3}
+    shadow: {fileID: 21300000, guid: 0a58ef9f59a91b949a9f3e201ad8bd68, type: 3}
+    sheen: {fileID: 21300000, guid: 918a621c536f0704f967fe8f564ebc13, type: 3}
+    bill: {fileID: 21300000, guid: 3ccc91995afc9a74199f40aed42437e7, type: 3}
+    logo: {fileID: 21300000, guid: 7436435c30eeaf643bc6ade01b5ccc18, type: 3}
+  bodyFont: {fileID: 11400000, guid: afcf1bd2618d8c74e9c188915b2a0bc6, type: 2}
+  boldFont: {fileID: 11400000, guid: 4c55c6c999e3b9e4e98bdf5f18f43761, type: 2}
+  heavyFont: {fileID: 11400000, guid: 5a4fa5257a95ba14c87191285b0af298, type: 2}
+  titleFont: {fileID: 11400000, guid: 5a4fa5257a95ba14c87191285b0af298, type: 2}
+  iconFont: {fileID: 11400000, guid: da3eac3ca2276a84bb0a4d9a829460cd, type: 2}
+  textShadowMaterial: {fileID: 2100000, guid: 81fdb83d0e019f54d9dd5737ab103960, type: 2}
+  titleMaterial: {fileID: 2100000, guid: 7689543524adc5b47ac336c3663a00ef, type: 2}
+  scene:
+    background: {r: 0.0627451, g: 0.08235294, b: 0.11372549, a: 1}
+    ambientSky: {r: 0.59607846, g: 0.63529414, b: 0.68235296, a: 1}
+    ambientEquator: {r: 0.4627451, g: 0.48235294, b: 0.50980395, a: 1}
+    ambientGround: {r: 0.23529412, g: 0.2, b: 0.17254902, a: 1}
+    sunColor: {r: 1, g: 0.96, b: 0.9, a: 1}
+    sunIntensity: 0.9
+    fillColor: {r: 0.8, g: 0.87, b: 1, a: 1}
+    fillIntensity: 0.22
+    reflection: {fileID: 8900000, guid: 3a1c45328f065994aa6a14217073c72f, type: 3}
+    reflectionIntensity: 0.85
+    confetti:
+    - {r: 0.89411765, g: 0, b: 0.16862746, a: 1}
+    - {r: 0.9607843, g: 0.7019608, b: 0.003921569, a: 1}
+    - {r: 0.09019608, g: 0.6392157, b: 0.2901961, a: 1}
+    - {r: 0.11372549, g: 0.43529412, b: 0.84705883, a: 1}
+    - {r: 0.8980392, g: 0.22352941, b: 0.20784314, a: 1}

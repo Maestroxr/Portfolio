@@ -11,8 +11,9 @@ namespace Portfolio.Monopoly
     /// <summary>
     /// Development players only. Started with <c>-monopoly-tour &lt;folder&gt;</c>, it plays through the game with scripted
     /// dice (the title screen, the new game screen, a turn, a Chance card, buying, building, trading, an auction, jail,
-    /// the pause menu and house rules, the speed die and the results) and saves a screenshot of every step into the
-    /// folder, then quits. The human seat is played by the tour itself. Without the argument it does nothing.
+    /// the pause menu and house rules, the speed die, the results, and the title and new game screens redrawn in the
+    /// game's next look) and saves a screenshot of every step into the folder, then quits. The human seat is played by
+    /// the tour itself. Without the argument it does nothing; with <c>-gamebox-theme &lt;name&gt;</c> it tours that look.
     /// </summary>
     public class MonopolyTour : MonoBehaviour
     {
@@ -248,6 +249,19 @@ namespace Portfolio.Monopoly
             yield return WaitFor(() => manager.MonopolyUI.Results.IsOpen, 20f);
             yield return new WaitForSeconds(2f);
             yield return Shot("17_results");
+
+            // Another look picked on the title screen redraws it at once, without loading the scene again.
+            manager.ReturnToTitle();
+            yield return new WaitForSecondsRealtime(1.5f);
+            GameTheme before = GameThemes.Active(GameType.Monopoly);
+            GameTheme after = GameThemes.SelectNext(GameType.Monopoly, 1, false);
+            yield return new WaitForSecondsRealtime(1.5f);
+            yield return Shot("18_title_next_look");
+            Write($"look switched on the title screen: {(before != null ? before.DisplayName : "none")} -> {(after != null ? after.DisplayName : "none")}");
+            manager.MonopolyUI.ShowSetup();
+            yield return new WaitForSecondsRealtime(1.2f);
+            yield return Shot("19_setup_next_look");
+            GameThemes.Select(GameType.Monopoly, before, false);
 
             Write("tour finished");
             // The tour leaves no progress behind; the login of the online game is not the tour's to forget.

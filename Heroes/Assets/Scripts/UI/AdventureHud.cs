@@ -185,7 +185,7 @@ namespace Portfolio.Heroes.UI
 
             RectTransform holder = UIKit.Rect(column, "EndTurn");
             UIKit.Fit(holder, 0f, 62f, true);
-            endTurnGlow = UIKit.Halo(holder, "Glow", new Color(1f, 0.82f, 0.4f, 0f));
+            endTurnGlow = UIKit.Halo(holder, "Glow", HeroesTheme.Palette.Active.Accent(new Color(1f, 0.82f, 0.4f, 0f)));
             UIKit.Stretch((RectTransform)endTurnGlow.transform, -34f, -26f, -34f, -26f);
             endTurn = UIKit.Push(holder, "Button", "End Turn", () => ui.EndTurn(), 28f);
             UIKit.Stretch((RectTransform)endTurn.transform);

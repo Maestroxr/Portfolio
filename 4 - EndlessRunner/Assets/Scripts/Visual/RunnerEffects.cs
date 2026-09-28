@@ -19,6 +19,33 @@ namespace Portfolio.EndlessRunner
         [SerializeField] internal ParticleSystem bounceRing;
         [SerializeField] internal ParticleSystem splash;
 
+        /// <summary>Draws the effects with the materials of a theme.</summary>
+        public void ApplyTheme(ParticleMaterials materials)
+        {
+            if (materials == null)
+            {
+                return;
+            }
+            Skin(coinSparkle, materials.sparkle);
+            Skin(gemSparkle, materials.sparkle);
+            Skin(powerUpBurst, materials.sparkle);
+            Skin(shieldBreak, materials.sparkle);
+            Skin(bounceRing, materials.glow);
+            Skin(crashDebris, materials.debris);
+            Skin(crashPuff, materials.smoke);
+            Skin(landPuff, materials.smoke);
+            Skin(confetti, materials.confetti);
+            Skin(splash, materials.soft);
+        }
+
+        private static void Skin(ParticleSystem system, Material material)
+        {
+            if (system != null && material != null && system.TryGetComponent(out ParticleSystemRenderer renderer))
+            {
+                renderer.sharedMaterial = material;
+            }
+        }
+
         public void Coin(Vector3 position)
         {
             Emit(coinSparkle, position, 9);

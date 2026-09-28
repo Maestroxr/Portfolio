@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 808957367171998306}
   - component: {fileID: 8093830279801233325}
   - component: {fileID: 8022317041333877410}
+  - component: {fileID: 6447909528226014211}
   m_Layer: 0
   m_Name: Quad
   m_TagString: Untagged
@@ -90,6 +91,21 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &6447909528226014211
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6632128459172039930}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Ground/Desert/Rubble
+  slot: 0
 --- !u!1 &7851728204855433218
 GameObject:
   m_ObjectHideFlags: 0

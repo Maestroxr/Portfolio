@@ -9,9 +9,12 @@ namespace Portfolio.MemoryCards.EditorTools
 {
     /// <summary>
     /// Builds the art and sound of Memory Cards: configures the imported Kenney files (animal renders, interface
-    /// sprites, card and interface sounds, jingles, the Kenney Future font), draws the generated textures with
-    /// <see cref="MemoryCardsArt"/>, synthesises the music and the remaining effects with <see cref="SoundFactory"/> and
-    /// creates the TextMesh Pro font asset.
+    /// sprites, card and interface sounds, jingles, the Kenney Future font), then draws the art of every theme of
+    /// <see cref="ThemeSpecs"/> with <see cref="MemoryCardsArt"/> (cards, special faces, icons, panels, particles,
+    /// backdrop shapes; for After Dark also the interface kit and the deck of <see cref="AfterDarkFaces"/>), bakes the
+    /// fonts of every theme into TextMesh Pro font assets, and synthesises the music and the remaining effects with
+    /// <see cref="SoundFactory"/>. The original art keeps its folders under Art/; a theme's own art goes under its
+    /// <see cref="ThemeSpec.ArtRoot"/>.
     /// </summary>
     internal static class MemoryCardsArtBuilder
     {
@@ -19,12 +22,13 @@ namespace Portfolio.MemoryCards.EditorTools
         public const string KenneyUiFolder = "Art/Kenney/UI";
         public const string KenneyFontsFolder = "Art/Kenney/Fonts";
         public const string KenneyAudioFolder = "Audio/Kenney";
+        public const string GeneratedAudioFolder = "Audio/Generated";
+        /// <summary>The folders of the original art (the Classic theme).</summary>
         public const string CardsFolder = "Art/Cards";
         public const string IconsFolder = "Art/Icons";
         public const string UiFolder = "Art/UI";
         public const string ParticlesFolder = "Art/Particles";
         public const string BackdropFolder = "Art/Backdrop";
-        public const string GeneratedAudioFolder = "Audio/Generated";
         public const string FontsFolder = "Art/Fonts";
         public const string FontAssetPath = FontsFolder + "/KenneyFuture SDF.asset";
 
@@ -32,6 +36,19 @@ namespace Portfolio.MemoryCards.EditorTools
         {
             "Pause", "Settings", "Power", "Home", "Levels", "Lock", "Heart", "Clock", "Stopwatch", "Moves", "Check", "Cross",
             "Play", "Retry", "Next", "Back", "Infinity", "Sliders", "Flag", "Cards", "Paw", "Star"
+        };
+
+        /// <summary>The roles of the buttons of a kit; a round button is "Round" + role.</summary>
+        public static readonly string[] KitRoles = { "Primary", "Secondary", "Accent", "Danger", "Neutral" };
+
+        public static readonly string[] ParticleNames = { "Spark", "Star", "Confetti", "Shard", "Circle" };
+
+        /// <summary>The Kenney sprite that plays each part of the kit in the Classic theme.</summary>
+        private static readonly Dictionary<string, string> KenneyKit = new Dictionary<string, string>
+        {
+            { "Primary", "ButtonGreen" }, { "Secondary", "ButtonBlue" }, { "Accent", "ButtonYellow" }, { "Danger", "ButtonRed" }, { "Neutral", "ButtonGrey" },
+            { "RoundPrimary", "RoundGreen" }, { "RoundSecondary", "RoundBlue" }, { "RoundAccent", "RoundYellow" }, { "RoundDanger", "RoundRed" }, { "RoundNeutral", "RoundGrey" },
+            { "InputField", "InputField" }, { "StarFull", "StarFull" }, { "StarEmpty", "StarEmpty" }, { "GoalDone", "GoalDone" }, { "GoalMissed", "GoalMissed" }
         };
 
         /// <summary>Kenney interface sprites and their nine-slice borders (left, bottom, right, top).</summary>
@@ -63,33 +80,46 @@ namespace Portfolio.MemoryCards.EditorTools
             "jingles_PIZZI02"
         };
 
-        /// <summary>Every character the font asset bakes (the interface is English only).</summary>
+        /// <summary>Every character the font assets bake (the interface is English only).</summary>
         private const string FontCharacters =
             " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
 
         public static void BuildAll()
         {
-            Step("Animals", 0.05f);
+            Step("Animals", 0.02f);
             ConfigureAnimals();
-            Step("Interface sprites", 0.1f);
+            Step("Interface sprites", 0.05f);
             ConfigureKenneyUi();
-            Step("Cards", 0.2f);
-            BuildCards();
-            Step("Special cards", 0.35f);
-            BuildSpecialFaces();
-            Step("Icons", 0.45f);
-            BuildIcons();
-            Step("Panels", 0.55f);
-            BuildUi();
-            Step("Particles and backdrop", 0.65f);
-            BuildParticles();
-            BuildBackdrop();
+            float share = 0.7f / ThemeSpecs.All.Length;
+            for (int i = 0; i < ThemeSpecs.All.Length; i++)
+            {
+                BuildTheme(ThemeSpecs.All[i], 0.1f + i * share, share);
+            }
+            Step("Launcher icon", 0.82f);
             BuildLauncherIcon();
-            Step("Sounds", 0.75f);
+            Step("Sounds", 0.85f);
             BuildAudio();
-            Step("Font", 0.9f);
-            BuildFont();
             AssetDatabase.SaveAssets();
+        }
+
+        /// <summary>Draws the art of one theme and bakes its fonts.</summary>
+        public static void BuildTheme(ThemeSpec theme, float from = 0f, float share = 1f)
+        {
+            Step($"{theme.Name}: cards", from);
+            BuildCards(theme);
+            BuildSpecialFaces(theme);
+            Step($"{theme.Name}: icons and panels", from + share * 0.2f);
+            BuildIcons(theme);
+            BuildUi(theme);
+            BuildParticles(theme);
+            BuildBackdrop(theme);
+            if (theme.DrawFaces)
+            {
+                Step($"{theme.Name}: deck", from + share * 0.4f);
+                BuildFaces(theme);
+            }
+            Step($"{theme.Name}: fonts", from + share * 0.9f);
+            BuildFonts(theme);
         }
 
         private static void Step(string what, float progress)
@@ -102,24 +132,100 @@ namespace Portfolio.MemoryCards.EditorTools
 
         #region Accessors
 
+        /// <summary>A face of the deck of <paramref name="theme"/>.</summary>
+        public static Sprite Face(ThemeSpec theme, string name)
+        {
+            return MemoryCardsAssets.LoadSprite($"{theme.FacesFolder}/{name}.png");
+        }
+
+        public static Sprite Card(ThemeSpec theme, string name)
+        {
+            return MemoryCardsAssets.LoadSprite($"{theme.CardsFolder}/{name}.png");
+        }
+
+        public static Sprite Icon(ThemeSpec theme, string name)
+        {
+            return MemoryCardsAssets.LoadSprite($"{theme.IconsFolder}/{name}.png");
+        }
+
+        public static Sprite Ui(ThemeSpec theme, string name)
+        {
+            return MemoryCardsAssets.LoadSprite($"{theme.UiFolder}/{name}.png");
+        }
+
+        /// <summary>
+        /// A part of the interface kit of <paramref name="theme"/> by role ("Primary", "RoundAccent", "InputField",
+        /// "StarFull", "GoalDone"...): a Kenney sprite for the Classic theme, a drawn one under the theme's UI folder otherwise.
+        /// </summary>
+        public static Sprite Kit(ThemeSpec theme, string role)
+        {
+            if (theme.KenneyKit)
+            {
+                return Kenney(KenneyKit[role]);
+            }
+            bool button = System.Array.IndexOf(KitRoles, role) >= 0;
+            return Ui(theme, button ? $"Button{role}" : role);
+        }
+
+        /// <summary>
+        /// A white sprite of the kit that the game tints ("Panel", "Pill", "Disc"): Kenney's kit has white panels already,
+        /// a drawn kit has tint variants of its own.
+        /// </summary>
+        public static Sprite Tint(ThemeSpec theme, string part)
+        {
+            if (theme.KenneyKit)
+            {
+                return Ui(theme, part == "Panel" ? "PanelDepth" : part);
+            }
+            return Ui(theme, $"{part}Tint");
+        }
+
+        public static Sprite Particle(ThemeSpec theme, string name)
+        {
+            return MemoryCardsAssets.LoadSprite($"{theme.ParticlesFolder}/{name}.png");
+        }
+
+        public static Sprite Backdrop(ThemeSpec theme, string name)
+        {
+            return MemoryCardsAssets.LoadSprite($"{theme.BackdropFolder}/{name}.png");
+        }
+
+        public static Texture2D Pattern(ThemeSpec theme)
+        {
+            return MemoryCardsAssets.Load<Texture2D>($"{theme.BackdropFolder}/Pattern.png");
+        }
+
+        public static TMP_FontAsset Font(FontSpec font)
+        {
+            return MemoryCardsAssets.Load<TMP_FontAsset>(font.AssetPath);
+        }
+
+        /// <summary>A material preset of a font: "Outline", "Shadow" or "Title".</summary>
+        public static Material FontMaterial(FontSpec font, string preset)
+        {
+            return MemoryCardsAssets.Load<Material>(font.MaterialPath(preset));
+        }
+
+        // The original art, for the campaign's own worlds and the launcher icon.
+
         public static Sprite Animal(string name)
         {
-            return MemoryCardsAssets.LoadSprite($"{AnimalsFolder}/{name}.png");
+            return Face(ThemeSpecs.Classic, name);
         }
 
         public static Sprite Card(string name)
         {
-            return MemoryCardsAssets.LoadSprite($"{CardsFolder}/{name}.png");
+            return Card(ThemeSpecs.Classic, name);
         }
 
         public static Sprite Icon(string name)
         {
-            return MemoryCardsAssets.LoadSprite($"{IconsFolder}/{name}.png");
+            return Icon(ThemeSpecs.Classic, name);
         }
 
         public static Sprite Ui(string name)
         {
-            return MemoryCardsAssets.LoadSprite($"{UiFolder}/{name}.png");
+            return Ui(ThemeSpecs.Classic, name);
         }
 
         public static Sprite Kenney(string name)
@@ -129,15 +235,15 @@ namespace Portfolio.MemoryCards.EditorTools
 
         public static Sprite Particle(string name)
         {
-            return MemoryCardsAssets.LoadSprite($"{ParticlesFolder}/{name}.png");
+            return Particle(ThemeSpecs.Classic, name);
         }
 
         public static Sprite Backdrop(string name)
         {
-            return MemoryCardsAssets.LoadSprite($"{BackdropFolder}/{name}.png");
+            return Backdrop(ThemeSpecs.Classic, name);
         }
 
-        public static Texture2D Pattern => MemoryCardsAssets.Load<Texture2D>($"{BackdropFolder}/Pattern.png");
+        public static Texture2D ClassicPattern => Pattern(ThemeSpecs.Classic);
 
         public static AudioClip KenneySound(string name)
         {
@@ -149,11 +255,11 @@ namespace Portfolio.MemoryCards.EditorTools
             return MemoryCardsAssets.Load<AudioClip>($"{GeneratedAudioFolder}/{name}.wav");
         }
 
-        public static TMP_FontAsset Font => MemoryCardsAssets.Load<TMP_FontAsset>(FontAssetPath);
+        public static TMP_FontAsset KenneyFont => Font(ThemeSpecs.KenneyFuture);
 
         public static Material FontMaterial(string preset)
         {
-            return MemoryCardsAssets.Load<Material>($"{FontsFolder}/KenneyFuture {preset}.mat");
+            return FontMaterial(ThemeSpecs.KenneyFuture, preset);
         }
 
         #endregion
@@ -180,68 +286,115 @@ namespace Portfolio.MemoryCards.EditorTools
 
         #region Generated textures
 
-        private static void BuildCards()
+        private static void BuildCards(ThemeSpec theme)
         {
+            ArtStyle style = theme.Style;
             var noBorder = MemoryCardsAssets.SpriteTexture(Vector4.zero, true);
-            Save(MemoryCardsArt.CardFront(), $"{CardsFolder}/CardFront.png", noBorder);
-            Save(MemoryCardsArt.CardShadow(), $"{CardsFolder}/CardShadow.png", noBorder);
-            Save(MemoryCardsArt.CardGlow(), $"{CardsFolder}/CardGlow.png", noBorder);
-            Save(MemoryCardsArt.Ice(false), $"{CardsFolder}/Ice.png", noBorder);
-            Save(MemoryCardsArt.Ice(true), $"{CardsFolder}/IceCracked.png", noBorder);
-            Save(MemoryCardsArt.Badge(), $"{CardsFolder}/Badge.png", noBorder);
-            foreach (WorldSpec world in WorldSpecs.All)
+            Save(MemoryCardsArt.CardFront(style), $"{theme.CardsFolder}/CardFront.png", noBorder);
+            Save(MemoryCardsArt.CardShadow(), $"{theme.CardsFolder}/CardShadow.png", noBorder);
+            Save(MemoryCardsArt.CardGlow(), $"{theme.CardsFolder}/CardGlow.png", noBorder);
+            Save(MemoryCardsArt.Ice(false, style), $"{theme.CardsFolder}/Ice.png", noBorder);
+            Save(MemoryCardsArt.Ice(true, style), $"{theme.CardsFolder}/IceCracked.png", noBorder);
+            Save(MemoryCardsArt.Badge(style), $"{theme.CardsFolder}/Badge.png", noBorder);
+            foreach (WorldSpec world in theme.Worlds)
             {
                 Color color = WorldSpecs.Color(world.Card);
                 Color dark = WorldSpecs.Color(world.CardDark);
-                Save(MemoryCardsArt.CardBack(color, dark, world.Pattern, true), $"{CardsFolder}/Back{world.Id}.png", noBorder);
-                Save(MemoryCardsArt.CardBack(color, dark, world.Pattern, false), $"{CardsFolder}/Back{world.Id}Plain.png", noBorder);
+                Save(MemoryCardsArt.CardBack(color, dark, world.Pattern, world.Emblem, style, true), $"{theme.CardsFolder}/{theme.BackName(world)}.png", noBorder);
+                Save(MemoryCardsArt.CardBack(color, dark, world.Pattern, world.Emblem, style, false), $"{theme.CardsFolder}/{theme.BackName(world)}Plain.png", noBorder);
             }
         }
 
-        private static void BuildSpecialFaces()
+        private static void BuildSpecialFaces(ThemeSpec theme)
         {
             var sprite = MemoryCardsAssets.SpriteTexture(Vector4.zero, true);
-            Save(MemoryCardsArt.WildFace(), $"{CardsFolder}/Wild.png", sprite);
-            Save(MemoryCardsArt.BombFace(), $"{CardsFolder}/Bomb.png", sprite);
-            Save(MemoryCardsArt.ClockFace(), $"{CardsFolder}/Clock.png", sprite);
-            Save(MemoryCardsArt.PeekFace(), $"{CardsFolder}/Peek.png", sprite);
+            Save(MemoryCardsArt.WildFace(theme.Style), $"{theme.CardsFolder}/Wild.png", sprite);
+            Save(MemoryCardsArt.BombFace(theme.Style), $"{theme.CardsFolder}/Bomb.png", sprite);
+            Save(MemoryCardsArt.ClockFace(theme.Style), $"{theme.CardsFolder}/Clock.png", sprite);
+            Save(MemoryCardsArt.PeekFace(theme.Style), $"{theme.CardsFolder}/Peek.png", sprite);
         }
 
-        private static void BuildIcons()
+        private static void BuildIcons(ThemeSpec theme)
         {
+            var sprite = MemoryCardsAssets.SpriteTexture(Vector4.zero, true);
             foreach (string icon in IconNames)
             {
-                Save(MemoryCardsArt.Icon(icon), $"{IconsFolder}/{icon}.png", MemoryCardsAssets.SpriteTexture(Vector4.zero, true));
+                Save(MemoryCardsArt.Icon(icon, theme.Style), $"{theme.IconsFolder}/{icon}.png", sprite);
             }
-            Save(MemoryCardsArt.HeartIcon(true), $"{IconsFolder}/HeartFull.png", MemoryCardsAssets.SpriteTexture(Vector4.zero, true));
-            Save(MemoryCardsArt.HeartIcon(false), $"{IconsFolder}/HeartEmpty.png", MemoryCardsAssets.SpriteTexture(Vector4.zero, true));
+            Save(MemoryCardsArt.HeartIcon(true, theme.Style), $"{theme.IconsFolder}/HeartFull.png", sprite);
+            Save(MemoryCardsArt.HeartIcon(false, theme.Style), $"{theme.IconsFolder}/HeartEmpty.png", sprite);
         }
 
-        private static void BuildUi()
+        /// <summary>The panels and pills of a theme, and the whole button kit of a theme that does not use Kenney's.</summary>
+        private static void BuildUi(ThemeSpec theme)
         {
-            Save(MemoryCardsArt.Panel(128, 30f), $"{UiFolder}/Panel.png", MemoryCardsAssets.SpriteTexture(new Vector4(40f, 40f, 40f, 40f)));
-            Save(MemoryCardsArt.PanelDepth(128, 30f, 10f), $"{UiFolder}/PanelDepth.png", MemoryCardsAssets.SpriteTexture(new Vector4(40f, 50f, 40f, 40f)));
-            Save(MemoryCardsArt.Pill(128, 64), $"{UiFolder}/Pill.png", MemoryCardsAssets.SpriteTexture(new Vector4(32f, 32f, 32f, 32f)));
-            Save(MemoryCardsArt.Disc(128), $"{UiFolder}/Disc.png", MemoryCardsAssets.SpriteTexture());
-            Save(MemoryCardsArt.Soft(128), $"{UiFolder}/Soft.png", MemoryCardsAssets.SpriteTexture());
-        }
-
-        private static void BuildParticles()
-        {
-            foreach (string name in new[] { "Spark", "Star", "Confetti", "Shard", "Circle" })
+            ArtStyle style = theme.Style;
+            Save(MemoryCardsArt.Panel(128, 30f, style), $"{theme.UiFolder}/Panel.png", MemoryCardsAssets.SpriteTexture(new Vector4(40f, 40f, 40f, 40f)));
+            Save(MemoryCardsArt.PanelDepth(128, 30f, 10f, style), $"{theme.UiFolder}/PanelDepth.png", MemoryCardsAssets.SpriteTexture(new Vector4(40f, 50f, 40f, 40f)));
+            Save(MemoryCardsArt.Pill(128, 64, style), $"{theme.UiFolder}/Pill.png", MemoryCardsAssets.SpriteTexture(new Vector4(32f, 32f, 32f, 32f)));
+            Save(MemoryCardsArt.Disc(128, style), $"{theme.UiFolder}/Disc.png", MemoryCardsAssets.SpriteTexture());
+            Save(MemoryCardsArt.Soft(128), $"{theme.UiFolder}/Soft.png", MemoryCardsAssets.SpriteTexture());
+            if (theme.KenneyKit)
             {
-                Save(MemoryCardsArt.Particle(name), $"{ParticlesFolder}/{name}.png", MemoryCardsAssets.SpriteTexture());
+                return;
+            }
+            var noBorder = MemoryCardsAssets.SpriteTexture(Vector4.zero, true);
+            var buttonBorder = MemoryCardsAssets.SpriteTexture(new Vector4(40f, 50f, 40f, 40f));
+            foreach (string role in KitRoles)
+            {
+                (Color face, Color lip) = KitColors(style, role);
+                Save(MemoryCardsArt.KitButton(face, lip, style), $"{theme.UiFolder}/Button{role}.png", buttonBorder);
+                Save(MemoryCardsArt.KitRound(face, lip, style), $"{theme.UiFolder}/Round{role}.png", noBorder);
+            }
+            Save(MemoryCardsArt.InputField(style), $"{theme.UiFolder}/InputField.png", MemoryCardsAssets.SpriteTexture(new Vector4(22f, 22f, 22f, 22f)));
+            Save(MemoryCardsArt.StarSprite(true, style), $"{theme.UiFolder}/StarFull.png", noBorder);
+            Save(MemoryCardsArt.StarSprite(false, style), $"{theme.UiFolder}/StarEmpty.png", noBorder);
+            Save(MemoryCardsArt.GoalMark(true, style), $"{theme.UiFolder}/GoalDone.png", noBorder);
+            Save(MemoryCardsArt.GoalMark(false, style), $"{theme.UiFolder}/GoalMissed.png", noBorder);
+            Save(MemoryCardsArt.Ornament(), $"{theme.UiFolder}/Ornament.png", noBorder);
+            Save(MemoryCardsArt.TintPanel(style), $"{theme.UiFolder}/PanelTint.png", MemoryCardsAssets.SpriteTexture(new Vector4(40f, 50f, 40f, 40f)));
+            Save(MemoryCardsArt.TintPill(style), $"{theme.UiFolder}/PillTint.png", MemoryCardsAssets.SpriteTexture(new Vector4(32f, 32f, 32f, 32f)));
+            Save(MemoryCardsArt.TintDisc(style), $"{theme.UiFolder}/DiscTint.png", MemoryCardsAssets.SpriteTexture());
+        }
+
+        private static (Color, Color) KitColors(ArtStyle style, string role)
+        {
+            switch (role)
+            {
+                case "Primary": return (style.Primary, style.PrimaryLip);
+                case "Secondary": return (style.Secondary, style.SecondaryLip);
+                case "Accent": return (style.Accent, style.AccentLip);
+                case "Danger": return (style.Danger, style.DangerLip);
+                default: return (style.Neutral, style.NeutralLip);
             }
         }
 
-        private static void BuildBackdrop()
+        private static void BuildParticles(ThemeSpec theme)
+        {
+            foreach (string name in ParticleNames)
+            {
+                Save(MemoryCardsArt.Particle(name), $"{theme.ParticlesFolder}/{name}.png", MemoryCardsAssets.SpriteTexture());
+            }
+        }
+
+        private static void BuildBackdrop(ThemeSpec theme)
         {
             var sprite = MemoryCardsAssets.SpriteTexture(Vector4.zero, true);
-            Save(MemoryCardsArt.Cloud(), $"{BackdropFolder}/Cloud.png", sprite);
-            Save(MemoryCardsArt.Leaf(), $"{BackdropFolder}/Leaf.png", sprite);
-            Save(MemoryCardsArt.Snowflake(), $"{BackdropFolder}/Snowflake.png", sprite);
-            Save(MemoryCardsArt.Balloon(), $"{BackdropFolder}/Balloon.png", sprite);
-            Save(MemoryCardsArt.Pattern(), $"{BackdropFolder}/Pattern.png", MemoryCardsAssets.TileTexture);
+            foreach (string name in theme.Ambients)
+            {
+                Save(MemoryCardsArt.Ambient(name), $"{theme.BackdropFolder}/{name}.png", sprite);
+            }
+            Save(MemoryCardsArt.Pattern(theme.Style.Deco), $"{theme.BackdropFolder}/Pattern.png", MemoryCardsAssets.TileTexture);
+        }
+
+        /// <summary>The drawn deck of a theme (After Dark's keepsakes).</summary>
+        private static void BuildFaces(ThemeSpec theme)
+        {
+            var sprite = MemoryCardsAssets.SpriteTexture(Vector4.zero, true);
+            foreach (string name in theme.Faces)
+            {
+                Save(AfterDarkFaces.Draw(name), $"{theme.FacesFolder}/{name}.png", sprite);
+            }
         }
 
         private static void BuildLauncherIcon()
@@ -283,39 +436,49 @@ namespace Portfolio.MemoryCards.EditorTools
 
         #endregion
 
-        #region Font
+        #region Fonts
+
+        /// <summary>Bakes the body font of a theme and, when it differs, its title font.</summary>
+        private static void BuildFonts(ThemeSpec theme)
+        {
+            BuildFont(theme.BodyFont);
+            if (theme.TitleFont != theme.BodyFont)
+            {
+                BuildFont(theme.TitleFont);
+            }
+        }
 
         /// <summary>
-        /// Bakes Kenney Future into a static TextMesh Pro font asset (atlas and material as sub-assets) and creates the
-        /// material presets: an outlined one for titles and the HUD, and one with a soft shadow for body text. The font
-        /// asset is only created when it is missing, so rebuilding keeps its GUID and bytes.
+        /// Bakes a TrueType file into a static TextMesh Pro font asset (atlas and material as sub-assets) and creates
+        /// the material presets: an outlined one for labels and the HUD, one with a soft shadow for body text, and the
+        /// heavy title outline. The font asset is only created when it is missing, so rebuilding keeps its GUID and bytes.
         /// </summary>
-        private static void BuildFont()
+        private static void BuildFont(FontSpec spec)
         {
-            TMP_FontAsset fontAsset = Font;
+            TMP_FontAsset fontAsset = Font(spec);
             if (fontAsset == null)
             {
-                var source = MemoryCardsAssets.Require<UnityEngine.Font>($"{KenneyFontsFolder}/Kenney Future.ttf");
+                var source = MemoryCardsAssets.Require<UnityEngine.Font>(spec.Source);
                 fontAsset = TMP_FontAsset.CreateFontAsset(source, 72, 9, GlyphRenderMode.SDFAA, 1024, 1024, AtlasPopulationMode.Dynamic, false);
-                fontAsset.name = "KenneyFuture SDF";
+                fontAsset.name = spec.Name;
                 fontAsset.TryAddCharacters(FontCharacters, out string missing);
                 if (!string.IsNullOrEmpty(missing))
                 {
-                    Debug.Log($"Memory Cards: Kenney Future has no glyphs for \"{missing}\"; the default font fills in.");
+                    Debug.Log($"Memory Cards: {spec.Name} has no glyphs for \"{missing}\"; the default font fills in.");
                 }
                 fontAsset.atlasPopulationMode = AtlasPopulationMode.Static;
-                MemoryCardsAssets.EnsureFolder(FontsFolder);
-                AssetDatabase.CreateAsset(fontAsset, MemoryCardsAssets.Path(FontAssetPath));
+                MemoryCardsAssets.EnsureFolder(spec.Folder);
+                AssetDatabase.CreateAsset(fontAsset, MemoryCardsAssets.Path(spec.AssetPath));
                 Texture2D atlas = fontAsset.atlasTexture;
-                atlas.name = "KenneyFuture SDF Atlas";
+                atlas.name = $"{spec.Name} Atlas";
                 AssetDatabase.AddObjectToAsset(atlas, fontAsset);
                 Material material = fontAsset.material;
-                material.name = "KenneyFuture SDF Material";
+                material.name = $"{spec.Name} Material";
                 AssetDatabase.AddObjectToAsset(material, fontAsset);
                 EditorUtility.SetDirty(fontAsset);
                 AssetDatabase.SaveAssets();
-                AssetDatabase.ImportAsset(MemoryCardsAssets.Path(FontAssetPath));
-                fontAsset = Font;
+                AssetDatabase.ImportAsset(MemoryCardsAssets.Path(spec.AssetPath));
+                fontAsset = Font(spec);
             }
             MemoryCardsAssets.ApplyIfChanged(fontAsset, () =>
             {
@@ -327,39 +490,39 @@ namespace Portfolio.MemoryCards.EditorTools
             });
 
             Material baseMaterial = fontAsset.material;
-            MemoryCardsAssets.SaveMaterial($"{FontsFolder}/KenneyFuture Outline.mat", baseMaterial.shader, m =>
+            MemoryCardsAssets.SaveMaterial(spec.MaterialPath("Outline"), baseMaterial.shader, m =>
             {
                 m.CopyPropertiesFromMaterial(baseMaterial);
                 m.EnableKeyword("OUTLINE_ON");
                 m.EnableKeyword("UNDERLAY_ON");
                 m.SetFloat("_OutlineWidth", 0.22f);
-                m.SetColor("_OutlineColor", new Color(0.12f, 0.12f, 0.24f, 1f));
+                m.SetColor("_OutlineColor", spec.OutlineColor);
                 m.SetFloat("_FaceDilate", 0.18f);
-                m.SetColor("_UnderlayColor", new Color(0.05f, 0.05f, 0.15f, 0.55f));
+                m.SetColor("_UnderlayColor", spec.OutlineShadow);
                 m.SetFloat("_UnderlayOffsetX", 0.35f);
                 m.SetFloat("_UnderlayOffsetY", -0.6f);
                 m.SetFloat("_UnderlayDilate", 0.2f);
                 m.SetFloat("_UnderlaySoftness", 0.1f);
             });
-            MemoryCardsAssets.SaveMaterial($"{FontsFolder}/KenneyFuture Shadow.mat", baseMaterial.shader, m =>
+            MemoryCardsAssets.SaveMaterial(spec.MaterialPath("Shadow"), baseMaterial.shader, m =>
             {
                 m.CopyPropertiesFromMaterial(baseMaterial);
                 m.EnableKeyword("UNDERLAY_ON");
-                m.SetColor("_UnderlayColor", new Color(0f, 0f, 0.1f, 0.35f));
+                m.SetColor("_UnderlayColor", spec.SoftShadow);
                 m.SetFloat("_UnderlayOffsetX", 0.2f);
                 m.SetFloat("_UnderlayOffsetY", -0.45f);
                 m.SetFloat("_UnderlaySoftness", 0.25f);
                 m.SetFloat("_FaceDilate", 0.05f);
             });
-            MemoryCardsAssets.SaveMaterial($"{FontsFolder}/KenneyFuture Title.mat", baseMaterial.shader, m =>
+            MemoryCardsAssets.SaveMaterial(spec.MaterialPath("Title"), baseMaterial.shader, m =>
             {
                 m.CopyPropertiesFromMaterial(baseMaterial);
                 m.EnableKeyword("OUTLINE_ON");
                 m.EnableKeyword("UNDERLAY_ON");
                 m.SetFloat("_OutlineWidth", 0.3f);
-                m.SetColor("_OutlineColor", new Color(0.2f, 0.1f, 0.35f, 1f));
+                m.SetColor("_OutlineColor", spec.TitleOutline);
                 m.SetFloat("_FaceDilate", 0.28f);
-                m.SetColor("_UnderlayColor", new Color(0.1f, 0.02f, 0.2f, 0.7f));
+                m.SetColor("_UnderlayColor", spec.TitleShadow);
                 m.SetFloat("_UnderlayOffsetX", 0.5f);
                 m.SetFloat("_UnderlayOffsetY", -0.9f);
                 m.SetFloat("_UnderlayDilate", 0.3f);

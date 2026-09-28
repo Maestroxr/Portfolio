@@ -1,0 +1,141 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a3f65b5148d64067912942e027104363, type: 3}
+  m_Name: GrimRealm
+  m_EditorClassIdentifier: Skinnerboxes.Heroes::Portfolio.Heroes.HeroesTheme
+  displayName: Grim Realm
+  description: 'A darker realm: overcast skies, weathered armies, mud and ash, black leather and cold iron.'
+  preview: {fileID: 21300000, guid: 59457d54ec870f14ab4ade9d6064eb6c, type: 3}
+  fonts:
+    body: {fileID: 11400000, guid: 3fa20b8cbcd85fb4999176088d851f92, type: 2}
+    bodyMaterial: {fileID: 2100000, guid: 7f0025b3ca2b4a548a65ac6682cd12d3, type: 2}
+    title: {fileID: 11400000, guid: 47fdb88c0841f1047a212538f1fcbdce, type: 2}
+    titleMaterial: {fileID: 2100000, guid: e714466b7d461f24f984675a9c8e0532, type: 2}
+  menu:
+    backdrop: {fileID: 21300000, guid: 34fdf2b92060929469c2b9b8cb49402e, type: 3}
+    backdropColor: {r: 0.03, g: 0.02, b: 0.01, a: 0.72}
+    window: {fileID: 21300000, guid: e5573ba7f5684fe4892df3b391de9cc2, type: 3}
+    windowColor: {r: 1, g: 1, b: 1, a: 1}
+    tileWindow: 1
+    settingsWindow: {fileID: 21300000, guid: e5573ba7f5684fe4892df3b391de9cc2, type: 3}
+    headerBanner: {fileID: 21300000, guid: f1b428ce627b50447929b591c3adca2f, type: 3}
+    rowsBackground: {fileID: 21300000, guid: 16a9459e94550c7448060f60438bb4ce, type: 3}
+    rowsColor: {r: 1, g: 1, b: 1, a: 1}
+    rowBackground: {fileID: 21300000, guid: ba9e19e823c3163418b5c19c4d5ee28b, type: 3}
+    rowColor: {r: 1, g: 1, b: 1, a: 1}
+    button: {fileID: 21300000, guid: 0cafbc2d16c6de6419125b9667eec25e, type: 3}
+    buttonHover: {fileID: 21300000, guid: 6a61664c80632cb438c0758e2d174c60, type: 3}
+    buttonPressed: {fileID: 21300000, guid: f103183283cb35e46b0abead753f3b97, type: 3}
+    buttonDisabled: {fileID: 21300000, guid: a236b5a658cc6a640b255ff412a339ea, type: 3}
+    arrowButton: {fileID: 21300000, guid: 826d9136c0d72864a9aca6c9c4c867b0, type: 3}
+    track: {fileID: 21300000, guid: c2f19578732142740af7938647a297ca, type: 3}
+    fill: {fileID: 21300000, guid: 2ef4ca7698fe1464f8ffd38944a70382, type: 3}
+    fillColor: {r: 0.76, g: 0.8, b: 0.88, a: 1}
+    knob: {fileID: 21300000, guid: 2a7c92e166938a54b8c520e3d499fe97, type: 3}
+    checkBox: {fileID: 21300000, guid: bd6037c598d561349a9640517e69eb1c, type: 3}
+    checkMark: {fileID: 21300000, guid: 5c12a5d3eb71a8a4c9e8833c0e06116c, type: 3}
+    headerColor: {r: 1, g: 1, b: 1, a: 1}
+    textColor: {r: 0.86, g: 0.84, b: 0.78, a: 1}
+    valueColor: {r: 0.76, g: 0.8, b: 0.88, a: 1}
+    buttonTextColor: {r: 0.86, g: 0.84, b: 0.78, a: 1}
+    errorColor: {r: 0.85, g: 0.3, b: 0.25, a: 1}
+  slots:
+    sprites: []
+    materials: []
+    textures: []
+    prefabs: []
+    meshes: []
+    fonts: []
+    clips: []
+    colors: []
+  art: {fileID: 11400000, guid: 349479c8c0e555549a9659781c7fd029, type: 2}
+  palette:
+    ink: {r: 0.86, g: 0.84, b: 0.78, a: 1}
+    dim: {r: 0.6, g: 0.58, b: 0.54, a: 1}
+    gold: {r: 0.76, g: 0.8, b: 0.88, a: 1}
+    bad: {r: 0.85, g: 0.3, b: 0.25, a: 1}
+    good: {r: 0.6, g: 0.75, b: 0.55, a: 1}
+    inkOnParchment: {r: 0.12, g: 0.1, b: 0.1, a: 1}
+    dimOnParchment: {r: 0.36, g: 0.33, b: 0.31, a: 1}
+    headingTop: {r: 0.92, g: 0.9, b: 0.86, a: 1}
+    headingBottom: {r: 0.6, g: 0.62, b: 0.68, a: 1}
+    logoTop: {r: 0.96, g: 0.93, b: 0.86, a: 1}
+    logoBottom: {r: 0.64, g: 0.6, b: 0.56, a: 1}
+    accent: {r: 0.72, g: 0.8, b: 0.95, a: 1}
+    accentMix: 1
+    mapSaturation: 0.5
+    mapValue: 0.8
+    players:
+    - {r: 0.64, g: 0.1, b: 0.1, a: 1}
+    - {r: 0.2, g: 0.3, b: 0.58, a: 1}
+    - {r: 0.22, g: 0.42, b: 0.24, a: 1}
+    - {r: 0.6, g: 0.5, b: 0.28, a: 1}
+    - {r: 0.45, g: 0.45, b: 0.47, a: 1}
+  atmosphere:
+    sun: {r: 0.82, g: 0.84, b: 0.9, a: 1}
+    sunIntensity: 1.3
+    shadowStrength: 0.65
+    sunAngles: {x: 40, y: 150}
+    ambientSky: {r: 0.42, g: 0.45, b: 0.52, a: 1}
+    ambientEquator: {r: 0.36, g: 0.37, b: 0.4, a: 1}
+    ambientGround: {r: 0.17, g: 0.16, b: 0.16, a: 1}
+    fog: {r: 0.4, g: 0.42, b: 0.47, a: 1}
+    fogStart: 70
+    fogEnd: 250
+    sky: {fileID: 2100000, guid: c0493c37a991464468b0ee68f17ac23a, type: 2}
+  glows:
+    warm: {r: 0.85, g: 0.1, b: 0.06, a: 1}
+    cold: {r: 0.42, g: 0.58, b: 0.95, a: 1}
+    mix: 0.6
+  pointers:
+    cursors:
+    - {fileID: 2800000, guid: 317f2803490e4f24fb1bde23a390d999, type: 3}
+    - {fileID: 2800000, guid: b2d0de0115a0ff54ea89038d905de41b, type: 3}
+    - {fileID: 2800000, guid: f5f8b17a2ab588f4da16017cdb34f27c, type: 3}
+    - {fileID: 2800000, guid: 352d2bac10efaa54b88b218eaabb0a11, type: 3}
+    - {fileID: 2800000, guid: cfd47a6032d7d2a4ea7608a70bc21f42, type: 3}
+    - {fileID: 2800000, guid: c43e7436d6c4f7f4ab943d5058ca1f75, type: 3}
+    - {fileID: 2800000, guid: 1a55dab22dbdd7c44ba1226e2c826230, type: 3}
+    - {fileID: 2800000, guid: 02de432e256017943ba2d3f92bf4d9e4, type: 3}
+    - {fileID: 2800000, guid: da12009b646c9df4e9aece426426b9bb, type: 3}
+    - {fileID: 2800000, guid: e7798e84a5083b64fa01f85967edfada, type: 3}
+    - {fileID: 2800000, guid: acb22096bee4cf244b1aa39b9b9c5fc7, type: 3}
+    - {fileID: 2800000, guid: fc2079b97d813aa428706f1d8b1d5089, type: 3}
+    - {fileID: 2800000, guid: 5020559011835784381dcf0a54b34ce5, type: 3}
+    - {fileID: 2800000, guid: d07ef1c5abf6e0943a1805efd3702b95, type: 3}
+    - {fileID: 2800000, guid: 17861cb96e17402459a04da08bb8e6e3, type: 3}
+    - {fileID: 2800000, guid: 5a20f9c7fabc211459f7ec285e795a09, type: 3}
+    - {fileID: 2800000, guid: a03d3e7c5396aee4986f680b7dab90d8, type: 3}
+    - {fileID: 2800000, guid: 172f0159e1dbf014e96db4beb17767d3, type: 3}
+    - {fileID: 2800000, guid: d0eeba5fa3dff5b47b2c3b8ff7ced8e6, type: 3}
+    - {fileID: 2800000, guid: be5980e41483dab418a5911fca9b13ca, type: 3}
+    hotspots:
+    - {x: 1, y: 4}
+    - {x: 6, y: 4}
+    - {x: 16, y: 16}
+    - {x: 16, y: 16}
+    - {x: 3, y: 4}
+    - {x: 16, y: 16}
+    - {x: 2, y: 10}
+    - {x: 16, y: 16}
+    - {x: 16, y: 16}
+    - {x: 16, y: 16}
+    - {x: 16, y: 16}
+    - {x: 16, y: 16}
+    - {x: 4, y: 3}
+    - {x: 16, y: 16}
+    - {x: 30, y: 19}
+    - {x: 24, y: 1}
+    - {x: 7, y: 1}
+    - {x: 2, y: 19}
+    - {x: 7, y: 30}
+    - {x: 24, y: 30}

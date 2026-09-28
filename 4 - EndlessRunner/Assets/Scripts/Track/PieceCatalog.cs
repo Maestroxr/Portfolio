@@ -31,7 +31,6 @@ namespace Portfolio.EndlessRunner
 
         [Header("Landmarks")]
         public TrackPiece finishLine;
-        public TrackPiece startLine;
 
         public PowerUpPickup PowerUp(PowerUpType type)
         {

@@ -140,6 +140,55 @@ namespace Portfolio.Asteroids
         [SerializeField] internal Sprite starFull;
         [SerializeField] internal Sprite starEmpty;
 
+        /// <summary>The full star: the active theme's, else the scene's.</summary>
+        internal Sprite StarFull => Themed(theme => theme.Interface.starFull, starFull);
+
+        /// <summary>The empty star: the active theme's, else the scene's.</summary>
+        internal Sprite StarEmpty => Themed(theme => theme.Interface.starEmpty, starEmpty);
+
+        /// <summary>The HUD icon of <paramref name="weapon"/>: the active theme's, else the scene's; null without either.</summary>
+        internal Sprite WeaponSprite(WeaponType weapon)
+        {
+            int index = (int)weapon;
+            return Themed(theme => theme.Weapon(weapon), index >= 0 && index < weaponSprites.Length ? weaponSprites[index] : null);
+        }
+
+        /// <summary>The hangar picture of <paramref name="ship"/>: the active theme's look of the hull, else the scene's; null without either.</summary>
+        internal Sprite Preview(HangarShip ship)
+        {
+            AsteroidsTheme.ShipLook look = AsteroidsThemes.Ship(ship.Name);
+            if (look != null && look.preview != null)
+            {
+                return look.preview;
+            }
+            return ship.Index >= 0 && ship.Index < shipPreviews.Length ? shipPreviews[ship.Index] : null;
+        }
+
+        /// <summary><paramref name="pick"/> of the active theme when there is one and it has the sprite, else <paramref name="fallback"/>.</summary>
+        internal static Sprite Themed(System.Func<AsteroidsTheme, Sprite> pick, Sprite fallback)
+        {
+            AsteroidsTheme theme = AsteroidsThemes.Active;
+            Sprite sprite = theme != null ? pick(theme) : null;
+            return sprite != null ? sprite : fallback;
+        }
+
+        /// <summary>The tint transitions of the game's buttons: lit up on hover, darkened when pressed, greyed when disabled.</summary>
+        public static ColorBlock ButtonColors
+        {
+            get
+            {
+                ColorBlock colors = ColorBlock.defaultColorBlock;
+                colors.normalColor = Color.white;
+                colors.highlightedColor = new Color(1.15f, 1.15f, 1.15f, 1f);
+                colors.selectedColor = Color.white;
+                colors.pressedColor = new Color(0.75f, 0.75f, 0.8f, 1f);
+                colors.disabledColor = new Color(0.45f, 0.45f, 0.5f, 0.7f);
+                colors.colorMultiplier = 1.2f;
+                colors.fadeDuration = 0.08f;
+                return colors;
+            }
+        }
+
         [Header("Strike")]
         [Tooltip("The strike mode's screens on the same canvas.")]
         [SerializeField] internal StrikeUI strike;
@@ -403,7 +452,7 @@ namespace Portfolio.Asteroids
         }
 
 
-        private void ShowHangar()
+        internal void ShowHangar()
         {
             if (hangarScreen == null)
             {
@@ -415,7 +464,7 @@ namespace Portfolio.Asteroids
         }
 
 
-        private void HideHangar()
+        internal void HideHangar()
         {
             if (hangarScreen == null)
             {
@@ -513,7 +562,7 @@ namespace Portfolio.Asteroids
                 missionNodes[i].gameObject.SetActive(used);
                 if (used)
                 {
-                    missionNodes[i].Show(summaries[i], summaries[i].Index == selected, starFull, starEmpty);
+                    missionNodes[i].Show(summaries[i], summaries[i].Index == selected, StarFull, StarEmpty);
                 }
             }
             ShowSectorHeaders(totalStars);
@@ -587,7 +636,7 @@ namespace Portfolio.Asteroids
                     continue;
                 }
                 detailStars[i].gameObject.SetActive(!summary.Endless);
-                detailStars[i].sprite = i < summary.Stars ? starFull : starEmpty;
+                detailStars[i].sprite = i < summary.Stars ? StarFull : StarEmpty;
             }
             if (launchButton != null)
             {
@@ -616,9 +665,10 @@ namespace Portfolio.Asteroids
                     continue;
                 }
                 shipCards[i].Show(ships[i], accent);
-                if (shipCards[i].preview != null && ships[i].Index < shipPreviews.Length)
+                Sprite preview = Preview(ships[i]);
+                if (shipCards[i].preview != null && preview != null)
                 {
-                    shipCards[i].preview.sprite = shipPreviews[ships[i].Index];
+                    shipCards[i].preview.sprite = preview;
                 }
             }
         }
@@ -743,13 +793,14 @@ namespace Portfolio.Asteroids
                 {
                     weaponText.color = tint;
                 }
-                if (weaponIcon != null && (int)hud.Weapon < weaponSprites.Length)
+                Sprite weaponSprite = WeaponSprite(hud.Weapon);
+                if (weaponIcon != null && weaponSprite != null)
                 {
-                    weaponIcon.sprite = weaponSprites[(int)hud.Weapon];
+                    weaponIcon.sprite = weaponSprite;
                 }
-                if (shipControls != null && (int)hud.Weapon < weaponSprites.Length)
+                if (shipControls != null && weaponSprite != null)
                 {
-                    shipControls.ShowWeapon(weaponSprites[(int)hud.Weapon]);
+                    shipControls.ShowWeapon(weaponSprite);
                 }
                 for (int i = 0; i < weaponPips.Length; i++)
                 {
@@ -1032,7 +1083,7 @@ namespace Portfolio.Asteroids
             {
                 if (star != null)
                 {
-                    star.sprite = starEmpty;
+                    star.sprite = StarEmpty;
                     star.transform.localScale = Vector3.one;
                     star.gameObject.SetActive(!result.Endless && !result.Coop);
                 }
@@ -1193,7 +1244,7 @@ namespace Portfolio.Asteroids
                 Image star = resultStars[starsPopped];
                 if (star != null)
                 {
-                    star.sprite = starFull;
+                    star.sprite = StarFull;
                 }
                 Sounds?.Star(starsPopped);
                 starsPopped++;

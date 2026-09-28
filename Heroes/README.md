@@ -212,11 +212,12 @@ faster until it catches up. There is no saving and no pausing online: the menu i
 The builders under the **Heroes** menu make everything the game shows from what was downloaded. Every builder writes
 in place, so a rebuild keeps the references the scenes already have and writes the same bytes again.
 
-- **Heroes > Build Everything**: the art, the scenarios and the scene, in that order. In batch mode
-  `-executeMethod Portfolio.Heroes.EditorTools.HeroesBuildMenu.BuildEverything`.
+- **Heroes > Build Everything**: the art of both themes, the scenarios, the themes and the scene, in that order. In
+  batch mode `-executeMethod Portfolio.Heroes.EditorTools.HeroesBuildMenu.BuildEverything`.
 - **Heroes > Build Art**: import settings, materials, terrain layers, the prefabs of the creatures, heroes, map objects
   and towns, the battlefield art, the portraits, the interface and the sounds, tied together in `Art/HeroesArt.asset`.
-  It works in a scene of its own that it throws away, so the open scene is not marked as changed.
+  It works in a scene of its own that it throws away, so the open scene is not marked as changed. **Heroes > Build Art
+  (Grim Realm)** runs the same builders with the second theme's spec into `Art/Themes/GrimRealm` (see Themes below).
 - **Heroes > Art > Portraits**, **Interface**, **Battlefield**: one part of Build Art each. **Interface Preview**
   draws the kit as the game puts it together into `Logs/shots/uikit.png`, and **Battlefield Pictures** renders every
   obstacle and backdrop into `Logs/shots/battlefield`.
@@ -246,8 +247,10 @@ without these arguments, and in a release player, nothing of it runs:
   a large, rich and hard setting. The tour changes a copy of the settings, never the defaults or the player's own.
 - `-heroes-ui-tour <folder>` walks through every screen outside the battles: the title, the credits, the settings,
   the campaign and the skirmish maps, the adventure screen and its tooltips, the hero's book, the town with its market
-  and tavern, the questions, the next day, the pause menu and the results of a game. It looks at the lobby only when
-  `-gamebox-server` is given; `-heroes-ui-tour-views 1` also shoots the title from its other camera views.
+  and tavern, the questions, the next day, the pause menu and the results of a game, and at last the title switched to
+  the next look the game lists (redrawn without a reload) and back. It looks at the lobby only when `-gamebox-server`
+  is given; `-heroes-ui-tour-views 1` also shoots the title from its other camera views. Either tour runs in another
+  look with `-gamebox-theme "Grim Realm"`.
 - `-heroes-online host <folder>` and `-heroes-online join <folder>` play an online game against each other: the host
   opens a room (a small random map, battles on a battlefield, no clock and no computer players; `-heroes-online-turn
   <seconds>` puts a clock on it), the other joins, and each plays four days of its own, walking to what is worth having
@@ -283,4 +286,47 @@ the title screen shows.
   the interface.
 - **The battlefield**: a sky for every ground with the light measured from it, every obstacle in the looks of six
   grounds (the packs' palettes repainted for snow, sand, ash and bog), and the hills, mountains and woods that ring a
-  field (`HeroesBattleArt`); the scene builder adds the gatehouse, the ruin, the stones and the banners of a siege.
+  field (`HeroesBattleArt`), and the gatehouse, the ruin, the stones and the banners of a siege (made by the scene
+  builder's code with the art of every theme; the classic ones stay next to the battle scene).
+
+## Themes
+
+The whole look of the game is a `HeroesTheme` asset (BaseGame's `GameTheme` for this game, `Scripts/HeroesTheme.cs`):
+it wraps a `HeroesArt` (every model, sprite, material, font, pointer and sound the builders made in the theme's manner)
+and adds what the art does not hold: the palette of the interface's words, headings, logo, highlights and little map
+and of the players (`UIKit.Ink`, `UIKit.Gold`, `HeroesArt.PlayerColor`... all read the active theme's palette; the gold
+highlights, the map's grid and the frame on the little map lean toward its `accent`), the light, sky and fog of the map
+(`atmosphere`), what the glows of spells and blows lean toward (`glows`), the pointers, and the look of the shared
+pause menu (`Menu`, `Fonts`). The manager reads its art through the theme (`HeroesGameManager.Art`) and so does
+everything under it: the map, the battles in both styles, the title valley, the interface kit. The colours that mean
+something in a battle (where a stack can walk, shoot or strike, whose turn it is) stay the same in every theme.
+
+There are two themes, in `Content/Themes`, and the game's definition (`Resources/Games/Heroes.asset`) starts with the
+first and lists both:
+
+- **Classic**: the game as it was drawn, old gold on dark leather and stone, parchment, clear skies, Cinzel and Alegreya.
+- **Grim Realm**: a darker, mature look of the same models. Their colours are drained and cold (a grade over the packs'
+  sheets and tints), the ground is mud, ash, dead grass and wet rock, dead trees stand in the forests and dead trees,
+  ruins and a crypt ring the battlefields under overcast, stormy and dusk skies with a thicker fog. The interface is
+  black leather and iron with riveted corners instead of gold ornaments, bone white paper with stains, blood red
+  ribbons and cold steel bars; the pointers are an iron gauntlet and steel swords; the portraits are lit with a cold
+  rim and their corners darkened in an iron frame; the words are set in IM Fell English, the titles in Pirata One and
+  the name of the game in UnifrakturCook (all OFL, in `Art/Themes/GrimRealm/Fonts` with their licences and
+  `Sources.txt`); the magic glows in blood red and cold blue. The music is the same. Everything of it is generated into
+  `Art/Themes/GrimRealm` by the same builders, run with the `HeroesThemeSpec.GrimRealm` spec (the folders, the colour
+  grade, the terrain grades, the sky table, the kit style, the fonts, the pointer tints, the portrait light and the
+  palette are all in `Editor/HeroesThemeSpec.cs`; there is no second copy of any builder).
+
+How to switch: point the definition's `Theme` at another theme (or `Gamebox > Themes > Choose...`), press the theme
+button of the game's card in the launcher, pick a **Look** in the settings panel of the pause menu, or start a
+development player, a tour or the editor with `-gamebox-theme "Grim Realm"`. The choice made in a game is remembered on
+the device (`Gamebox.Theme.Heroes`). A change while the title shows redraws the title, its valley and every screen at
+once (the interface is built again from the new art); a scenario in progress keeps the map and the battles it started
+with, and takes the new look when it is loaded again, while the pause menu re-skins itself at once.
+
+**Heroes > Build Everything** builds the art of both themes, the scenarios, the theme assets (`HeroesThemeBuilder`,
+also **Heroes > Rebuild Themes**) and the scene; **Heroes > Build Art (Grim Realm)** builds the second art alone, and
+**Heroes > Art > Interface Preview (Grim Realm)** draws its kit into `Logs/shots/uikit-grim.png`. The theme tests
+(`Tests/Editor/Themes`) check that both themes exist and are complete (`Validate`), that the definition lists them,
+that the classic theme carries the art the scene was built with, that nothing of the classic art is referenced by the
+Grim Realm, and that picking a theme changes what the game reads.

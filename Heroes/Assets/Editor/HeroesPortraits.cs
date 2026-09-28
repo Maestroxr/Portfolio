@@ -17,7 +17,9 @@ namespace Portfolio.Heroes.EditorTools
     /// </summary>
     internal static class HeroesPortraits
     {
-        private const string Folder = "Art/Generated/Portraits";
+        /// <summary>Where the theme's portraits go, and the light they are rendered in.</summary>
+        private static string Folder => $"{HeroesThemeSpec.Current.Generated}/Portraits";
+        private static PortraitLook Look => HeroesThemeSpec.Current.Portraits;
         private const int Size = 256;
 
         [MenuItem("Heroes/Art/Portraits", false, 41)]
@@ -51,7 +53,12 @@ namespace Portfolio.Heroes.EditorTools
                     }
                     town.portraits = portraits;
                 }
-                Items(studio);
+                if (HeroesThemeSpec.Current == HeroesThemeSpec.Classic)
+                {
+                    // The item icons are shared by every theme (Art/UI/Items), so only the classic build draws them: a
+                    // graded theme would paint them in its own colours.
+                    Items(studio);
+                }
             }
         }
 
@@ -123,6 +130,7 @@ namespace Portfolio.Heroes.EditorTools
                 return null;
             }
             var shot = new StudioShot { Width = Size, Height = Size, Yaw = 205f, Pitch = 10f, Padding = 0.05f };
+            Look.Apply(shot);
             float at = 0.3f;
             switch (unit.creature)
             {
@@ -188,6 +196,7 @@ namespace Portfolio.Heroes.EditorTools
                 BustFraction = tall ? 0.36f : 0.56f,
                 Padding = 0.07f
             };
+            Look.Apply(shot);
             Texture2D picture = studio.Shoot(hero.rider, shot, model => Rest(model, "Idle"));
             return Save(picture, $"Hero_{hero.heroClass}");
         }
@@ -210,6 +219,7 @@ namespace Portfolio.Heroes.EditorTools
                 return null;
             }
             var shot = new StudioShot { Width = Size, Height = Size, Yaw = 225f, Pitch = 10f, Padding = 0.05f };
+            Look.Apply(shot);
             GameObject mount = studio.Place(hero.mount);
             try
             {
@@ -262,7 +272,9 @@ namespace Portfolio.Heroes.EditorTools
             {
                 return null;
             }
-            var shot = new StudioShot { Width = Size, Height = Size, Yaw = 200f, Pitch = 30f, Padding = 0.04f, Key = 1.45f };
+            var shot = new StudioShot { Width = Size, Height = Size, Yaw = 200f, Pitch = 30f, Padding = 0.04f };
+            Look.Apply(shot);
+            shot.Key = Look.TownKey;
             return Save(studio.Shoot(prefab, shot), name);
         }
 
@@ -418,8 +430,37 @@ namespace Portfolio.Heroes.EditorTools
         private static Sprite Save(Texture2D picture, string name)
         {
             string relative = $"{Folder}/{name}.png";
+            Vignette(picture, Look.Vignette);
             HeroesAssets.SaveTexture(picture, relative, importer => HeroesAssets.SpriteImport(importer, Vector4.zero, Size));
             return HeroesAssets.Sprite(relative);
+        }
+
+        /// <summary>
+        /// Darkens the corners of a portrait toward black by <paramref name="strength"/>, from a little below its middle
+        /// (where a face is) outward; what is see-through stays so, and nothing changes for a strength of zero.
+        /// </summary>
+        private static void Vignette(Texture2D picture, float strength)
+        {
+            if (strength <= 0f || picture == null)
+            {
+                return;
+            }
+            int width = picture.width;
+            int height = picture.height;
+            Color[] pixels = picture.GetPixels();
+            var center = new Vector2(width * 0.5f, height * 0.55f);
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    float r = (new Vector2(x + 0.5f, y + 0.5f) - center).magnitude / (width * 0.6f);
+                    float dark = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((r - 0.45f) / 0.6f)) * strength;
+                    Color p = pixels[y * width + x];
+                    pixels[y * width + x] = new Color(p.r * (1f - dark), p.g * (1f - dark), p.b * (1f - dark), p.a);
+                }
+            }
+            picture.SetPixels(pixels);
+            picture.Apply();
         }
     }
 }

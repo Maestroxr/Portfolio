@@ -31,6 +31,10 @@ namespace Portfolio.Monopoly
         private bool myTurn;
         private float bobPhase;
         private Coroutine moving;
+        private MaterialPropertyBlock tint;
+
+        private static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
+        private static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
 
         public int Token => token;
 
@@ -39,20 +43,9 @@ namespace Portfolio.Monopoly
         /// <summary>Called by the manager for a new match or a loaded one: the figure, the seat colour of the base and ring.</summary>
         public void Configure(int tokenIndex, int color, bool visible)
         {
-            token = Mathf.Clamp(tokenIndex, 0, Mathf.Max(0, tokenMeshes.Length - 1));
+            token = Mathf.Clamp(tokenIndex, 0, Mathf.Max(0, MonopolyStyle.TokenCount - 1));
             colorIndex = color;
-            if (figure != null && tokenMeshes.Length > 0)
-            {
-                figure.sharedMesh = tokenMeshes[token];
-            }
-            if (baseRenderer != null && colorIndex >= 0 && colorIndex < seatMaterials.Length)
-            {
-                baseRenderer.sharedMaterial = seatMaterials[colorIndex];
-            }
-            if (ring != null && colorIndex >= 0 && colorIndex < ringMaterials.Length)
-            {
-                ring.sharedMaterial = ringMaterials[colorIndex];
-            }
+            Reskin();
             gameObject.SetActive(visible);
             if (body != null)
             {
@@ -61,6 +54,55 @@ namespace Portfolio.Monopoly
                 body.localScale = Vector3.one;
             }
             SetTurn(false);
+        }
+
+        /// <summary>
+        /// Draws the token in the active theme: the figure and its colour, the base and the ring in the seat's look.
+        /// The theme wins over the meshes and materials the scene was built with, which stay as fallbacks.
+        /// </summary>
+        public void Reskin()
+        {
+            MonopolyTheme theme = MonopolyStyle.Theme;
+            TokenLook look = theme != null ? theme.Token(token) : null;
+            SeatLook seat = theme != null ? theme.Seat(colorIndex) : null;
+            Mesh mesh = look != null && look.mesh != null ? look.mesh : token < tokenMeshes.Length ? tokenMeshes[token] : null;
+            if (figure != null && mesh != null)
+            {
+                figure.sharedMesh = mesh;
+            }
+            Renderer figureRenderer = figure != null ? figure.GetComponent<Renderer>() : null;
+            if (figureRenderer != null)
+            {
+                if (theme != null && theme.tokenMaterial != null)
+                {
+                    figureRenderer.sharedMaterial = theme.tokenMaterial;
+                }
+                tint ??= new MaterialPropertyBlock();
+                figureRenderer.GetPropertyBlock(tint);
+                if (look != null && look.tint.a > 0f)
+                {
+                    tint.SetColor(BaseColor, look.tint);
+                    // A glowing look lights the figure up in its tint (the material glows only when its look asks for it).
+                    tint.SetColor(EmissionColor, look.tint * (theme != null ? theme.tokenGlow : 0f));
+                }
+                else
+                {
+                    tint.Clear();
+                }
+                figureRenderer.SetPropertyBlock(tint);
+            }
+            Material baseMaterial = seat != null && seat.baseMaterial != null ? seat.baseMaterial
+                : colorIndex >= 0 && colorIndex < seatMaterials.Length ? seatMaterials[colorIndex] : null;
+            if (baseRenderer != null && baseMaterial != null)
+            {
+                baseRenderer.sharedMaterial = baseMaterial;
+            }
+            Material ringMaterial = seat != null && seat.ringMaterial != null ? seat.ringMaterial
+                : colorIndex >= 0 && colorIndex < ringMaterials.Length ? ringMaterials[colorIndex] : null;
+            if (ring != null && ringMaterial != null)
+            {
+                ring.sharedMaterial = ringMaterial;
+            }
         }
 
         /// <summary>Puts the token on a spot at once.</summary>

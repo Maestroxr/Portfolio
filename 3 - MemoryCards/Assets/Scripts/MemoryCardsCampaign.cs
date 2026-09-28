@@ -43,6 +43,22 @@ namespace Portfolio.MemoryCards
             return GetWorld(world)?.theme;
         }
 
+        /// <summary>
+        /// The world at <paramref name="index"/> as <paramref name="look"/> shows it: the theme's world when it has one
+        /// there, else the campaign's own.
+        /// </summary>
+        public CardWorld WorldOf(int index, MemoryCardsTheme look)
+        {
+            CardWorld themed = look != null ? look.World(index) : null;
+            return themed != null ? themed : Theme(index);
+        }
+
+        /// <summary>The deck of <paramref name="look"/>; the campaign's own animals without a theme (or with an empty one).</summary>
+        public IReadOnlyList<Sprite> Deck(MemoryCardsTheme look)
+        {
+            return look != null && look.Faces != null && look.Faces.Count > 0 ? look.Faces : animals;
+        }
+
         public MemoryCardsLevel Level(int index)
         {
             return this[index] as MemoryCardsLevel;
@@ -98,6 +114,19 @@ namespace Portfolio.MemoryCards
                 return theme.animals;
             }
             return animals;
+        }
+
+        /// <summary>
+        /// The faces a level deals from under <paramref name="look"/>: the faces of the theme's world, else the theme's
+        /// whole deck; without a theme, <see cref="AnimalPool(MemoryCardsLevel, MemoryCardsSettings)"/>.
+        /// </summary>
+        public IReadOnlyList<Sprite> AnimalPool(MemoryCardsLevel level, MemoryCardsSettings settings, MemoryCardsTheme look)
+        {
+            if (look == null || look.Faces == null || look.Faces.Count == 0)
+            {
+                return AnimalPool(level, settings);
+            }
+            return look.FacesOf(level != null ? level.World : -1);
         }
 
         /// <summary>Stars are earned on campaign levels only.</summary>
@@ -205,8 +234,11 @@ namespace Portfolio.MemoryCards
             return done;
         }
 
-        /// <summary>Checks every level against the animals of its world. Returns the problems found.</summary>
-        public List<string> Validate()
+        /// <summary>
+        /// Checks every level against the animals of its world (as <paramref name="look"/> deals them, when given).
+        /// Returns the problems found.
+        /// </summary>
+        public List<string> Validate(MemoryCardsTheme look = null)
         {
             var problems = new List<string>();
             for (int i = 0; i < Count; i++)
@@ -230,7 +262,7 @@ namespace Portfolio.MemoryCards
                 {
                     problems.Add($"{level.name}: world {level.World} does not exist.");
                 }
-                int pool = AnimalPool(level).Count;
+                int pool = AnimalPool(level, null, look).Count;
                 if (!level.Settings.AreSettingsValid(pool, out string message))
                 {
                     problems.Add($"{level.name}: {message}");

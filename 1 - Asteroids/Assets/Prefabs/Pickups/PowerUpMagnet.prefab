@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 7894830578118856316}
   - component: {fileID: 2015762191713006628}
   - component: {fileID: 7016286737917370532}
+  - component: {fileID: 6373442110209172552}
   m_Layer: 0
   m_Name: Icon
   m_TagString: Untagged
@@ -90,6 +91,21 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &6373442110209172552
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2595947510413738896}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Materials/IconMagnet
+  slot: 0
 --- !u!1 &2893509929549801557
 GameObject:
   m_ObjectHideFlags: 0
@@ -133,6 +149,8 @@ GameObject:
   - component: {fileID: 7701959439870673731}
   - component: {fileID: 870572967771037190}
   - component: {fileID: 1389457351568453224}
+  - component: {fileID: 1372064982810313111}
+  - component: {fileID: 4109403003221065922}
   m_Layer: 0
   m_Name: Model
   m_TagString: Untagged
@@ -212,6 +230,35 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &1372064982810313111
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3877560426492422469}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Materials/Palette
+  slot: 0
+--- !u!114 &4109403003221065922
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3877560426492422469}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68a8cc4438b7cdf40b6a35c7fa61b5cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedMesh
+  game: 0
+  mesh: Models/PickupFrame
 --- !u!1 &4270253987042108172
 GameObject:
   m_ObjectHideFlags: 0
@@ -289,6 +336,7 @@ GameObject:
   - component: {fileID: 969742367674675683}
   - component: {fileID: 4054935347886527780}
   - component: {fileID: 2386401471713866903}
+  - component: {fileID: 164673374871864744}
   m_Layer: 0
   m_Name: Core
   m_TagString: Untagged
@@ -368,6 +416,21 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &164673374871864744
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6150013651084129431}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Materials/CorePowerUpMagnet
+  slot: 0
 --- !u!1 &7219065979427171454
 GameObject:
   m_ObjectHideFlags: 0

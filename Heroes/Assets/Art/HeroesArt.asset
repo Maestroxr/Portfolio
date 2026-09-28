@@ -803,6 +803,8 @@ MonoBehaviour:
     ambientEquator: {r: 0.44, g: 0.46, b: 0.46, a: 1}
     ambientGround: {r: 0.26, g: 0.23, b: 0.18, a: 1}
     fog: {r: 0.61, g: 0.63, b: 0.68, a: 1}
+    fogStart: 75
+    fogEnd: 290
   - name: Overcast
     material: {fileID: 2100000, guid: 4b1a2104aed5efc4b8d692de6982bd05, type: 2}
     sun: {r: 0.9, g: 0.92, b: 0.95, a: 1}
@@ -812,6 +814,8 @@ MonoBehaviour:
     ambientEquator: {r: 0.5, g: 0.5, b: 0.5, a: 1}
     ambientGround: {r: 0.3, g: 0.28, b: 0.25, a: 1}
     fog: {r: 0.49, g: 0.51, b: 0.54, a: 1}
+    fogStart: 75
+    fogEnd: 290
   - name: Snow
     material: {fileID: 2100000, guid: 1fd5e4e8ed826d84599529dd94004981, type: 2}
     sun: {r: 0.96, g: 0.97, b: 1, a: 1}
@@ -821,6 +825,8 @@ MonoBehaviour:
     ambientEquator: {r: 0.56, g: 0.58, b: 0.62, a: 1}
     ambientGround: {r: 0.42, g: 0.42, b: 0.45, a: 1}
     fog: {r: 0.57, g: 0.57, b: 0.56, a: 1}
+    fogStart: 75
+    fogEnd: 290
   - name: Wasteland
     material: {fileID: 2100000, guid: 0d14838fca20a7f499c7c8c361784476, type: 2}
     sun: {r: 1, g: 0.87, b: 0.68, a: 1}
@@ -830,6 +836,8 @@ MonoBehaviour:
     ambientEquator: {r: 0.52, g: 0.46, b: 0.4, a: 1}
     ambientGround: {r: 0.3, g: 0.24, b: 0.18, a: 1}
     fog: {r: 0.65, g: 0.66, b: 0.6, a: 1}
+    fogStart: 75
+    fogEnd: 290
   - name: Dusk
     material: {fileID: 2100000, guid: 7e9357c14de82e54d813082bf1482b20, type: 2}
     sun: {r: 1, g: 0.64, b: 0.44, a: 1}
@@ -839,6 +847,8 @@ MonoBehaviour:
     ambientEquator: {r: 0.38, g: 0.3, b: 0.32, a: 1}
     ambientGround: {r: 0.16, g: 0.12, b: 0.12, a: 1}
     fog: {r: 0.57, g: 0.5, b: 0.57, a: 1}
+    fogStart: 75
+    fogEnd: 290
   terrainSkies: 000000000000000003000000020000000100000000000000030000000000000004000000i
   duskSky: 4
   obstacles:
@@ -1585,6 +1595,15 @@ MonoBehaviour:
     - {fileID: 4281619267189629057, guid: 81b47b857f50c5e48bc19120488f8f6b, type: 3}
     - {fileID: 5779625040066107961, guid: c468b02effd8d9d4cbeedca7faba52e7, type: 3}
     - {fileID: 3326604656894020853, guid: 220fa33517d32b64cbbad8a8bd541da6, type: 3}
+  siegeGate: {fileID: 5018695046121274546, guid: 97ca7626341a5ab4baa1d8e907339683, type: 3}
+  siegeRuin: {fileID: 8273200299053173447, guid: 4713187226f39724ea4a909d9beec916, type: 3}
+  siegeStones: {fileID: 645028543625925511, guid: 3442c23b1133b19428d91f5f60f7ad56, type: 3}
+  siegeBanners:
+  - {fileID: 3378616028782409458, guid: 4b71e3e4e7e33a34995683d2acf96e5d, type: 3}
+  - {fileID: 7267080203349098048, guid: b6ee876f926d8784e9437c88a4f5acaa, type: 3}
+  - {fileID: 2421094007971124845, guid: e21e66fb777f9144983bbb779abf06a6, type: 3}
+  - {fileID: 8722369993700351099, guid: 9b54f2894b56eb34488307fd5547bf0b, type: 3}
+  - {fileID: 4104863676395796294, guid: f36e5692eeaee744bb8cfcefb660c66e, type: 3}
   titleFont: {fileID: 11400000, guid: 93826eed20d40714482a7216b0472240, type: 2}
   bodyFont: {fileID: 11400000, guid: bc5e36c3e29424c45b10ea02aec06869, type: 2}
   logoFont: {fileID: 11400000, guid: 128b01544bed3eb48a221ed211d1c9fe, type: 2}
@@ -1620,7 +1639,6 @@ MonoBehaviour:
   star: {fileID: 21300000, guid: 213e99832d092d0459e6ad94952d17aa, type: 3}
   starEmpty: {fileID: 21300000, guid: bbe44a733ec4b37439b09754dda450e1, type: 3}
   banner: {fileID: 21300000, guid: 0e8425e69f3c4f54aa8b125ced92ef1d, type: 3}
-  titleArt: {fileID: 0}
   strip: {fileID: 21300000, guid: 295b67fca25add44a900702d329357bf, type: 3}
   card: {fileID: 21300000, guid: d2a9cdb5e70983245b7fbdbff2d42cb8, type: 3}
   cardHover: {fileID: 21300000, guid: 3fb10e7b7c1d78943b63ad5e5d3d99ff, type: 3}

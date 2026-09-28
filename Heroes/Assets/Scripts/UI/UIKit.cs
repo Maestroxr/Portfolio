@@ -15,11 +15,12 @@ namespace Portfolio.Heroes.UI
     /// </summary>
     public static class UIKit
     {
-        public static readonly Color Ink = new Color(0.94f, 0.9f, 0.8f);
-        public static readonly Color Dim = new Color(0.72f, 0.67f, 0.56f);
-        public static readonly Color Gold = new Color(0.88f, 0.74f, 0.4f);
-        public static readonly Color Bad = new Color(0.92f, 0.45f, 0.38f);
-        public static readonly Color Good = new Color(0.55f, 0.88f, 0.5f);
+        // The colours of the words are the active theme's (HeroesTheme.Activate); without a theme they are the classic ones.
+        public static Color Ink => HeroesTheme.Palette.Active.ink;
+        public static Color Dim => HeroesTheme.Palette.Active.dim;
+        public static Color Gold => HeroesTheme.Palette.Active.gold;
+        public static Color Bad => HeroesTheme.Palette.Active.bad;
+        public static Color Good => HeroesTheme.Palette.Active.good;
 
         public static HeroesArt Art { get; set; }
 
@@ -328,14 +329,14 @@ namespace Portfolio.Heroes.UI
             return label;
         }
 
-        /// <summary>A title in gold with a dark outline and a shadow: the heading of a window or a panel.</summary>
+        /// <summary>A title in the palette's heading colours (gold in the classic look) with a dark outline and a shadow.</summary>
         public static TextMeshProUGUI Heading(Transform parent, string name, string text, float size,
             TextAlignmentOptions align = TextAlignmentOptions.Center)
         {
             TextMeshProUGUI label = Title(parent, name, text, size, Color.white, align);
             label.enableVertexGradient = true;
-            label.colorGradient = new VertexGradient(new Color(1f, 0.93f, 0.7f), new Color(1f, 0.93f, 0.7f),
-                new Color(0.86f, 0.66f, 0.3f), new Color(0.86f, 0.66f, 0.3f));
+            HeroesTheme.Palette palette = HeroesTheme.Palette.Active;
+            label.colorGradient = new VertexGradient(palette.headingTop, palette.headingTop, palette.headingBottom, palette.headingBottom);
             return Look(label, TextLook.Gold);
         }
 
@@ -348,8 +349,8 @@ namespace Portfolio.Heroes.UI
                 label.font = Art.logoFont;
             }
             label.enableVertexGradient = true;
-            label.colorGradient = new VertexGradient(new Color(1f, 0.95f, 0.75f), new Color(1f, 0.95f, 0.75f),
-                new Color(0.82f, 0.58f, 0.22f), new Color(0.82f, 0.58f, 0.22f));
+            HeroesTheme.Palette palette = HeroesTheme.Palette.Active;
+            label.colorGradient = new VertexGradient(palette.logoTop, palette.logoTop, palette.logoBottom, palette.logoBottom);
             return Look(label, TextLook.Logo);
         }
 
@@ -566,9 +567,9 @@ namespace Portfolio.Heroes.UI
 
         // ------------------------------------------------------------------ words with icons
 
-        /// <summary>The colours of words on parchment: brown ink, and a lighter brown for what matters less.</summary>
-        public static readonly Color InkOnParchment = new Color(0.24f, 0.15f, 0.07f);
-        public static readonly Color DimOnParchment = new Color(0.42f, 0.3f, 0.17f);
+        /// <summary>The colours of words on parchment: brown ink, and a lighter brown for what matters less (the theme's).</summary>
+        public static Color InkOnParchment => HeroesTheme.Palette.Active.inkOnParchment;
+        public static Color DimOnParchment => HeroesTheme.Palette.Active.dimOnParchment;
 
         /// <summary>The names the icons of the resources have in a line of text, by <see cref="ResourceKind"/>.</summary>
         private static readonly string[] ResourceSprites = { "gold", "wood", "ore", "mercury", "sulfur", "crystal", "gems" };
@@ -767,7 +768,7 @@ namespace Portfolio.Heroes.UI
             rect.sizeDelta = new Vector2(8f, 0f);
             rect.anchoredPosition = Vector2.zero;
             RectTransform area = Stretch(Rect(rect, "Sliding Area"), 1f, 1f, 1f, 1f);
-            Image handle = Sprite(area, "Handle", Art != null ? Art.bar : null, new Color(0.88f, 0.74f, 0.4f, 0.85f));
+            Image handle = Sprite(area, "Handle", Art != null ? Art.bar : null, new Color(Gold.r, Gold.g, Gold.b, 0.85f));
             handle.raycastTarget = true;
             Stretch(handle.rectTransform);
             var scrollbar = groove.gameObject.AddComponent<Scrollbar>();

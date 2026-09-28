@@ -48,24 +48,7 @@ namespace Portfolio.Monopoly
             seat = player.index;
             isLocal = false;
             gameObject.SetActive(true);
-            Color color = MonopolyStyle.PlayerColor(player.color);
-            if (accent != null)
-            {
-                accent.color = color;
-            }
-            if (badge != null)
-            {
-                badge.color = color;
-            }
-            if (glow != null)
-            {
-                glow.color = MonopolyStyle.WithAlpha(color, 0f);
-            }
-            if (tokenIcon != null)
-            {
-                tokenIcon.sprite = token;
-                tokenIcon.enabled = token != null;
-            }
+            Repaint(player, token);
             if (nameText != null)
             {
                 nameText.text = player.name;
@@ -83,6 +66,34 @@ namespace Portfolio.Monopoly
                 group.alpha = 1f;
             }
             transform.localScale = Vector3.one;
+        }
+
+        /// <summary>The seat colour and the token badge, from the style (again when the theme changes).</summary>
+        public void Repaint(PlayerState player, Sprite token)
+        {
+            Color color = MonopolyStyle.PlayerColor(player.color);
+            if (accent != null)
+            {
+                accent.color = color;
+            }
+            if (badge != null)
+            {
+                badge.color = color;
+            }
+            if (glow != null)
+            {
+                glow.color = MonopolyStyle.WithAlpha(color, glow.color.a);
+            }
+            if (tokenIcon != null)
+            {
+                tokenIcon.sprite = token;
+                tokenIcon.enabled = token != null;
+                tokenIcon.color = MonopolyStyle.TextOn(color);
+            }
+            if (frame != null)
+            {
+                frame.color = isTurn ? MonopolyStyle.Paper : MonopolyStyle.Panel;
+            }
         }
 
         /// <summary>Marks the panel of the player at this device, in an online match where the others sit elsewhere.</summary>
@@ -234,7 +245,7 @@ namespace Portfolio.Monopoly
             }
             if (frame != null)
             {
-                frame.color = value ? Color.white : MonopolyStyle.Panel;
+                frame.color = value ? MonopolyStyle.Paper : MonopolyStyle.Panel;
             }
         }
 

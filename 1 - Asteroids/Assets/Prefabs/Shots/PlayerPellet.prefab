@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 6873725548974055715}
   - component: {fileID: 3671034969779209381}
   - component: {fileID: 2244380299571212291}
+  - component: {fileID: 6617695486688848732}
   m_Layer: 0
   m_Name: Glow
   m_TagString: Untagged
@@ -90,6 +91,21 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &6617695486688848732
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2003818278196443544}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Materials/Pellet
+  slot: 0
 --- !u!1 &4352997594277498388
 GameObject:
   m_ObjectHideFlags: 0

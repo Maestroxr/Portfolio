@@ -116,6 +116,7 @@ namespace Portfolio.Monopoly
                 PlayerState other = match.players[partnerSeats[i]];
                 partners[i].badge.color = MonopolyStyle.PlayerColor(other.color);
                 partners[i].token.sprite = tokens?.Invoke(other.token);
+                partners[i].token.color = MonopolyStyle.TextOn(partners[i].badge.color);
                 partners[i].name.text = other.name;
             }
             if (title != null)
@@ -137,7 +138,7 @@ namespace Portfolio.Monopoly
             {
                 if (partners[i].frame != null)
                 {
-                    partners[i].frame.color = i == index ? MonopolyStyle.Tint(MonopolyStyle.PlayerColor(match.players[partnerSeats[Math.Min(i, partnerSeats.Count - 1)]].color), 0.6f) : Color.white;
+                    partners[i].frame.color = i == index ? MonopolyStyle.Tint(MonopolyStyle.PlayerColor(match.players[partnerSeats[Math.Min(i, partnerSeats.Count - 1)]].color), 0.6f) : MonopolyStyle.Paper;
                 }
             }
             giveCash = 0;

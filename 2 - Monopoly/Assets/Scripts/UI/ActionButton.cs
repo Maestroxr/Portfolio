@@ -99,7 +99,7 @@ namespace Portfolio.Monopoly
             {
                 button.interactable = option.enabled;
             }
-            Color text = option.color.grayscale > 0.72f ? MonopolyStyle.Ink : Color.white;
+            Color text = MonopolyStyle.TextOn(option.color);
             if (label != null)
             {
                 label.color = option.enabled ? text : MonopolyStyle.WithAlpha(Color.white, 0.8f);

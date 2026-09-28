@@ -19,7 +19,14 @@ namespace Portfolio.Heroes.EditorTools
     /// </summary>
     internal static partial class HeroesUIArt
     {
-        private const string FontFolder = "Art/Generated/Fonts";
+        /// <summary>Where the theme's font assets and their looks go.</summary>
+        private static string FontFolder => HeroesThemeSpec.Current.FontFolder;
+
+        /// <summary>The symbol fonts every theme shares, made once.</summary>
+        private const string SharedFonts = "Art/Generated/Fonts";
+
+        /// <summary>The coloured icons every theme shares.</summary>
+        private const string IconFolder = "UI/Generated/Icons";
 
         /// <summary>The signs the symbol fonts are asked for; the stars come from the icon sprites instead.</summary>
         private const string Arrows = "←↑→↓↔↕⇐⇒⚔⚒⚑";
@@ -29,8 +36,9 @@ namespace Portfolio.Heroes.EditorTools
 
         private static void Fonts(HeroesArt art)
         {
-            TMP_FontAsset arrows = Font("Art/Fonts/NotoSansSymbols-Regular.ttf", $"{FontFolder}/Noto Symbols SDF.asset", 64, Arrows);
-            TMP_FontAsset marks = Font("Art/Fonts/NotoSansSymbols2-Regular.ttf", $"{FontFolder}/Noto Symbols2 SDF.asset", 64, Marks);
+            FontLook look = HeroesThemeSpec.Current.Fonts;
+            TMP_FontAsset arrows = Font("Art/Fonts/NotoSansSymbols-Regular.ttf", $"{SharedFonts}/Noto Symbols SDF.asset", 64, Arrows);
+            TMP_FontAsset marks = Font("Art/Fonts/NotoSansSymbols2-Regular.ttf", $"{SharedFonts}/Noto Symbols2 SDF.asset", 64, Marks);
             var fallbacks = new List<TMP_FontAsset>();
             if (arrows != null)
             {
@@ -41,11 +49,11 @@ namespace Portfolio.Heroes.EditorTools
                 fallbacks.Add(marks);
             }
 
-            art.titleFont = Font("Art/Fonts/Cinzel-Bold.ttf", "Art/Generated/Cinzel-Bold SDF.asset", 90);
-            art.bodyFont = Font("Art/Fonts/Alegreya-Regular.ttf", "Art/Generated/Alegreya SDF.asset", 90);
-            art.logoFont = Font("Art/Fonts/CinzelDecorative-Black.ttf", $"{FontFolder}/CinzelDecorative-Black SDF.asset", 90);
-            TMP_FontAsset bold = Font("Art/Fonts/Alegreya-Bold.ttf", $"{FontFolder}/Alegreya-Bold SDF.asset", 90);
-            TMP_FontAsset italic = Font("Art/Fonts/Alegreya-Italic.ttf", $"{FontFolder}/Alegreya-Italic SDF.asset", 90);
+            art.titleFont = Font(look.TitleFile, look.TitleAsset, 90);
+            art.bodyFont = Font(look.BodyFile, look.BodyAsset, 90);
+            art.logoFont = Font(look.LogoFile, look.LogoAsset, 90);
+            TMP_FontAsset bold = look.BoldFile != null ? Font(look.BoldFile, look.BoldAsset, 90) : null;
+            TMP_FontAsset italic = look.ItalicFile != null ? Font(look.ItalicFile, look.ItalicAsset, 90) : null;
 
             // <b> and <i> draw with the real faces rather than a thickened or slanted regular.
             if (art.bodyFont != null && (bold != null || italic != null))
@@ -63,9 +71,9 @@ namespace Portfolio.Heroes.EditorTools
                 Fallbacks(font, fallbacks);
             }
 
-            art.titleLooks = Looks(art.titleFont, "Cinzel-Bold");
-            art.bodyLooks = Looks(art.bodyFont, "Alegreya");
-            art.logoLooks = Looks(art.logoFont, "CinzelDecorative-Black");
+            art.titleLooks = Looks(art.titleFont, FontLook.NameOf(look.TitleAsset), look);
+            art.bodyLooks = Looks(art.bodyFont, FontLook.NameOf(look.BodyAsset), look);
+            art.logoLooks = Looks(art.logoFont, FontLook.NameOf(look.LogoAsset), look);
         }
 
         private static void Fallbacks(TMP_FontAsset font, List<TMP_FontAsset> fallbacks)
@@ -127,8 +135,8 @@ namespace Portfolio.Heroes.EditorTools
             return asset;
         }
 
-        /// <summary>The materials of a font for every <see cref="TextLook"/>, the first its own.</summary>
-        private static Material[] Looks(TMP_FontAsset font, string name)
+        /// <summary>The materials of a font for every <see cref="TextLook"/>, the first its own, in the colours of <paramref name="look"/>.</summary>
+        private static Material[] Looks(TMP_FontAsset font, string name, FontLook look)
         {
             var looks = new Material[Enum.GetValues(typeof(TextLook)).Length];
             if (font == null || font.material == null)
@@ -138,8 +146,8 @@ namespace Portfolio.Heroes.EditorTools
             looks[(int)TextLook.Plain] = font.material;
             looks[(int)TextLook.Gold] = Look(font, name, "Gold", m =>
             {
-                Outline(m, 0.16f, new Color(0.14f, 0.07f, 0.02f, 1f));
-                Underlay(m, new Color(0f, 0f, 0f, 0.8f), new Vector2(0.7f, -0.9f), 0.1f, 0.35f);
+                Outline(m, 0.16f, look.TitleOutline);
+                Underlay(m, look.TitleShadow, new Vector2(0.7f, -0.9f), 0.1f, 0.35f);
                 m.SetFloat(ShaderUtilities.ID_FaceDilate, 0.1f);
             });
             looks[(int)TextLook.Shadow] = Look(font, name, "Shadow", m =>
@@ -148,13 +156,13 @@ namespace Portfolio.Heroes.EditorTools
             });
             looks[(int)TextLook.Outline] = Look(font, name, "Outline", m =>
             {
-                Outline(m, 0.24f, new Color(0.06f, 0.035f, 0.02f, 1f));
+                Outline(m, 0.24f, look.Outline);
                 m.SetFloat(ShaderUtilities.ID_FaceDilate, 0.14f);
             });
             looks[(int)TextLook.Logo] = Look(font, name, "Logo", m =>
             {
-                Outline(m, 0.2f, new Color(0.18f, 0.08f, 0.02f, 1f));
-                Underlay(m, new Color(1f, 0.64f, 0.2f, 0.6f), Vector2.zero, 0.6f, 0.9f);
+                Outline(m, 0.2f, look.LogoOutline);
+                Underlay(m, look.LogoGlow, Vector2.zero, 0.6f, 0.9f);
                 m.SetFloat(ShaderUtilities.ID_FaceDilate, 0.12f);
             });
             return looks;
@@ -250,6 +258,10 @@ namespace Portfolio.Heroes.EditorTools
             // The colored icons, and the sheet of them the text draws its inline icons from.
             var colored = new Dictionary<string, Sprite>();
             var cells = new List<(string name, Color[] pixels, uint unicode)>();
+            // A theme with an icon grade paints them in its own, quieter tones, into its own folder (not beside the kit's
+            // IconSheet.png, whose name Unity would give a new Icons folder there, case and all: "IconS").
+            ColorGrade grade = HeroesThemeSpec.Current.IconGrade;
+            string iconFolder = grade != null ? $"{HeroesThemeSpec.Current.Generated}/Icons" : IconFolder;
             foreach ((string name, Color light, Color dark) in Colored)
             {
                 Texture2D white = Read($"Art/UI/Icons/{name}.png");
@@ -257,12 +269,12 @@ namespace Portfolio.Heroes.EditorTools
                 {
                     continue;
                 }
-                Color[] big = Paint(white, 128, light, dark);
+                Color[] big = Paint(white, 128, grade != null ? grade.Apply(light) : light, grade != null ? grade.Apply(dark) : dark);
                 UnityEngine.Object.DestroyImmediate(white);
                 var texture = new Texture2D(128, 128, TextureFormat.RGBA32, false);
                 texture.SetPixels(big);
                 texture.Apply();
-                string relative = $"{Out}/Icons/{name}.png";
+                string relative = $"{iconFolder}/{name}.png";
                 HeroesAssets.SaveTexture(texture, relative, importer => HeroesAssets.SpriteImport(importer, Vector4.zero, 128));
                 colored[name] = HeroesAssets.Sprite(relative);
                 cells.Add((SpriteName(name), Shrink(big, 128, 64), 0xFFFE));
@@ -462,7 +474,7 @@ namespace Portfolio.Heroes.EditorTools
                 sheet.SetPixels(x, y, cell, cell, cells[i].pixels);
             }
             sheet.Apply();
-            const string sheetPath = Out + "/IconSheet.png";
+            string sheetPath = $"{Out}/IconSheet.png";
             Texture2D atlas = HeroesAssets.SaveTexture(sheet, sheetPath, importer =>
             {
                 importer.textureType = TextureImporterType.Default;

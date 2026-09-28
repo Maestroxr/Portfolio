@@ -68,7 +68,7 @@ namespace Portfolio.Monopoly
                 Debt debt = match.CurrentDebt;
                 string bank = match.rules.limitedBuildings ? $"The bank has {match.housesLeft} houses and {match.hotelsLeft} hotels left." : "";
                 hint.text = debt != null && debt.debtor == Seat
-                    ? $"<color=#E4002B>Raise {MonopolyStyle.Money(debt.amount - player.cash)} more to pay {MonopolyStyle.Money(debt.amount)}.</color> Sell buildings or mortgage."
+                    ? $"<color={MonopolyStyle.RedTag}>Raise {MonopolyStyle.Money(debt.amount - player.cash)} more to pay {MonopolyStyle.Money(debt.amount)}.</color> Sell buildings or mortgage."
                     : bank;
             }
             List<int> owned = match.PropertiesOf(Seat)

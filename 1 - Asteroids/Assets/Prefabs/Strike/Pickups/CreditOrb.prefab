@@ -109,6 +109,7 @@ GameObject:
   - component: {fileID: 6170904932466354891}
   - component: {fileID: 155291772316591712}
   - component: {fileID: 234023721659585355}
+  - component: {fileID: 4440822239219677083}
   m_Layer: 0
   m_Name: Halo
   m_TagString: Untagged
@@ -188,6 +189,21 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &4440822239219677083
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4367532847297815340}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Strike/Materials/StrikeHaloCreditOrb
+  slot: 0
 --- !u!1 &4751003013264480036
 GameObject:
   m_ObjectHideFlags: 0
@@ -199,6 +215,8 @@ GameObject:
   - component: {fileID: 5962072324503567532}
   - component: {fileID: 7332094004753442445}
   - component: {fileID: 5427775536935603533}
+  - component: {fileID: 2391349946074463726}
+  - component: {fileID: 4308937247858662149}
   m_Layer: 0
   m_Name: Model
   m_TagString: Untagged
@@ -278,6 +296,35 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &2391349946074463726
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4751003013264480036}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Strike/Materials/StrikePalette
+  slot: 0
+--- !u!114 &4308937247858662149
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4751003013264480036}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68a8cc4438b7cdf40b6a35c7fa61b5cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedMesh
+  game: 0
+  mesh: Strike/Models/CreditCoin
 --- !u!1 &8885213680142020792
 GameObject:
   m_ObjectHideFlags: 0

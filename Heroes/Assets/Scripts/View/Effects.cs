@@ -51,6 +51,12 @@ namespace Portfolio.Heroes
             }
         }
 
+        /// <summary>A colour of a glow as the active theme paints it (<see cref="HeroesTheme.Glows"/>).</summary>
+        private static Color Tone(Color color)
+        {
+            return HeroesTheme.Glows.Active.Grade(color);
+        }
+
         // ------------------------------------------------------------------ floating text
 
         public void Float(Vector3 position, string text, Color color, float size = 3.2f, float rise = 1.6f, float duration = 1.4f)
@@ -161,6 +167,8 @@ namespace Portfolio.Heroes
         {
             ParticleSystem system = pool.Count > 0 && !pool.Peek().IsAlive(true) ? pool.Dequeue() : MakeBurst(material, name);
             system.transform.position = position;
+            // Sparks glow in the theme's colours; smoke and dust keep their own.
+            color = grow ? color : Tone(color);
             ParticleSystem.MainModule main = system.main;
             main.startColor = new ParticleSystem.MinMaxGradient(color, Color.Lerp(color, Color.white, grow ? 0.15f : 0.4f));
             main.startSpeed = new ParticleSystem.MinMaxCurve(speed * 0.4f, speed);
@@ -279,6 +287,7 @@ namespace Portfolio.Heroes
         /// </summary>
         private Transform Orb(Color color, float size)
         {
+            color = Tone(color);
             var root = new GameObject("Orb").transform;
             Quad(root, color * 1.6f, size);
             Quad(root, Color.Lerp(color, Color.white, 0.7f) * 1.4f, size * 0.45f);
@@ -343,14 +352,14 @@ namespace Portfolio.Heroes
         {
             var go = new GameObject("Lightning");
             // A wide blue glow with a white hot core down the middle, and a flash that lights the ground around.
-            LineRenderer line = Bolt(go.transform, 0.55f, new Color(0.55f, 0.72f, 1f), new Color(0.4f, 0.6f, 1f));
+            LineRenderer line = Bolt(go.transform, 0.55f, Tone(new Color(0.55f, 0.72f, 1f)), Tone(new Color(0.4f, 0.6f, 1f)));
             LineRenderer core = Bolt(go.transform, 0.16f, Color.white, new Color(0.85f, 0.92f, 1f));
             var lightGo = new GameObject("Bolt Light");
             lightGo.transform.SetParent(go.transform, false);
             lightGo.transform.position = target + Vector3.up * 3f;
             var light = lightGo.AddComponent<Light>();
             light.type = LightType.Point;
-            light.color = new Color(0.7f, 0.82f, 1f);
+            light.color = Tone(new Color(0.7f, 0.82f, 1f));
             light.range = 14f;
             light.intensity = 0f;
             Vector3 top = target + new Vector3(Random.Range(-2f, 2f), 18f, Random.Range(-2f, 2f));

@@ -20,22 +20,23 @@ namespace Portfolio.Heroes.EditorTools
             Center
         }
 
-        private static readonly (CursorKind kind, string source, Spot spot, Color light, Color dark)[] Pointers =
+        /// <summary>The pictures of the pointers; the tones they are painted in are the kit style's (<see cref="KitStyle.Pointers"/>).</summary>
+        private static readonly (CursorKind kind, string source, Spot spot)[] Pointers =
         {
-            (CursorKind.Default, "gauntlet_default", Spot.Tip, new Color(1f, 0.93f, 0.66f), new Color(0.74f, 0.52f, 0.2f)),
-            (CursorKind.Hand, "hand_point", Spot.Tip, new Color(1f, 0.95f, 0.8f), new Color(0.84f, 0.66f, 0.42f)),
-            (CursorKind.Move, "boot", Spot.Center, new Color(1f, 0.93f, 0.66f), new Color(0.74f, 0.52f, 0.2f)),
-            (CursorKind.Fly, "icon:spell_bless", Spot.Center, new Color(1f, 1f, 1f), new Color(0.7f, 0.8f, 0.95f)),
-            (CursorKind.Attack, "tool_sword_a", Spot.Tip, new Color(0.95f, 0.96f, 1f), new Color(0.55f, 0.58f, 0.66f)),
-            (CursorKind.Shoot, "tool_bow", Spot.Center, new Color(1f, 0.9f, 0.62f), new Color(0.66f, 0.42f, 0.18f)),
-            (CursorKind.Cast, "tool_wand", Spot.Tip, new Color(0.82f, 0.9f, 1f), new Color(0.38f, 0.5f, 0.95f)),
-            (CursorKind.Blocked, "disabled", Spot.Center, new Color(1f, 0.5f, 0.42f), new Color(0.72f, 0.1f, 0.08f)),
-            (CursorKind.Wait, "busy_hourglass", Spot.Center, new Color(1f, 0.93f, 0.66f), new Color(0.74f, 0.52f, 0.2f)),
-            (CursorKind.Info, "look_a", Spot.Center, new Color(1f, 0.97f, 0.88f), new Color(0.82f, 0.72f, 0.5f)),
-            (CursorKind.Travel, "steps", Spot.Center, new Color(1f, 0.93f, 0.66f), new Color(0.74f, 0.52f, 0.2f)),
-            (CursorKind.Visit, "door_enter", Spot.Center, new Color(1f, 0.93f, 0.66f), new Color(0.74f, 0.52f, 0.2f)),
-            (CursorKind.Fight, "tool_sword_b", Spot.Tip, new Color(1f, 0.62f, 0.5f), new Color(0.7f, 0.16f, 0.1f)),
-            (CursorKind.Take, "hand_open", Spot.Center, new Color(1f, 0.95f, 0.8f), new Color(0.84f, 0.66f, 0.42f))
+            (CursorKind.Default, "gauntlet_default", Spot.Tip),
+            (CursorKind.Hand, "hand_point", Spot.Tip),
+            (CursorKind.Move, "boot", Spot.Center),
+            (CursorKind.Fly, "icon:spell_bless", Spot.Center),
+            (CursorKind.Attack, "tool_sword_a", Spot.Tip),
+            (CursorKind.Shoot, "tool_bow", Spot.Center),
+            (CursorKind.Cast, "tool_wand", Spot.Tip),
+            (CursorKind.Blocked, "disabled", Spot.Center),
+            (CursorKind.Wait, "busy_hourglass", Spot.Center),
+            (CursorKind.Info, "look_a", Spot.Center),
+            (CursorKind.Travel, "steps", Spot.Center),
+            (CursorKind.Visit, "door_enter", Spot.Center),
+            (CursorKind.Fight, "tool_sword_b", Spot.Tip),
+            (CursorKind.Take, "hand_open", Spot.Center)
         };
 
         private static void Cursors(HeroesArt art)
@@ -43,7 +44,7 @@ namespace Portfolio.Heroes.EditorTools
             int count = Enum.GetValues(typeof(CursorKind)).Length;
             var cursors = new Texture2D[count];
             var hotspots = new Vector2[count];
-            foreach ((CursorKind kind, string source, Spot spot, Color light, Color dark) in Pointers)
+            foreach ((CursorKind kind, string source, Spot spot) in Pointers)
             {
                 Color[] picture = source.StartsWith("icon:", StringComparison.Ordinal)
                     ? Outlined(source.Substring(5))
@@ -52,6 +53,7 @@ namespace Portfolio.Heroes.EditorTools
                 {
                     continue;
                 }
+                (Color light, Color dark) = Style.Pointers.TryGetValue(kind, out (Color light, Color dark) tones) ? tones : (Color.white, Color.grey);
                 picture = Tint(picture, CursorSize, light, dark);
                 hotspots[(int)kind] = spot == Spot.Tip ? Tip(picture, CursorSize) : new Vector2(CursorSize / 2f, CursorSize / 2f);
                 cursors[(int)kind] = SaveCursor(picture, kind);
@@ -70,7 +72,7 @@ namespace Portfolio.Heroes.EditorTools
                 {
                     // The blade of the picture points up and to the left (135 degrees).
                     Color[] turned = Turn(sword, CursorSize * 2, angle - 135f);
-                    Color[] small = Tint(Shrink(turned, CursorSize * 2, CursorSize), CursorSize, new Color(0.95f, 0.96f, 1f), new Color(0.55f, 0.58f, 0.66f));
+                    Color[] small = Tint(Shrink(turned, CursorSize * 2, CursorSize), CursorSize, Style.StrikeLight, Style.StrikeDark);
                     Vector2 direction = new Vector2(Mathf.Cos(angle * Mathf.Deg2Rad), Mathf.Sin(angle * Mathf.Deg2Rad));
                     hotspots[(int)kind] = Farthest(small, CursorSize, direction);
                     cursors[(int)kind] = SaveCursor(small, kind);
@@ -232,7 +234,7 @@ namespace Portfolio.Heroes.EditorTools
             var texture = new Texture2D(CursorSize, CursorSize, TextureFormat.RGBA32, false);
             texture.SetPixels(pixels);
             texture.Apply();
-            return HeroesAssets.SaveTexture(texture, $"Art/Generated/Cursors/{kind}.png", importer =>
+            return HeroesAssets.SaveTexture(texture, $"{HeroesThemeSpec.Current.Generated}/Cursors/{kind}.png", importer =>
             {
                 importer.textureType = TextureImporterType.Cursor;
                 importer.alphaIsTransparency = true;

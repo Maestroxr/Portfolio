@@ -53,9 +53,17 @@ namespace Portfolio.Monopoly
             {
                 okBackground.color = color;
             }
+            if (okButton != null)
+            {
+                foreach (TMP_Text word in okButton.GetComponentsInChildren<TMP_Text>(true))
+                {
+                    word.color = MonopolyStyle.TextOn(color);
+                }
+            }
             if (deckTitle != null)
             {
                 deckTitle.text = chance ? "CHANCE" : "COMMUNITY CHEST";
+                deckTitle.color = MonopolyStyle.TextOn(color);
             }
             if (icon != null)
             {

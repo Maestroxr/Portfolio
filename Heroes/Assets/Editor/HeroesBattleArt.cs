@@ -18,7 +18,9 @@ namespace Portfolio.Heroes.EditorTools
     /// </summary>
     internal static class HeroesBattleArt
     {
-        private const string Folder = "Art/Generated/Battlefield";
+        /// <summary>The theme being built, and where its battlefield art goes.</summary>
+        private static HeroesThemeSpec Spec => HeroesThemeSpec.Current;
+        private static string Folder => $"{Spec.Generated}/Battlefield";
 
         /// <summary>A hexagon of the battlefield is 2.08 m across; an obstacle keeps inside it.</summary>
         private const float Cell = HexLayout.DefaultRadius * 1.7320508f;
@@ -128,41 +130,18 @@ namespace Portfolio.Heroes.EditorTools
 
         // ------------------------------------------------------------------ skies
 
-        private static readonly (string name, string file, Color sun, float intensity, float lowest, Color sky, Color equator, Color ground)[] SkyTable =
-        {
-            ("Clear", "kloofendal_48d_partly_cloudy_puresky", new Color(1f, 0.96f, 0.88f), 1.45f, 38f,
-                new Color(0.52f, 0.6f, 0.72f), new Color(0.44f, 0.46f, 0.46f), new Color(0.26f, 0.23f, 0.18f)),
-            ("Overcast", "kloofendal_overcast_puresky", new Color(0.9f, 0.92f, 0.95f), 1.0f, 45f,
-                new Color(0.6f, 0.62f, 0.66f), new Color(0.5f, 0.5f, 0.5f), new Color(0.3f, 0.28f, 0.25f)),
-            ("Snow", "snow_field_puresky", new Color(0.96f, 0.97f, 1f), 1.15f, 35f,
-                new Color(0.64f, 0.68f, 0.74f), new Color(0.56f, 0.58f, 0.62f), new Color(0.42f, 0.42f, 0.45f)),
-            ("Wasteland", "wasteland_clouds_puresky", new Color(1f, 0.87f, 0.68f), 1.35f, 26f,
-                new Color(0.55f, 0.58f, 0.66f), new Color(0.52f, 0.46f, 0.4f), new Color(0.3f, 0.24f, 0.18f)),
-            ("Dusk", "qwantani_dusk_2_puresky", new Color(1f, 0.64f, 0.44f), 1.0f, 18f,
-                new Color(0.38f, 0.36f, 0.52f), new Color(0.38f, 0.3f, 0.32f), new Color(0.16f, 0.12f, 0.12f))
-        };
-
-        /// <summary>By <see cref="TerrainType"/>: the name of the sky a battle on it is fought under.</summary>
-        private static readonly string[] SkyOfTerrain =
-        {
-            "Clear", // Grass
-            "Clear", // Dirt
-            "Wasteland", // Sand
-            "Snow", // Snow
-            "Overcast", // Swamp
-            "Clear", // Rough
-            "Wasteland", // Wasteland
-            "Clear", // Water
-            "Dusk" // Rock, under the earth
-        };
-
+        /// <summary>
+        /// The skies of the theme (<see cref="HeroesThemeSpec.Skies"/>), each on a skybox material of its own, lit and
+        /// fogged as the spec says, and which ground is fought under which.
+        /// </summary>
         private static void Skies(HeroesArt art)
         {
             Shader panoramic = Shader.Find("Skybox/Panoramic");
             art.skies.Clear();
-            foreach ((string name, string file, Color sun, float intensity, float lowest, Color sky, Color equator, Color ground) in SkyTable)
+            foreach (SkyLook look in Spec.Skies)
             {
-                string relative = $"Art/Sky/{file}.jpg";
+                string name = look.Name;
+                string relative = $"Art/Sky/{look.File}.jpg";
                 if (HeroesAssets.Load<Texture2D>(relative) == null)
                 {
                     Debug.LogWarning($"Heroes: the sky {relative} is missing.");
@@ -188,32 +167,35 @@ namespace Portfolio.Heroes.EditorTools
                     m.SetFloat("_ImageType", 0f);
                     m.SetFloat("_MirrorOnBack", 0f);
                     m.SetFloat("_Layout", 0f);
-                    m.SetFloat("_Exposure", 1f);
+                    m.SetFloat("_Exposure", look.Exposure);
                     m.SetFloat("_Rotation", 0f);
-                    m.SetColor("_Tint", new Color(0.5f, 0.5f, 0.5f, 0.5f));
+                    m.SetColor("_Tint", look.Tint);
                     m.EnableKeyword("_MAPPING_LATITUDE_LONGITUDE_LAYOUT");
                     m.DisableKeyword("_MAPPING_6_FRAMES_LAYOUT");
                 });
-                Measure(relative, lowest, out Vector2 sunAngles, out Color horizon);
+                Measure(relative, look.Lowest, out Vector2 sunAngles, out Color horizon);
                 art.skies.Add(new HeroesArt.SkyArt
                 {
                     name = name,
                     material = material,
-                    sun = sun,
-                    sunIntensity = intensity,
+                    sun = look.Sun,
+                    sunIntensity = look.Intensity,
                     sunAngles = sunAngles,
-                    ambientSky = sky,
-                    ambientEquator = equator,
-                    ambientGround = ground,
-                    fog = horizon
+                    ambientSky = look.AmbientSky,
+                    ambientEquator = look.AmbientEquator,
+                    ambientGround = look.AmbientGround,
+                    fog = new Color(horizon.r * look.FogValue, horizon.g * look.FogValue, horizon.b * look.FogValue, 1f),
+                    fogStart = Spec.FogStart,
+                    fogEnd = Spec.FogEnd
                 });
             }
-            art.terrainSkies = new int[SkyOfTerrain.Length];
-            for (int t = 0; t < SkyOfTerrain.Length; t++)
+            string[] skyOfTerrain = Spec.SkyOfTerrain;
+            art.terrainSkies = new int[skyOfTerrain.Length];
+            for (int t = 0; t < skyOfTerrain.Length; t++)
             {
-                art.terrainSkies[t] = Mathf.Max(0, art.skies.FindIndex(sky => sky.name == SkyOfTerrain[t]));
+                art.terrainSkies[t] = Mathf.Max(0, art.skies.FindIndex(sky => sky.name == skyOfTerrain[t]));
             }
-            art.duskSky = art.skies.FindIndex(sky => sky.name == "Dusk");
+            art.duskSky = art.skies.FindIndex(sky => sky.name == Spec.DuskSky);
         }
 
         /// <summary>
@@ -315,6 +297,12 @@ namespace Portfolio.Heroes.EditorTools
 
         private static readonly Dictionary<(Texture, Paint), Material> Repainted = new Dictionary<(Texture, Paint), Material>();
 
+        /// <summary>Forgets the repainted materials of the theme built before (they belong to its folder).</summary>
+        internal static void ForgetCaches()
+        {
+            Repainted.Clear();
+        }
+
         /// <summary>Gives every textured material of an instance the same texture repainted for <paramref name="paint"/>.</summary>
         internal static void Repaint(GameObject instance, Paint paint)
         {
@@ -341,6 +329,8 @@ namespace Portfolio.Heroes.EditorTools
 
         private static Material RepaintedMaterial(Texture map, Paint paint, Color tint)
         {
+            // A graded theme paints its models with graded copies of the sheets; the repaint starts from the pack's own.
+            map = HeroesArtBuilder.OriginalOf(map);
             if (Repainted.TryGetValue((map, paint), out Material cached) && cached != null)
             {
                 return cached;
@@ -349,10 +339,16 @@ namespace Portfolio.Heroes.EditorTools
             string name = $"{Path.GetFileNameWithoutExtension(source)}_{paint}";
             var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
             texture.LoadImage(File.ReadAllBytes(HeroesAssets.FullPath(source)));
+            ColorGrade grade = Spec.Grade;
             Color[] pixels = texture.GetPixels();
             for (int i = 0; i < pixels.Length; i++)
             {
                 pixels[i] = Recolor(pixels[i], paint);
+                if (grade != null)
+                {
+                    // Repainted for the ground first, then weathered like everything else of the theme.
+                    pixels[i] = grade.Apply(pixels[i]);
+                }
             }
             texture.SetPixels(pixels);
             texture.Apply();
@@ -513,14 +509,14 @@ namespace Portfolio.Heroes.EditorTools
             Material scorch = Scorch();
             Material pool = HeroesAssets.Material($"{Folder}/Materials/Pool.mat", Shader.Find("Universal Render Pipeline/Lit"), m =>
             {
-                m.SetColor("_BaseColor", new Color(0.1f, 0.3f, 0.42f, 0.82f));
+                m.SetColor("_BaseColor", Spec.Materials.Pool);
                 m.SetFloat("_Smoothness", 0.93f);
                 m.SetFloat("_Metallic", 0.05f);
                 Transparent(m);
             });
             Material bog = HeroesAssets.Material($"{Folder}/Materials/Bog.mat", Shader.Find("Universal Render Pipeline/Lit"), m =>
             {
-                m.SetColor("_BaseColor", new Color(0.16f, 0.2f, 0.1f, 0.9f));
+                m.SetColor("_BaseColor", Spec.Materials.Bog);
                 m.SetFloat("_Smoothness", 0.85f);
                 m.SetFloat("_Metallic", 0f);
                 Transparent(m);
@@ -724,7 +720,9 @@ namespace Portfolio.Heroes.EditorTools
         {
             const BattleObstacle kind = BattleObstacle.Mound;
             string texture = Earth.TryGetValue(ground, out string name) ? name : "Grass";
-            var diffuse = HeroesAssets.Load<Texture2D>($"Art/Terrain/{texture}.jpg");
+            // The picture of the theme's own ground (a graded theme has graded copies), the downloaded one without layers.
+            TerrainLayer layer = art.layers != null ? art.layers.FirstOrDefault(candidate => candidate != null && candidate.name == texture) : null;
+            Texture2D diffuse = layer != null && layer.diffuseTexture != null ? layer.diffuseTexture : HeroesAssets.Load<Texture2D>($"Art/Terrain/{texture}.jpg");
             var normal = HeroesAssets.Load<Texture2D>($"Art/Terrain/{texture}_Normal.jpg");
             Material earth = HeroesAssets.Material($"{Folder}/Materials/Earth{ground}.mat", Shader.Find("Universal Render Pipeline/Lit"), m =>
             {
@@ -916,8 +914,11 @@ namespace Portfolio.Heroes.EditorTools
                     ("KayKit/Nature/mountain_A", 16f), ("KayKit/Nature/mountain_B", 15f), ("KayKit/Nature/mountain_C", 14f)
                 })
             };
-            foreach ((TerrainType terrain, Paint paint, Color tint, (string model, float width)[] pieces) in table)
+            foreach ((TerrainType terrain, Paint paint, Color tint, (string model, float width)[] own) in table)
             {
+                // A theme may ring a field with more: dead trees, a ruin, a crypt (painted for the ground like the rest).
+                (string model, float width)[] pieces = own.Concat(Spec.BackdropExtras.Where(extra => extra.terrain == terrain)
+                    .Select(extra => (extra.model, extra.width))).ToArray();
                 var prefabs = new List<GameObject>();
                 for (int i = 0; i < pieces.Length; i++)
                 {

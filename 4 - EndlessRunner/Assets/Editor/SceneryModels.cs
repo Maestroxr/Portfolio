@@ -289,6 +289,24 @@ namespace Portfolio.EndlessRunner.EditorTools
             return m;
         }
 
+        /// <summary>A weathered wooden signpost with two arrow boards, for the roadside of the canyon.</summary>
+        public static MeshBuilder Signpost()
+        {
+            var m = new MeshBuilder();
+            m.Color(Swatch.SandDark).Cylinder(Vector3.zero, 0.22f, 0.16f, 0.12f, 7);
+            m.Color(Swatch.WoodDark).Box(new Vector3(0f, 1.1f, 0f), new Vector3(0.14f, 2.2f, 0.14f));
+            m.Push(new Vector3(0.3f, 1.9f, 0f), Quaternion.Euler(0f, 0f, 4f));
+            m.Color(Swatch.WoodLight).Prism(new[] { new Vector2(-0.4f, -0.12f), new Vector2(0.45f, -0.12f), new Vector2(0.62f, 0f), new Vector2(0.45f, 0.12f), new Vector2(-0.4f, 0.12f) }, 0.05f);
+            m.Pop();
+            m.Push(new Vector3(-0.28f, 1.55f, 0f), Quaternion.Euler(0f, 0f, -5f));
+            m.Color(Swatch.Wood).Prism(new[] { new Vector2(-0.6f, 0f), new Vector2(-0.42f, -0.12f), new Vector2(0.4f, -0.12f), new Vector2(0.4f, 0.12f), new Vector2(-0.42f, 0.12f) }, 0.05f);
+            m.Pop();
+            m.Color(Swatch.OffWhite).Sphere(new Vector3(0.05f, 2.3f, 0f), new Vector3(0.14f, 0.11f, 0.12f), 5, 8);
+            m.Color(Swatch.OffWhite).Rod(new Vector3(0.05f, 2.36f, 0f), new Vector3(0.28f, 2.5f, 0.05f), 0.03f, 4, false, 0.01f);
+            m.Color(Swatch.OffWhite).Rod(new Vector3(0.05f, 2.36f, 0f), new Vector3(-0.18f, 2.5f, -0.05f), 0.03f, 4, false, 0.01f);
+            return m;
+        }
+
         // ------------------------------------------------------------------ snow
 
         public static MeshBuilder Snowman()

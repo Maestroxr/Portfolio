@@ -65,8 +65,11 @@ namespace Portfolio.Asteroids
             }
         }
 
+        /// <summary>The world shown: the active theme's counterpart of the level's (null while hidden).</summary>
+        public StrikeTheme World => Level != null ? AsteroidsThemes.Strike(Level.Terrain) : null;
+
         /// <summary>The theme's shadow colour for the drop shadows (a soft black when nothing is shown).</summary>
-        public Color ShadowColor => Level != null && Level.Terrain != null ? Level.Terrain.ShadowColor : new Color(0f, 0f, 0f, 0.45f);
+        public Color ShadowColor => World != null ? World.ShadowColor : new Color(0f, 0f, 0f, 0.45f);
 
         private float Top => playground != null ? playground.Top : StrikeRules.HalfSize.y;
 
@@ -95,8 +98,21 @@ namespace Portfolio.Asteroids
                     tileCount += Mathf.Max(0, segment.tiles);
                 }
             }
-            ApplyLighting(level.Terrain);
+            ApplyLighting(World);
             SetDistance(0f);
+        }
+
+
+        /// <summary>The game's theme changed: the level shown gets the new theme's tiles and lighting, at the same distance.</summary>
+        public void Refresh()
+        {
+            if (!IsShown)
+            {
+                return;
+            }
+            float distance = Distance;
+            Show(Level);
+            SetDistance(distance);
         }
 
 
@@ -115,7 +131,7 @@ namespace Portfolio.Asteroids
         public void SetDistance(float distance)
         {
             Distance = distance;
-            if (!IsShown || Level == null || Level.Terrain == null)
+            if (!IsShown || Level == null || World == null)
             {
                 return;
             }
@@ -183,7 +199,8 @@ namespace Portfolio.Asteroids
             decal.localRotation = Quaternion.Euler(0f, 0f, decalCount * 137.5f % 360f);
             decal.localScale = new Vector3(size, size, 1f);
             decalCount++;
-            Material material = Level != null && Level.Terrain != null ? Level.Terrain.CraterMaterial : null;
+            StrikeTheme world = World;
+            Material material = world != null ? world.CraterMaterial : null;
             if (material != null && decal.TryGetComponent(out Renderer renderer))
             {
                 renderer.sharedMaterial = material;
@@ -229,7 +246,8 @@ namespace Portfolio.Asteroids
         /// <summary>An instance of the prefab of tile <paramref name="index"/> (tiles before and after the level repeat its ends).</summary>
         private TerrainTile Take(int index)
         {
-            if (Level == null || Level.Terrain == null || tileCount <= 0)
+            StrikeTheme world = World;
+            if (Level == null || world == null || tileCount <= 0)
             {
                 return null;
             }
@@ -238,7 +256,7 @@ namespace Portfolio.Asteroids
             {
                 return null;
             }
-            TerrainTile prefab = Level.Terrain.Tile(segment.kind, segment.variant);
+            TerrainTile prefab = world.Tile(segment.kind, segment.variant);
             if (prefab == null)
             {
                 return null;

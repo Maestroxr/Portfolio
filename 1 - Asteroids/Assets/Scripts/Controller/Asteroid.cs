@@ -41,16 +41,42 @@ namespace Portfolio.Asteroids
             score = AsteroidRules.Score(kind, size);
             contactDamage = AsteroidRules.ContactDamage(kind, size);
             randomSpin = size == AsteroidSize.Large ? 28f : size == AsteroidSize.Medium ? 50f : 90f;
-            if (meshFilter != null && meshes != null && meshes.Length > 0)
-            {
-                Shape = shape >= 0 ? shape % meshes.Length : Random.Range(0, meshes.Length);
-                meshFilter.sharedMesh = meshes[Shape];
-            }
+            Mesh[] shapes = Shapes();
+            Shape = shape >= 0 ? shape : Random.Range(0, shapes != null && shapes.Length > 0 ? shapes.Length : 1);
+            ApplyTheme();
             if (visual != null)
             {
                 visual.localScale = Vector3.one * (radius / Mathf.Max(0.01f, modelRadius) * Random.Range(0.94f, 1.08f));
                 visual.localRotation = Random.rotation;
             }
+        }
+
+
+        /// <summary>
+        /// Shows the shape variant <see cref="Shape"/> of the active theme's look of the kind, and its hit flash colour (the
+        /// material follows through the ThemedRenderer of the model). Also called on the rocks in play when the theme changes.
+        /// </summary>
+        public void ApplyTheme()
+        {
+            Mesh[] shapes = Shapes();
+            if (meshFilter != null && shapes != null && shapes.Length > 0)
+            {
+                Shape %= shapes.Length;
+                meshFilter.sharedMesh = shapes[Shape];
+            }
+            AsteroidsTheme.AsteroidLook look = AsteroidsThemes.Asteroid(kind);
+            if (look != null && look.flash.a > 0f)
+            {
+                flashColor = look.flash;
+            }
+        }
+
+
+        /// <summary>The shape variants of the kind in the active theme; the prefab's own without a theme.</summary>
+        private Mesh[] Shapes()
+        {
+            AsteroidsTheme.AsteroidLook look = AsteroidsThemes.Asteroid(kind);
+            return look != null && look.meshes != null && look.meshes.Length > 0 ? look.meshes : meshes;
         }
 
 

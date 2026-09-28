@@ -45,11 +45,11 @@ namespace Portfolio.Monopoly
             colorBar.color = MonopolyStyle.GroupColor(data.group);
             nameText.text = data.name;
             string buildings = deed.houses == MonopolyMatch.Hotel ? $"{Icons.Hotel} Hotel" : deed.houses > 0 ? Repeat(Icons.House, deed.houses) : "";
-            string rent = deed.mortgaged ? "<color=#E4002B>Mortgaged</color>" : $"Rent {MonopolyStyle.Money(match.Rent(space, 7))}" + (data.kind == SpaceKind.Utility ? " (at a 7)" : "");
+            string rent = deed.mortgaged ? $"<color={MonopolyStyle.RedTag}>Mortgaged</color>" : $"Rent {MonopolyStyle.Money(match.Rent(space, 7))}" + (data.kind == SpaceKind.Utility ? " (at a 7)" : "");
             stateText.text = string.IsNullOrEmpty(buildings) ? rent : $"{buildings}   {rent}";
             if (background != null)
             {
-                background.color = deed.mortgaged ? MonopolyStyle.Tint(MonopolyStyle.Red, 0.9f) : Color.white;
+                background.color = deed.mortgaged ? MonopolyStyle.Tint(MonopolyStyle.Red, 0.9f) : MonopolyStyle.Paper;
             }
 
             bool street = data.kind == SpaceKind.Street;

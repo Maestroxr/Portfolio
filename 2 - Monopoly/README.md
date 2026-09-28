@@ -2,7 +2,8 @@
 
 Monopoly for up to four players, any mix of people sharing the device and computer players, or people on devices of
 their own playing online, on a 3D board with a modern Monopoly look: the World Tour edition, with streets from Lisbon
-to New York, travel themed Chance and Community Chest cards, die cast style tokens and a wooden table. It plays the
+to New York, travel themed Chance and Community Chest cards, die cast style tokens and a wooden table (or, with the
+Galactic Trade theme, a space station trading floor). It plays the
 full official rules, and the modes add the favourite variants: the Mega Edition speed die, the official short game,
 the Free Parking jackpot and more.
 
@@ -143,12 +144,56 @@ fits the board between the side columns of the interface at any aspect ratio, th
 and taps work like clicks. `Gamebox > Android > Build APK` builds `Build/Android/Monopoly.apk`
 (`com.skinnerboxes.monopoly`, with the game's icon).
 
+## Themes
+
+The whole look of the game is a `MonopolyTheme` asset (`Scripts/MonopolyTheme.cs`, a `GameTheme` of BaseGame): the
+palette (`MonopolyStyle` reads every colour and name through the active theme, with the classic values as the
+fallback), the print colours of the board, the ten colour sets, the four seats (colour, base and turn ring
+materials), the eight tokens (name, mesh, badge, tint of the figure), the board, slab and table materials and meshes,
+the card decks, the logo, the house and hotel meshes and materials, the dice, the highlight, mortgage and shadow
+materials, the shapes of the interface kit (rounded rectangle, circle, ring, glow, shadow, sheen, banknote, logo),
+the fonts (body, bold, heavy, title, icons) with their shadow and title materials, the edition line and the scene
+(sky, ambient light, sun and fill, the reflection of the metal, the confetti colours).
+
+- **Switching.** The `GameDefinition` (`Resources/Games/Monopoly.asset`) starts with `Classic` and lists both themes.
+  A player picks the look with the *Look of the game* row of the House Rules panel (a `ThemeSelector` of BaseGame,
+  remembered on the device), the launcher's main menu cycles it per game, and `-gamebox-theme "Galactic Trade"`
+  picks one for a run of a development player or a tour (`-monopoly-tour <folder>` ends by switching to the next
+  look on the title and new game screens). The title screen, the new game screen, the board and the panels redraw
+  at once, without loading the scene again; in a running match the tokens, owner tags and player panels change on
+  the spot, and a popup that is open when the look changes gets the new look at once and its details (the band of a
+  deed, the badges) the next time it opens. The online lobby (BaseGame's shared lobby,
+  styled once by the scene builder) keeps the classic colours and Poppins in both looks.
+- **How.** `MonopolySceneBuilder` and `MonopolyInterfaceBuilder` build the scene in the classic look, then
+  `MonopolyThemeTagger` reads it back: every image, text, outline, renderer and mesh that shows an asset or a colour
+  of the classic theme gets a themed part (`ThemedLook`, or BaseGame's `ThemedRenderer` / `ThemedMesh`) with the key
+  of what it shows; a colour becomes an expression of the palette (`palette.ink`, `palette.muted~0.6`, a shade
+  `*0.72`, an alpha `@0.5`, `seats.1.color`, and `on:palette.green` for the words on a coloured button: white in the
+  classic look, dark on the bright neon of Galactic Trade). Dark surfaces behind white words (a station's deed, the
+  computer tag, the jail banner) are the palette's `plate`. A themed part draws each theme once, and `MonopolyUI`
+  draws the hidden popups up front, so what the code paints on them (seat colours, deed bands, token badges) is
+  never drawn over. What the code colours at run time reads `MonopolyStyle`; the tokens (`MonopolyPlayer.Reskin`:
+  figure, material, tint, base and ring) and the owner tags (`BoardView`) take their look from the theme in code;
+  `MonopolySkin` applies the lights and the sky.
+- **Building.** `MonopolyThemeSpec` describes each look as data (palette, print colours, sets, seats, tokens, fonts,
+  material colours, lights); the art builder runs the same generators for every spec (`MonopolyArt` draws the board
+  in the classic or the station style, `MonopolyModels` builds the classic figures or the spacecraft), the content
+  builder writes `Config/Themes/<Name>.asset` from the art and points the definition at Classic. New looks go under
+  `Art/Themes/<Name>/`. Monopoly > Rebuild Themes refreshes the assets from the art on disk.
+- **Galactic Trade.** A space station trading floor: a near-black board with cyan rims and lanes, neon colour sets,
+  a holographic emblem over a starfield, holographic cards, domes and towers with lit windows, glowing dice, a
+  starfield table, glassy dark panels with cyan halos, and the tokens rocket, satellite, robot, UFO, comet, ringed
+  planet, astronaut helmet and space station (on hexagonal glowing bases, lit up faintly in their own tint). Fonts: Orbitron Black for the titles and Exo 2 for the words (Google
+  Fonts, SIL Open Font License, see `Art/Themes/GalacticTrade/Fonts/Sources.txt`). Everything else is generated.
+
 ## Assets and credits
 
 - [Poppins](https://fonts.google.com/specimen/Poppins) by Indian Type Foundry, SIL Open Font License 1.1
   (`Art/Fonts/Poppins-OFL.txt`).
 - [Font Awesome Free](https://fontawesome.com) solid icons: icons CC BY 4.0, font SIL OFL 1.1
   (`Art/Fonts/FontAwesome-LICENSE.txt`).
+- [Orbitron](https://fonts.google.com/specimen/Orbitron) and [Exo 2](https://fonts.google.com/specimen/Exo+2)
+  (the Galactic Trade theme), SIL Open Font License 1.1 (`Art/Themes/GalacticTrade/Fonts/OFL-*.txt`).
 - Sound effects from [Kenney](https://kenney.nl)'s Casino Audio, Interface Sounds and Music Jingles packs, CC0
   (`Audio/Kenney/License.txt`).
 - Everything else (board and card art, 3D models, the music) is generated by the editor code of this project.

@@ -171,6 +171,7 @@ GameObject:
   - component: {fileID: 4001203296651200353}
   - component: {fileID: 494017630779221998}
   - component: {fileID: 9070256251628054931}
+  - component: {fileID: 7383429684209666582}
   m_Layer: 0
   m_Name: Swirl
   m_TagString: Untagged
@@ -2458,6 +2459,21 @@ ParticleSystemRenderer:
   m_MeshWeighting1: 1
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
+--- !u!114 &7383429684209666582
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4784785994858824636}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Materials/ParticleAdd
+  slot: 0
 --- !u!1 &5726345012015125136
 GameObject:
   m_ObjectHideFlags: 0
@@ -2469,6 +2485,7 @@ GameObject:
   - component: {fileID: 6565910227597144885}
   - component: {fileID: 8681891314856747755}
   - component: {fileID: 6179725002295073587}
+  - component: {fileID: 2624128796627620575}
   m_Layer: 0
   m_Name: Disk
   m_TagString: Untagged
@@ -2548,6 +2565,21 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &2624128796627620575
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5726345012015125136}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Materials/Accretion
+  slot: 0
 --- !u!1 &7181861184262729354
 GameObject:
   m_ObjectHideFlags: 0
@@ -2594,6 +2626,7 @@ GameObject:
   - component: {fileID: 4602836997862339111}
   - component: {fileID: 3154644920558387042}
   - component: {fileID: 7024073468938198680}
+  - component: {fileID: 2888872812246648720}
   m_Layer: 0
   m_Name: Core
   m_TagString: Untagged
@@ -2673,6 +2706,21 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &2888872812246648720
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7837386427281416002}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Materials/BlackHole
+  slot: 0
 --- !u!1 &8733319771713952632
 GameObject:
   m_ObjectHideFlags: 0
@@ -2684,6 +2732,7 @@ GameObject:
   - component: {fileID: 7908240005406803109}
   - component: {fileID: 5652587317187983514}
   - component: {fileID: 5639238480408807300}
+  - component: {fileID: 3309319814984913084}
   m_Layer: 0
   m_Name: Halo
   m_TagString: Untagged
@@ -2763,3 +2812,18 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &3309319814984913084
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8733319771713952632}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Materials/WellHalo
+  slot: 0

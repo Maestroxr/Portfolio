@@ -159,6 +159,18 @@ namespace Portfolio.Asteroids.EditorTools
             return b;
         }
 
+        /// <summary>
+        /// A rock of an old vector arcade game: a jagged, faceted body of large flat faces (80 at one subdivision), about one
+        /// unit in radius, for the edge shader of a theme to outline.
+        /// </summary>
+        public static MeshBuilder VectorRock(int seed, int subdivisions)
+        {
+            var b = new MeshBuilder();
+            var random = new System.Random(seed);
+            FacetedBlob(b, new Vector3(0.9f, 0.82f, 0.86f), subdivisions, 0.24f, seed, random, Swatch.Rock, Swatch.RockDark, Swatch.Basalt);
+            return b;
+        }
+
         /// <summary>A void crystal: a dark rock core bristling with glowing violet and magenta crystals.</summary>
         public static MeshBuilder CrystalRock(int seed)
         {

@@ -1,0 +1,79 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3e4b3590a93690f48973c3b10bd9e0e1, type: 3}
+  m_Name: Subway
+  m_EditorClassIdentifier: Skinnerboxes.EndlessRunner::Portfolio.EndlessRunner.RunnerTheme
+  displayName: Subway
+  skyTop: {r: 0.01, g: 0.01, b: 0.012, a: 1}
+  skyHorizon: {r: 0.06, g: 0.05, b: 0.04, a: 1}
+  skyBottom: {r: 0.02, g: 0.02, b: 0.02, a: 1}
+  sunDisc: {r: 0.03, g: 0.03, b: 0.03, a: 1}
+  sunSize: 0.005
+  starDensity: 0
+  cloudColor: {r: 0, g: 0, b: 0, a: 0}
+  cloudCoverage: 0
+  mountainFar: {r: 0.03, g: 0.03, b: 0.03, a: 1}
+  mountainNear: {r: 0.02, g: 0.02, b: 0.02, a: 1}
+  mountainHeight: 0.05
+  sunColor: {r: 0.9, g: 0.78, b: 0.55, a: 1}
+  sunIntensity: 0.65
+  sunRotation: {x: 60, y: 20, z: 0}
+  ambientSky: {r: 0.26, g: 0.24, b: 0.22, a: 1}
+  ambientEquator: {r: 0.3, g: 0.28, b: 0.25, a: 1}
+  ambientGround: {r: 0.08, g: 0.08, b: 0.08, a: 1}
+  shadowStrength: 0.4
+  fogColor: {r: 0.05, g: 0.05, b: 0.055, a: 1}
+  fogDensity: 0.022
+  ambientEffect: 7
+  road: {fileID: 2100000, guid: a46654f225a87364092e5f8352a7e7fb, type: 2}
+  stripes: {fileID: 2100000, guid: 893dc13baafd1d84a978348752135718, type: 2}
+  curbs: {fileID: 2100000, guid: 97a6fd5ab83bcf34fa354b3280e681bc, type: 2}
+  ground: {fileID: 2100000, guid: e15e9a60bffc2fd4580c478dc46046fb, type: 2}
+  cliff: {fileID: 2100000, guid: 878395495f861f946809ab5ea41ba5cd, type: 2}
+  chasmFill: {fileID: 2100000, guid: 680eeb59967733d46a25d5bab9eec3de, type: 2}
+  dustColor: {r: 0.4, g: 0.4, b: 0.4, a: 0.5}
+  scenery:
+  - prefab: {fileID: 1187500485549605980, guid: b455c20eb2f898c43a815b562fc4a4b7, type: 3}
+    weight: 1.2
+    distance: {x: 0, y: 0}
+    scale: {x: 1, y: 1}
+    facing: 2
+  - prefab: {fileID: 7965050759538685609, guid: bcaa466b57243ac4d94aa9a25c122d4a, type: 3}
+    weight: 2
+    distance: {x: 6.5, y: 8.5}
+    scale: {x: 0.9, y: 1.1}
+    facing: 1
+  - prefab: {fileID: 7213773825623616057, guid: f4e541b12650a7641856a9840cbb516d, type: 3}
+    weight: 1.5
+    distance: {x: 6.5, y: 8.5}
+    scale: {x: 0.9, y: 1.1}
+    facing: 1
+  - prefab: {fileID: 2900730138386416581, guid: 3a026fe258c4ec045826ad25ff873853, type: 3}
+    weight: 1
+    distance: {x: 5.8, y: 6.6}
+    scale: {x: 1, y: 1}
+    facing: 4
+  - prefab: {fileID: 1452048209773737045, guid: 6bcb2c3c62f6abc488299b23e97a0e7f, type: 3}
+    weight: 0.7
+    distance: {x: 5.8, y: 6.6}
+    scale: {x: 1, y: 1}
+    facing: 4
+  - prefab: {fileID: 1853437613239321365, guid: 8f51af1fe81121942a77896bd5476dbe, type: 3}
+    weight: 1.2
+    distance: {x: 6.2, y: 7.5}
+    scale: {x: 1, y: 1}
+    facing: 2
+  sceneryPerTile: 4
+  roadsideProp: {fileID: 1275046035728587690, guid: f636f115ef2beae459942156ce527ee3, type: 3}
+  roadsideEvery: 1
+  roadsideOffset: 5
+  accent: {r: 1, g: 0.72, b: 0.2, a: 1}

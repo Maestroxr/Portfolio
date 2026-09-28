@@ -30,6 +30,8 @@ namespace Portfolio.Monopoly
         [SerializeField] private MonopolyAudio sound;
         [SerializeField] private List<MonopolyPlayer> tokens = new List<MonopolyPlayer>();
         [SerializeField] private ParticleSystem confetti;
+        [Tooltip("The lights, the sky and the confetti of the scene, drawn from the theme.")]
+        [SerializeField] private MonopolySkin skin;
 
         private MonopolySettings customSettings;
         private MonopolySettings activeSettings;
@@ -102,7 +104,27 @@ namespace Portfolio.Monopoly
         protected override void Start()
         {
             base.Start();
+            skin?.Apply(ThemeAs<MonopolyTheme>());
             ShowIdleBoard();
+        }
+
+        /// <summary>
+        /// The player picked another look (or the definition changed in the editor): the sky and lights, the tokens,
+        /// the owner tags and the interface panels redraw at once; what the themed parts of the scene show follows by
+        /// itself. Popups take the new look when they open next.
+        /// </summary>
+        protected override void OnThemeChanged(GameTheme theme)
+        {
+            base.OnThemeChanged(theme);
+            // The style may hear of the change after this manager does: it takes the new theme first.
+            MonopolyStyle.Follow(theme as MonopolyTheme);
+            skin?.Apply(theme as MonopolyTheme);
+            foreach (MonopolyPlayer token in tokens)
+            {
+                token.Reskin();
+            }
+            board?.Reskin();
+            ui?.Reskin(Match);
         }
 
         // ------------------------------------------------------------------ starting
@@ -436,8 +458,8 @@ namespace Portfolio.Monopoly
             Sprite token = ui.TokenSprite(player.token);
             IMonopolyCommands commands = Commands;
             var options = new List<ActionOption>();
-            ActionOption manage = ActionOption.Of("Manage", Icons.Building, Color.white, () => commands.OpenManager(seat), Match.PropertiesOf(seat).Any(), KeyCode.M);
-            ActionOption trade = ActionOption.Of("Trade", Icons.Handshake, Color.white, () => commands.OpenTrade(seat), Match.ActiveCount > 1, KeyCode.T);
+            ActionOption manage = ActionOption.Of("Manage", Icons.Building, MonopolyStyle.Paper, () => commands.OpenManager(seat), Match.PropertiesOf(seat).Any(), KeyCode.M);
+            ActionOption trade = ActionOption.Of("Trade", Icons.Handshake, MonopolyStyle.Paper, () => commands.OpenTrade(seat), Match.ActiveCount > 1, KeyCode.T);
             string title = $"{MonopolyStyle.Possessive(player)} turn";
             string detail = "";
             switch (Match.phase)
@@ -500,7 +522,7 @@ namespace Portfolio.Monopoly
                     detail = $"To {creditor}. Raise {MonopolyStyle.Money(debt.amount - player.cash)} by selling buildings or mortgaging, or give up.";
                     options.Add(ActionOption.Of("Manage", Icons.Building, MonopolyStyle.Blue, () => commands.OpenManager(seat), true, KeyCode.M));
                     options.Add(trade);
-                    options.Add(ActionOption.Of("Go bankrupt", Icons.Flag, Color.white, () => commands.DeclareBankruptcy(seat), true));
+                    options.Add(ActionOption.Of("Go bankrupt", Icons.Flag, MonopolyStyle.Paper, () => commands.DeclareBankruptcy(seat), true));
                     if (!ui.Manage.IsOpen && Match.LiquidValue(seat) >= debt.amount)
                     {
                         commands.OpenManager(seat);

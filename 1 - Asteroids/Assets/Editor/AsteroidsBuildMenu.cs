@@ -63,6 +63,7 @@ namespace Portfolio.Asteroids.EditorTools
             AsteroidsContentBuilder.BuildHulls();
             AsteroidsPrefabBuilder.BuildAll();
             AsteroidsContentBuilder.BuildAll();
+            AsteroidsThemeBuilder.BuildAll();
             AsteroidsSceneBuilder.Build();
             AssetDatabase.SaveAssets();
             if (!ReportProblems())
@@ -127,7 +128,23 @@ namespace Portfolio.Asteroids.EditorTools
             ReportProblems();
         }
 
-        [MenuItem("Asteroids/Rebuild Scene", priority = 23)]
+        /// <summary>The theme assets (Classic and the generated looks) from the art and prefabs already on disk.</summary>
+        [MenuItem("Asteroids/Rebuild Themes", priority = 23)]
+        public static void RebuildThemes()
+        {
+            AsteroidsAssets.Problems.Clear();
+            try
+            {
+                AsteroidsThemeBuilder.BuildAll();
+            }
+            finally
+            {
+                EditorUtility.ClearProgressBar();
+            }
+            ReportProblems();
+        }
+
+        [MenuItem("Asteroids/Rebuild Scene", priority = 24)]
         public static void RebuildScene()
         {
             if (EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())

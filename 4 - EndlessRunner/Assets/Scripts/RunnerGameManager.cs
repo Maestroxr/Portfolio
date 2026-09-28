@@ -175,7 +175,49 @@ namespace Portfolio.EndlessRunner
             {
                 track.HintReached += OnHintReached;
             }
+            ApplyLook(ThemeAs<RunnerGameTheme>());
             base.Start();
+        }
+
+
+        /// <summary>
+        /// The game got another theme. The interface and the effects change at once (the runner and the canvas follow
+        /// the theme by themselves); the track behind the level select is laid out again with the new pieces, scenery,
+        /// worlds and sky, and a run that is on keeps its track and world until the next one.
+        /// </summary>
+        protected override void OnThemeChanged(GameTheme theme)
+        {
+            base.OnThemeChanged(theme);
+            var look = theme as RunnerGameTheme;
+            if (look == null)
+            {
+                return;
+            }
+            ApplyLook(look);
+            if (phase == RunPhase.Menu && State != null && State.Is(BaseGameState.Initialization))
+            {
+                PreviewLevel(LevelIndex, true);
+            }
+        }
+
+
+        private void ApplyLook(RunnerGameTheme look)
+        {
+            if (look == null)
+            {
+                return;
+            }
+            ui?.ApplyTheme(look);
+            effects?.ApplyTheme(look.Particles);
+        }
+
+
+        /// <summary>The colour of a power-up in the theme, or the manager's own when there is none.</summary>
+        private Color PowerUpColor(PowerUpType type)
+        {
+            RunnerGameTheme look = ThemeAs<RunnerGameTheme>();
+            int index = (int)type;
+            return look != null ? look.Colors.PowerUp(type) : index < powerUpColors.Length ? powerUpColors[index] : Color.white;
         }
 
 
@@ -369,7 +411,8 @@ namespace Portfolio.EndlessRunner
         }
 
 
-        private void PlayLevel(int index)
+        /// <summary>Plays a level of the campaign, open or not: the level select checks that first (the tours do not).</summary>
+        internal void PlayLevel(int index)
         {
             if (controller != null)
             {
@@ -406,8 +449,8 @@ namespace Portfolio.EndlessRunner
                 summaries.Add(new LevelSummary
                 {
                     Index = i,
-                    Title = level.Title,
-                    Description = level.Description,
+                    Title = RunnerGameTheme.TitleFor(level),
+                    Description = RunnerGameTheme.DescriptionFor(level),
                     World = level.Theme != null ? level.Theme.displayName : string.Empty,
                     Endless = level.IsEndless,
                     Unlocked = level.IsEndless || progress.IsUnlocked(i),
@@ -469,7 +512,7 @@ namespace Portfolio.EndlessRunner
             {
                 sounds.PlayMusic(sounds.runMusic);
             }
-            ui?.BeginRun(level.Title, LevelIndex, level.IsEndless, maxHearts, level.IsEndless ? progress.EndlessBestDistance : level.Length);
+            ui?.BeginRun(RunnerGameTheme.TitleFor(level), LevelIndex, level.IsEndless, maxHearts, level.IsEndless ? progress.EndlessBestDistance : level.Length);
             RefreshHud();
             if (race != null)
             {
@@ -509,7 +552,12 @@ namespace Portfolio.EndlessRunner
             }
             track.Build(level, RunnerSettings, TrackSeed(level), runner.Gravity);
             track.UpdateTrack(0f, 110f);
-            themes?.Apply(level.ThemeAt(0f), true);
+            // The sky and the world come with the track, in the look it was laid out in.
+            if (track.Look != null)
+            {
+                themes?.SetSky(track.Look.Sky);
+            }
+            themes?.Apply(track.ThemeAt(0f), true);
             // The coins of a race are shared, so there is no goal of one's own to reach.
             coinGoal = level.IsEndless || race != null ? 0 : Mathf.Max(1, Mathf.CeilToInt(track.LevelCoins * level.CoinGoal));
             trackReady = true;
@@ -567,7 +615,8 @@ namespace Portfolio.EndlessRunner
             if (RunnerLevel.IsEndless && !recordAnnounced && progress.EndlessBestDistance > 50f && distance > progress.EndlessBestDistance)
             {
                 recordAnnounced = true;
-                ui?.Toast("NEW RECORD!", new Color(1f, 0.85f, 0.2f));
+                RunnerGameTheme look = ThemeAs<RunnerGameTheme>();
+                ui?.Toast("NEW RECORD!", look != null ? look.Colors.accent : new Color(1f, 0.85f, 0.2f));
                 sounds?.Play(sounds.star);
             }
             if (z >= track.FinishZ)
@@ -767,7 +816,7 @@ namespace Portfolio.EndlessRunner
             int score = Mathf.FloorToInt(PlayerScore);
             var result = new RunResult
             {
-                LevelTitle = level.Title,
+                LevelTitle = RunnerGameTheme.TitleFor(level),
                 Victory = victory,
                 Endless = level.IsEndless,
                 Coins = coins,
@@ -829,7 +878,7 @@ namespace Portfolio.EndlessRunner
         {
             int index = (int)pickup.Type;
             powerUpTimers[index] = index < powerUpDurations.Length ? powerUpDurations[index] : 10f;
-            Color color = index < powerUpColors.Length ? powerUpColors[index] : Color.white;
+            Color color = PowerUpColor(pickup.Type);
             effects?.PowerUp(pickup.transform.position, color);
             sounds?.Play(sounds.powerUp);
             ui?.Toast($"{PowerUps.Title(pickup.Type)}!\n<size=60%>{PowerUps.Description(pickup.Type)}</size>", color);
@@ -869,7 +918,7 @@ namespace Portfolio.EndlessRunner
                 effects?.ShieldBreak(runner.transform.position + Vector3.up);
                 sounds?.Play(sounds.shieldBreak);
                 runner.MakeInvulnerable(0.8f);
-                ui?.Toast("Shield saved you!", powerUpColors[(int)PowerUpType.Shield]);
+                ui?.Toast("Shield saved you!", PowerUpColor(PowerUpType.Shield));
                 UpdatePowerUps(0f);
                 return;
             }

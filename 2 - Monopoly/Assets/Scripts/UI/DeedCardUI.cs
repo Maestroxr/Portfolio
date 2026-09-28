@@ -137,7 +137,7 @@ namespace Portfolio.Monopoly
             if (!affordable && ownerText != null && buyer >= 0)
             {
                 int missing = data.price - match.players[buyer].cash;
-                ownerText.text = $"For sale: <b>{MonopolyStyle.Money(data.price)}</b>  •  <color=#E4002B>{MonopolyStyle.Money(missing)} short</color>";
+                ownerText.text = $"For sale: <b>{MonopolyStyle.Money(data.price)}</b>  •  <color={MonopolyStyle.RedTag}>{MonopolyStyle.Money(missing)} short</color>";
             }
             if (closeButton != null)
             {
@@ -193,7 +193,7 @@ namespace Portfolio.Monopoly
             SpaceData data = match.Space(space);
             DeedState deed = match.Deed(space);
             bool street = data.kind == SpaceKind.Street;
-            Color band = street ? MonopolyStyle.GroupColor(data.group) : MonopolyStyle.Ink;
+            Color band = street ? MonopolyStyle.GroupColor(data.group) : MonopolyStyle.Plate;
             if (header != null)
             {
                 header.color = band;
@@ -314,8 +314,9 @@ namespace Portfolio.Monopoly
         {
             if (current)
             {
-                left.Append("<color=#E4002B><b>").Append(label).Append("</b></color>\n");
-                right.Append("<color=#E4002B><b>").Append(value).Append("</b></color>\n");
+                string tag = MonopolyStyle.RedTag;
+                left.Append("<color=").Append(tag).Append("><b>").Append(label).Append("</b></color>\n");
+                right.Append("<color=").Append(tag).Append("><b>").Append(value).Append("</b></color>\n");
             }
             else
             {

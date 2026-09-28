@@ -37,7 +37,7 @@ RenderSettings:
   m_ReflectionBounces: 1
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
-  m_Sun: {fileID: 1260666084}
+  m_Sun: {fileID: 2101051445}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -119,7 +119,7 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &900696969
+--- !u!1 &188049030
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -127,9 +127,9 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 900696972}
-  - component: {fileID: 900696970}
-  - component: {fileID: 900696971}
+  - component: {fileID: 188049033}
+  - component: {fileID: 188049031}
+  - component: {fileID: 188049032}
   m_Layer: 0
   m_Name: Battle Camera
   m_TagString: Untagged
@@ -137,13 +137,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!20 &900696970
+--- !u!20 &188049031
 Camera:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 900696969}
+  m_GameObject: {fileID: 188049030}
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 1
@@ -188,13 +188,13 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!114 &900696971
+--- !u!114 &188049032
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 900696969}
+  m_GameObject: {fileID: 188049030}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
@@ -232,22 +232,22 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
---- !u!4 &900696972
+--- !u!4 &188049033
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 900696969}
+  m_GameObject: {fileID: 188049030}
   serializedVersion: 2
   m_LocalRotation: {x: 0.4539905, y: -0, z: -0, w: 0.8910065}
   m_LocalPosition: {x: 16, y: 30, z: -12}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1365019338}
+  m_Father: {fileID: 1832257509}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1260666083
+--- !u!1 &467828899
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -255,8 +255,117 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1260666085}
-  - component: {fileID: 1260666084}
+  - component: {fileID: 467828901}
+  - component: {fileID: 467828900}
+  m_Layer: 0
+  m_Name: Battle Grading
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &467828900
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 467828899}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 172515602e62fb746b5d573b38a5fe58, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Core.Runtime::UnityEngine.Rendering.Volume
+  m_IsGlobal: 1
+  priority: 1
+  blendDistance: 0
+  weight: 1
+  sharedProfile: {fileID: 11400000, guid: 304667eaf1a67954dba3b3f43d9b3639, type: 2}
+--- !u!4 &467828901
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 467828899}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1832257509}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1832257507
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1832257509}
+  - component: {fileID: 1832257508}
+  m_Layer: 0
+  m_Name: Battlefield
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1832257508
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1832257507}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2dc750f8e5db470cb7285728178776de, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Skinnerboxes.Heroes::Portfolio.Heroes.BattlefieldScene
+  art: {fileID: 11400000, guid: a98f512dc28ab96489e0ec2c735cd061, type: 2}
+  view: {fileID: 188049031}
+  sun: {fileID: 2101051445}
+  volume: {fileID: 467828900}
+  gate: {fileID: 5018695046121274546, guid: 97ca7626341a5ab4baa1d8e907339683, type: 3}
+  ruin: {fileID: 8273200299053173447, guid: 4713187226f39724ea4a909d9beec916, type: 3}
+  stones: {fileID: 645028543625925511, guid: 3442c23b1133b19428d91f5f60f7ad56, type: 3}
+  banners:
+  - {fileID: 3378616028782409458, guid: 4b71e3e4e7e33a34995683d2acf96e5d, type: 3}
+  - {fileID: 7267080203349098048, guid: b6ee876f926d8784e9437c88a4f5acaa, type: 3}
+  - {fileID: 2421094007971124845, guid: e21e66fb777f9144983bbb779abf06a6, type: 3}
+  - {fileID: 8722369993700351099, guid: 9b54f2894b56eb34488307fd5547bf0b, type: 3}
+  - {fileID: 4104863676395796294, guid: f36e5692eeaee744bb8cfcefb660c66e, type: 3}
+--- !u!4 &1832257509
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1832257507}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 188049033}
+  - {fileID: 2101051446}
+  - {fileID: 467828901}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2101051444
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2101051446}
+  - component: {fileID: 2101051445}
   m_Layer: 0
   m_Name: Battle Sun
   m_TagString: Untagged
@@ -264,13 +373,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!108 &1260666084
+--- !u!108 &2101051445
 Light:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1260666083}
+  m_GameObject: {fileID: 2101051444}
   m_Enabled: 1
   serializedVersion: 13
   m_Type: 1
@@ -329,132 +438,23 @@ Light:
   m_LightUnit: 1
   m_LuxAtDistance: 1
   m_EnableSpotReflector: 1
---- !u!4 &1260666085
+--- !u!4 &2101051446
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1260666083}
+  m_GameObject: {fileID: 2101051444}
   serializedVersion: 2
   m_LocalRotation: {x: -0.3603407, y: 0.4057038, z: -0.17809153, w: -0.82087904}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1365019338}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1365019336
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1365019338}
-  - component: {fileID: 1365019337}
-  m_Layer: 0
-  m_Name: Battlefield
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1365019337
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1365019336}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2dc750f8e5db470cb7285728178776de, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Skinnerboxes.Heroes::Portfolio.Heroes.BattlefieldScene
-  art: {fileID: 11400000, guid: a98f512dc28ab96489e0ec2c735cd061, type: 2}
-  view: {fileID: 900696970}
-  sun: {fileID: 1260666084}
-  volume: {fileID: 1956332358}
-  gate: {fileID: 5018695046121274546, guid: 97ca7626341a5ab4baa1d8e907339683, type: 3}
-  ruin: {fileID: 8273200299053173447, guid: 4713187226f39724ea4a909d9beec916, type: 3}
-  stones: {fileID: 645028543625925511, guid: 3442c23b1133b19428d91f5f60f7ad56, type: 3}
-  banners:
-  - {fileID: 3378616028782409458, guid: 4b71e3e4e7e33a34995683d2acf96e5d, type: 3}
-  - {fileID: 7267080203349098048, guid: b6ee876f926d8784e9437c88a4f5acaa, type: 3}
-  - {fileID: 2421094007971124845, guid: e21e66fb777f9144983bbb779abf06a6, type: 3}
-  - {fileID: 8722369993700351099, guid: 9b54f2894b56eb34488307fd5547bf0b, type: 3}
-  - {fileID: 4104863676395796294, guid: f36e5692eeaee744bb8cfcefb660c66e, type: 3}
---- !u!4 &1365019338
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1365019336}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 900696972}
-  - {fileID: 1260666085}
-  - {fileID: 1956332359}
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1956332357
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1956332359}
-  - component: {fileID: 1956332358}
-  m_Layer: 0
-  m_Name: Battle Grading
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1956332358
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1956332357}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 172515602e62fb746b5d573b38a5fe58, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.RenderPipelines.Core.Runtime::UnityEngine.Rendering.Volume
-  m_IsGlobal: 1
-  priority: 1
-  blendDistance: 0
-  weight: 1
-  sharedProfile: {fileID: 11400000, guid: 304667eaf1a67954dba3b3f43d9b3639, type: 2}
---- !u!4 &1956332359
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1956332357}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1365019338}
+  m_Father: {fileID: 1832257509}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 1365019338}
+  - {fileID: 1832257509}

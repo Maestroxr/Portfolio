@@ -50,7 +50,18 @@ namespace Portfolio.Heroes
 
         public Effects Effects { get; private set; }
 
-        public HeroesArt Art => art;
+        /// <summary>The art the game shows: the active theme's, or the one the scene was built with without a theme.</summary>
+        public HeroesArt Art
+        {
+            get
+            {
+                HeroesTheme theme = Look;
+                return theme != null && theme.art != null ? theme.art : art;
+            }
+        }
+
+        /// <summary>The theme the game shows (<see cref="BaseGameManager.Theme"/> as the game's own), or null.</summary>
+        public HeroesTheme Look => ThemeAs<HeroesTheme>();
 
         public HeroesAudio Sound => sound;
 
@@ -105,7 +116,8 @@ namespace Portfolio.Heroes
             base.Awake();
             brain = new AdventureAI();
             Effects = gameObject.AddComponent<Effects>();
-            Effects.Setup(art, cameraRig != null ? cameraRig.View : Camera.main);
+            ApplyTheme(Look);
+            Effects.Setup(Art, cameraRig != null ? cameraRig.View : Camera.main);
             Battle = gameObject.AddComponent<BattleView>();
         }
 
@@ -113,6 +125,65 @@ namespace Portfolio.Heroes
         {
             base.Start();
             sound?.PlayMenuMusic();
+        }
+
+        /// <summary>
+        /// The game got another theme: its colours, light and glows apply at once, the effects take the new art, and the
+        /// interface (the title and its valley with it) is built again in the new look when no scenario is running. A
+        /// scenario in progress keeps the map and the battles it started with until it is loaded again; the pause menu
+        /// itself is re-skinned by the shared menu's ThemedMenu.
+        /// </summary>
+        protected override void OnThemeChanged(GameTheme theme)
+        {
+            base.OnThemeChanged(theme);
+            ApplyTheme(theme as HeroesTheme);
+            Effects?.Setup(Art, cameraRig != null ? cameraRig.View : Camera.main);
+            if (ui != null && Game == null)
+            {
+                ui.Rebuild();
+            }
+        }
+
+        /// <summary>The static side of a theme: the palette and the glows everything reads, and the light of the map.</summary>
+        private void ApplyTheme(HeroesTheme theme)
+        {
+            HeroesTheme.Activate(theme);
+            UIKit.Art = Art;
+            if (theme != null && theme.atmosphere != null)
+            {
+                theme.atmosphere.Apply(Sun());
+            }
+        }
+
+        /// <summary>The sun of the open scene: the light the render settings name, else the first directional light.</summary>
+        private static Light Sun()
+        {
+            if (RenderSettings.sun != null)
+            {
+                return RenderSettings.sun;
+            }
+            foreach (Light light in FindObjectsByType<Light>(FindObjectsSortMode.None))
+            {
+                if (light.type == LightType.Directional)
+                {
+                    return light;
+                }
+            }
+            return null;
+        }
+
+        /// <summary>Makes a pointer of the theme (or of the art) the system's pointer.</summary>
+        public void UseCursor(CursorKind kind)
+        {
+            HeroesTheme theme = Look;
+            if (theme != null)
+            {
+                theme.UseCursor(kind);
+            }
+            else if (art != null)
+            {
+                art.UseCursor(kind);
+            }
         }
 
         public override void LoadLevel(int level)
@@ -255,10 +326,11 @@ namespace Portfolio.Heroes
             }
             var holder = new GameObject("Map");
             Map = holder.AddComponent<MapView>();
-            Map.Build(Game.State, art, cameraRig != null ? cameraRig.View : Camera.main);
+            HeroesArt look = Art;
+            Map.Build(Game.State, look, cameraRig != null ? cameraRig.View : Camera.main);
             Path = holder.AddComponent<PathView>();
-            Path.Setup(Map, art);
-            Battle.Setup(art, Effects, Options, sound);
+            Path.Setup(Map, look);
+            Battle.Setup(look, Effects, Options, sound);
         }
 
         private void StopDirecting()

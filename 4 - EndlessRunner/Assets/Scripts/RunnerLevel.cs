@@ -53,7 +53,9 @@ namespace Portfolio.EndlessRunner
         [SerializeField] internal bool showHints;
 
         public string Description => description;
-        public RunnerTheme Theme => theme;
+
+        /// <summary>The world of the level, as the active game theme shows it (see <see cref="RunnerGameTheme.Resolve"/>).</summary>
+        public RunnerTheme Theme => RunnerGameTheme.Resolve(theme);
         public float Length => length;
         public bool IsEndless => length <= 0f;
         public int Seed => seed;
@@ -68,15 +70,25 @@ namespace Portfolio.EndlessRunner
             return (features & feature) == feature;
         }
 
-        /// <summary>The theme of the track at <paramref name="z"/>: fixed for campaign levels, rotating when endless.</summary>
+        /// <summary>
+        /// The world of the track at <paramref name="z"/>: fixed for campaign levels, rotating when endless, and the one
+        /// the active game theme shows for it.
+        /// </summary>
         public RunnerTheme ThemeAt(float z)
         {
-            if (!IsEndless || themeRotation == null || themeRotation.Length == 0 || themeLength <= 0f)
+            return ThemeAt(z, RunnerGameTheme.Active);
+        }
+
+        /// <summary>The world of the track at <paramref name="z"/> as <paramref name="look"/> shows it; the level's own without one.</summary>
+        public RunnerTheme ThemeAt(float z, RunnerGameTheme look)
+        {
+            RunnerTheme world = theme;
+            if (IsEndless && themeRotation != null && themeRotation.Length > 0 && themeLength > 0f)
             {
-                return theme;
+                int index = Mathf.FloorToInt(Mathf.Max(0f, z) / themeLength) % themeRotation.Length;
+                world = themeRotation[index] != null ? themeRotation[index] : theme;
             }
-            int index = Mathf.FloorToInt(Mathf.Max(0f, z) / themeLength) % themeRotation.Length;
-            return themeRotation[index] != null ? themeRotation[index] : theme;
+            return look != null ? look.Biome(world) : world;
         }
 
         /// <summary>Difficulty (0 to 1) at <paramref name="z"/>; endless levels reach the end value after 2.5 km.</summary>

@@ -202,6 +202,9 @@ namespace Portfolio.Heroes
             public Color ambientGround = new Color(0.24f, 0.21f, 0.17f);
             /// <summary>Fog toward the horizon, the color of the bottom of the sky.</summary>
             public Color fog = new Color(0.62f, 0.68f, 0.75f);
+            /// <summary>Where the fog begins and where it hides everything, in meters from the camera.</summary>
+            public float fogStart = 75f;
+            public float fogEnd = 290f;
         }
 
         /// <summary>
@@ -267,6 +270,16 @@ namespace Portfolio.Heroes
         public List<ObstacleArt> obstacles = new List<ObstacleArt>();
         public List<BackdropArt> backdrops = new List<BackdropArt>();
 
+        /// <summary>The gatehouse in the wall of a besieged town, drawbridge down, at the size it stands on the field.</summary>
+        [Header("Siege")]
+        public GameObject siegeGate;
+        /// <summary>A heap of the wall's stones: where an arrow tower fell, and at the broken ends of a breach.</summary>
+        public GameObject siegeRuin;
+        /// <summary>A few loose stones of the wall, strewn over the ground of a breach.</summary>
+        public GameObject siegeStones;
+        /// <summary>The banners the gatehouse hangs out, by the color of the town's owner, the fifth for nobody.</summary>
+        public GameObject[] siegeBanners = new GameObject[5];
+
         [Header("Interface")]
         public TMP_FontAsset titleFont;
         public TMP_FontAsset bodyFont;
@@ -304,7 +317,6 @@ namespace Portfolio.Heroes
         public Sprite starEmpty;
         /// <summary>A red pennant with a gold edge (old; see <see cref="pennant"/> for one in a player's color).</summary>
         public Sprite banner;
-        public Sprite titleArt;
 
         /// <summary>A long bar along an edge of the screen: dark wood between thin gold bands (resources, commands).</summary>
         [Header("Interface kit")]
@@ -677,17 +689,10 @@ namespace Portfolio.Heroes
             return index < sounds.Length ? sounds[index] : null;
         }
 
-        /// <summary>The colors of the players: red, blue, green, tan, and grey for nobody.</summary>
+        /// <summary>The colors of the players: red, blue, green, tan, and grey for nobody, as the active theme paints them.</summary>
         public static Color PlayerColor(int color)
         {
-            switch (color)
-            {
-                case 0: return new Color(0.86f, 0.16f, 0.14f);
-                case 1: return new Color(0.2f, 0.42f, 0.9f);
-                case 2: return new Color(0.2f, 0.7f, 0.25f);
-                case 3: return new Color(0.86f, 0.68f, 0.3f);
-                default: return new Color(0.7f, 0.7f, 0.7f);
-            }
+            return HeroesTheme.Palette.Active.Player(color);
         }
     }
 }

@@ -619,7 +619,7 @@ namespace Portfolio.Heroes.UI
                 int index = i;
                 RectTransform cell = UIKit.Rect(rect, $"Place{i}");
                 UIKit.Fit(cell, size, size);
-                Image halo = UIKit.Halo(cell, "Halo", new Color(1f, 0.85f, 0.45f, 0f));
+                Image halo = UIKit.Halo(cell, "Halo", HeroesTheme.Palette.Active.Accent(new Color(1f, 0.85f, 0.45f, 0f)));
                 UIKit.Stretch((RectTransform)halo.transform, -size * 0.22f, -size * 0.22f, -size * 0.22f, -size * 0.22f);
                 Image slot = UIKit.Slot(cell, "Slot");
                 UIKit.Stretch((RectTransform)slot.transform);

@@ -51,7 +51,8 @@ namespace Portfolio.MemoryCards
             if (CustomSettingsButtonText != null)
             {
                 CustomSettingsButtonText.text = usingDefault ? "Use Custom Rules" : "Use Default Rules";
-                CustomSettingsButtonText.color = new Color(0.17f, 0.18f, 0.26f);
+                MemoryCardsTheme look = (Manager as MemoryCardsGameManager)?.Look;
+                CustomSettingsButtonText.color = look != null ? look.Colors.ink : new Color(0.17f, 0.18f, 0.26f);
             }
         }
 

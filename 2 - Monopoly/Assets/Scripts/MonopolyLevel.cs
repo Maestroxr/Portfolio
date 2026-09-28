@@ -24,8 +24,21 @@ namespace Portfolio.Monopoly
         [field: SerializeField]
         public string Icon { get; private set; }
 
-        [field: SerializeField]
-        public Color Accent { get; private set; } = Color.red;
+        [SerializeField] private Color accent = Color.red;
+        [Tooltip("A colour of the theme for the accent (palette.red); the colour above when empty or unknown.")]
+        [SerializeField] private string accentKey;
+
+        /// <summary>The colour of the mode's card: the theme's colour of <see cref="AccentKey"/>, else the colour it was built with.</summary>
+        public Color Accent
+        {
+            get
+            {
+                MonopolyTheme theme = MonopolyStyle.Theme;
+                return theme != null && theme.TryResolveColor(accentKey, out Color themed) ? themed : accent;
+            }
+        }
+
+        public string AccentKey => accentKey;
 
         /// <summary>Whether the mode plays the custom rules of the settings panel instead of settings of its own.</summary>
         public bool UsesCustomRules => Settings == null;
@@ -42,13 +55,14 @@ namespace Portfolio.Monopoly
 
 #if UNITY_EDITOR
         /// <summary>Editor only: the content builder fills the mode in.</summary>
-        public void Configure(MonopolySettings settings, string tagline, string description, string icon, Color accent)
+        public void Configure(MonopolySettings settings, string tagline, string description, string icon, Color accentColor, string accentColorKey = null)
         {
             Settings = settings;
             Tagline = tagline;
             Description = description;
             Icon = icon;
-            Accent = accent;
+            accent = accentColor;
+            accentKey = accentColorKey;
         }
 #endif
     }

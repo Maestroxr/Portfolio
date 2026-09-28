@@ -94,6 +94,8 @@ namespace Portfolio.EndlessRunner
         [SerializeField] internal ParticleSystem snow;
         [SerializeField] internal ParticleSystem fireflies;
         [SerializeField] internal ParticleSystem embers;
+        [SerializeField] internal ParticleSystem rain;
+        [SerializeField] internal ParticleSystem ash;
         [SerializeField] internal float transitionTime = 2.5f;
 
         private Environment from;
@@ -106,10 +108,29 @@ namespace Portfolio.EndlessRunner
 
         private void Awake()
         {
-            if (skyMaterial != null)
+            SetSky(skyMaterial);
+        }
+
+        /// <summary>
+        /// Draws the sky with a copy of <paramref name="asset"/> from now on (a theme brought another horizon); the
+        /// colours of the current world are pushed into it.
+        /// </summary>
+        public void SetSky(Material asset)
+        {
+            if (asset == null || (sky != null && skyMaterial == asset))
             {
-                sky = new Material(skyMaterial) { name = skyMaterial.name + " (runtime)" };
-                RenderSettings.skybox = sky;
+                return;
+            }
+            if (sky != null)
+            {
+                Destroy(sky);
+            }
+            skyMaterial = asset;
+            sky = new Material(asset) { name = asset.name + " (runtime)" };
+            RenderSettings.skybox = sky;
+            if (Theme != null)
+            {
+                Push(current);
             }
         }
 
@@ -155,6 +176,8 @@ namespace Portfolio.EndlessRunner
                 Place(snow, anchor + Vector3.up * 8f);
                 Place(fireflies, anchor);
                 Place(embers, anchor - Vector3.up * 2f);
+                Place(rain, anchor + Vector3.up * 9f);
+                Place(ash, anchor + Vector3.up * 3f);
             }
         }
 
@@ -208,6 +231,8 @@ namespace Portfolio.EndlessRunner
             Toggle(snow, effect == AmbientEffect.Snow);
             Toggle(fireflies, effect == AmbientEffect.Fireflies);
             Toggle(embers, effect == AmbientEffect.Embers);
+            Toggle(rain, effect == AmbientEffect.Rain);
+            Toggle(ash, effect == AmbientEffect.Ash);
         }
 
         private static void Toggle(ParticleSystem system, bool on)

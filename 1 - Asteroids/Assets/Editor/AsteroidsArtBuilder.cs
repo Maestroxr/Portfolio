@@ -56,6 +56,8 @@ namespace Portfolio.Asteroids.EditorTools
             BuildStrikeArt();
             Progress("Ground art", 0.95f);
             BuildGroundArt();
+            Progress("Theme art", 0.98f);
+            BuildThemeArt();
             AssetDatabase.SaveAssets();
             EditorUtility.ClearProgressBar();
         }
@@ -405,11 +407,19 @@ namespace Portfolio.Asteroids.EditorTools
 
         // ------------------------------------------------------------------ hangar pictures
 
-        /// <summary>
-        /// Renders every hangar ship from above into a transparent picture (two renders, over black and white). The
-        /// temporary studio lives on a layer of its own far away, so whatever scene is open does not show up.
-        /// </summary>
+        /// <summary>The hangar pictures of the Classic look: the pack models in their pack paint.</summary>
         private static void BuildShipPreviews()
+        {
+            RenderShipPreviews("Art/Previews", hull => (ShipMesh(hull.model), PackMaterial(hull.material)));
+        }
+
+
+        /// <summary>
+        /// Renders every hangar ship from above into a transparent picture (two renders, over black and white) under
+        /// <paramref name="folder"/>, each with the model and paint <paramref name="lookOf"/> gives its hull. The temporary
+        /// studio lives on a layer of its own far away, so whatever scene is open does not show up.
+        /// </summary>
+        public static void RenderShipPreviews(string folder, Func<(string name, string model, string material, Color engine), (Mesh mesh, Material paint)> lookOf)
         {
             const int studioLayer = 31;
             var studio = new GameObject("Hangar Studio") { hideFlags = HideFlags.HideAndDontSave };
@@ -444,23 +454,24 @@ namespace Portfolio.Asteroids.EditorTools
                 camera.enabled = false;
                 camera.GetUniversalAdditionalCameraData().renderPostProcessing = false;
 
-                foreach ((string name, string model, string material, Color engine) in Hulls)
+                foreach ((string name, string model, string material, Color engine) hull in Hulls)
                 {
-                    Mesh mesh = ShipMesh(model);
+                    (Mesh mesh, Material paint) = lookOf(hull);
                     if (mesh == null)
                     {
                         continue;
                     }
+                    string name = hull.name;
                     var ship = new GameObject(name) { hideFlags = HideFlags.HideAndDontSave, layer = studioLayer };
                     ship.transform.SetParent(studio.transform, false);
                     ship.AddComponent<MeshFilter>().sharedMesh = mesh;
-                    ship.AddComponent<MeshRenderer>().sharedMaterial = PackMaterial(material);
+                    ship.AddComponent<MeshRenderer>().sharedMaterial = paint;
                     float length = Mathf.Max(mesh.bounds.size.x, mesh.bounds.size.z);
                     ship.transform.localScale = Vector3.one / length;
                     ship.transform.localRotation = Quaternion.Euler(-90f, 0f, 0f);
                     ship.transform.localPosition = -(ship.transform.localRotation * mesh.bounds.center) / length;
                     Texture2D picture = Matte(camera, 256);
-                    AsteroidsAssets.SaveTexture(picture, $"Art/Previews/{name}.png", AsteroidsAssets.SpriteTexture(Vector4.zero));
+                    AsteroidsAssets.SaveTexture(picture, $"{folder}/{name}.png", AsteroidsAssets.SpriteTexture(Vector4.zero));
                     Object.DestroyImmediate(ship);
                 }
             }

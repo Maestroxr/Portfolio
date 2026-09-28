@@ -1,0 +1,214 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b3f22cde396483fa0a312556e991f56, type: 3}
+  m_Name: NightShift
+  m_EditorClassIdentifier: Skinnerboxes.EndlessRunner::Portfolio.EndlessRunner.RunnerGameTheme
+  displayName: Night Shift
+  description: 'A courier''s run through the night city: wet streets, the subway, the docks, the highway and the rooftops at dawn.'
+  preview: {fileID: 21300000, guid: 49a45a381fa578f47a626ac169fce8fb, type: 3}
+  fonts:
+    body: {fileID: 11400000, guid: 80f7083f931d8844684709f765e8462f, type: 2}
+    bodyMaterial: {fileID: 2100000, guid: 852a3cc5101ad234ea27f1a56ea975aa, type: 2}
+    title: {fileID: 11400000, guid: 80f7083f931d8844684709f765e8462f, type: 2}
+    titleMaterial: {fileID: 2100000, guid: b8cd06812488854448aae8428bb67b96, type: 2}
+  menu:
+    backdrop: {fileID: 21300000, guid: 97088e349bacf774d91998053d9dede2, type: 3}
+    backdropColor: {r: 0.06, g: 0.065, b: 0.075, a: 0.88}
+    window: {fileID: 21300000, guid: 9886274c57584fe42bc0b8fcab565535, type: 3}
+    windowColor: {r: 0.07, g: 0.075, b: 0.085, a: 0.97}
+    tileWindow: 0
+    settingsWindow: {fileID: 21300000, guid: 9886274c57584fe42bc0b8fcab565535, type: 3}
+    headerBanner: {fileID: 21300000, guid: 9886274c57584fe42bc0b8fcab565535, type: 3}
+    rowsBackground: {fileID: 21300000, guid: 9886274c57584fe42bc0b8fcab565535, type: 3}
+    rowsColor: {r: 0.03, g: 0.03, b: 0.035, a: 0.6}
+    rowBackground: {fileID: 21300000, guid: 9886274c57584fe42bc0b8fcab565535, type: 3}
+    rowColor: {r: 0.1, g: 0.1, b: 0.11, a: 0.6}
+    button: {fileID: 21300000, guid: 16bb3b04a74c9ea499aebf685ab5f9c0, type: 3}
+    buttonHover: {fileID: 21300000, guid: d7d74e8b696243a4495f39ab37ee04ca, type: 3}
+    buttonPressed: {fileID: 21300000, guid: e318fd49262cc0a4eb5c5bd0257120e9, type: 3}
+    buttonDisabled: {fileID: 21300000, guid: 3d9d7365b7b16c644bf8a7fcf0de9300, type: 3}
+    arrowButton: {fileID: 21300000, guid: 16bb3b04a74c9ea499aebf685ab5f9c0, type: 3}
+    track: {fileID: 21300000, guid: 9886274c57584fe42bc0b8fcab565535, type: 3}
+    fill: {fileID: 21300000, guid: 16bb3b04a74c9ea499aebf685ab5f9c0, type: 3}
+    fillColor: {r: 1, g: 0.72, b: 0.25, a: 1}
+    knob: {fileID: 21300000, guid: f1510c375d0f7ed419616e446fa13953, type: 3}
+    checkBox: {fileID: 21300000, guid: 9886274c57584fe42bc0b8fcab565535, type: 3}
+    checkMark: {fileID: 21300000, guid: cda5303366b1bad488e6e70067f4d6ed, type: 3}
+    headerColor: {r: 1, g: 0.72, b: 0.25, a: 1}
+    textColor: {r: 0.9, g: 0.9, b: 0.88, a: 1}
+    valueColor: {r: 1, g: 0.72, b: 0.25, a: 1}
+    buttonTextColor: {r: 1, g: 1, b: 1, a: 1}
+    errorColor: {r: 1, g: 0.4, b: 0.3, a: 1}
+  slots:
+    sprites: []
+    materials: []
+    textures: []
+    prefabs: []
+    meshes: []
+    fonts: []
+    clips: []
+    colors: []
+  biomes:
+  - {fileID: 11400000, guid: 2c8bc536ad3583744b5346b016bec481, type: 2}
+  - {fileID: 11400000, guid: acfec9a58b8d98e48b6572715528ece3, type: 2}
+  - {fileID: 11400000, guid: 3c146a3c57238f54bb63191138c13ce5, type: 2}
+  - {fileID: 11400000, guid: 74dd4694ecc36914b9358b882c6be3c0, type: 2}
+  - {fileID: 11400000, guid: b8b13ecdb08dd7a44b6b7d2571db7990, type: 2}
+  pieces: {fileID: 11400000, guid: d9636d0099cb06146a33ee88e6125c98, type: 2}
+  runner:
+    torso: {fileID: 4300000, guid: 695d00034ec76474b8324027a6644c87, type: 2}
+    head: {fileID: 4300000, guid: cde08d772e0f2834483404f40e503ffe, type: 2}
+    upperArm: {fileID: 4300000, guid: 4f0b59c60a8892d4095ce91086337a92, type: 2}
+    forearm: {fileID: 4300000, guid: 8b45e78351f77e541961e98f38ebd3f8, type: 2}
+    thigh: {fileID: 4300000, guid: 9313756317d762d4fa57a2bbbc1c6124, type: 2}
+    shin: {fileID: 4300000, guid: 4f5d2640bbf169341a2b1a2ced50faf0, type: 2}
+    material: {fileID: 2100000, guid: f1070668a5f9f9b448e7d65b8d271309, type: 2}
+    hipsHeight: 0.89
+    neck: {x: 0, y: 0.56, z: 0}
+    shoulder: {x: 0.23, y: 0.48, z: 0}
+    elbow: -0.28
+    hip: 0.1
+    knee: -0.42
+  materials:
+    palette: {fileID: 2100000, guid: f1070668a5f9f9b448e7d65b8d271309, type: 2}
+    coin: {fileID: 2100000, guid: f1070668a5f9f9b448e7d65b8d271309, type: 2}
+    haloGem: {fileID: 2100000, guid: b43db06fd05ecef4eb6ff39a3326a088, type: 2}
+    haloMagnet: {fileID: 2100000, guid: b0c897409fc7ee544be24e23ba425deb, type: 2}
+    haloShield: {fileID: 2100000, guid: 0e17d4210f621134c829c8fa0681172a, type: 2}
+    haloMultiplier: {fileID: 2100000, guid: d57577828d182984da8d0d2ce9126b19, type: 2}
+    haloSuperJump: {fileID: 2100000, guid: b1b2f80bcbb52004cb3c7a759d64d95a, type: 2}
+    shieldRing: {fileID: 2100000, guid: e07873311352b4d4dae386a72d20e9cc, type: 2}
+  particles:
+    sparkle: {fileID: 2100000, guid: 2bf5d060d0f501a44b5376e3e2b6a3f3, type: 2}
+    glow: {fileID: 2100000, guid: e899786358f9e7747a221fde76a8c05e, type: 2}
+    soft: {fileID: 2100000, guid: 8311b2e34c6666b4e94af64fce926498, type: 2}
+    smoke: {fileID: 2100000, guid: c322605c980c306419d5d03bb711e920, type: 2}
+    confetti: {fileID: 2100000, guid: ac8d9015c40efdb409f1d56a61d87d63, type: 2}
+    debris: {fileID: 2100000, guid: 4cffc1ef3fbff954082d7331dc546e1d, type: 2}
+  sky: {fileID: 2100000, guid: ac69fec271590174d870a3a0248d0c06, type: 2}
+  sprites:
+    coin: {fileID: 21300000, guid: 981e0fbe8a4829c41ad2d6eaa186798a, type: 3}
+    gem: {fileID: 21300000, guid: 4f26911ff614c8947ba28cd8a3aeeec7, type: 3}
+    heart: {fileID: 21300000, guid: 8efaaa7d180bc754fbcdd388f9108b91, type: 3}
+    heartEmpty: {fileID: 21300000, guid: ba29f1ed1bd13034d8771d6e9abc5989, type: 3}
+    star: {fileID: 21300000, guid: 00d7359a6ae2b304db5dd2fe0a3f1d48, type: 3}
+    starEmpty: {fileID: 21300000, guid: 030b13c8208271140b0a1d6ae2742f68, type: 3}
+    lockIcon: {fileID: 21300000, guid: f0c5b0cc6b2de3c4b8401e2c36e49daf, type: 3}
+    magnet: {fileID: 21300000, guid: 3e7c69e0d5ffdc2489b1115754260f8a, type: 3}
+    shield: {fileID: 21300000, guid: f30d79d0170ec9243b0246f06c2c784e, type: 3}
+    multiplier: {fileID: 21300000, guid: b1452cce5a47dde4b821f612db88965f, type: 3}
+    spring: {fileID: 21300000, guid: 5d1d0c9a04fed1b4592a40e27018402d, type: 3}
+    pause: {fileID: 21300000, guid: 21e69ef1ecdf75645acd326f93a0894b, type: 3}
+    flag: {fileID: 21300000, guid: 4c514e9e971511d42b3aacb977745ef4, type: 3}
+    runner: {fileID: 21300000, guid: 49a45a381fa578f47a626ac169fce8fb, type: 3}
+    infinity: {fileID: 21300000, guid: d2517dcff042f0f4e8e2f451993eec90, type: 3}
+    play: {fileID: 21300000, guid: 397f206701a2935489dc8b4523b2f6e4, type: 3}
+    retry: {fileID: 21300000, guid: 1c3691238a32f1542b82059f649eb1e7, type: 3}
+    levels: {fileID: 21300000, guid: 32cc2edf2ce830d438f2d84a6684e359, type: 3}
+    settings: {fileID: 21300000, guid: 49ba5ace7a4967c4e845b7b4e77569ad, type: 3}
+    exit: {fileID: 21300000, guid: 42a63748682094a40b08244bae49c256, type: 3}
+    check: {fileID: 21300000, guid: cda5303366b1bad488e6e70067f4d6ed, type: 3}
+    panel: {fileID: 21300000, guid: 9886274c57584fe42bc0b8fcab565535, type: 3}
+    button: {fileID: 21300000, guid: 16bb3b04a74c9ea499aebf685ab5f9c0, type: 3}
+    buttonHover: {fileID: 21300000, guid: d7d74e8b696243a4495f39ab37ee04ca, type: 3}
+    buttonPressed: {fileID: 21300000, guid: e318fd49262cc0a4eb5c5bd0257120e9, type: 3}
+    buttonDisabled: {fileID: 21300000, guid: 3d9d7365b7b16c644bf8a7fcf0de9300, type: 3}
+    fade: {fileID: 21300000, guid: a094b71bf21002f479bc6ff004cc7fb2, type: 3}
+    vignette: {fileID: 21300000, guid: 5b6bbb5cf67750c4e8682b3e83a86c61, type: 3}
+    glow: {fileID: 21300000, guid: f1510c375d0f7ed419616e446fa13953, type: 3}
+    ring: {fileID: 21300000, guid: 6d55946666bbea34abeb577af6bd0b3f, type: 3}
+    grain: {fileID: 21300000, guid: e93ff9486e31cd5448e5a35fa33cd803, type: 3}
+    backdrop: {fileID: 21300000, guid: 97088e349bacf774d91998053d9dede2, type: 3}
+  colors:
+    panel: {r: 0.06, g: 0.065, b: 0.075, a: 0.88}
+    accent: {r: 1, g: 0.72, b: 0.25, a: 1}
+    play: {r: 0.16, g: 0.5, b: 0.32, a: 1}
+    warning: {r: 0.72, g: 0.42, b: 0.14, a: 1}
+    info: {r: 0.2, g: 0.36, b: 0.5, a: 1}
+    danger: {r: 0.6, g: 0.2, b: 0.2, a: 1}
+    soft: {r: 0.72, g: 0.74, b: 0.76, a: 1}
+    badge: {r: 0.72, g: 0.45, b: 0.12, a: 0.95}
+    hint: {r: 0.55, g: 0.57, b: 0.6, a: 1}
+    locked: {r: 0.2, g: 0.21, b: 0.23, a: 1}
+    goals: {r: 0.85, g: 0.8, b: 0.7, a: 1}
+    logoEndlessTop: {r: 0.95, g: 0.95, b: 0.92, a: 1}
+    logoEndlessBottom: {r: 0.6, g: 0.62, b: 0.66, a: 1}
+    logoRunnerTop: {r: 1, g: 0.78, b: 0.3, a: 1}
+    logoRunnerBottom: {r: 0.85, g: 0.42, b: 0.1, a: 1}
+    overlay: {r: 0, g: 0, b: 0, a: 0.45}
+    grain: {r: 1, g: 1, b: 1, a: 0.07}
+    curtain: {r: 0.01, g: 0.01, b: 0.012, a: 1}
+    magnet: {r: 1, g: 0.3, b: 0.25, a: 1}
+    shield: {r: 0.4, g: 0.75, b: 1, a: 1}
+    multiplier: {r: 1, g: 0.72, b: 0.25, a: 1}
+    superJump: {r: 0.45, g: 1, b: 0.55, a: 1}
+    menuResume: {r: 0.16, g: 0.5, b: 0.32, a: 1}
+    menuRestart: {r: 0.72, g: 0.42, b: 0.14, a: 1}
+    menuSettings: {r: 0.2, g: 0.36, b: 0.5, a: 1}
+    menuQuit: {r: 0.6, g: 0.2, b: 0.2, a: 1}
+    menuText: {r: 0.9, g: 0.9, b: 0.88, a: 1}
+    field: {r: 0.13, g: 0.135, b: 0.15, a: 0.95}
+    fieldText: {r: 0.92, g: 0.92, b: 0.9, a: 1}
+  levels:
+  - title: First Shift
+    description: Your first night on the job. Dodge the dumpsters, clear the road blocks and grab every credit chip on the way.
+  - title: Loading Zone
+    description: Delivery trucks line the street. Run up the loading ramps to reach the chips stacked on their roofs.
+  - title: Under the City
+    description: The subway after midnight. Slide under the scaffolds and let the lift pads throw you up to the lights.
+  - title: Mind the Gap
+    description: The tracks cut the platform in two. Time your jumps - or find the steel bridge.
+  - title: Night Freight
+    description: Mail carts roll loose between the containers. Keep your eyes open in the fog.
+  - title: Container Run
+    description: Leap from truck to truck along the harbour.
+  - title: Red Lights
+    description: Everything you have learned, on the highway at night. Follow the sodium lights.
+  - title: Last Drop
+    description: The final run over the rooftops as the sun comes up. Only the best couriers make the drop.
+  - title: Night Shift
+    description: No finish line. Run through the whole city while the pace keeps climbing.
+  words:
+  - from: over hurdles
+    to: over road blocks
+  - from: the crates
+    to: the dumpsters
+  - from: under barriers
+    to: under scaffolds
+  - from: coins are waiting on the wagon
+    to: chips are waiting on the truck
+  - from: wagon to wagon
+    to: truck to truck
+  - from: onto the wagons
+    to: onto the trucks
+  - from: onto wagons
+    to: onto trucks
+  - from: on wagons
+    to: on trucks
+  - from: Bounce pads
+    to: Lift pads
+  - from: into the sky
+    to: up high
+  - from: Runaway cart
+    to: Runaway mail cart
+  - from: coins in an arc
+    to: chips in an arc
+  - from: The world changes
+    to: The city changes
+  - from: Coins
+    to: Chips
+  - from: coins
+    to: chips
+  - from: 'Coin '
+    to: 'Chip '
+  - from: 'coin '
+    to: 'chip '

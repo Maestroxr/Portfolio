@@ -128,6 +128,12 @@ namespace Portfolio.Asteroids
         [SerializeField] internal Sprite starFull;
         [SerializeField] internal Sprite starEmpty;
 
+        /// <summary>The full star: the active theme's, else the scene's.</summary>
+        internal Sprite StarFull => AsteroidsUI.Themed(theme => theme.Interface.starFull, starFull);
+
+        /// <summary>The empty star: the active theme's, else the scene's.</summary>
+        internal Sprite StarEmpty => AsteroidsUI.Themed(theme => theme.Interface.starEmpty, starEmpty);
+
         private readonly List<StrikeMissionSummary> summaries = new List<StrikeMissionSummary>();
         private readonly List<StrikeItemInfo> offers = new List<StrikeItemInfo>();
         private StrikeLoadout pilot;
@@ -336,7 +342,7 @@ namespace Portfolio.Asteroids
                 missionNodes[i].gameObject.SetActive(used);
                 if (used)
                 {
-                    missionNodes[i].Show(NodeSummary(summaries[i]), summaries[i].Index == selected, starFull, starEmpty);
+                    missionNodes[i].Show(NodeSummary(summaries[i]), summaries[i].Index == selected, StarFull, StarEmpty);
                 }
             }
             ShowSectorHeaders(stars);
@@ -762,7 +768,7 @@ namespace Portfolio.Asteroids
                 progressFill.fillAmount = 0f;
                 if (mission != null && mission.Terrain != null)
                 {
-                    progressFill.color = mission.Terrain.Accent;
+                    progressFill.color = AsteroidsThemes.Accent(mission.Terrain, progressFill.color);
                 }
             }
         }
@@ -981,7 +987,7 @@ namespace Portfolio.Asteroids
             {
                 if (star != null)
                 {
-                    star.sprite = starEmpty;
+                    star.sprite = StarEmpty;
                     star.transform.localScale = Vector3.one;
                     star.gameObject.SetActive(!result.Coop);
                 }
@@ -1014,7 +1020,7 @@ namespace Portfolio.Asteroids
             {
                 if (resultStars[starsPopped] != null)
                 {
-                    resultStars[starsPopped].sprite = starFull;
+                    resultStars[starsPopped].sprite = StarFull;
                 }
                 Sounds?.Star(starsPopped);
                 starsPopped++;
@@ -1043,11 +1049,11 @@ namespace Portfolio.Asteroids
         #endregion
 
 
-        /// <summary>The icon of <paramref name="item"/> (null when the scene has none).</summary>
+        /// <summary>The icon of <paramref name="item"/>: the active theme's, else the scene's (null when neither has one).</summary>
         internal Sprite ItemSprite(StrikeItem item)
         {
             int index = (int)item;
-            return index >= 0 && index < itemSprites.Length ? itemSprites[index] : null;
+            return AsteroidsUI.Themed(theme => theme.StrikeIcon(item.ToString()), index >= 0 && index < itemSprites.Length ? itemSprites[index] : null);
         }
 
 
@@ -1071,7 +1077,7 @@ namespace Portfolio.Asteroids
 
         private void SetStars(Image[] stars, int count)
         {
-            SetStars(stars, count, starFull, starEmpty);
+            SetStars(stars, count, StarFull, StarEmpty);
         }
 
 

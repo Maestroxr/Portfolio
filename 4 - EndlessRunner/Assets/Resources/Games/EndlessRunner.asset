@@ -14,8 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   type: 4
   displayName: Endless Runner
-  description: 'Run through five worlds: dodge crates, jump hurdles, slide under barriers and climb ramps onto wagons to grab the coins. Eight campaign levels with three stars each, plus an endless run.'
+  description: 'Run through five worlds: dodge crates, jump hurdles, slide under barriers and climb ramps onto wagons to grab the coins. Eight campaign levels with three stars each, plus an endless run. Two looks: the classic worlds and the Night Shift.'
   icon: {fileID: 21300000, guid: ff0f2497ed1c95744a62c6ef5b8f771c, type: 3}
   sortOrder: 4
-  scenePath: Packages/com.skinnerboxes.endlessrunner/Scenes/EndlessRunner.unity
+  scenePath: Assets/Scenes/EndlessRunner.unity
+  extraScenePaths: []
+  theme: {fileID: 11400000, guid: 32438ac614d30f24e8ff68c9dce23db0, type: 2}
+  themes:
+  - {fileID: 11400000, guid: 32438ac614d30f24e8ff68c9dce23db0, type: 2}
+  - {fileID: 11400000, guid: 9151d5eb2b6342944ac866f146250c5f, type: 2}
   scene: {fileID: 102900000, guid: 75def2e6118654349bc1f291612b504a, type: 3}
+  extraScenes: []

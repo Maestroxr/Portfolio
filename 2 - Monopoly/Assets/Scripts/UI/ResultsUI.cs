@@ -70,6 +70,7 @@ namespace Portfolio.Monopoly
             {
                 winnerBadge.color = MonopolyStyle.PlayerColor(winner.color);
                 winnerToken.sprite = tokens?.Invoke(winner.token);
+                winnerToken.color = MonopolyStyle.TextOn(winnerBadge.color);
                 headline.text = $"{winner.name} {MonopolyStyle.Verb(winner, "wins")}!";
                 bool byWorth = match.rules.DecidedByNetWorth && match.ActiveCount > 1;
                 subline.text = byWorth
@@ -89,7 +90,8 @@ namespace Portfolio.Monopoly
                 row.place.text = (i + 1).ToString();
                 row.badge.color = MonopolyStyle.PlayerColor(player.color);
                 row.token.sprite = tokens?.Invoke(player.token);
-                row.name.text = player.name + (player.bot ? $" <size=70%><color=#8C96A5>{player.level.ToString().ToUpperInvariant()}</color></size>" : "");
+                row.token.color = MonopolyStyle.TextOn(row.badge.color);
+                row.name.text = player.name + (player.bot ? $" <size=70%><color={MonopolyStyle.ColorTag(MonopolyStyle.Muted)}>{player.level.ToString().ToUpperInvariant()}</color></size>" : "");
                 int properties = match.PropertiesOf(player.index).Count();
                 row.detail.text = player.bankrupt
                     ? $"Bankrupt in round {player.bankruptRound}"

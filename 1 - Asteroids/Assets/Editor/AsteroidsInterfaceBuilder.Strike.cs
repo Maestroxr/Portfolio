@@ -10,8 +10,8 @@ namespace Portfolio.Asteroids.EditorTools
     /// <summary>The strike interface: the PLANET STRIKE tab, the Supply Room, the strike HUD and results.</summary>
     internal static partial class AsteroidsInterfaceBuilder
     {
-        private static readonly Color StrikeAccent = new Color(1f, 0.6f, 0.25f);
-        private static readonly Color TabIdle = new Color(0.16f, 0.26f, 0.4f, 0.95f);
+        private static readonly Color StrikeAccent = Classic.strikeAccent;
+        private static readonly Color TabIdle = Classic.tabIdle;
 
         /// <summary>The shop cards: one per item of the armory, whatever the list shows.</summary>
         private const int ShopCardCount = 18;

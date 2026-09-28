@@ -92,6 +92,25 @@ namespace Portfolio.Monopoly
             Validate();
         }
 
+        /// <summary>Draws the seats and modes again (the theme changed while the screen is open).</summary>
+        public void Repaint()
+        {
+            if (setup == null)
+            {
+                return;
+            }
+            foreach (SeatCard seat in seats)
+            {
+                seat.Paint();
+            }
+            for (int i = 0; i < modes.Length; i++)
+            {
+                MonopolyLevel level = campaign != null ? campaign.Mode(i) : null;
+                modes[i].SetSelected(i == mode, level != null ? level.Accent : MonopolyStyle.Red);
+            }
+            Validate();
+        }
+
         /// <summary>Steps a seat to the next token no other seat uses.</summary>
         private void ChangeToken(SeatCard card, int direction)
         {

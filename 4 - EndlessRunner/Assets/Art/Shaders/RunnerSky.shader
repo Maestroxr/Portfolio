@@ -1,5 +1,6 @@
 // Stylised sky of the Endless Runner: a three colour gradient with a sun (or moon), drifting clouds, stars and two
-// ridges of mountains along the horizon. The ThemeController sets the properties per world.
+// ridges of mountains along the horizon, or (with _Skyline on, the Night Shift theme's sky material) two rows of city
+// blocks with lit windows in their place. The ThemeController sets the colours per world.
 Shader "Portfolio/EndlessRunner/Sky"
 {
     Properties
@@ -16,6 +17,7 @@ Shader "Portfolio/EndlessRunner/Sky"
         _MountainFar ("Far Mountains", Color) = (0.55, 0.7, 0.85, 1)
         _MountainNear ("Near Mountains", Color) = (0.4, 0.6, 0.5, 1)
         _MountainHeight ("Mountain Height", Range(0, 0.3)) = 0.09
+        _Skyline ("City Skyline", Range(0, 1)) = 0
     }
 
     SubShader
@@ -45,6 +47,7 @@ Shader "Portfolio/EndlessRunner/Sky"
                 half4 _MountainFar;
                 half4 _MountainNear;
                 float _MountainHeight;
+                float _Skyline;
             CBUFFER_END
 
             struct Attributes
@@ -125,6 +128,28 @@ Shader "Portfolio/EndlessRunner/Sky"
                 return height;
             }
 
+            // Height of a row of city blocks around the horizon: flat roofs of hashed heights, sampled so it wraps.
+            float Blocks(float azimuth, float count, float seed)
+            {
+                float a = (azimuth + 3.14159265) / 6.2831853 * count;
+                float cell = floor(a);
+                float h = Hash21(float2(cell, seed));
+                float wide = Hash21(float2(cell, seed + 7.0));
+                float inset = step(0.06, frac(a)) * step(frac(a), 0.94 + wide * 0.06);
+                return (0.15 + 0.85 * h * h) * inset;
+            }
+
+            // A sprinkle of lit windows on the face of a row of blocks.
+            float Windows(float azimuth, float y, float count, float seed)
+            {
+                float2 grid = float2((azimuth + 3.14159265) / 6.2831853 * count * 9.0, y * 220.0);
+                float2 cell = floor(grid);
+                float2 f = frac(grid);
+                float lit = step(0.72, Hash21(cell + seed));
+                float inside = step(0.25, f.x) * step(f.x, 0.7) * step(0.3, f.y) * step(f.y, 0.75);
+                return lit * inside;
+            }
+
             half4 Frag(Varyings input) : SV_Target
             {
                 float3 d = normalize(input.direction);
@@ -168,14 +193,17 @@ Shader "Portfolio/EndlessRunner/Sky"
                 float azimuth = atan2(d.x, d.z);
                 float enabled = step(0.001, _MountainHeight);
                 float yy = y + 0.004;
-                float farHeight = _MountainHeight * (0.35 + 0.9 * Ridge(azimuth, 1.6, 3.1));
+                float city = step(0.5, _Skyline);
+                float farHeight = _MountainHeight * lerp(0.35 + 0.9 * Ridge(azimuth, 1.6, 3.1), 0.2 + 1.1 * Blocks(azimuth, 90.0, 3.1), city);
                 float farMask = smoothstep(farHeight + 0.002, farHeight - 0.002, yy) * step(-0.08, yy) * enabled;
                 float3 farColor = lerp(lerp(_MountainFar.rgb, _HorizonColor.rgb, 0.55), _MountainFar.rgb, saturate(yy / max(farHeight, 0.001)));
+                farColor += _HorizonColor.rgb * Windows(azimuth, yy, 90.0, 3.1) * 0.8 * city * step(0.0, yy);
                 color = lerp(color, farColor, farMask * _MountainFar.a);
 
-                float nearHeight = _MountainHeight * (0.1 + 0.75 * Ridge(azimuth, 2.7, 11.3)) * 0.8;
+                float nearHeight = _MountainHeight * lerp((0.1 + 0.75 * Ridge(azimuth, 2.7, 11.3)) * 0.8, 0.1 + 0.7 * Blocks(azimuth, 48.0, 11.3), city);
                 float nearMask = smoothstep(nearHeight + 0.002, nearHeight - 0.002, yy) * step(-0.08, yy) * enabled;
                 float3 nearColor = lerp(lerp(_MountainNear.rgb, _HorizonColor.rgb, 0.45), _MountainNear.rgb, saturate(yy / max(nearHeight, 0.001)));
+                nearColor += _HorizonColor.rgb * Windows(azimuth, yy, 48.0, 11.3) * 0.9 * city * step(0.0, yy);
                 color = lerp(color, nearColor, nearMask * _MountainNear.a);
 
                 return half4(color, 1.0);

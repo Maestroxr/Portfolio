@@ -5,33 +5,53 @@ using UnityEngine;
 namespace Portfolio.Monopoly.EditorTools
 {
     /// <summary>
-    /// The 3D models of the game, built from <see cref="MeshFactory"/> shapes: the eight pewter tokens (cut-out side
-    /// views extruded with rounded edges, or turned and modelled from ellipsoids), their bases and turn ring, houses,
-    /// hotels, the dice and the pieces of the board. Sizes are in board units (a space is one unit wide).
+    /// The 3D models of the game, built from <see cref="MeshFactory"/> shapes: the eight tokens (cut-out side views
+    /// extruded with rounded edges, or turned and modelled from ellipsoids; spacecraft and planets in the galactic
+    /// look), their bases and turn ring, houses and hotels (domes and towers in the galactic look), the dice and the
+    /// pieces of the board. Sizes are in board units (a space is one unit wide).
     /// </summary>
     internal static class MonopolyModels
     {
         /// <summary>Height of the coloured base the figures stand on.</summary>
         public const float BaseHeight = 0.06f;
 
-        public static Mesh Token(int index)
+        public static Mesh Token(MonopolyThemeSpec spec, int index)
         {
-            MeshBuilder figure;
-            switch (index)
-            {
-                case 0: figure = RaceCar(); break;
-                case 1: figure = TopHat(); break;
-                case 2: figure = Extruded(TokenOutlines.Dog, 0.0049f, 0.17f); break;
-                case 3: figure = Battleship(); break;
-                case 4: figure = Extruded(TokenOutlines.Cat, 0.0045f, 0.16f); break;
-                case 5: figure = Duck(); break;
-                case 6: figure = Penguin(); break;
-                default: figure = Extruded(TokenOutlines.Dino, 0.0049f, 0.16f); break;
-            }
+            MeshBuilder figure = spec.Style == ArtStyle.Galactic ? SpaceFigure(index) : ClassicFigure(index);
             // Stand the figure on the base, centred over it.
             Bounds bounds = figure.Bounds();
             var placed = new MeshBuilder().Append(figure, Matrix4x4.Translate(new Vector3(-bounds.center.x, BaseHeight - bounds.min.y, -bounds.center.z)));
-            return placed.ToMesh(MonopolyStyle.TokenNames[index]);
+            return placed.ToMesh(spec.Tokens[index].name);
+        }
+
+        private static MeshBuilder ClassicFigure(int index)
+        {
+            switch (index)
+            {
+                case 0: return RaceCar();
+                case 1: return TopHat();
+                case 2: return Extruded(TokenOutlines.Dog, 0.0049f, 0.17f);
+                case 3: return Battleship();
+                case 4: return Extruded(TokenOutlines.Cat, 0.0045f, 0.16f);
+                case 5: return Duck();
+                case 6: return Penguin();
+                default: return Extruded(TokenOutlines.Dino, 0.0049f, 0.16f);
+            }
+        }
+
+        private static MeshBuilder SpaceFigure(int index)
+        {
+            switch (index)
+            {
+                case 0: return Rocket();
+                case 1: return Satellite();
+                case 2: return Robot();
+                case 3: return Ufo();
+                case 4: return Comet();
+                case 5: return RingedPlanet();
+                case 6: return Helmet();
+                default: return SpaceStation();
+            }
         }
 
         /// <summary>A side view cut out and extruded: <paramref name="scale"/> board units per design unit, <paramref name="depth"/> thick.</summary>
@@ -40,6 +60,8 @@ namespace Portfolio.Monopoly.EditorTools
             List<Vector2> outline = TokenOutlines.Outline(anchors).Select(p => p * scale).ToList();
             return MeshFactory.Extrude(outline, depth, depth * 0.16f, 3);
         }
+
+        // ------------------------------------------------------------------ the classic figures
 
         private static MeshBuilder RaceCar()
         {
@@ -141,11 +163,167 @@ namespace Portfolio.Monopoly.EditorTools
             return penguin;
         }
 
+        // ------------------------------------------------------------------ the spacecraft of the galactic look
+
+        /// <summary>A rocket standing on three fins: a turned body with a nose cone, fins, a porthole and a nozzle.</summary>
+        private static MeshBuilder Rocket()
+        {
+            var rocket = new MeshBuilder();
+            var profile = new List<Vector2>
+            {
+                new Vector2(0f, 0.04f), new Vector2(0.05f, 0.04f), new Vector2(0.06f, 0.07f), new Vector2(0.085f, 0.09f),
+                new Vector2(0.095f, 0.16f), new Vector2(0.095f, 0.26f), new Vector2(0.08f, 0.32f), new Vector2(0.045f, 0.37f),
+                new Vector2(0.012f, 0.4f), new Vector2(0f, 0.41f)
+            };
+            rocket.Append(MeshFactory.Lathe(profile, 28));
+            // The nozzle.
+            rocket.Append(MeshFactory.Cylinder(0.045f, 0.05f, 0.008f, 16), Matrix4x4.Translate(new Vector3(0f, 0f, 0f)));
+            // Three fins around the foot.
+            var fin = new List<Vector2> { new Vector2(0.06f, 0.02f), new Vector2(0.15f, 0f), new Vector2(0.15f, 0.03f), new Vector2(0.09f, 0.14f), new Vector2(0.075f, 0.16f) };
+            MeshBuilder finMesh = MeshFactory.Extrude(fin, 0.016f, 0.004f, 2);
+            for (int i = 0; i < 3; i++)
+            {
+                rocket.Append(finMesh, Matrix4x4.TRS(Vector3.zero, Quaternion.Euler(0f, 120f * i, 0f), Vector3.one));
+            }
+            // A porthole and a band.
+            rocket.Append(MeshFactory.Torus(0.03f, 0.008f, 16, 8), Matrix4x4.TRS(new Vector3(0f, 0.25f, -0.09f), Quaternion.Euler(90f, 0f, 0f), Vector3.one));
+            rocket.Append(MeshFactory.Torus(0.094f, 0.006f, 28, 6), Matrix4x4.Translate(new Vector3(0f, 0.15f, 0f)));
+            return rocket;
+        }
+
+        /// <summary>A satellite on a thin stand: a body with two solar panels, a dish and an antenna.</summary>
+        private static MeshBuilder Satellite()
+        {
+            var satellite = new MeshBuilder();
+            satellite.Append(MeshFactory.Cylinder(0.02f, 0.14f, 0.004f, 10));
+            satellite.Append(MeshFactory.Cylinder(0.07f, 0.02f, 0.006f, 20));
+            satellite.Append(MeshFactory.Box(new Vector3(0f, 0.2f, 0f), new Vector3(0.11f, 0.11f, 0.11f)));
+            foreach (float side in new[] { -1f, 1f })
+            {
+                satellite.Append(MeshFactory.Box(new Vector3(side * 0.2f, 0.2f, 0f), new Vector3(0.24f, 0.012f, 0.09f)));
+                satellite.Append(MeshFactory.Cylinder(0.008f, 0.09f, 0.002f, 8), Matrix4x4.TRS(new Vector3(side * 0.055f, 0.2f, 0f), Quaternion.Euler(0f, 0f, side * 90f), Vector3.one));
+            }
+            // The dish, a shallow cone turned upside down, on a short mast.
+            satellite.Append(MeshFactory.Cylinder(0.008f, 0.06f, 0.002f, 8), Matrix4x4.Translate(new Vector3(0f, 0.255f, 0f)));
+            var dish = new List<Vector2> { new Vector2(0f, 0f), new Vector2(0.075f, 0.03f), new Vector2(0.07f, 0.036f), new Vector2(0.01f, 0.012f), new Vector2(0f, 0.012f) };
+            satellite.Append(MeshFactory.Lathe(dish, 24), Matrix4x4.Translate(new Vector3(0f, 0.31f, 0f)));
+            satellite.Append(MeshFactory.Cylinder(0.005f, 0.05f, 0.001f, 6), Matrix4x4.Translate(new Vector3(0f, 0.32f, 0f)));
+            satellite.Append(MeshFactory.Ellipsoid(new Vector3(0.012f, 0.012f, 0.012f), 8, 6), Matrix4x4.Translate(new Vector3(0f, 0.375f, 0f)));
+            return satellite;
+        }
+
+        /// <summary>A little robot: boxy body and head, round eyes, arms, legs and an antenna.</summary>
+        private static MeshBuilder Robot()
+        {
+            var robot = new MeshBuilder();
+            foreach (float z in new[] { -0.05f, 0.05f })
+            {
+                robot.Append(MeshFactory.Box(new Vector3(0f, 0.035f, z), new Vector3(0.07f, 0.07f, 0.06f)));
+            }
+            robot.Append(MeshFactory.Box(new Vector3(0f, 0.16f, 0f), new Vector3(0.14f, 0.18f, 0.2f)));
+            robot.Append(MeshFactory.Box(new Vector3(0f, 0.31f, 0f), new Vector3(0.12f, 0.12f, 0.16f)));
+            foreach (float z in new[] { -0.045f, 0.045f })
+            {
+                robot.Append(MeshFactory.Ellipsoid(new Vector3(0.02f, 0.02f, 0.012f), 10, 8), Matrix4x4.Translate(new Vector3(0.06f, 0.325f, z)));
+                robot.Append(MeshFactory.Cylinder(0.02f, 0.13f, 0.006f, 10), Matrix4x4.TRS(new Vector3(0f, 0.16f, z * 2.6f), Quaternion.Euler(z < 0f ? 15f : -15f, 0f, 0f), Vector3.one));
+            }
+            robot.Append(MeshFactory.Box(new Vector3(0.062f, 0.15f, 0f), new Vector3(0.01f, 0.03f, 0.08f)));
+            robot.Append(MeshFactory.Cylinder(0.006f, 0.06f, 0.001f, 6), Matrix4x4.Translate(new Vector3(0f, 0.37f, 0f)));
+            robot.Append(MeshFactory.Ellipsoid(new Vector3(0.016f, 0.016f, 0.016f), 10, 8), Matrix4x4.Translate(new Vector3(0f, 0.435f, 0f)));
+            return robot;
+        }
+
+        /// <summary>A flying saucer on three landing legs, with a dome and a ring of lights.</summary>
+        private static MeshBuilder Ufo()
+        {
+            var ufo = new MeshBuilder();
+            var saucer = new List<Vector2>
+            {
+                new Vector2(0f, 0.1f), new Vector2(0.09f, 0.1f), new Vector2(0.2f, 0.135f), new Vector2(0.26f, 0.165f),
+                new Vector2(0.2f, 0.2f), new Vector2(0.1f, 0.215f), new Vector2(0f, 0.22f)
+            };
+            ufo.Append(MeshFactory.Lathe(saucer, 32));
+            ufo.Append(MeshFactory.Ellipsoid(new Vector3(0.1f, 0.075f, 0.1f), 24, 12), Matrix4x4.Translate(new Vector3(0f, 0.22f, 0f)));
+            ufo.Append(MeshFactory.Torus(0.17f, 0.012f, 32, 8), Matrix4x4.Translate(new Vector3(0f, 0.15f, 0f)));
+            for (int i = 0; i < 3; i++)
+            {
+                Quaternion turn = Quaternion.Euler(0f, 120f * i + 60f, 0f);
+                ufo.Append(MeshFactory.Cylinder(0.01f, 0.12f, 0.002f, 8), Matrix4x4.TRS(turn * new Vector3(0.12f, 0f, 0f), turn * Quaternion.Euler(0f, 0f, 20f), Vector3.one));
+                ufo.Append(MeshFactory.Cylinder(0.03f, 0.012f, 0.004f, 12), Matrix4x4.Translate(turn * new Vector3(0.16f, 0f, 0f)));
+            }
+            return ufo;
+        }
+
+        /// <summary>A comet: a bright head with a tail streaming back, propped on a small stand.</summary>
+        private static MeshBuilder Comet()
+        {
+            var comet = new MeshBuilder();
+            comet.Append(MeshFactory.Cylinder(0.06f, 0.04f, 0.008f, 16), Matrix4x4.Translate(new Vector3(0.05f, 0f, 0f)));
+            comet.Append(MeshFactory.Ellipsoid(new Vector3(0.1f, 0.1f, 0.1f), 24, 16), Matrix4x4.Translate(new Vector3(0.12f, 0.2f, 0f)));
+            // The tail: two cones pointing away from the head, one long and one short beside it.
+            comet.Append(MeshFactory.Cone(0.075f, 0.34f, 18), Matrix4x4.TRS(new Vector3(0.08f, 0.17f, 0f), Quaternion.Euler(0f, 0f, 118f), Vector3.one));
+            comet.Append(MeshFactory.Cone(0.04f, 0.24f, 14), Matrix4x4.TRS(new Vector3(0.09f, 0.26f, 0.04f), Quaternion.Euler(-10f, 0f, 108f), Vector3.one));
+            comet.Append(MeshFactory.Cylinder(0.014f, 0.16f, 0.004f, 8), Matrix4x4.Translate(new Vector3(0.05f, 0.03f, 0f)));
+            return comet;
+        }
+
+        /// <summary>A ringed planet on a slim stand.</summary>
+        private static MeshBuilder RingedPlanet()
+        {
+            var planet = new MeshBuilder();
+            planet.Append(MeshFactory.Cylinder(0.07f, 0.03f, 0.008f, 20));
+            planet.Append(MeshFactory.Cylinder(0.012f, 0.1f, 0.003f, 8), Matrix4x4.Translate(new Vector3(0f, 0.02f, 0f)));
+            planet.Append(MeshFactory.Ellipsoid(new Vector3(0.13f, 0.12f, 0.13f), 28, 18), Matrix4x4.Translate(new Vector3(0f, 0.25f, 0f)));
+            var ring = new List<Vector2>
+            {
+                new Vector2(0.16f, -0.006f), new Vector2(0.26f, -0.004f), new Vector2(0.26f, 0.004f), new Vector2(0.16f, 0.006f), new Vector2(0.16f, -0.006f)
+            };
+            planet.Append(MeshFactory.Lathe(ring, 40), Matrix4x4.TRS(new Vector3(0f, 0.25f, 0f), Quaternion.Euler(18f, 0f, -12f), Vector3.one));
+            return planet;
+        }
+
+        /// <summary>An astronaut's helmet: a sphere with a visor and a neck ring.</summary>
+        private static MeshBuilder Helmet()
+        {
+            var helmet = new MeshBuilder();
+            helmet.Append(MeshFactory.Cylinder(0.11f, 0.05f, 0.012f, 24));
+            helmet.Append(MeshFactory.Torus(0.1f, 0.016f, 24, 8), Matrix4x4.Translate(new Vector3(0f, 0.05f, 0f)));
+            helmet.Append(MeshFactory.Ellipsoid(new Vector3(0.15f, 0.15f, 0.15f), 28, 18), Matrix4x4.Translate(new Vector3(0f, 0.2f, 0f)));
+            // The visor, a flattened dome set into the front.
+            helmet.Append(MeshFactory.Ellipsoid(new Vector3(0.1f, 0.085f, 0.06f), 20, 12), Matrix4x4.Translate(new Vector3(0.11f, 0.21f, 0f)));
+            helmet.Append(MeshFactory.Torus(0.1f, 0.012f, 24, 8), Matrix4x4.TRS(new Vector3(0.115f, 0.21f, 0f), Quaternion.Euler(0f, 0f, 90f), new Vector3(1f, 1f, 0.6f)));
+            // A small antenna.
+            helmet.Append(MeshFactory.Cylinder(0.007f, 0.07f, 0.002f, 6), Matrix4x4.Translate(new Vector3(-0.06f, 0.32f, 0.06f)));
+            helmet.Append(MeshFactory.Ellipsoid(new Vector3(0.012f, 0.012f, 0.012f), 8, 6), Matrix4x4.Translate(new Vector3(-0.06f, 0.39f, 0.06f)));
+            return helmet;
+        }
+
+        /// <summary>A space station: a hub on a mast with a ring around it and four spokes.</summary>
+        private static MeshBuilder SpaceStation()
+        {
+            var station = new MeshBuilder();
+            station.Append(MeshFactory.Cylinder(0.07f, 0.03f, 0.008f, 20));
+            station.Append(MeshFactory.Cylinder(0.014f, 0.14f, 0.003f, 8), Matrix4x4.Translate(new Vector3(0f, 0.02f, 0f)));
+            station.Append(MeshFactory.Cylinder(0.05f, 0.1f, 0.01f, 16), Matrix4x4.Translate(new Vector3(0f, 0.16f, 0f)));
+            station.Append(MeshFactory.Torus(0.17f, 0.024f, 40, 10), Matrix4x4.TRS(new Vector3(0f, 0.21f, 0f), Quaternion.Euler(0f, 0f, 0f), Vector3.one));
+            for (int i = 0; i < 4; i++)
+            {
+                Quaternion turn = Quaternion.Euler(0f, 90f * i + 45f, 0f);
+                station.Append(MeshFactory.Cylinder(0.008f, 0.15f, 0.002f, 8), Matrix4x4.TRS(turn * new Vector3(0.04f, 0.21f, 0f), turn * Quaternion.Euler(0f, 0f, -90f), Vector3.one));
+            }
+            station.Append(MeshFactory.Cylinder(0.006f, 0.1f, 0.001f, 6), Matrix4x4.Translate(new Vector3(0f, 0.26f, 0f)));
+            station.Append(MeshFactory.Box(new Vector3(0f, 0.34f, 0f), new Vector3(0.09f, 0.008f, 0.03f)));
+            return station;
+        }
+
         // ------------------------------------------------------------------ pieces
 
-        public static Mesh TokenBase()
+        /// <summary>The base a token stands on: a round disc, or a hexagonal plate in the galactic look.</summary>
+        public static Mesh TokenBase(MonopolyThemeSpec spec)
         {
-            return MeshFactory.Cylinder(0.25f, BaseHeight, 0.018f, 36).ToMesh("TokenBase");
+            return spec.Style == ArtStyle.Galactic
+                ? MeshFactory.Cylinder(0.27f, BaseHeight, 0.01f, 6).ToMesh("TokenBase")
+                : MeshFactory.Cylinder(0.25f, BaseHeight, 0.018f, 36).ToMesh("TokenBase");
         }
 
         public static Mesh TurnRing()
@@ -153,8 +331,13 @@ namespace Portfolio.Monopoly.EditorTools
             return MeshFactory.Torus(0.33f, 0.02f, 48, 10).ToMesh("TurnRing");
         }
 
-        public static Mesh House()
+        /// <summary>A house: a small gabled house, or a dome with a beacon in the galactic look.</summary>
+        public static Mesh House(MonopolyThemeSpec spec)
         {
+            if (spec.Style == ArtStyle.Galactic)
+            {
+                return Dome().ToMesh("House");
+            }
             var house = new MeshBuilder();
             house.Append(MeshFactory.Box(new Vector3(0f, 0.065f, 0f), new Vector3(0.18f, 0.13f, 0.15f)));
             house.Append(MeshFactory.Roof(0.18f, 0.15f, 0.085f, 0.012f), Matrix4x4.Translate(new Vector3(0f, 0.13f, 0f)));
@@ -162,12 +345,46 @@ namespace Portfolio.Monopoly.EditorTools
             return house.ToMesh("House");
         }
 
-        public static Mesh Hotel()
+        /// <summary>A hotel: a long gabled block, or a tower in the galactic look.</summary>
+        public static Mesh Hotel(MonopolyThemeSpec spec)
         {
+            if (spec.Style == ArtStyle.Galactic)
+            {
+                return Tower().ToMesh("Hotel");
+            }
             var hotel = new MeshBuilder();
             hotel.Append(MeshFactory.Box(new Vector3(0f, 0.09f, 0f), new Vector3(0.42f, 0.18f, 0.2f)));
             hotel.Append(MeshFactory.Roof(0.42f, 0.2f, 0.1f, 0.012f), Matrix4x4.Translate(new Vector3(0f, 0.18f, 0f)));
             return hotel.ToMesh("Hotel");
+        }
+
+        /// <summary>A habitat dome: a foot ring, a wall with the windows and a dome with a beacon (v runs from the foot to the top).</summary>
+        private static MeshBuilder Dome()
+        {
+            var profile = new List<Vector2> { new Vector2(0f, 0f), new Vector2(0.1f, 0f), new Vector2(0.1f, 0.02f), new Vector2(0.088f, 0.03f), new Vector2(0.088f, 0.09f) };
+            for (int i = 1; i <= 8; i++)
+            {
+                float angle = i / 8f * Mathf.PI * 0.5f;
+                profile.Add(new Vector2(0.088f * Mathf.Cos(angle), 0.09f + 0.085f * Mathf.Sin(angle)));
+            }
+            profile.Add(new Vector2(0.012f, 0.175f));
+            profile.Add(new Vector2(0.012f, 0.205f));
+            profile.Add(new Vector2(0f, 0.208f));
+            return MeshFactory.Lathe(profile, 24);
+        }
+
+        /// <summary>A trade tower: an octagonal shaft on a wider foot, a ring near the top and a spire.</summary>
+        private static MeshBuilder Tower()
+        {
+            var profile = new List<Vector2>
+            {
+                new Vector2(0f, 0f), new Vector2(0.17f, 0f), new Vector2(0.17f, 0.03f), new Vector2(0.13f, 0.04f),
+                new Vector2(0.13f, 0.3f), new Vector2(0.15f, 0.31f), new Vector2(0.15f, 0.335f), new Vector2(0.11f, 0.345f),
+                new Vector2(0.11f, 0.37f), new Vector2(0.02f, 0.39f), new Vector2(0.02f, 0.45f), new Vector2(0f, 0.46f)
+            };
+            var tower = new MeshBuilder();
+            tower.Append(MeshFactory.Lathe(profile, 8), Matrix4x4.TRS(Vector3.zero, Quaternion.Euler(0f, 22.5f, 0f), new Vector3(1.3f, 1f, 0.8f)));
+            return tower;
         }
 
         public static Mesh Die()

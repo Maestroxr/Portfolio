@@ -721,6 +721,29 @@ namespace Portfolio.EndlessRunner.EditorTools
             QuadFacing(center - axisU - axisV, center + axisU - axisV, center + axisU + axisV, center - axisU + axisV, outward);
         }
 
+        /// <summary>
+        /// Adds every face of <paramref name="other"/> under the current transform and into the current submesh, the
+        /// colours and normals as they were built: a finished model placed inside a bigger one.
+        /// </summary>
+        public void Append(MeshBuilder other)
+        {
+            int start = positions.Count;
+            for (int i = 0; i < other.positions.Count; i++)
+            {
+                positions.Add(matrix.MultiplyPoint3x4(other.positions[i]));
+                normals.Add(normalMatrix.MultiplyVector(other.normals[i]).normalized);
+                uvs.Add(other.uvs[i]);
+            }
+            List<int> indices = submeshes[submesh];
+            foreach (List<int> list in other.submeshes)
+            {
+                foreach (int index in list)
+                {
+                    indices.Add(start + index);
+                }
+            }
+        }
+
         // ------------------------------------------------------------------ output
 
         public Mesh ToMesh(string name)

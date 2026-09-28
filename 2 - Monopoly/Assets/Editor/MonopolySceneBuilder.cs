@@ -18,7 +18,9 @@ namespace Portfolio.Monopoly.EditorTools
     /// (surface, printed names and icons, owner tags, mortgage stamps, highlights, the logo and the card decks), the
     /// house and hotel pools, the dice, the four tokens, the audio, the manager and controller, (through
     /// <see cref="MonopolyInterfaceBuilder"/>) the whole interface, and online play (the server client, the online
-    /// controller and the shared lobby, through <see cref="OnlineInstaller"/>). The scene file is replaced, its GUID kept.
+    /// controller and the shared lobby, through <see cref="OnlineInstaller"/>). The scene is built in the classic look
+    /// and every part that a theme changes is tagged with the key of what it shows (<see cref="MonopolyThemeTagger"/>),
+    /// so the active theme re-skins it at run time. The scene file is replaced, its GUID kept.
     /// </summary>
     internal static class MonopolySceneBuilder
     {
@@ -32,23 +34,41 @@ namespace Portfolio.Monopoly.EditorTools
         private const float Surface = 0.3f;
         /// <summary>Where the clock of an online match sits, from the top centre of the screen.</summary>
         private static readonly Vector2 TurnClockOffset = new Vector2(0f, -18f);
-        private static readonly Color Background = MonopolyStyle.Hex(0x10151D);
+
+        /// <summary>The classic theme the scene is built and tagged with.</summary>
+        private static MonopolyTheme classic;
+
+        /// <summary>
+        /// The pieces whose look the game's code sets from the theme as the match goes (the figures, bases and turn
+        /// rings of the tokens, the owner tags): they get no themed parts, which would fight the code.
+        /// </summary>
+        private static readonly HashSet<GameObject> DrawnByCode = new HashSet<GameObject>();
+
+        /// <summary>The pieces whose mesh the code sets (the figures of the tokens, which follow the token a seat picks).</summary>
+        private static readonly HashSet<GameObject> ShapedByCode = new HashSet<GameObject>();
 
         public static void Build()
         {
+            DrawnByCode.Clear();
+            ShapedByCode.Clear();
+            classic = MonopolyContentBuilder.ClassicTheme;
+            if (classic == null)
+            {
+                throw new System.InvalidOperationException("Monopoly: the classic theme is missing; run Build Everything (the content builder makes it).");
+            }
             BuildVolumeProfile();
             GameObject house = BuildBuildingPrefab(false);
             GameObject hotel = BuildBuildingPrefab(true);
 
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            BuildLighting();
+            BuildLighting(out Light sun, out Light fill);
             Camera camera = BuildCamera(out CameraRig rig);
-            BuildTable();
+            GameObject table = BuildTable();
             BoardView board = BuildBoard(house, hotel);
             MonopolyAssets.SetObject(rig, "view", camera);
             MonopolyAssets.SetObject(rig, "board", board);
             Dice dice = BuildDice(board);
-            List<MonopolyPlayer> tokens = BuildTokens();
+            List<MonopolyPlayer> tokens = BuildTokens(out Transform tokenRoot);
             ParticleSystem confetti = BuildConfetti();
             MonopolyAudio audio = BuildAudio();
 
@@ -58,8 +78,13 @@ namespace Portfolio.Monopoly.EditorTools
             var manager = managerObject.AddComponent<MonopolyGameManager>();
             var controllerObject = new GameObject("Controller");
             var controller = controllerObject.AddComponent<MonopolyController>();
+            var skin = managerObject.AddComponent<MonopolySkin>();
+            MonopolyAssets.SetObject(skin, "view", camera);
+            MonopolyAssets.SetObject(skin, "sun", sun);
+            MonopolyAssets.SetObject(skin, "fill", fill);
+            MonopolyAssets.SetObject(skin, "confetti", confetti);
 
-            MonopolyUI ui = MonopolyInterfaceBuilder.Build(manager, controller, rig, audio, camera);
+            MonopolyUI ui = MonopolyInterfaceBuilder.Build(manager, controller, rig, audio, camera, classic);
 
             var input = managerObject.AddComponent<BoardInput>();
             MonopolyAssets.SetObject(input, "manager", manager);
@@ -76,6 +101,7 @@ namespace Portfolio.Monopoly.EditorTools
             MonopolyAssets.SetObject(manager, "sound", audio);
             MonopolyAssets.SetObjects(manager, "tokens", tokens.ToArray());
             MonopolyAssets.SetObject(manager, "confetti", confetti);
+            MonopolyAssets.SetObject(manager, "skin", skin);
             MonopolyAssets.SetObject(manager, "StorageBehaviour", storage);
             MonopolyAssets.Set(manager, "GameIdentifier", p => p.intValue = (int)GameType.Monopoly);
             MonopolyAssets.SetObject(controller, "UI", ui);
@@ -97,36 +123,41 @@ namespace Portfolio.Monopoly.EditorTools
 
             new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
 
+            // The 3D parts take their materials, meshes and print colours from the theme by key.
+            int tagged = MonopolyThemeTagger.TagScene(table, classic) + MonopolyThemeTagger.TagScene(board.gameObject, classic, DrawnByCode)
+                + MonopolyThemeTagger.TagScene(dice.gameObject, classic) + MonopolyThemeTagger.TagScene(tokenRoot.gameObject, classic, DrawnByCode, ShapedByCode);
+
             GameMenuInstaller.EnsureUrpCameras();
             string path = MonopolyAssets.Path(ScenePath);
             EditorSceneManager.SaveScene(scene, path);
             GameSceneBuildSettings.Sync(true);
-            Debug.Log($"Monopoly scene built at {path}.");
+            Debug.Log($"Monopoly scene built at {path} ({tagged} themed parts on the board and pieces).");
         }
 
         // ------------------------------------------------------------------ light and camera
 
-        private static void BuildLighting()
+        private static void BuildLighting(out Light sun, out Light fill)
         {
+            SceneLook look = MonopolyThemeSpec.Classic.Scene;
             RenderSettings.skybox = null;
             RenderSettings.ambientMode = AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor = MonopolyStyle.Hex(0x98A2AE);
-            RenderSettings.ambientEquatorColor = MonopolyStyle.Hex(0x767B82);
-            RenderSettings.ambientGroundColor = MonopolyStyle.Hex(0x3C332C);
+            RenderSettings.ambientSkyColor = look.ambientSky;
+            RenderSettings.ambientEquatorColor = look.ambientEquator;
+            RenderSettings.ambientGroundColor = look.ambientGround;
             RenderSettings.defaultReflectionMode = DefaultReflectionMode.Custom;
             RenderSettings.customReflectionTexture = MonopolyArtBuilder.Reflection;
-            RenderSettings.reflectionIntensity = 0.85f;
+            RenderSettings.reflectionIntensity = look.reflectionIntensity;
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.Linear;
-            RenderSettings.fogColor = Background;
+            RenderSettings.fogColor = look.background;
             RenderSettings.fogStartDistance = 26f;
             RenderSettings.fogEndDistance = 58f;
 
             var sunObject = new GameObject("Sun");
-            var sun = sunObject.AddComponent<Light>();
+            sun = sunObject.AddComponent<Light>();
             sun.type = LightType.Directional;
-            sun.color = new Color(1f, 0.96f, 0.9f);
-            sun.intensity = 0.9f;
+            sun.color = look.sunColor;
+            sun.intensity = look.sunIntensity;
             sun.shadows = LightShadows.Soft;
             sun.shadowStrength = 0.65f;
             sun.shadowBias = 0.02f;
@@ -137,10 +168,10 @@ namespace Portfolio.Monopoly.EditorTools
             RenderSettings.sun = sun;
 
             var fillObject = new GameObject("Fill Light");
-            var fill = fillObject.AddComponent<Light>();
+            fill = fillObject.AddComponent<Light>();
             fill.type = LightType.Directional;
-            fill.color = new Color(0.8f, 0.87f, 1f);
-            fill.intensity = 0.22f;
+            fill.color = look.fillColor;
+            fill.intensity = look.fillIntensity;
             fill.shadows = LightShadows.None;
             fillObject.transform.rotation = Quaternion.Euler(30f, 150f, 0f);
             fillObject.AddComponent<UniversalAdditionalLightData>();
@@ -154,7 +185,7 @@ namespace Portfolio.Monopoly.EditorTools
             cameraObject.transform.SetParent(rigObject.transform, false);
             var camera = cameraObject.AddComponent<Camera>();
             camera.clearFlags = CameraClearFlags.SolidColor;
-            camera.backgroundColor = Background;
+            camera.backgroundColor = MonopolyThemeSpec.Classic.Scene.background;
             camera.fieldOfView = 30f;
             camera.nearClipPlane = 0.3f;
             camera.farClipPlane = 150f;
@@ -225,10 +256,11 @@ namespace Portfolio.Monopoly.EditorTools
             return go;
         }
 
-        private static void BuildTable()
+        private static GameObject BuildTable()
         {
             GameObject table = MeshObject("Table", null, MonopolyArtBuilder.Mesh("Table"), MonopolyArtBuilder.Material("Table"), false);
             table.transform.position = new Vector3(0f, -0.001f, 0f);
+            return table;
         }
 
         private static BoardView BuildBoard(GameObject housePrefab, GameObject hotelPrefab)
@@ -287,6 +319,7 @@ namespace Portfolio.Monopoly.EditorTools
             GameObject model = MeshObject("Model", root.transform, MonopolyArtBuilder.Mesh(hotel ? "Hotel" : "House"), MonopolyArtBuilder.Material(hotel ? "Hotel" : "House"));
             MonopolyAssets.SetBool(building, "hotel", hotel);
             MonopolyAssets.SetObject(building, "model", model.transform);
+            MonopolyThemeTagger.TagScene(root, classic);
             return MonopolyAssets.SavePrefab(root, hotel ? HotelPrefabPath : HousePrefabPath);
         }
 
@@ -319,6 +352,7 @@ namespace Portfolio.Monopoly.EditorTools
             if (data.IsProperty)
             {
                 GameObject tag = MeshObject("OwnerTag", go.transform, MonopolyArtBuilder.Mesh("OwnerTag"), MonopolyArtBuilder.Material("Seat_0"));
+                DrawnByCode.Add(tag);
                 tag.transform.localPosition = new Vector3(0f, 0.002f, -size.y * 0.5f + 0.09f);
                 tag.SetActive(false);
                 MonopolyAssets.SetObject(tile, "ownerTag", tag.GetComponent<MeshRenderer>());
@@ -328,7 +362,7 @@ namespace Portfolio.Monopoly.EditorTools
                 GameObject shade = MeshObject("Shade", stamp.transform, MonopolyArtBuilder.Mesh("FlatQuad"), MonopolyArtBuilder.Material("Mortgaged"), false);
                 shade.transform.localPosition = new Vector3(0f, 0.008f, 0f);
                 shade.transform.localScale = new Vector3(size.x - 0.04f, 1f, size.y - 0.04f);
-                TextMeshPro word = WorldText(stamp.transform, "Word", "MORTGAGED", MonopolyArtBuilder.Heavy, MonopolyStyle.Hex(0xFF4D5E),
+                TextMeshPro word = WorldText(stamp.transform, "Word", "MORTGAGED", "heavyFont", "print.mortgaged",
                     new Vector3(0f, 0.012f, 0f), Quaternion.Euler(90f, 0f, 58f), new Vector2(size.y * 0.95f, 0.3f), 1.6f);
                 word.fontStyle = FontStyles.Bold;
                 stamp.SetActive(false);
@@ -351,10 +385,10 @@ namespace Portfolio.Monopoly.EditorTools
         {
             float w = size.x;
             float d = size.y;
-            Color ink = MonopolyStyle.Ink;
-            TMP_FontAsset bold = MonopolyArtBuilder.Bold;
-            TMP_FontAsset heavy = MonopolyArtBuilder.Heavy;
-            TMP_FontAsset icons = MonopolyArtBuilder.IconFont;
+            const string ink = "print.ink";
+            const string bold = "boldFont";
+            const string heavy = "heavyFont";
+            const string icons = "iconFont";
             string name = data.name.ToUpperInvariant();
             string price = MonopolyStyle.Money(data.price);
             Quaternion flat = Quaternion.Euler(90f, 0f, 0f);
@@ -362,27 +396,27 @@ namespace Portfolio.Monopoly.EditorTools
             {
                 case SpaceKind.Street:
                     WorldText(parent, "Name", name, bold, ink, new Vector3(0f, 0.004f, d * 0.07f), flat, new Vector2(w * 0.9f, d * 0.26f), 1.25f);
-                    WorldText(parent, "City", data.city.ToUpperInvariant(), bold, MonopolyStyle.Shade(MonopolyStyle.Mint, 0.45f), new Vector3(0f, 0.004f, -d * 0.12f), flat, new Vector2(w * 0.9f, 0.1f), 0.62f);
+                    WorldText(parent, "City", data.city.ToUpperInvariant(), bold, "print.city", new Vector3(0f, 0.004f, -d * 0.12f), flat, new Vector2(w * 0.9f, 0.1f), 0.62f);
                     WorldText(parent, "Price", price, heavy, ink, new Vector3(0f, 0.004f, -d * 0.3f), flat, new Vector2(w * 0.9f, 0.18f), 1.35f);
                     break;
                 case SpaceKind.Railroad:
                 case SpaceKind.Utility:
                     WorldText(parent, "Name", name, bold, ink, new Vector3(0f, 0.004f, d * 0.33f), flat, new Vector2(w * 0.9f, d * 0.2f), 1.15f);
-                    WorldText(parent, "Icon", Icons.ForSpace(data), icons, data.kind == SpaceKind.Railroad ? ink : MonopolyStyle.Hex(0x1F6FB2),
+                    WorldText(parent, "Icon", Icons.ForSpace(data), icons, data.kind == SpaceKind.Railroad ? ink : "print.utilityIcon",
                         new Vector3(0f, 0.004f, -d * 0.02f), flat, new Vector2(w * 0.8f, 0.5f), 4.2f);
                     WorldText(parent, "Price", price, heavy, ink, new Vector3(0f, 0.004f, -d * 0.3f), flat, new Vector2(w * 0.9f, 0.18f), 1.35f);
                     break;
                 case SpaceKind.Chance:
                     WorldText(parent, "Name", "CHANCE", heavy, ink, new Vector3(0f, 0.004f, d * 0.36f), flat, new Vector2(w * 0.9f, 0.2f), 1.2f);
-                    WorldText(parent, "Mark", "?", heavy, MonopolyStyle.ChanceOrange, new Vector3(0f, 0.004f, -d * 0.08f), flat, new Vector2(w * 0.9f, d * 0.6f), 9f);
+                    WorldText(parent, "Mark", "?", heavy, "print.chanceMark", new Vector3(0f, 0.004f, -d * 0.08f), flat, new Vector2(w * 0.9f, d * 0.6f), 9f);
                     break;
                 case SpaceKind.CommunityChest:
                     WorldText(parent, "Name", "COMMUNITY\nCHEST", heavy, ink, new Vector3(0f, 0.004f, d * 0.3f), flat, new Vector2(w * 0.95f, 0.36f), 1.05f);
-                    WorldText(parent, "Icon", Icons.Chest, icons, MonopolyStyle.ChestBlue, new Vector3(0f, 0.004f, -d * 0.12f), flat, new Vector2(w * 0.8f, 0.5f), 4.6f);
+                    WorldText(parent, "Icon", Icons.Chest, icons, "print.chestIcon", new Vector3(0f, 0.004f, -d * 0.12f), flat, new Vector2(w * 0.8f, 0.5f), 4.6f);
                     break;
                 case SpaceKind.Tax:
                     WorldText(parent, "Name", name, heavy, ink, new Vector3(0f, 0.004f, d * 0.33f), flat, new Vector2(w * 0.9f, d * 0.2f), 1.15f);
-                    WorldText(parent, "Icon", Icons.ForSpace(data), icons, MonopolyStyle.Shade(MonopolyStyle.Gold, 0.85f), new Vector3(0f, 0.004f, 0f), flat, new Vector2(w * 0.8f, 0.5f), 4f);
+                    WorldText(parent, "Icon", Icons.ForSpace(data), icons, "print.taxIcon", new Vector3(0f, 0.004f, 0f), flat, new Vector2(w * 0.8f, 0.5f), 4f);
                     WorldText(parent, "Price", $"PAY {MonopolyStyle.Money(data.tax)}", heavy, ink, new Vector3(0f, 0.004f, -d * 0.3f), flat, new Vector2(w * 0.9f, 0.18f), 1.15f);
                     break;
                 default:
@@ -395,10 +429,10 @@ namespace Portfolio.Monopoly.EditorTools
         private static void PrintCorner(Transform parent, SpaceData data, int space, Vector2 size)
         {
             float c = size.x;
-            Color ink = MonopolyStyle.Ink;
-            TMP_FontAsset heavy = MonopolyArtBuilder.Heavy;
-            TMP_FontAsset bold = MonopolyArtBuilder.Bold;
-            TMP_FontAsset icons = MonopolyArtBuilder.IconFont;
+            const string ink = "print.ink";
+            const string heavy = "heavyFont";
+            const string bold = "boldFont";
+            const string icons = "iconFont";
             // Turned 45 degrees: text runs across the corner, reading from outside the board.
             Quaternion diagonal = Quaternion.Euler(90f, -45f, 0f);
             Vector3 up = Quaternion.Euler(0f, -45f, 0f) * Vector3.forward;
@@ -406,8 +440,8 @@ namespace Portfolio.Monopoly.EditorTools
             {
                 case SpaceKind.Go:
                     WorldText(parent, "Collect", "COLLECT $200 SALARY\nAS YOU PASS", bold, ink, up * (c * 0.3f) + Vector3.up * 0.004f, diagonal, new Vector2(c * 0.8f, 0.25f), 0.9f);
-                    WorldText(parent, "Go", "GO", heavy, MonopolyStyle.Red, up * (c * 0.02f) + Vector3.up * 0.004f, diagonal, new Vector2(c * 0.8f, 0.6f), 6.2f);
-                    WorldText(parent, "Arrow", Icons.ArrowLeft, MonopolyArtBuilder.IconFont, MonopolyStyle.Red, new Vector3(0f, 0.004f, -c * 0.33f), Quaternion.Euler(90f, 0f, 0f),
+                    WorldText(parent, "Go", "GO", heavy, "print.go", up * (c * 0.02f) + Vector3.up * 0.004f, diagonal, new Vector2(c * 0.8f, 0.6f), 6.2f);
+                    WorldText(parent, "Arrow", Icons.ArrowLeft, icons, "print.go", new Vector3(0f, 0.004f, -c * 0.33f), Quaternion.Euler(90f, 0f, 0f),
                         new Vector2(c * 0.9f, 0.4f), 5.5f);
                     break;
                 case SpaceKind.Jail:
@@ -422,32 +456,38 @@ namespace Portfolio.Monopoly.EditorTools
                 }
                 case SpaceKind.FreeParking:
                     WorldText(parent, "Free", "FREE", heavy, ink, up * (c * 0.3f) + Vector3.up * 0.004f, diagonal, new Vector2(c * 0.8f, 0.25f), 1.9f);
-                    WorldText(parent, "Car", Icons.Car, icons, MonopolyStyle.Red, Vector3.up * 0.004f, diagonal, new Vector2(c * 0.8f, 0.6f), 5.5f);
+                    WorldText(parent, "Car", Icons.Car, icons, "print.go", Vector3.up * 0.004f, diagonal, new Vector2(c * 0.8f, 0.6f), 5.5f);
                     WorldText(parent, "Parking", "PARKING", heavy, ink, -up * (c * 0.3f) + Vector3.up * 0.004f, diagonal, new Vector2(c * 0.9f, 0.25f), 1.9f);
                     break;
                 case SpaceKind.GoToJail:
                     WorldText(parent, "GoTo", "GO TO", heavy, ink, up * (c * 0.3f) + Vector3.up * 0.004f, diagonal, new Vector2(c * 0.8f, 0.25f), 1.9f);
-                    WorldText(parent, "Officer", Icons.Officer, icons, MonopolyStyle.Blue, Vector3.up * 0.004f, diagonal, new Vector2(c * 0.8f, 0.6f), 5.2f);
+                    WorldText(parent, "Officer", Icons.Officer, icons, "print.officer", Vector3.up * 0.004f, diagonal, new Vector2(c * 0.8f, 0.6f), 5.2f);
                     WorldText(parent, "Jail", "JAIL", heavy, ink, -up * (c * 0.3f) + Vector3.up * 0.004f, diagonal, new Vector2(c * 0.8f, 0.25f), 1.9f);
                     break;
             }
         }
 
         /// <summary>
-        /// A TextMesh Pro text lying on the board. <paramref name="size"/> is the box it fits into (world units) and
-        /// <paramref name="fontSize"/> its largest size; longer names shrink to fit.
+        /// A TextMesh Pro text lying on the board, in the font and colour of the theme named by key (and in the classic
+        /// look right away). <paramref name="size"/> is the box it fits into (world units) and <paramref name="fontSize"/>
+        /// its largest size; longer names shrink to fit.
         /// </summary>
-        private static TextMeshPro WorldText(Transform parent, string name, string text, TMP_FontAsset font, Color color, Vector3 position,
-            Quaternion rotation, Vector2 size, float fontSize)
+        private static TextMeshPro WorldText(Transform parent, string name, string text, string fontKey, string colorKey, Vector3 position,
+            Quaternion rotation, Vector2 size, float fontSize, string wordsKey = null)
         {
             var go = new GameObject(name, typeof(RectTransform));
             go.transform.SetParent(parent, false);
             go.transform.localPosition = position;
             go.transform.localRotation = rotation;
             var label = go.AddComponent<TextMeshPro>();
+            TMP_FontAsset font = classic.FontOf(fontKey);
+            if (font == null)
+            {
+                throw new System.InvalidOperationException($"Monopoly: the classic theme has no font {fontKey}.");
+            }
             label.font = font;
             label.text = text;
-            label.color = color;
+            label.color = classic.ResolveColor(colorKey, Color.magenta);
             label.fontSize = fontSize;
             label.enableAutoSizing = true;
             label.fontSizeMax = fontSize;
@@ -457,6 +497,7 @@ namespace Portfolio.Monopoly.EditorTools
             label.overflowMode = TextOverflowModes.Overflow;
             label.rectTransform.sizeDelta = size;
             label.GetComponent<MeshRenderer>().shadowCastingMode = ShadowCastingMode.Off;
+            MonopolyThemeTagger.Paint(label, colorKey, null, fontKey, null, wordsKey);
             return label;
         }
 
@@ -473,11 +514,11 @@ namespace Portfolio.Monopoly.EditorTools
             GameObject banner = MeshObject("Banner", logo, MonopolyArtBuilder.Mesh("FlatQuad"), MonopolyArtBuilder.Material("Logo"), false);
             banner.transform.localPosition = new Vector3(0f, 0.01f, 0f);
             banner.transform.localScale = new Vector3(5.6f, 1f, 5.6f * 300f / 1024f);
-            TextMeshPro word = WorldText(logo, "Word", "MONOPOLY", MonopolyArtBuilder.Heavy, Color.white, new Vector3(0f, 0.016f, -0.02f),
+            TextMeshPro word = WorldText(logo, "Word", "MONOPOLY", "titleFont", "print.logoWord", new Vector3(0f, 0.016f, -0.02f),
                 Quaternion.Euler(90f, 0f, 0f), new Vector2(4.9f, 1.2f), 12f);
             word.characterSpacing = 4f;
-            WorldText(logo, "Edition", "WORLD TOUR EDITION", MonopolyArtBuilder.Heavy, MonopolyStyle.Ink, new Vector3(0f, 0.012f, -1.12f),
-                Quaternion.Euler(90f, 0f, 0f), new Vector2(4.6f, 0.4f), 3f).characterSpacing = 12f;
+            WorldText(logo, "Edition", classic.editionLabel, "heavyFont", "print.edition", new Vector3(0f, 0.012f, -1.12f),
+                Quaternion.Euler(90f, 0f, 0f), new Vector2(4.6f, 0.4f), 3f, "edition").characterSpacing = 12f;
 
             BuildDeck(center, "Community Chest", new Vector3(-2.35f, 0f, 2.35f), MonopolyArtBuilder.Material("CardChest"), Icons.Chest, "COMMUNITY\nCHEST", true);
             BuildDeck(center, "Chance", new Vector3(2.35f, 0f, -2.35f), MonopolyArtBuilder.Material("CardChance"), "?", "CHANCE", false);
@@ -493,9 +534,9 @@ namespace Portfolio.Monopoly.EditorTools
             GameObject face = MeshObject("Top", deck, MonopolyArtBuilder.Mesh("FlatQuad"), top, false);
             face.transform.localPosition = new Vector3(0f, 0.142f, 0f);
             face.transform.localScale = new Vector3(1.16f, 1f, 1.76f);
-            WorldText(deck, "Icon", icon, iconFont ? MonopolyArtBuilder.IconFont : MonopolyArtBuilder.Heavy, Color.white, new Vector3(0f, 0.146f, 0.16f),
+            WorldText(deck, "Icon", icon, iconFont ? "iconFont" : "heavyFont", "print.deckWords", new Vector3(0f, 0.146f, 0.16f),
                 Quaternion.Euler(90f, 0f, 0f), new Vector2(1f, 0.9f), iconFont ? 6f : 9f);
-            WorldText(deck, "Label", label, MonopolyArtBuilder.Heavy, Color.white, new Vector3(0f, 0.146f, -0.55f), Quaternion.Euler(90f, 0f, 0f),
+            WorldText(deck, "Label", label, "heavyFont", "print.deckWords", new Vector3(0f, 0.146f, -0.55f), Quaternion.Euler(90f, 0f, 0f),
                 new Vector2(1.05f, 0.42f), 1.4f);
         }
 
@@ -525,7 +566,7 @@ namespace Portfolio.Monopoly.EditorTools
             return dice;
         }
 
-        private static List<MonopolyPlayer> BuildTokens()
+        private static List<MonopolyPlayer> BuildTokens(out Transform parent)
         {
             var tokens = new List<MonopolyPlayer>();
             var meshes = new Mesh[MonopolyStyle.TokenCount];
@@ -540,7 +581,7 @@ namespace Portfolio.Monopoly.EditorTools
                 seatMaterials[i] = MonopolyArtBuilder.Material($"Seat_{i}");
                 ringMaterials[i] = MonopolyArtBuilder.Material($"TurnRing_{i}");
             }
-            var parent = new GameObject("Tokens").transform;
+            parent = new GameObject("Tokens").transform;
             for (int seat = 0; seat < 4; seat++)
             {
                 var root = new GameObject($"Token {seat + 1}");
@@ -552,6 +593,10 @@ namespace Portfolio.Monopoly.EditorTools
                 GameObject figure = MeshObject("Figure", body, meshes[Mathf.Min(seat, meshes.Length - 1)], MonopolyArtBuilder.Material("Pewter"));
                 GameObject stand = MeshObject("Base", body, MonopolyArtBuilder.Mesh("TokenBase"), seatMaterials[seat]);
                 GameObject ring = MeshObject("Ring", root.transform, MonopolyArtBuilder.Mesh("TurnRing"), ringMaterials[seat], false);
+                DrawnByCode.Add(figure);
+                DrawnByCode.Add(stand);
+                DrawnByCode.Add(ring);
+                ShapedByCode.Add(figure);
                 ring.transform.localPosition = new Vector3(0f, 0.015f, 0f);
                 ring.SetActive(false);
                 GameObject shadow = MeshObject("Shadow", root.transform, MonopolyArtBuilder.Mesh("FlatQuad"), MonopolyArtBuilder.Material("ContactShadow"), false);
@@ -590,14 +635,7 @@ namespace Portfolio.Monopoly.EditorTools
             main.startRotationZ = new ParticleSystem.MinMaxCurve(0f, Mathf.PI * 2f);
             main.gravityModifier = 0.35f;
             main.maxParticles = 600;
-            main.startColor = new ParticleSystem.MinMaxGradient(MonopolyStyle.Red, MonopolyStyle.Gold);
-            var colors = new Gradient();
-            colors.SetKeys(new[]
-            {
-                new GradientColorKey(MonopolyStyle.Red, 0f), new GradientColorKey(MonopolyStyle.Gold, 0.25f), new GradientColorKey(MonopolyStyle.Green, 0.5f),
-                new GradientColorKey(MonopolyStyle.Blue, 0.75f), new GradientColorKey(MonopolyStyle.PlayerColor(0), 1f)
-            }, new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, 1f) });
-            main.startColor = new ParticleSystem.MinMaxGradient(colors) { mode = ParticleSystemGradientMode.RandomColor };
+            main.startColor = new ParticleSystem.MinMaxGradient(MonopolySkin.Gradient(MonopolyThemeSpec.Classic.Scene.confetti)) { mode = ParticleSystemGradientMode.RandomColor };
             ParticleSystem.EmissionModule emission = system.emission;
             emission.rateOverTime = 0f;
             emission.SetBursts(new[] { new ParticleSystem.Burst(0f, 260), new ParticleSystem.Burst(0.6f, 180), new ParticleSystem.Burst(1.2f, 120) });

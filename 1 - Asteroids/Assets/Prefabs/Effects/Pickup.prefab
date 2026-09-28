@@ -69,6 +69,7 @@ GameObject:
   - component: {fileID: 1241915233444516422}
   - component: {fileID: 1712194394761271472}
   - component: {fileID: 1026770779582670966}
+  - component: {fileID: 6391758836594053913}
   m_Layer: 0
   m_Name: Sparkle
   m_TagString: Untagged
@@ -2378,6 +2379,21 @@ ParticleSystemRenderer:
   m_MeshWeighting1: 1
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
+--- !u!114 &6391758836594053913
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2577119962426429333}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Materials/ParticleFlare
+  slot: 0
 --- !u!1 &9149387184835611868
 GameObject:
   m_ObjectHideFlags: 0
@@ -2389,6 +2405,7 @@ GameObject:
   - component: {fileID: 4069165160495189574}
   - component: {fileID: 4918422704666107548}
   - component: {fileID: 7706690085998317291}
+  - component: {fileID: 4615757460574830586}
   m_Layer: 0
   m_Name: Ring
   m_TagString: Untagged
@@ -2468,3 +2485,18 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &4615757460574830586
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9149387184835611868}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Materials/ParticleRing
+  slot: 0

@@ -67,8 +67,10 @@ namespace Portfolio.Heroes.EditorTools
             GameMenuInstaller.WireGameUI(ui, menu, controller, manager, scaler, false);
             GameMenuInstaller.WireSettingsPanel(menu, typeof(HeroesSettingsUI), ui, HeroesContentBuilder.DefaultSettings);
             Button titleButton = GameMenuInstaller.AddMenuButton(menu, TitleButtonName, "Leave to the Title");
-            GameMenuInstaller.MenuStyle style = MenuStyle(art);
+            GameMenuInstaller.MenuStyle style = MenuStyle(art, HeroesThemeSpec.Classic.Palette);
             GameMenuInstaller.Restyle(menu, style);
+            // The active theme re-skins the menu when the scene starts and whenever the theme changes.
+            GameMenuInstaller.MakeThemed(menu, GameType.Heroes);
             HeroesAssets.SetObject(ui, "titleButton", titleButton);
             SettingsPanel(menu, style);
 
@@ -127,6 +129,8 @@ namespace Portfolio.Heroes.EditorTools
             HeroesAssets.SetString(definition, "scenePath", scenePath);
             definition.ExtraScenes = ExtraScenes();
             EditorUtility.SetDirty(definition);
+            // The themes, from the art each one's builders made: the classic one first, the others listed after it.
+            HeroesThemeBuilder.BuildAll();
             AssetDatabase.SaveAssets();
         }
 
@@ -235,10 +239,12 @@ namespace Portfolio.Heroes.EditorTools
                 HeroesAssets.SetObject(field, "view", camera);
                 HeroesAssets.SetObject(field, "sun", sun);
                 HeroesAssets.SetObject(field, "volume", volume);
-                HeroesAssets.SetObject(field, "gate", Gate());
-                HeroesAssets.SetObject(field, "ruin", Ruin());
-                HeroesAssets.SetObject(field, "stones", Stones());
-                HeroesAssets.SetObjects(field, "banners", Banners());
+                // The classic art's siege props, which live next to this scene (built with the art, or here without it).
+                HeroesAssets.SetObject(field, "gate", art != null && art.siegeGate != null ? art.siegeGate : Gate(BattleAssets));
+                HeroesAssets.SetObject(field, "ruin", art != null && art.siegeRuin != null ? art.siegeRuin : Ruin(BattleAssets));
+                HeroesAssets.SetObject(field, "stones", art != null && art.siegeStones != null ? art.siegeStones : Stones(BattleAssets));
+                HeroesAssets.SetObjects(field, "banners", art != null && art.siegeBanners != null && art.siegeBanners.Length > 0
+                    ? art.siegeBanners : Banners(BattleAssets));
 
                 HeroesAssets.EnsureFolderOf(BattleScenePath);
                 EditorSceneManager.SaveScene(scene, path);
@@ -307,13 +313,28 @@ namespace Portfolio.Heroes.EditorTools
         }
 
         /// <summary>
+        /// The props of a siege for the art of the theme being built: the gatehouse, the ruin of a tower, loose stones and
+        /// the banners of the five colours. The classic ones stay next to the battle scene, where it has always had them;
+        /// another theme's go among its own art, in its colours.
+        /// </summary>
+        internal static void SiegeArt(HeroesArt art)
+        {
+            HeroesThemeSpec spec = HeroesThemeSpec.Current;
+            string folder = spec == HeroesThemeSpec.Classic ? BattleAssets : $"{spec.Generated}/Siege";
+            art.siegeGate = Gate(folder);
+            art.siegeRuin = Ruin(folder);
+            art.siegeStones = Stones(folder);
+            art.siegeBanners = Banners(folder);
+        }
+
+        /// <summary>
         /// The gatehouse in the wall of a besieged town, at the size it stands on the field (the scene stands it as it
         /// is): the gateway of the wall's own set, stretched a little longer than the gate's row of the wall (the walls
         /// on either side run into it), taller than the wall and jutting out well before it on the besiegers' side (+z),
         /// so it stands out of the line seen from above, doors shut; and before it the drawbridge down on the ground. It
         /// runs along x, centered on its origin (the middle of the wall).
         /// </summary>
-        private static GameObject Gate()
+        private static GameObject Gate(string folder)
         {
             GameObject wall = HeroesArtBuilder.Model(WallModel);
             float wallLength = wall != null ? Mathf.Max(0.01f, HeroesArtBuilder.BoundsOf(wall).size.x) : 2f;
@@ -343,14 +364,14 @@ namespace Portfolio.Heroes.EditorTools
                 bridge.transform.localPosition += new Vector3(-sized.center.x, 0.02f - sized.min.y, GateJut + depth * 0.5f + 0.9f - sized.center.z);
                 bridge.name = "Drawbridge";
             }
-            return HeroesArtBuilder.Save(root, BattleAssets + "/Gate.prefab");
+            return HeroesArtBuilder.Save(root, folder + "/Gate.prefab");
         }
 
         /// <summary>
         /// A heap of the wall's stones, about a cell across and knee high, standing on the ground at its origin: where an
         /// arrow tower fell, and at the broken ends of the wall beside a breach (smaller there).
         /// </summary>
-        private static GameObject Ruin()
+        private static GameObject Ruin(string folder)
         {
             GameObject root = HeroesArtBuilder.Root("Ruin");
             HeroesArtBuilder.Piece(root.transform, "KayKit/Dungeon/rubble_large", new Vector3(0.1f, 0f, 0.05f), 20f, 1f, 0.75f, RuinStone);
@@ -370,11 +391,11 @@ namespace Portfolio.Heroes.EditorTools
                     block.transform.localRotation = Quaternion.Euler(0f, blocks[i, 2], 18f);
                 }
             }
-            return HeroesArtBuilder.Save(root, BattleAssets + "/Ruin.prefab");
+            return HeroesArtBuilder.Save(root, folder + "/Ruin.prefab");
         }
 
         /// <summary>A few loose stones of the wall lying on the ground, about a pace across, for the ground of a breach.</summary>
-        private static GameObject Stones()
+        private static GameObject Stones(string folder)
         {
             GameObject root = HeroesArtBuilder.Root("Stones");
             HeroesArtBuilder.Piece(root.transform, StoneModel, new Vector3(0.2f, 0f, -0.15f), 25f, 1.2f, 0f, LooseStone);
@@ -384,7 +405,7 @@ namespace Portfolio.Heroes.EditorTools
                 tipped.transform.localRotation = Quaternion.Euler(0f, 80f, 14f);
             }
             HeroesArtBuilder.Piece(root.transform, StoneModel, new Vector3(0.05f, 0f, 0.4f), 140f, 0.8f, 0f, LooseStone);
-            return HeroesArtBuilder.Save(root, BattleAssets + "/Stones.prefab");
+            return HeroesArtBuilder.Save(root, folder + "/Stones.prefab");
         }
 
         /// <summary>
@@ -392,7 +413,7 @@ namespace Portfolio.Heroes.EditorTools
         /// nobody): the dungeon's banners on their brackets at not quite half their size, standing on their lower edge, the cloth
         /// across x.
         /// </summary>
-        private static GameObject[] Banners()
+        private static GameObject[] Banners(string folder)
         {
             string[] colors = { "red", "blue", "green", "yellow", "white" };
             var banners = new GameObject[colors.Length];
@@ -400,7 +421,7 @@ namespace Portfolio.Heroes.EditorTools
             {
                 GameObject root = HeroesArtBuilder.Root($"Banner{i}");
                 HeroesArtBuilder.Piece(root.transform, $"KayKit/Dungeon/banner_{colors[i]}", Vector3.zero, 0f, 0.42f);
-                banners[i] = HeroesArtBuilder.Save(root, $"{BattleAssets}/Banner{i}.prefab");
+                banners[i] = HeroesArtBuilder.Save(root, $"{folder}/Banner{i}.prefab");
             }
             return banners;
         }
@@ -500,8 +521,9 @@ namespace Portfolio.Heroes.EditorTools
         /// The look of the pause menu and the settings panel: a framed window of leather with its title on the crimson
         /// ribbon, the stone buttons, the fonts of the game, and rows of settings on cards in two columns.
         /// </summary>
-        private static GameMenuInstaller.MenuStyle MenuStyle(HeroesArt art)
+        internal static GameMenuInstaller.MenuStyle MenuStyle(HeroesArt art, HeroesTheme.Palette palette)
         {
+            palette = palette ?? new HeroesTheme.Palette();
             var style = new GameMenuInstaller.MenuStyle
             {
                 ReferenceResolution = new Vector2(1920f, 1080f),
@@ -512,12 +534,11 @@ namespace Portfolio.Heroes.EditorTools
                 Order = new[] { "ReturnToGame", "SaveGame", "LoadGame", "Game Settings", TitleButtonName, "ExitGame" },
                 HeaderFontSize = 32f,
                 HeaderColor = Color.white,
-                HeaderGradient = new TMPro.VertexGradient(new Color(1f, 0.93f, 0.7f), new Color(1f, 0.93f, 0.7f),
-                    new Color(0.86f, 0.66f, 0.3f), new Color(0.86f, 0.66f, 0.3f)),
-                TextColor = UIKit.Ink,
-                ValueColor = UIKit.Gold,
-                ErrorColor = UIKit.Bad,
-                ButtonTextColor = UIKit.Ink,
+                HeaderGradient = new TMPro.VertexGradient(palette.headingTop, palette.headingTop, palette.headingBottom, palette.headingBottom),
+                TextColor = palette.ink,
+                ValueColor = palette.gold,
+                ErrorColor = palette.bad,
+                ButtonTextColor = palette.ink,
                 BackdropColor = new Color(0.03f, 0.02f, 0.01f, 0.72f),
                 WindowColor = Color.white,
                 TileWindow = true,
@@ -539,7 +560,7 @@ namespace Portfolio.Heroes.EditorTools
                 RowHeight = 56f,
                 RowFontSize = 22f,
                 TrackHeight = 18f,
-                FillColor = UIKit.Gold,
+                FillColor = palette.gold,
                 KnobSize = new Vector2(34f, 34f),
                 CheckSize = new Vector2(38f, 38f),
                 ArrowGlyph = "▲",
@@ -610,6 +631,8 @@ namespace Portfolio.Heroes.EditorTools
             HeroesAssets.SetObject(settings, "edgeScroll", GameMenuInstaller.AddToggle(menu, "EdgeScroll", "Scroll at the edges", true, style));
             HeroesAssets.SetObject(settings, "enemyMoves", GameMenuInstaller.AddToggle(menu, "EnemyMoves", "Show enemy moves", true, style));
             HeroesAssets.SetObject(settings, "autoSave", GameMenuInstaller.AddToggle(menu, "AutoSave", "Save every day", true, style));
+            // The look of the game: a choice among the themes the definition lists (hidden with fewer than two).
+            GameMenuInstaller.AddThemeChoice(menu, style, "Look", GameType.Heroes);
         }
 
         /// <summary>

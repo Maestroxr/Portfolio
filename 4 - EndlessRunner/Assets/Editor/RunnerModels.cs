@@ -367,16 +367,19 @@ namespace Portfolio.EndlessRunner.EditorTools
             return m;
         }
 
-        /// <summary>A cart wheel with spokes, turning around x. Pivot at its axle.</summary>
-        public static MeshBuilder Wheel()
+        /// <summary>A cart wheel (with spokes, or a solid caster), turning around x. Pivot at its axle.</summary>
+        public static MeshBuilder Wheel(Swatch tire = Swatch.Charcoal, Swatch hub = Swatch.Metal, bool spokes = true)
         {
             var m = new MeshBuilder();
             m.Push(Vector3.zero, Quaternion.Euler(0f, 0f, 90f));
-            m.Color(Swatch.Charcoal).Cylinder(new Vector3(0f, -0.06f, 0f), 0.3f, 0.3f, 0.12f, 12);
-            m.Color(Swatch.Metal).Cylinder(new Vector3(0f, -0.08f, 0f), 0.08f, 0.08f, 0.16f, 8);
+            m.Color(tire).Cylinder(new Vector3(0f, -0.06f, 0f), 0.3f, 0.3f, 0.12f, 12);
+            m.Color(hub).Cylinder(new Vector3(0f, -0.08f, 0f), spokes ? 0.08f : 0.13f, spokes ? 0.08f : 0.13f, 0.16f, 8);
             m.Pop();
-            m.Color(Swatch.Metal).Box(new Vector3(0f, 0f, 0f), new Vector3(0.14f, 0.5f, 0.06f));
-            m.Color(Swatch.Metal).Box(new Vector3(0f, 0f, 0f), new Vector3(0.14f, 0.06f, 0.5f));
+            if (spokes)
+            {
+                m.Color(hub).Box(new Vector3(0f, 0f, 0f), new Vector3(0.14f, 0.5f, 0.06f));
+                m.Color(hub).Box(new Vector3(0f, 0f, 0f), new Vector3(0.14f, 0.06f, 0.5f));
+            }
             return m;
         }
 
@@ -429,13 +432,13 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>The bouncy top of a pad with an arrow on it. Pivot at its underside.</summary>
-        public static MeshBuilder JumpPadMembrane()
+        public static MeshBuilder JumpPadMembrane(Swatch top = Swatch.GlowGreen, Swatch arrow = Swatch.White)
         {
             var m = new MeshBuilder();
-            m.Color(Swatch.GlowGreen).Cylinder(Vector3.zero, 0.8f, 0.78f, 0.07f, 18);
+            m.Color(top).Cylinder(Vector3.zero, 0.8f, 0.78f, 0.07f, 18);
             m.Push(new Vector3(0f, 0.075f, 0f), Quaternion.Euler(90f, 0f, 0f));
-            m.Color(Swatch.White).Prism(new[] { new Vector2(-0.14f, -0.4f), new Vector2(0.14f, -0.4f), new Vector2(0.14f, 0.02f), new Vector2(-0.14f, 0.02f) }, 0.02f);
-            m.Color(Swatch.White).Prism(new[] { new Vector2(-0.34f, 0.02f), new Vector2(0.34f, 0.02f), new Vector2(0f, 0.42f) }, 0.02f);
+            m.Color(arrow).Prism(new[] { new Vector2(-0.14f, -0.4f), new Vector2(0.14f, -0.4f), new Vector2(0.14f, 0.02f), new Vector2(-0.14f, 0.02f) }, 0.02f);
+            m.Color(arrow).Prism(new[] { new Vector2(-0.34f, 0.02f), new Vector2(0.34f, 0.02f), new Vector2(0f, 0.42f) }, 0.02f);
             m.Pop();
             return m;
         }
@@ -456,31 +459,31 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A cut gem. Pivot at its centre.</summary>
-        public static MeshBuilder Gem()
+        public static MeshBuilder Gem(Swatch crown = Swatch.GlowMagenta, Swatch pavilion = Swatch.GlowPurple)
         {
             var m = new MeshBuilder();
-            m.Color(Swatch.GlowMagenta).Cylinder(Vector3.zero, 0.34f, 0.2f, 0.16f, 8);
-            m.Color(Swatch.GlowPurple).Cylinder(new Vector3(0f, -0.38f, 0f), 0f, 0.34f, 0.38f, 8, false, false, false);
+            m.Color(crown).Cylinder(Vector3.zero, 0.34f, 0.2f, 0.16f, 8);
+            m.Color(pavilion).Cylinder(new Vector3(0f, -0.38f, 0f), 0f, 0.34f, 0.38f, 8, false, false, false);
             return m;
         }
 
         /// <summary>A horseshoe magnet. Pivot at its centre.</summary>
-        public static MeshBuilder Magnet()
+        public static MeshBuilder Magnet(Swatch body = Swatch.Red, Swatch tip = Swatch.GlowWhite)
         {
             var m = new MeshBuilder();
             m.Push(new Vector3(0f, -0.05f, 0f), Quaternion.Euler(-90f, 0f, 0f));
-            m.Color(Swatch.Red).Torus(Vector3.zero, 0.24f, 0.1f, 12, 8, 180f, true, 180f);
+            m.Color(body).Torus(Vector3.zero, 0.24f, 0.1f, 12, 8, 180f, true, 180f);
             m.Pop();
             for (int side = -1; side <= 1; side += 2)
             {
-                m.Color(Swatch.Red).Cylinder(new Vector3(side * 0.24f, -0.05f, 0f), 0.1f, 0.1f, 0.2f, 10, true, false, false);
-                m.Color(Swatch.GlowWhite).Cylinder(new Vector3(side * 0.24f, 0.15f, 0f), 0.1f, 0.1f, 0.13f, 10, true);
+                m.Color(body).Cylinder(new Vector3(side * 0.24f, -0.05f, 0f), 0.1f, 0.1f, 0.2f, 10, true, false, false);
+                m.Color(tip).Cylinder(new Vector3(side * 0.24f, 0.15f, 0f), 0.1f, 0.1f, 0.13f, 10, true);
             }
             return m;
         }
 
         /// <summary>A heater shield with a star. Pivot at its centre.</summary>
-        public static MeshBuilder Shield()
+        public static MeshBuilder Shield(Swatch rim = Swatch.Gold, Swatch face = Swatch.GlowBlue, Swatch star = Swatch.GlowWhite)
         {
             var outline = new[]
             {
@@ -488,29 +491,29 @@ namespace Portfolio.EndlessRunner.EditorTools
                 new Vector2(0.12f, -0.28f), new Vector2(0f, -0.38f), new Vector2(-0.12f, -0.28f), new Vector2(-0.22f, -0.16f),
                 new Vector2(-0.3f, 0.02f)
             };
-            var rim = new Vector2[outline.Length];
+            var edge = new Vector2[outline.Length];
             for (int i = 0; i < outline.Length; i++)
             {
-                rim[i] = outline[i] * 1.14f;
+                edge[i] = outline[i] * 1.14f;
             }
             var m = new MeshBuilder();
-            m.Color(Swatch.Gold).Prism(rim, 0.08f);
-            m.Color(Swatch.GlowBlue).Prism(outline, 0.12f);
-            m.Color(Swatch.GlowWhite).Prism(MeshBuilder.StarOutline(5, 0.14f, 0.06f), 0.14f, new Vector3(0f, 0.02f, 0f));
+            m.Color(rim).Prism(edge, 0.08f);
+            m.Color(face).Prism(outline, 0.12f);
+            m.Color(star).Prism(MeshBuilder.StarOutline(5, 0.14f, 0.06f), 0.14f, new Vector3(0f, 0.02f, 0f));
             return m;
         }
 
         /// <summary>A double star: the coin multiplier. Pivot at its centre.</summary>
-        public static MeshBuilder StarPower()
+        public static MeshBuilder StarPower(Swatch outer = Swatch.GlowPurple, Swatch inner = Swatch.GlowYellow)
         {
             var m = new MeshBuilder();
-            m.Color(Swatch.GlowPurple).Prism(MeshBuilder.StarOutline(5, 0.36f, 0.16f), 0.14f);
-            m.Color(Swatch.GlowYellow).Prism(MeshBuilder.StarOutline(5, 0.17f, 0.08f), 0.18f);
+            m.Color(outer).Prism(MeshBuilder.StarOutline(5, 0.36f, 0.16f), 0.14f);
+            m.Color(inner).Prism(MeshBuilder.StarOutline(5, 0.17f, 0.08f), 0.18f);
             return m;
         }
 
         /// <summary>A sneaker on a spring: super jump. Pivot at its centre.</summary>
-        public static MeshBuilder SpringShoe()
+        public static MeshBuilder SpringShoe(Swatch shoe = Swatch.Shoe, Swatch spring = Swatch.GlowGreen, Swatch wing = Swatch.White)
         {
             var m = new MeshBuilder();
             var coil = new List<Vector3>();
@@ -520,15 +523,15 @@ namespace Portfolio.EndlessRunner.EditorTools
                 float turn = t * Mathf.PI * 2f * 4f;
                 coil.Add(new Vector3(Mathf.Cos(turn) * 0.13f, -0.38f + t * 0.3f, Mathf.Sin(turn) * 0.13f));
             }
-            m.Color(Swatch.GlowGreen).Tube(coil, 0.03f, 6);
-            m.Color(Swatch.Shoe).BeveledBox(new Vector3(0f, 0.02f, 0.04f), new Vector3(0.26f, 0.16f, 0.44f), 0.06f);
-            m.Color(Swatch.GlowGreen).BeveledBox(new Vector3(0f, -0.07f, 0.04f), new Vector3(0.28f, 0.05f, 0.46f), 0.02f);
-            m.Color(Swatch.GlowGreen).Box(new Vector3(0.132f, 0.03f, 0.04f), new Vector3(0.01f, 0.05f, 0.26f));
-            m.Color(Swatch.GlowGreen).Box(new Vector3(-0.132f, 0.03f, 0.04f), new Vector3(0.01f, 0.05f, 0.26f));
+            m.Color(spring).Tube(coil, 0.03f, 6);
+            m.Color(shoe).BeveledBox(new Vector3(0f, 0.02f, 0.04f), new Vector3(0.26f, 0.16f, 0.44f), 0.06f);
+            m.Color(spring).BeveledBox(new Vector3(0f, -0.07f, 0.04f), new Vector3(0.28f, 0.05f, 0.46f), 0.02f);
+            m.Color(spring).Box(new Vector3(0.132f, 0.03f, 0.04f), new Vector3(0.01f, 0.05f, 0.26f));
+            m.Color(spring).Box(new Vector3(-0.132f, 0.03f, 0.04f), new Vector3(0.01f, 0.05f, 0.26f));
             for (int side = -1; side <= 1; side += 2)
             {
                 m.Push(new Vector3(side * 0.16f, 0.08f, -0.12f), Quaternion.Euler(0f, side * 20f, side * -35f));
-                m.Color(Swatch.White).BeveledBox(new Vector3(side * 0.1f, 0f, 0f), new Vector3(0.22f, 0.03f, 0.14f), 0.01f);
+                m.Color(wing).BeveledBox(new Vector3(side * 0.1f, 0f, 0f), new Vector3(0.22f, 0.03f, 0.14f), 0.01f);
                 m.Pop();
             }
             return m;
@@ -645,17 +648,23 @@ namespace Portfolio.EndlessRunner.EditorTools
             }
             m.Color(Swatch.FlagRed).Box(new Vector3(0f, bannerBottom - 0.06f, 0f), new Vector3(banner.width, 0.12f, 0.2f));
             m.Color(Swatch.FlagRed).Box(new Vector3(0f, bannerTop + 0.06f, 0f), new Vector3(banner.width, 0.12f, 0.2f));
+            ChequeredLine(m, Swatch.White, Swatch.Black);
+            return m;
+        }
+
+        /// <summary>The chequered finish line across the road at z = 0.</summary>
+        public static void ChequeredLine(MeshBuilder m, Swatch light, Swatch dark)
+        {
             const int lineColumns = 16;
             float lineCell = RoadHalfWidth * 2f / lineColumns;
             for (int column = 0; column < lineColumns; column++)
             {
                 for (int row = 0; row < 2; row++)
                 {
-                    m.Color((column + row) % 2 == 0 ? Swatch.White : Swatch.Black)
+                    m.Color((column + row) % 2 == 0 ? light : dark)
                         .Box(new Vector3(-RoadHalfWidth + (column + 0.5f) * lineCell, 0.005f, (row - 0.5f) * lineCell), new Vector3(lineCell, 0.01f, lineCell));
                 }
             }
-            return m;
         }
 
         /// <summary>A glowing ring (magnet aura, spring boots). Pivot at its centre.</summary>

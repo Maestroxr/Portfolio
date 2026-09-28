@@ -66,6 +66,7 @@ namespace Portfolio.Monopoly
             {
                 tokenIcon.sprite = token;
                 tokenIcon.enabled = token != null;
+                tokenIcon.color = MonopolyStyle.TextOn(accent);
             }
             shown.Clear();
             for (int i = 0; i < buttons.Length; i++)

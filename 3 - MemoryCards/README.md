@@ -107,6 +107,7 @@ scene, so the Quit button closes a build of the game on its own; in the editor i
 | `Scripts/MemoryCardsAutopilot.cs` | Plays a level by itself; add it to any object in play mode to test a level end to end |
 | `Scripts/MemoryCardsTour.cs` | Development builds only: `-memorycards-tour <folder>` plays through the game and saves screenshots; `-memorycards-versus <folder>` plays only the versus game for three |
 | `Scripts/MemoryCardsOnlineTour.cs` | Development builds only, on BaseGame's `OnlineTour`: `-memorycards-online host <folder>` and `-memorycards-online join <folder>` (or `idle`, `quitter`) play an online game between two running players; `-memorycards-mistakes <rate>`, `-memorycards-bombs` and `-memorycards-level <n>` change what and how they play |
+| `Scripts/MemoryCardsTheme.cs`, `Scripts/View/ThemedLabel.cs` | The look of the game in one asset (see "Themes"), and the label that takes its font, text material and colour from it |
 
 The rules engine knows nothing of Unity objects, so it is covered by edit mode tests (`Tests/Editor`, assembly
 `Skinnerboxes.MemoryCards.Tests`) together with the dealer, the settings, the campaign unlocks and the progress. The
@@ -119,11 +120,12 @@ in too).
 Everything the game shows is built by the editor code in `Assets/Editor` (menu **Memory Cards**):
 
 - **Rebuild Art and Sound**: configures the imported Kenney files, draws the card fronts, card backs (one pattern per
-  world), special cards, ice, icons, panels, particles and backdrop shapes with a small signed distance rasteriser
-  (`Canvas2D`, `MemoryCardsArt`), synthesises the two music loops and a few effects (`SoundFactory`) and bakes Kenney
-  Future into a TextMesh Pro font asset.
-- **Rebuild Worlds and Levels**: the four worlds, the rules and goals of every level, the campaign, the free play
-  settings and the launcher entry. The level data lives in `MemoryCardsContentBuilder`, so hand edits of those assets
+  world), special cards, ice, icons, panels, particles and backdrop shapes of every theme with a small signed distance
+  rasteriser (`Canvas2D`, `MemoryCardsArt`; After Dark's deck and interface kit too, `AfterDarkFaces`), synthesises the
+  two music loops and a few effects (`SoundFactory`) and bakes the fonts of every theme (Kenney Future, Cinzel,
+  Playfair Display) into TextMesh Pro font assets.
+- **Rebuild Worlds and Levels**: the worlds of every theme, the rules and goals of every level, the campaign, the free
+  play settings, the theme assets and the launcher entry with its themes (see "Themes"). The level data lives in `MemoryCardsContentBuilder`, so hand edits of those assets
   are overwritten by a rebuild.
 - **Rebuild Scene**: the card prefab and `Scenes/MemoryCards.unity` with its interface, pool, particles and audio.
 - **Build Everything** runs the three steps and removes the assets of the original version. The same methods run in
@@ -169,12 +171,81 @@ results to the level select and leaves the level select for the launcher (or clo
 its own). `Gamebox > Android > Build APK` builds `Build/Android/MemoryCards.apk` (`com.skinnerboxes.memorycards`, with
 the game's icon).
 
+## Themes
+
+Everything the game shows comes from a `MemoryCardsTheme` asset (`Scripts/MemoryCardsTheme.cs`, a BaseGame
+`GameTheme`), so the whole look changes by pointing the game at another theme. The game has two:
+
+| Theme | Asset | Look |
+| --- | --- | --- |
+| Classic (the one it starts with) | `Settings/Themes/Classic.asset` | The original game: thirty cute critters, sunny worlds, the rounded Kenney interface and Kenney Future |
+| After Dark | `Settings/Themes/AfterDark.asset` | A grown-up night out in black, gold and deep red, with art deco frames, velvet and lace |
+
+What a theme holds, as typed fields:
+
+| Field | What |
+| --- | --- |
+| `worlds` | A `CardWorld` for every world of the campaign: name, tagline, sky and accent colours, card backs (with and without the medallion), mascot, the shape floating in the backdrop and how it moves, and the faces dealt there |
+| `faces` | The whole deck; save games and the endless run refer to faces by their index here |
+| `special`, `card` | The faces of the wild, bomb, clock and peek cards; the front, shadow, glow, badge and ice of a card |
+| `kit`, `icons`, `hud` | The buttons in five roles (primary, secondary, accent, danger, neutral) and their round versions, panels, pills, discs, the white parts the game tints (world tabs, ribbons, badges, bars), the input field; the interface icons and hearts; stars, goal marks and an icon per level mode |
+| `title` | The words of the logo, their gradient, the ornament behind them and the figures around them |
+| `Fonts`, `text` | The body and title fonts (TextMesh Pro) and the outline, shadow and title materials the labels use |
+| `palette` | Every colour of the interface that is not a world's: words on panels and buttons, pills, dims, ribbons, the colours of play (good, bad, match glow, confetti, seats, hurry) and of the online lobby |
+| `backdrop`, `particles` | The scrolling pattern and the glow over it; the particle shapes and the colours of the wild card's burst |
+| `words` | What a face is called in hints ("animal", "keepsake"), the shuffle banner, and the titles, descriptions and tips of the levels in the theme's voice (an empty text keeps the level's own) |
+
+The game manager reads the theme when the game starts and again whenever it changes (`OnThemeChanged`): the worlds,
+the deck, the special faces, the cards, the particles, the camera and the sprites and colours the interface sets
+itself (`MemoryCardsUI.ApplyTheme`: stars, hearts, goal marks, mode icons, the title, the level cards, the world tabs,
+the scoreboard of a versus game). The rest of the scene carries the base `ThemedImage`, `ThemedRawImage` and the
+game's `ThemedLabel` (font role, text material and colour by key) with the key of what it shows ("kit.primary",
+"icons.play", "palette.ink", "text.outline"), and redraws itself. `MemoryCardsTheme.Validate` adds the game's own
+checks to the base one: every world deals faces, the deck is big enough, there is an icon per level mode and a figure
+for the title.
+
+**Switching.** The launcher entry (`Resources/Games/MemoryCards.asset`) names the theme the game starts with and lists
+both (the content builder sets them; `Gamebox > Themes > Choose...` or the theme's inspector changes the starting one).
+Players pick a look with the theme button of the game's entry in the launcher or with the **Look** row of the settings
+panel (the settings button of the level select, or Settings in the pause menu); the pick is remembered on the device.
+`-gamebox-theme "After Dark"` picks a theme for one run of a development player or a tour.
+
+**What changes when.** A theme change redraws the level select, the menus, the HUD, the backdrop and the world at once,
+and the backs and frames of the cards on the board; the faces of a board in play stay until the next deal. A saved game
+stores the index of every face in the deck, so a game saved under one theme shows the other theme's face of the same
+index when it is continued under the other. Online, the server deals indices into the pool of the level's world, so
+each player sees the faces of their own theme; that is why After Dark's worlds deal exactly as many faces as the
+Classic ones (10, 12, 11 and the whole deck of 30).
+
+**After Dark.** Four worlds: Velvet Lounge (damask card backs with a diamond, smoke drifting by), Boudoir (lace backs
+with lips, rose petals falling), Masquerade (a sunburst back with a mask, sparkles rising) and the Champagne Bar
+(chevrons and a star, champagne bubbles rising). Its deck is thirty keepsakes of a night out drawn as flat vector
+illustrations by `Editor/AfterDarkFaces.cs`: lipstick, stiletto, corset, garter, champagne, rose, masquerade mask,
+feather fan, perfume, pearls, a dancer's silhouette in a spotlight, cocktail, lace glove, red lips, cherries, fluffy
+handcuffs, candle, diamond ring, laced boot, cigarette holder, satin bow, love letter, key, velvet curtain, chandelier,
+top hat, cane, bow tie, dice and a playing card. It is suggestive at most: no nudity, no people beyond one silhouette.
+The interface is drawn too: dark velvet panels with gold rims, wine, plum and gold buttons, gold stars and hearts,
+gilded special cards, and the levels have names of their own ("Doors Open", "Sleight of Hand", "Unmasked"). The fonts
+are Cinzel (titles) and Playfair Display (body), both under the SIL Open Font License 1.1 from the Google Fonts
+repository (see `Art/Themes/AfterDark/Fonts/LICENSES.md`); everything else is generated.
+
+**How the themes are made.** `Editor/ThemeSpecs.cs` describes every theme (`ThemeSpec`: its art folder, worlds, deck,
+the colours and the art deco flag of `ArtStyle`, fonts, title, palette and words). **Rebuild Art and Sound** draws the
+art of every theme with the same drawings (`MemoryCardsArt`; Classic keeps its folders under `Art/`, After Dark goes to
+`Art/Themes/AfterDark/`) and bakes its fonts; **Rebuild Worlds and Levels** writes the worlds
+(`Settings/Worlds/<world>.asset`, After Dark's with the `AfterDark` prefix) and the theme assets, checks every theme
+against the campaign and with `Validate`, and lists them on the launcher entry; **Rebuild Scene** lays the scene out in
+the Classic look with the keys above. Another theme is another `ThemeSpec` in `ThemeSpecs.All`. The edit mode tests in
+`Tests/Editor/GameThemesTest.cs` check both assets, the launcher entry, the art Classic points at and what switching
+the theme changes.
+
 ## Art and sound
 
 The animals, interface buttons, stars, font, card and interface sounds and the jingles are from
 [Kenney](https://kenney.nl) (CC0): Animal Pack Remastered, UI Pack, Kenney Fonts, Casino Audio, Interface Sounds and
 Music Jingles (see `Assets/Art/Kenney/License.txt`). The animals were rendered at 512 x 512 from the pack's vector
-sheet. Everything else is generated by the editor code.
+sheet. The fonts of the After Dark theme are Cinzel and Playfair Display (SIL Open Font License 1.1, see "Themes").
+Everything else is generated by the editor code.
 
 ## Server
 

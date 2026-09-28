@@ -31,7 +31,7 @@ namespace Portfolio.EndlessRunner
             }
         }
 
-        public void Show(LevelSummary summary, bool selected, Sprite starFull, Sprite starEmpty)
+        public void Show(LevelSummary summary, bool selected, Sprite starFull, Sprite starEmpty, Color? locked = null)
         {
             LevelIndex = summary.Index;
             if (number != null)
@@ -48,7 +48,7 @@ namespace Portfolio.EndlessRunner
             }
             if (background != null)
             {
-                background.color = summary.Unlocked ? summary.Accent : LockedColor;
+                background.color = summary.Unlocked ? summary.Accent : locked ?? LockedColor;
             }
             for (int i = 0; i < stars.Length; i++)
             {

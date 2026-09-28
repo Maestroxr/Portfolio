@@ -22,6 +22,7 @@ namespace Portfolio.Monopoly
         [SerializeField] private float barShare = 0.24f;
 
         private readonly HashSet<int> pulsing = new HashSet<int>();
+        private readonly Dictionary<int, int> owners = new Dictionary<int, int>();
         private int hovered = -1;
 
         public float Corner => corner;
@@ -159,8 +160,15 @@ namespace Portfolio.Monopoly
 
         // ------------------------------------------------------------------ pieces of the match
 
+        /// <summary>The material of a seat's owner tags: the seat's base material of the active theme, else the one the scene was built with.</summary>
         public Material OwnerMaterial(int seat)
         {
+            MonopolyTheme theme = MonopolyStyle.Theme;
+            SeatLook look = theme != null && seat >= 0 ? theme.Seat(seat) : null;
+            if (look != null && look.baseMaterial != null)
+            {
+                return look.baseMaterial;
+            }
             return seat >= 0 && seat < ownerMaterials.Length ? ownerMaterials[seat] : null;
         }
 
@@ -170,6 +178,23 @@ namespace Portfolio.Monopoly
             if (tile != null)
             {
                 tile.SetOwner(seat >= 0 ? OwnerMaterial(seat) : null);
+                if (seat >= 0)
+                {
+                    owners[space] = seat;
+                }
+                else
+                {
+                    owners.Remove(space);
+                }
+            }
+        }
+
+        /// <summary>Draws the owner tags again in the active theme (the themed parts of the board redraw by themselves).</summary>
+        public void Reskin()
+        {
+            foreach (KeyValuePair<int, int> owned in owners)
+            {
+                Tile(owned.Key)?.SetOwner(OwnerMaterial(owned.Value));
             }
         }
 
@@ -194,6 +219,7 @@ namespace Portfolio.Monopoly
                 tile.SetBuildings(0, housePool, hotelPool, false);
                 tile.SetHighlight(false, Color.white);
             }
+            owners.Clear();
             pulsing.Clear();
             hovered = -1;
         }

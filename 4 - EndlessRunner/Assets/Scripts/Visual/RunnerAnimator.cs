@@ -103,6 +103,15 @@ namespace Portfolio.EndlessRunner
             motion = runner;
         }
 
+        /// <summary>Takes the hips where they are now as the rest pose: called after a theme moved the joints.</summary>
+        internal void RefreshRest()
+        {
+            if (hips != null)
+            {
+                hipsRest = hips.localPosition;
+            }
+        }
+
         public void ResetPose()
         {
             mood = Mood.Idle;

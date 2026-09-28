@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Gamebox;
 using Gamebox.Editor;
 using Gamebox.UI;
@@ -18,9 +19,12 @@ namespace Portfolio.EndlessRunner.EditorTools
 {
     /// <summary>
     /// Builds the Endless Runner scene from the generated assets: environment, camera, runner, the game object with
-    /// the manager, track pools, effects and audio, the shared menu (restyled as the pause menu), the runner's own
-    /// canvas with the level select, the HUD and the results screen, and online play (the server client, the online
-    /// controller and the shared lobby, through <see cref="OnlineInstaller"/>).
+    /// the manager, track pools (of the pieces and scenery of every theme), effects and audio, the shared menu
+    /// (restyled as the pause menu, re-skinned by the active theme at run time), the runner's own canvas with the level
+    /// select, the HUD and the results screen, and online play (the server client, the online controller and the
+    /// shared lobby, through <see cref="OnlineInstaller"/>). The scene is laid out in the classic theme's look; every
+    /// picture, colour and text of the canvas carries a themed component with the key of what it shows, so another
+    /// theme redraws it (see <see cref="Themify"/>).
     /// </summary>
     internal static class RunnerSceneBuilder
     {
@@ -28,14 +32,17 @@ namespace Portfolio.EndlessRunner.EditorTools
         /// <summary>The name the module of Server/ is published under (spacetime.json of the game's project).</summary>
         public const string Database = "skinnerboxes-endlessrunner";
 
-        private static readonly Color PanelColor = new Color(0.06f, 0.08f, 0.2f, 0.86f);
-        private static readonly Color Gold = new Color(1f, 0.83f, 0.26f);
-        private static readonly Color Green = new Color(0.3f, 0.76f, 0.34f);
-        private static readonly Color Orange = new Color(0.98f, 0.58f, 0.2f);
-        private static readonly Color Blue = new Color(0.26f, 0.55f, 0.95f);
-        private static readonly Color Red = new Color(0.9f, 0.32f, 0.32f);
-        private static readonly Color Soft = new Color(0.84f, 0.87f, 0.95f);
+        private static InterfaceColors colors = new InterfaceColors();
 
+        private static Color PanelColor => colors.panel;
+        private static Color Gold => colors.accent;
+        private static Color Green => colors.play;
+        private static Color Orange => colors.warning;
+        private static Color Blue => colors.info;
+        private static Color Red => colors.danger;
+        private static Color Soft => colors.soft;
+
+        private static RunnerGameTheme classic;
         private static Material titleFont;
         private static Material hudFont;
         private static Sprite panelSprite;
@@ -44,13 +51,20 @@ namespace Portfolio.EndlessRunner.EditorTools
         public static void Build()
         {
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            PrepareFonts();
-            panelSprite = RunnerArtBuilder.Icon("Panel");
-            buttonSprite = RunnerArtBuilder.Icon("Button");
+            classic = RunnerContentBuilder.Theme(RunnerThemes.Classic);
+            if (classic == null)
+            {
+                throw new System.InvalidOperationException("Build the worlds and levels first: the classic game theme is missing.");
+            }
+            colors = classic.Colors;
+            titleFont = classic.Fonts.titleMaterial;
+            hudFont = classic.Fonts.bodyMaterial;
+            panelSprite = classic.Sprites.panel;
+            buttonSprite = classic.Sprites.button;
 
             RunnerLevel firstLevel = RunnerContentBuilder.FirstLevel;
             RunnerTheme theme = firstLevel.Theme;
-            Material sky = RunnerArtBuilder.Material("Sky");
+            Material sky = classic.Sky;
 
             Light sun = BuildSun();
             RenderSettings.skybox = sky;
@@ -94,12 +108,20 @@ namespace Portfolio.EndlessRunner.EditorTools
             new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
 
             GameObject menu = GameMenuInstaller.InstallMenu(scene, 100, false);
+            foreach (Transform part in menu.GetComponentsInChildren<Transform>(true))
+            {
+                // A script of the shared prefab that moved files since it was saved would otherwise stay as a missing component.
+                GameObjectUtility.RemoveMonoBehavioursWithMissingScript(part.gameObject);
+            }
             var ui = GameMenuInstaller.EnsureComponent<RunnerUI>(menu);
             GameMenuInstaller.WireGameUI(ui, menu, controller, manager, menu.GetComponent<CanvasScaler>());
             var defaults = RunnerAssets.Load<RunnerSettings>("Config/RunnerSettings.asset");
             var settingsUi = (RunnerSettingsUI)GameMenuInstaller.WireSettingsPanel(menu, typeof(RunnerSettingsUI), ui, defaults);
             WireSettingsFields(menu, settingsUi);
             RestyleMenu(menu);
+            // The active theme re-skins the pause menu at run time, and a row of the settings panel picks the theme.
+            ui.themedMenu = GameMenuInstaller.MakeThemed(menu, GameType.EndlessRunner);
+            GameMenuInstaller.AddThemeChoice(menu, null, "Look", GameType.EndlessRunner);
 
             var campaign = RunnerAssets.Load<Campaign>("Config/Campaign/RunnerCampaign.asset");
             BuildRunnerCanvas(ui, campaign != null ? campaign.Count : 9);
@@ -202,20 +224,29 @@ namespace Portfolio.EndlessRunner.EditorTools
                 TilePool(pools, RunnerArtBuilder.Tile(false), 90),
                 TilePool(pools, RunnerArtBuilder.Tile(true), 12)
             };
-            PieceCatalog catalog = RunnerContentBuilder.Catalog;
-            var pieces = new List<TrackPiece>
+            // The pieces and the scenery of every theme: the generator takes the active theme's from these pools.
+            var pieces = new List<TrackPiece>();
+            foreach (ThemeArt art in RunnerThemes.All)
             {
-                catalog.coin, catalog.gem, catalog.magnet, catalog.shield, catalog.multiplier, catalog.superJump, catalog.jumpPad,
-                catalog.hurdle, catalog.barrier, catalog.ramp, catalog.bridge, catalog.cart, catalog.finishLine
-            };
-            pieces.AddRange(catalog.blocks);
-            pieces.AddRange(catalog.shortWagons);
-            pieces.AddRange(catalog.longWagons);
+                PieceCatalog catalog = RunnerContentBuilder.CatalogOf(art);
+                if (catalog == null)
+                {
+                    continue;
+                }
+                pieces.AddRange(new TrackPiece[]
+                {
+                    catalog.coin, catalog.gem, catalog.magnet, catalog.shield, catalog.multiplier, catalog.superJump, catalog.jumpPad,
+                    catalog.hurdle, catalog.barrier, catalog.ramp, catalog.bridge, catalog.cart, catalog.finishLine
+                });
+                pieces.AddRange(catalog.blocks);
+                pieces.AddRange(catalog.shortWagons);
+                pieces.AddRange(catalog.longWagons);
+            }
             pieces.AddRange(RunnerArtBuilder.AllScenery());
             var piecePools = new List<TrackPiecePool>();
             foreach (TrackPiece piece in pieces.Where(piece => piece != null).Distinct())
             {
-                int size = piece == catalog.coin ? 500 : piece is Obstacle || piece is Collidable ? 60 : 260;
+                int size = piece is Coin coin && !coin.IsGem ? 500 : piece is Obstacle || piece is Collidable ? 60 : 260;
                 piecePools.Add(PiecePool(pools, piece, size));
             }
             track.tilePools = tileCaches.ToArray();
@@ -310,6 +341,16 @@ namespace Portfolio.EndlessRunner.EditorTools
             themes.snow = Ambient(ambient, "Snow", soft, new Vector3(50f, 1f, 50f), 140f, 6f, 0.1f, 0.2f, new Color(1f, 1f, 1f, 0.9f), new Vector3(0.3f, -2.5f, 0f), 0.5f);
             themes.fireflies = Ambient(ambient, "Fireflies", glow, new Vector3(40f, 5f, 40f), 22f, 5f, 0.18f, 0.3f, new Color(0.8f, 1f, 0.4f, 1f), Vector3.zero, 1f);
             themes.embers = Ambient(ambient, "Embers", glow, new Vector3(40f, 2f, 40f), 45f, 4f, 0.08f, 0.16f, new Color(1f, 0.55f, 0.15f, 1f), new Vector3(0f, 1.8f, 0f), 0.8f);
+            // The weather of the night city: rain streaks falling past the camera, and ash drifting in the tunnels and over the roofs.
+            Material rainMaterial = RunnerArtBuilder.Material(RunnerThemes.NightShift, "ParticleRain");
+            Material ashMaterial = RunnerArtBuilder.Material(RunnerThemes.NightShift, "ParticleSoft");
+            themes.rain = Ambient(ambient, "Rain", rainMaterial != null ? rainMaterial : soft, new Vector3(44f, 1f, 44f), 320f, 0.9f, 0.16f, 0.24f, new Color(0.75f, 0.85f, 1f, 0.45f), new Vector3(0.6f, -17f, 0f), 0f);
+            var rainRenderer = themes.rain.GetComponent<ParticleSystemRenderer>();
+            rainRenderer.renderMode = ParticleSystemRenderMode.Stretch;
+            rainRenderer.lengthScale = 4f;
+            rainRenderer.velocityScale = 0.03f;
+            ParticleFactory.MaxParticles(themes.rain, 1200);
+            themes.ash = Ambient(ambient, "Ash", ashMaterial != null ? ashMaterial : soft, new Vector3(40f, 6f, 40f), 24f, 6f, 0.05f, 0.11f, new Color(0.6f, 0.6f, 0.6f, 0.6f), new Vector3(0.3f, -0.45f, 0f), 0.6f);
         }
 
         private static ParticleSystem Burst(Transform parent, string name, Material material, float minLife, float maxLife, float minSpeed, float maxSpeed,
@@ -517,15 +558,126 @@ namespace Portfolio.EndlessRunner.EditorTools
             BuildTitle(root, ui, levelCount);
             BuildResults(root, ui);
 
+            // The film look of a theme: a vignette and a film grain over everything, invisible while a theme leaves their colours clear.
+            Image overlay = Image(root, "Overlay", classic.Sprites.vignette, classic.Colors.overlay, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero);
+            StretchFull(overlay.rectTransform);
+            overlay.preserveAspect = false;
+            overlay.raycastTarget = false;
+            Themed(overlay, "sprites.vignette", "colors.overlay");
+            Image grain = Image(root, "Grain", classic.Sprites.grain, classic.Colors.grain, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero);
+            StretchFull(grain.rectTransform);
+            grain.rectTransform.offsetMin = new Vector2(-24f, -24f);
+            grain.rectTransform.offsetMax = new Vector2(24f, 24f);
+            grain.type = UnityEngine.UI.Image.Type.Tiled;
+            grain.pixelsPerUnitMultiplier = 0.5f;
+            grain.preserveAspect = false;
+            grain.raycastTarget = false;
+            Themed(grain, "sprites.grain", "colors.grain");
+            ui.grain = grain;
+
             Image curtain = Image(root, "Curtain", null, new Color(0.02f, 0.03f, 0.08f, 0f), Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero);
             StretchFull(curtain.rectTransform);
             curtain.raycastTarget = false;
             ui.curtain = curtain;
 
-            ui.starFull = RunnerArtBuilder.Icon("Star");
-            ui.starEmpty = RunnerArtBuilder.Icon("StarEmpty");
-            ui.heartFull = RunnerArtBuilder.Icon("Heart");
-            ui.heartEmpty = RunnerArtBuilder.Icon("HeartEmpty");
+            ui.starFull = classic.Sprites.star;
+            ui.starEmpty = classic.Sprites.starEmpty;
+            ui.heartFull = classic.Sprites.heart;
+            ui.heartEmpty = classic.Sprites.heartEmpty;
+            Themify(root);
+        }
+
+        // ------------------------------------------------------------------ themed parts
+
+        /// <summary>
+        /// Puts a themed component on every picture and text of the canvas whose sprite, colour or font is one of the
+        /// classic theme's, with the key of that sprite, colour or font role: another theme redraws them by the same
+        /// keys. Pictures whose sprite the game sets at run time (stars, hearts) and the level cards' backgrounds
+        /// (coloured by the world) keep only what applies.
+        /// </summary>
+        private static void Themify(Transform root)
+        {
+            foreach (Image image in root.GetComponentsInChildren<Image>(true))
+            {
+                if (image.GetComponent<ThemedElement>() != null || image.name.StartsWith("Star") || image.name.StartsWith("Heart"))
+                {
+                    continue;
+                }
+                bool card = image.name == "Background" && image.GetComponentInParent<LevelCard>(true) != null;
+                string spriteKey = KeyOf(classic.Sprites, image.sprite, "sprites");
+                string colorKey = card ? null : ColorKeyOf(image.color);
+                if (spriteKey != null || colorKey != null)
+                {
+                    Themed(image, spriteKey, colorKey);
+                }
+            }
+            foreach (TMP_Text text in root.GetComponentsInChildren<TMP_Text>(true))
+            {
+                if (text.GetComponent<ThemedElement>() != null)
+                {
+                    continue;
+                }
+                var themed = text.gameObject.AddComponent<ThemedText>();
+                themed.ThemedGame = GameType.EndlessRunner;
+                themed.ColorKey = ColorKeyOf(text.color);
+                if (text.fontSharedMaterial == titleFont)
+                {
+                    themed.Role = TextRole.Title;
+                }
+                else if (text.fontSharedMaterial == hudFont)
+                {
+                    themed.Role = TextRole.Body;
+                }
+                else
+                {
+                    // Plain words in the theme's body font with the font's own material (no outline).
+                    RunnerAssets.Set(themed, "font", p => p.stringValue = "fonts.body");
+                }
+            }
+        }
+
+        private static ThemedImage Themed(Image image, string spriteKey, string colorKey)
+        {
+            var themed = image.gameObject.AddComponent<ThemedImage>();
+            themed.ThemedGame = GameType.EndlessRunner;
+            themed.SpriteKey = spriteKey;
+            themed.ColorKey = colorKey;
+            return themed;
+        }
+
+        /// <summary>The path of the field of <paramref name="holder"/> that holds <paramref name="value"/>, or null.</summary>
+        private static string KeyOf(object holder, Object value, string prefix)
+        {
+            if (value == null)
+            {
+                return null;
+            }
+            foreach (FieldInfo field in holder.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public))
+            {
+                if (field.GetValue(holder) as Object == value)
+                {
+                    return $"{prefix}.{field.Name}";
+                }
+            }
+            return null;
+        }
+
+        /// <summary>The path of the colour of the classic theme that <paramref name="color"/> is, or null for a colour of its own.</summary>
+        private static string ColorKeyOf(Color color)
+        {
+            foreach (FieldInfo field in typeof(InterfaceColors).GetFields(BindingFlags.Instance | BindingFlags.Public))
+            {
+                if (field.FieldType == typeof(Color) && Same((Color)field.GetValue(classic.Colors), color))
+                {
+                    return $"colors.{field.Name}";
+                }
+            }
+            return null;
+        }
+
+        private static bool Same(Color a, Color b)
+        {
+            return Mathf.Abs(a.r - b.r) < 0.002f && Mathf.Abs(a.g - b.g) < 0.002f && Mathf.Abs(a.b - b.b) < 0.002f && Mathf.Abs(a.a - b.a) < 0.002f;
         }
 
         private static void BuildTitle(Transform canvas, RunnerUI ui, int levelCount)
@@ -544,11 +696,13 @@ namespace Portfolio.EndlessRunner.EditorTools
             RectTransform logo = Rect(root, "Logo", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -18f), new Vector2(1100f, 270f));
             logo.localRotation = Quaternion.Euler(0f, 0f, 2.5f);
             TextMeshProUGUI endless = Text(logo, "Endless", "ENDLESS", 116f, Color.white, TextAlignmentOptions.Center, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(-40f, 0f), new Vector2(1100f, 130f), titleFont);
-            Gradient(endless, new Color(1f, 0.97f, 0.55f), new Color(1f, 0.62f, 0.12f));
+            Gradient(endless, colors.logoEndlessTop, colors.logoEndlessBottom);
             TextMeshProUGUI runner = Text(logo, "Runner", "RUNNER", 136f, Color.white, TextAlignmentOptions.Center, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(60f, -110f), new Vector2(1100f, 150f), titleFont);
-            Gradient(runner, new Color(0.55f, 0.95f, 1f), new Color(0.15f, 0.5f, 1f));
+            Gradient(runner, colors.logoRunnerTop, colors.logoRunnerBottom);
             endless.characterSpacing = 6f;
             runner.characterSpacing = 6f;
+            ui.logoEndless = endless;
+            ui.logoRunner = runner;
 
             // Level details
             RectTransform details = Panel(root, "Details", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(50f, 110f), new Vector2(580f, 560f));
@@ -556,7 +710,7 @@ namespace Portfolio.EndlessRunner.EditorTools
             ui.detailTitle = Text(details, "Title", "1. Sunny Start", 50f, Color.white, TextAlignmentOptions.Left, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -64f), new Vector2(520f, 70f), titleFont);
             ui.detailStars = Stars(details, "Stars", new Vector2(0.5f, 1f), new Vector2(-190f, -170f), 64f, 70f, false);
             ui.detailDescription = Text(details, "Description", "Description", 26f, Soft, TextAlignmentOptions.TopLeft, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -210f), new Vector2(520f, 120f), null, false);
-            ui.detailGoals = Text(details, "Goals", "Goals", 25f, new Color(1f, 0.93f, 0.7f), TextAlignmentOptions.TopLeft, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -330f), new Vector2(520f, 110f), null, false);
+            ui.detailGoals = Text(details, "Goals", "Goals", 25f, colors.goals, TextAlignmentOptions.TopLeft, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -330f), new Vector2(520f, 110f), null, false);
             ui.playButton = Button(details, "Play", "PLAY", RunnerArtBuilder.Icon("Play"), Green, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 26f), new Vector2(440f, 108f), 56f, out TextMeshProUGUI playLabel);
             ui.playLabel = playLabel;
 
@@ -571,9 +725,9 @@ namespace Portfolio.EndlessRunner.EditorTools
             ui.titleExitButton = Button(progress, "Exit", "Quit", RunnerArtBuilder.Icon("Exit"), Red, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -374f), new Vector2(340f, 82f), 34f, out _);
             ui.resetProgressButton = TextButton(progress, "ResetProgress", "Reset progress", new Vector2(0.5f, 0f), new Vector2(0f, 58f), new Vector2(300f, 40f), 22f, out TextMeshProUGUI resetLabel);
             ui.resetProgressLabel = resetLabel;
-            TextMeshProUGUI keys = Text(progress, "Controls", "Arrows / WASD / Space - or swipe", 20f, new Color(0.7f, 0.74f, 0.85f), TextAlignmentOptions.Center, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 18f), new Vector2(390f, 34f), null, false);
+            TextMeshProUGUI keys = Text(progress, "Controls", "Arrows / WASD / Space - or swipe", 20f, colors.hint, TextAlignmentOptions.Center, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 18f), new Vector2(390f, 34f), null, false);
             UIBuildUtils.ShowOnly(keys.gameObject, TouchLayout.Visibility.WithoutTouch);
-            TextMeshProUGUI swipes = Text(progress, "TouchControls", "Swipe to switch lanes, jump and slide", 20f, new Color(0.7f, 0.74f, 0.85f), TextAlignmentOptions.Center, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 18f), new Vector2(390f, 34f), null, false);
+            TextMeshProUGUI swipes = Text(progress, "TouchControls", "Swipe to switch lanes, jump and slide", 20f, colors.hint, TextAlignmentOptions.Center, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 18f), new Vector2(390f, 34f), null, false);
             UIBuildUtils.ShowOnly(swipes.gameObject, TouchLayout.Visibility.TouchOnly);
 
             // Level strip
@@ -640,7 +794,7 @@ namespace Portfolio.EndlessRunner.EditorTools
             Image coinIcon = Image(coins, "Icon", RunnerArtBuilder.Icon("Coin"), Color.white, new Vector2(0f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(56f, 0f), new Vector2(78f, 78f));
             ui.coinsIcon = coinIcon.rectTransform;
             ui.coinsText = Text(coins, "Value", "0", 56f, Color.white, TextAlignmentOptions.Left, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(104f, 0f), new Vector2(220f, 80f), hudFont);
-            RectTransform badge = Panel(root, "Multiplier", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(370f, -42f), new Vector2(110f, 62f), new Color(0.55f, 0.25f, 0.9f, 0.95f));
+            RectTransform badge = Panel(root, "Multiplier", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(370f, -42f), new Vector2(110f, 62f), colors.badge);
             Text(badge, "Label", "x2", 42f, Color.white, TextAlignmentOptions.Center, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(110f, 62f), titleFont);
             badge.gameObject.SetActive(false);
             ui.multiplierBadge = badge.gameObject;
@@ -700,8 +854,8 @@ namespace Portfolio.EndlessRunner.EditorTools
             powerLayout.childForceExpandWidth = false;
             powerLayout.childForceExpandHeight = false;
             var slots = new List<RunnerUI.PowerUpSlot>();
-            var icons = new[] { ("Magnet", PowerUpType.Magnet, new Color(1f, 0.35f, 0.35f)), ("Shield", PowerUpType.Shield, new Color(0.35f, 0.75f, 1f)),
-                ("Multiplier", PowerUpType.Multiplier, new Color(0.75f, 0.45f, 1f)), ("Spring", PowerUpType.SuperJump, new Color(0.4f, 1f, 0.45f)) };
+            var icons = new[] { ("Magnet", PowerUpType.Magnet, colors.magnet), ("Shield", PowerUpType.Shield, colors.shield),
+                ("Multiplier", PowerUpType.Multiplier, colors.multiplier), ("Spring", PowerUpType.SuperJump, colors.superJump) };
             foreach ((string icon, PowerUpType type, Color color) in icons)
             {
                 RectTransform slot = Rect(powerUps, type.ToString(), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(110f, 110f));
@@ -816,34 +970,6 @@ namespace Portfolio.EndlessRunner.EditorTools
 
         // ------------------------------------------------------------------ widgets
 
-        private static void PrepareFonts()
-        {
-            TMP_FontAsset font = TMP_Settings.defaultFontAsset;
-            titleFont = RunnerAssets.SaveMaterial("Art/Materials/FontTitle.mat", font.material.shader, m =>
-            {
-                m.CopyPropertiesFromMaterial(font.material);
-                m.EnableKeyword("OUTLINE_ON");
-                m.EnableKeyword("UNDERLAY_ON");
-                m.SetFloat("_FaceDilate", 0.15f);
-                m.SetFloat("_OutlineWidth", 0.26f);
-                m.SetColor("_OutlineColor", new Color(0.1f, 0.07f, 0.2f, 1f));
-                m.SetColor("_UnderlayColor", new Color(0f, 0f, 0.05f, 0.65f));
-                m.SetFloat("_UnderlayOffsetX", 0.5f);
-                m.SetFloat("_UnderlayOffsetY", -0.7f);
-                m.SetFloat("_UnderlayDilate", 0.3f);
-                m.SetFloat("_UnderlaySoftness", 0.25f);
-            });
-            hudFont = RunnerAssets.SaveMaterial("Art/Materials/FontHud.mat", font.material.shader, m =>
-            {
-                m.CopyPropertiesFromMaterial(font.material);
-                m.EnableKeyword("OUTLINE_ON");
-                m.DisableKeyword("UNDERLAY_ON");
-                m.SetFloat("_FaceDilate", 0.08f);
-                m.SetFloat("_OutlineWidth", 0.18f);
-                m.SetColor("_OutlineColor", new Color(0.05f, 0.05f, 0.12f, 1f));
-            });
-        }
-
         private static CanvasGroup Screen(Transform parent, string name)
         {
             RectTransform rect = Rect(parent, name, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero);
@@ -956,7 +1082,7 @@ namespace Portfolio.EndlessRunner.EditorTools
             hit.color = new Color(1f, 1f, 1f, 0f);
             var button = rect.gameObject.AddComponent<Button>();
             button.targetGraphic = hit;
-            text = Text(rect, "Label", label, fontSize, new Color(0.75f, 0.78f, 0.9f), TextAlignmentOptions.Center, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, size, null);
+            text = Text(rect, "Label", label, fontSize, colors.hint, TextAlignmentOptions.Center, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, size, null);
             text.fontStyle = FontStyles.Underline;
             return button;
         }

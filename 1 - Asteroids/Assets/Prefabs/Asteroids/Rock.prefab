@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 6387394546868032665}
   - component: {fileID: 5581221361752617381}
   - component: {fileID: 8387200819912077948}
+  - component: {fileID: 3190587864838201557}
   m_Layer: 0
   m_Name: Model
   m_TagString: Untagged
@@ -90,6 +91,21 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &3190587864838201557
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2024910215572495549}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Materials/Rock
+  slot: 0
 --- !u!1 &5027476059614109906
 GameObject:
   m_ObjectHideFlags: 0

@@ -79,9 +79,53 @@ namespace Portfolio.Monopoly
         public FloatingTexts Floating => floating;
         public MonopolyAudio Sound => sound;
 
+        /// <summary>The badge of a token: the active theme's, else the one the scene was built with.</summary>
         public Sprite TokenSprite(int token)
         {
+            MonopolyTheme theme = MonopolyStyle.Theme;
+            TokenLook look = theme != null ? theme.Token(token) : null;
+            if (look != null && look.badge != null)
+            {
+                return look.badge;
+            }
             return token >= 0 && token < tokenSprites.Length ? tokenSprites[token] : null;
+        }
+
+        /// <summary>
+        /// Draws every themed part of the interface in the active theme, the hidden ones too, so a popup opened later
+        /// is not drawn again over what the code paints on it before it opens.
+        /// </summary>
+        public void DrawThemedParts()
+        {
+            foreach (ThemedLook look in GetComponentsInChildren<ThemedLook>(true))
+            {
+                look.Refresh();
+            }
+        }
+
+        /// <summary>
+        /// Takes the look of a new theme: the themed parts first, then what the interface coloured itself from the style
+        /// (the panels, the switches, an open new game screen).
+        /// </summary>
+        public void Reskin(MonopolyMatch match)
+        {
+            DrawThemedParts();
+            if (match != null)
+            {
+                foreach (PlayerUI panel in players)
+                {
+                    if (panel != null && panel.gameObject.activeSelf && panel.Seat >= 0 && panel.Seat < match.players.Count)
+                    {
+                        panel.Repaint(match.players[panel.Seat], TokenSprite(match.players[panel.Seat].token));
+                    }
+                }
+                RefreshPlayers(match);
+            }
+            PaintSoundButtons();
+            if (setup != null && setup.IsOpen)
+            {
+                setup.Repaint();
+            }
         }
 
         public PlayerUI Panel(int seat)
@@ -92,6 +136,7 @@ namespace Portfolio.Monopoly
         protected override void Awake()
         {
             base.Awake();
+            DrawThemedParts();
             if (mainMenuButton != null)
             {
                 mainMenuButton.onClick.AddListener(() => Monopoly?.ReturnToTitle());

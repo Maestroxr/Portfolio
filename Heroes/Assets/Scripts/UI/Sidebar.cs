@@ -290,7 +290,7 @@ namespace Portfolio.Heroes.UI
             // The view box is four thin gold lines, so it never hides what it frames.
             for (int side = 0; side < 4; side++)
             {
-                Image line = UIKit.Sprite(map.box, $"Edge{side}", null, new Color(1f, 0.86f, 0.45f, 0.95f));
+                Image line = UIKit.Sprite(map.box, $"Edge{side}", null, HeroesTheme.Palette.Active.Accent(new Color(1f, 0.86f, 0.45f, 0.95f)));
                 var rect = (RectTransform)line.transform;
                 bool across = side < 2;
                 rect.anchorMin = across ? new Vector2(0f, side) : new Vector2(side - 2, 0f);
@@ -355,7 +355,7 @@ namespace Portfolio.Heroes.UI
             int width = texture.width;
             for (int i = 0; i < pixels.Length; i++)
             {
-                pixels[i] = Unknown;
+                pixels[i] = HeroesTheme.Palette.Active.Map(Unknown);
             }
             for (int cell = 0; cell < grid.Count; cell++)
             {
@@ -365,7 +365,7 @@ namespace Portfolio.Heroes.UI
                 }
                 int row = grid.Row(cell);
                 int x = 2 * grid.Column(cell) + 1 - (row & 1);
-                Color32 ground = Ground(state, cell);
+                Color32 ground = HeroesTheme.Palette.Active.Map(Ground(state, cell));
                 pixels[row * width + x] = ground;
                 pixels[row * width + x + 1] = ground;
             }

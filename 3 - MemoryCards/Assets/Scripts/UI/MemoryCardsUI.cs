@@ -29,7 +29,7 @@ namespace Portfolio.MemoryCards
             "Tip: flip cards you have not seen yet before guessing.",
             "Tip: matches in a row build a combo worth up to x5 points.",
             "Tip: click anywhere after a mistake to flip the cards back sooner.",
-            "Tip: a wild card clears every card of the animal you pair it with.",
+            "Tip: a wild card clears every card of the {0} you pair it with.",
             "Tip: remember where the bombs are - they stay put until a shuffle.",
             "Tip: in a parade, keep finding pairs even when they are not next."
         };
@@ -43,6 +43,9 @@ namespace Portfolio.MemoryCards
 
         [Header("Level select")]
         [SerializeField] internal RectTransform logo;
+        [SerializeField] internal TMP_Text logoName;
+        [SerializeField] internal TMP_Text logoSubtitle;
+        [SerializeField] internal Image logoOrnament;
         [SerializeField] internal RectTransform[] titleMascots = new RectTransform[0];
         [SerializeField] internal WorldTab[] worldTabs = new WorldTab[0];
         [SerializeField] internal LevelCard[] levelCards = new LevelCard[0];
@@ -169,8 +172,94 @@ namespace Portfolio.MemoryCards
         private Vector2 retryRest;
         private Vector2 heartsRest;
         private Vector2 logoRest;
+        private MemoryCardsTheme.Palette palette = new MemoryCardsTheme.Palette();
+        private string faceWord = "animal";
 
         private MemoryCardsGameManager Cards => Manager as MemoryCardsGameManager;
+
+
+        /// <summary>
+        /// Takes the sprites and colours of <paramref name="look"/> (nothing changes without one): the stars, hearts,
+        /// goal marks and mode icons, the title with its mascots, the level cards, the world tabs and the versus
+        /// scoreboard. The manager calls it when the game starts and whenever the theme changes; the themed parts of the
+        /// scene (buttons, panels, labels) redraw themselves.
+        /// </summary>
+        public void ApplyTheme(MemoryCardsTheme look)
+        {
+            if (look == null)
+            {
+                return;
+            }
+            palette = look.Colors;
+            faceWord = string.IsNullOrEmpty(look.Say.face) ? faceWord : look.Say.face;
+            starFull = Or(look.Hud.starFull, starFull);
+            starEmpty = Or(look.Hud.starEmpty, starEmpty);
+            goalDone = Or(look.Hud.goalDone, goalDone);
+            goalMissed = Or(look.Hud.goalMissed, goalMissed);
+            heartFull = Or(look.Icons.heartFull, heartFull);
+            heartEmpty = Or(look.Icons.heartEmpty, heartEmpty);
+            if (look.Hud.modeIcons != null && look.Hud.modeIcons.Count > 0)
+            {
+                modeIcons = look.Hud.modeIcons.ToArray();
+            }
+            SetLabel(logoName, look.Title.words);
+            if (logoName != null)
+            {
+                logoName.colorGradient = new VertexGradient(look.Title.gradientTop, look.Title.gradientTop, look.Title.gradientBottom, look.Title.gradientBottom);
+            }
+            SetLabel(logoSubtitle, look.Title.subtitle);
+            if (logoOrnament != null)
+            {
+                logoOrnament.sprite = Or(look.Title.ornament, logoOrnament.sprite);
+                logoOrnament.color = look.Title.ornamentColor;
+                logoOrnament.enabled = logoOrnament.sprite != null;
+            }
+            for (int i = 0; i < titleMascots.Length; i++)
+            {
+                Image figure = titleMascots[i] != null ? titleMascots[i].GetComponent<Image>() : null;
+                if (figure == null)
+                {
+                    continue;
+                }
+                Sprite sprite = look.Title.mascots != null && i < look.Title.mascots.Count ? look.Title.mascots[i] : null;
+                figure.sprite = sprite;
+                figure.gameObject.SetActive(sprite != null);
+            }
+            foreach (LevelCard card in levelCards)
+            {
+                if (card != null)
+                {
+                    card.ApplyLook(look);
+                }
+            }
+            foreach (WorldTab tab in worldTabs)
+            {
+                if (tab != null)
+                {
+                    tab.ApplyLook(palette);
+                }
+            }
+            if (versusHud != null)
+            {
+                versusHud.ApplyLook(palette);
+            }
+            if (modeIcon != null && hud.Title != null)
+            {
+                modeIcon.sprite = ModeIcon(hud.Mode);
+            }
+            for (int i = 0; i < hearts.Length && shownHearts >= 0; i++)
+            {
+                if (hearts[i] != null)
+                {
+                    hearts[i].sprite = i < shownHearts ? heartFull : heartEmpty;
+                }
+            }
+        }
+
+        private static Sprite Or(Sprite first, Sprite second)
+        {
+            return first != null ? first : second;
+        }
 
         protected override void Awake()
         {
@@ -621,7 +710,7 @@ namespace Portfolio.MemoryCards
                 }
                 if (timerText != null)
                 {
-                    timerText.color = low ? new Color(1f, 0.35f, 0.3f) : Color.white;
+                    timerText.color = low ? palette.hurry : palette.light;
                 }
             }
             if (heartsLeft != shownHearts)
@@ -643,7 +732,7 @@ namespace Portfolio.MemoryCards
                 SetLabel(movesText, movesLeft.ToString());
                 if (movesText != null)
                 {
-                    movesText.color = movesLeft <= 3 ? new Color(1f, 0.35f, 0.3f) : Color.white;
+                    movesText.color = movesLeft <= 3 ? palette.hurry : palette.light;
                 }
             }
             if (sets != shownSets)
@@ -797,7 +886,7 @@ namespace Portfolio.MemoryCards
         {
             if (resultHeader != null)
             {
-                resultHeader.color = result.Victory ? result.Accent : new Color(0.55f, 0.5f, 0.62f);
+                resultHeader.color = result.Victory ? result.Accent : palette.defeat;
             }
             if (retryButton != null)
             {
@@ -853,7 +942,7 @@ namespace Portfolio.MemoryCards
                 {
                     resultGoals[i].gameObject.SetActive(show);
                     resultGoals[i].text = goal;
-                    resultGoals[i].color = reached ? new Color(0.13f, 0.5f, 0.24f) : new Color(0.35f, 0.35f, 0.42f, 0.8f);
+                    resultGoals[i].color = reached ? palette.goalReached : palette.goalMissed;
                 }
                 if (i < resultGoalIcons.Length && resultGoalIcons[i] != null)
                 {
@@ -871,7 +960,7 @@ namespace Portfolio.MemoryCards
             }
             else if (!result.Victory)
             {
-                SetLabel(resultBest, ForInput(Tips[Random.Range(0, Tips.Length)]));
+                SetLabel(resultBest, ForInput(string.Format(Tips[Random.Range(0, Tips.Length)], faceWord)));
             }
             else
             {

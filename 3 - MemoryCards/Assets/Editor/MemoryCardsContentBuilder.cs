@@ -8,9 +8,11 @@ using UnityEngine;
 namespace Portfolio.MemoryCards.EditorTools
 {
     /// <summary>
-    /// Builds the content of Memory Cards: the four worlds, the rules of every level, the level assets, the campaign,
-    /// the free play settings and the launcher entry. Values that belong to the content (board sizes, twists, goals,
-    /// texts) live in <see cref="Levels"/>, so hand edits of those assets are overwritten by a rebuild.
+    /// Builds the content of Memory Cards: the worlds of every theme, the rules of every level, the level assets, the
+    /// campaign, the free play settings, the theme assets (<see cref="MemoryCardsTheme"/>, one per
+    /// <see cref="ThemeSpecs"/> entry, gathering the art the art builder drew) and the launcher entry with its themes.
+    /// Values that belong to the content (board sizes, twists, goals, texts) live in <see cref="Levels"/>, so hand
+    /// edits of those assets are overwritten by a rebuild.
     /// </summary>
     internal static class MemoryCardsContentBuilder
     {
@@ -174,23 +176,32 @@ namespace Portfolio.MemoryCards.EditorTools
 
         public static MemoryCardsSettings CurrentSettings => MemoryCardsAssets.Load<MemoryCardsSettings>(CurrentSettingsPath);
 
+        /// <summary>The asset of a theme, relative to the package.</summary>
+        public static string ThemePath(ThemeSpec theme)
+        {
+            return $"{ThemeSpecs.ThemesFolder}/{theme.Id}.asset";
+        }
+
+        public static MemoryCardsTheme Theme(ThemeSpec theme)
+        {
+            return MemoryCardsAssets.Load<MemoryCardsTheme>(ThemePath(theme));
+        }
+
+        public static CardWorld World(ThemeSpec theme, int index)
+        {
+            return MemoryCardsAssets.Load<CardWorld>(theme.WorldPath(theme.Worlds[index]));
+        }
+
+        /// <summary>A world of the original campaign (the Classic theme).</summary>
         public static CardWorld World(int index)
         {
-            return MemoryCardsAssets.Load<CardWorld>($"Settings/Worlds/{WorldSpecs.All[index].Id}.asset");
+            return World(ThemeSpecs.Classic, index);
         }
 
         public static void BuildAll()
         {
-            List<Sprite> animals = WorldSpecs.Animals.Select(MemoryCardsArtBuilder.Animal).ToList();
-            if (animals.Any(sprite => sprite == null))
-            {
-                throw new System.InvalidOperationException("Memory Cards: animal sprites are missing; run Rebuild Art first.");
-            }
-            var worlds = new List<CardWorld>();
-            for (int i = 0; i < WorldSpecs.All.Length; i++)
-            {
-                worlds.Add(BuildWorld(WorldSpecs.All[i]));
-            }
+            List<Sprite> animals = Faces(ThemeSpecs.Classic);
+            List<CardWorld> worlds = BuildWorlds(ThemeSpecs.Classic);
             BuildFreePlaySettings(animals);
 
             var levels = new List<GameLevel>();
@@ -244,13 +255,34 @@ namespace Portfolio.MemoryCards.EditorTools
             {
                 throw new System.InvalidOperationException("Memory Cards campaign is invalid:\n" + string.Join("\n", problems));
             }
-            BuildGameDefinition();
+            var themes = new List<MemoryCardsTheme>();
+            foreach (ThemeSpec spec in ThemeSpecs.All)
+            {
+                themes.Add(BuildTheme(spec, campaign));
+            }
+            BuildGameDefinition(themes);
             AssetDatabase.SaveAssets();
         }
 
-        private static CardWorld BuildWorld(WorldSpec spec)
+        /// <summary>The faces of a theme's deck, in the order save games refer to them; fails when the art is missing.</summary>
+        private static List<Sprite> Faces(ThemeSpec theme)
         {
-            return MemoryCardsAssets.SaveScriptable<CardWorld>($"Settings/Worlds/{spec.Id}.asset", world =>
+            List<Sprite> faces = theme.Faces.Select(name => MemoryCardsArtBuilder.Face(theme, name)).ToList();
+            if (faces.Any(sprite => sprite == null))
+            {
+                throw new System.InvalidOperationException($"Memory Cards: faces of the {theme.Name} theme are missing; run Rebuild Art first.");
+            }
+            return faces;
+        }
+
+        private static List<CardWorld> BuildWorlds(ThemeSpec theme)
+        {
+            return theme.Worlds.Select(spec => BuildWorld(theme, spec)).ToList();
+        }
+
+        private static CardWorld BuildWorld(ThemeSpec theme, WorldSpec spec)
+        {
+            return MemoryCardsAssets.SaveScriptable<CardWorld>(theme.WorldPath(spec), world =>
             {
                 world.displayName = spec.Name;
                 world.tagline = spec.Tagline;
@@ -259,15 +291,182 @@ namespace Portfolio.MemoryCards.EditorTools
                 world.accent = WorldSpecs.Color(spec.Accent);
                 world.accentDark = WorldSpecs.Color(spec.AccentDark);
                 world.cardColor = WorldSpecs.Color(spec.Card);
-                world.cardBack = MemoryCardsArtBuilder.Card($"Back{spec.Id}");
-                world.levelCardBack = MemoryCardsArtBuilder.Card($"Back{spec.Id}Plain");
-                world.mascot = MemoryCardsArtBuilder.Animal(spec.Mascot);
-                world.ambient = MemoryCardsArtBuilder.Backdrop(spec.Ambient);
+                world.cardBack = MemoryCardsArtBuilder.Card(theme, theme.BackName(spec));
+                world.levelCardBack = MemoryCardsArtBuilder.Card(theme, $"{theme.BackName(spec)}Plain");
+                world.mascot = MemoryCardsArtBuilder.Face(theme, spec.Mascot);
+                world.ambient = MemoryCardsArtBuilder.Backdrop(theme, spec.Ambient);
                 world.ambientColor = spec.AmbientColor;
                 world.motion = spec.Motion;
-                IEnumerable<string> names = spec.Animals.Length > 0 ? spec.Animals : WorldSpecs.Animals;
-                world.animals = names.Select(MemoryCardsArtBuilder.Animal).ToList();
+                IEnumerable<string> names = spec.Animals.Length > 0 ? spec.Animals : theme.Faces;
+                world.animals = names.Select(name => MemoryCardsArtBuilder.Face(theme, name)).ToList();
             });
+        }
+
+        /// <summary>
+        /// The theme asset of <paramref name="spec"/>: its worlds, its deck and every sprite, font, material and colour
+        /// of its art, checked against the campaign (every level can be dealt from its world) and by the theme itself.
+        /// </summary>
+        private static MemoryCardsTheme BuildTheme(ThemeSpec spec, MemoryCardsCampaign campaign)
+        {
+            List<Sprite> faces = Faces(spec);
+            List<CardWorld> worlds = BuildWorlds(spec);
+            MemoryCardsTheme theme = MemoryCardsAssets.SaveScriptable<MemoryCardsTheme>(ThemePath(spec), asset => Fill(asset, spec, worlds, faces));
+            var problems = new List<string>(campaign.Validate(theme));
+            theme.Validate(problems);
+            if (problems.Count > 0)
+            {
+                throw new System.InvalidOperationException($"Memory Cards theme {spec.Name} is invalid:\n" + string.Join("\n", problems));
+            }
+            return theme;
+        }
+
+        private static void Fill(MemoryCardsTheme theme, ThemeSpec spec, List<CardWorld> worlds, List<Sprite> faces)
+        {
+            MemoryCardsAssets.Set(theme, "displayName", p => p.stringValue = spec.Name);
+            MemoryCardsAssets.Set(theme, "description", p => p.stringValue = spec.Description);
+            MemoryCardsAssets.SetObject(theme, "preview", worlds[0].cardBack);
+            theme.worlds = new List<CardWorld>(worlds);
+            theme.faces = new List<Sprite>(faces);
+
+            theme.special.wild = MemoryCardsArtBuilder.Card(spec, "Wild");
+            theme.special.bomb = MemoryCardsArtBuilder.Card(spec, "Bomb");
+            theme.special.clock = MemoryCardsArtBuilder.Card(spec, "Clock");
+            theme.special.peek = MemoryCardsArtBuilder.Card(spec, "Peek");
+
+            theme.card.front = MemoryCardsArtBuilder.Card(spec, "CardFront");
+            theme.card.shadow = MemoryCardsArtBuilder.Card(spec, "CardShadow");
+            theme.card.glow = MemoryCardsArtBuilder.Card(spec, "CardGlow");
+            theme.card.badge = MemoryCardsArtBuilder.Card(spec, "Badge");
+            theme.card.ice = MemoryCardsArtBuilder.Card(spec, "Ice");
+            theme.card.crackedIce = MemoryCardsArtBuilder.Card(spec, "IceCracked");
+            theme.card.defaultBack = worlds[0].cardBack;
+
+            theme.kit.primary = MemoryCardsArtBuilder.Kit(spec, "Primary");
+            theme.kit.secondary = MemoryCardsArtBuilder.Kit(spec, "Secondary");
+            theme.kit.accent = MemoryCardsArtBuilder.Kit(spec, "Accent");
+            theme.kit.danger = MemoryCardsArtBuilder.Kit(spec, "Danger");
+            theme.kit.neutral = MemoryCardsArtBuilder.Kit(spec, "Neutral");
+            theme.kit.roundPrimary = MemoryCardsArtBuilder.Kit(spec, "RoundPrimary");
+            theme.kit.roundSecondary = MemoryCardsArtBuilder.Kit(spec, "RoundSecondary");
+            theme.kit.roundAccent = MemoryCardsArtBuilder.Kit(spec, "RoundAccent");
+            theme.kit.roundDanger = MemoryCardsArtBuilder.Kit(spec, "RoundDanger");
+            theme.kit.roundNeutral = MemoryCardsArtBuilder.Kit(spec, "RoundNeutral");
+            theme.kit.inputField = MemoryCardsArtBuilder.Kit(spec, "InputField");
+            theme.kit.panel = MemoryCardsArtBuilder.Ui(spec, "Panel");
+            theme.kit.panelDepth = MemoryCardsArtBuilder.Ui(spec, "PanelDepth");
+            theme.kit.pill = MemoryCardsArtBuilder.Ui(spec, "Pill");
+            theme.kit.disc = MemoryCardsArtBuilder.Ui(spec, "Disc");
+            theme.kit.soft = MemoryCardsArtBuilder.Ui(spec, "Soft");
+            theme.kit.tintPanel = MemoryCardsArtBuilder.Tint(spec, "Panel");
+            theme.kit.tintPill = MemoryCardsArtBuilder.Tint(spec, "Pill");
+            theme.kit.tintDisc = MemoryCardsArtBuilder.Tint(spec, "Disc");
+
+            theme.icons.pause = MemoryCardsArtBuilder.Icon(spec, "Pause");
+            theme.icons.settings = MemoryCardsArtBuilder.Icon(spec, "Settings");
+            theme.icons.power = MemoryCardsArtBuilder.Icon(spec, "Power");
+            theme.icons.home = MemoryCardsArtBuilder.Icon(spec, "Home");
+            theme.icons.levels = MemoryCardsArtBuilder.Icon(spec, "Levels");
+            theme.icons.padlock = MemoryCardsArtBuilder.Icon(spec, "Lock");
+            theme.icons.heart = MemoryCardsArtBuilder.Icon(spec, "Heart");
+            theme.icons.clock = MemoryCardsArtBuilder.Icon(spec, "Clock");
+            theme.icons.stopwatch = MemoryCardsArtBuilder.Icon(spec, "Stopwatch");
+            theme.icons.moves = MemoryCardsArtBuilder.Icon(spec, "Moves");
+            theme.icons.check = MemoryCardsArtBuilder.Icon(spec, "Check");
+            theme.icons.cross = MemoryCardsArtBuilder.Icon(spec, "Cross");
+            theme.icons.play = MemoryCardsArtBuilder.Icon(spec, "Play");
+            theme.icons.retry = MemoryCardsArtBuilder.Icon(spec, "Retry");
+            theme.icons.next = MemoryCardsArtBuilder.Icon(spec, "Next");
+            theme.icons.back = MemoryCardsArtBuilder.Icon(spec, "Back");
+            theme.icons.infinity = MemoryCardsArtBuilder.Icon(spec, "Infinity");
+            theme.icons.sliders = MemoryCardsArtBuilder.Icon(spec, "Sliders");
+            theme.icons.flag = MemoryCardsArtBuilder.Icon(spec, "Flag");
+            theme.icons.cards = MemoryCardsArtBuilder.Icon(spec, "Cards");
+            theme.icons.paw = MemoryCardsArtBuilder.Icon(spec, "Paw");
+            theme.icons.star = MemoryCardsArtBuilder.Icon(spec, "Star");
+            theme.icons.heartFull = MemoryCardsArtBuilder.Icon(spec, "HeartFull");
+            theme.icons.heartEmpty = MemoryCardsArtBuilder.Icon(spec, "HeartEmpty");
+
+            theme.hud.starFull = MemoryCardsArtBuilder.Kit(spec, "StarFull");
+            theme.hud.starEmpty = MemoryCardsArtBuilder.Kit(spec, "StarEmpty");
+            theme.hud.goalDone = MemoryCardsArtBuilder.Kit(spec, "GoalDone");
+            theme.hud.goalMissed = MemoryCardsArtBuilder.Kit(spec, "GoalMissed");
+            // In LevelMode order: classic, time attack, survival, move limit, parade, endless, free play.
+            theme.hud.modeIcons = new List<Sprite>
+            {
+                theme.icons.cards, theme.icons.stopwatch, theme.icons.heart, theme.icons.moves, theme.icons.flag, theme.icons.infinity, theme.icons.sliders
+            };
+
+            theme.title.words = spec.TitleWords;
+            theme.title.subtitle = spec.Subtitle;
+            theme.title.gradientTop = spec.GradientTop;
+            theme.title.gradientBottom = spec.GradientBottom;
+            theme.title.ornament = MemoryCardsArtBuilder.Ui(spec, spec.Ornament);
+            theme.title.ornamentColor = spec.OrnamentColor;
+            theme.title.mascots = spec.Mascots.Select(name => MemoryCardsArtBuilder.Face(spec, name)).ToList();
+
+            TMP_FontAssetOf(theme, spec);
+            spec.Palette(theme.palette);
+
+            theme.backdrop.pattern = MemoryCardsArtBuilder.Pattern(spec);
+            theme.backdrop.patternColor = spec.PatternColor;
+            theme.backdrop.patternTileSize = 300f;
+            theme.backdrop.vignette = MemoryCardsArtBuilder.Ui(spec, "Soft");
+            theme.backdrop.vignetteColor = spec.VignetteColor;
+
+            theme.particles.spark = MemoryCardsArtBuilder.Particle(spec, "Spark");
+            theme.particles.star = MemoryCardsArtBuilder.Particle(spec, "Star");
+            theme.particles.circle = MemoryCardsArtBuilder.Particle(spec, "Circle");
+            theme.particles.confetti = MemoryCardsArtBuilder.Particle(spec, "Confetti");
+            theme.particles.shard = MemoryCardsArtBuilder.Particle(spec, "Shard");
+            theme.particles.wildColors = new List<Color>(spec.WildColors);
+            spec.Words(theme.words);
+
+            // The shared menu is not used by this game; its skin still carries the look, should a scene install it.
+            MenuSkin menu = theme.Menu;
+            menu.backdrop = theme.kit.panel;
+            menu.backdropColor = theme.palette.dim;
+            menu.window = theme.kit.panelDepth;
+            menu.windowColor = Color.white;
+            menu.settingsWindow = theme.kit.panelDepth;
+            menu.headerBanner = theme.kit.pill;
+            menu.rowsBackground = theme.kit.panel;
+            menu.rowsColor = Color.white;
+            menu.rowBackground = theme.kit.pill;
+            menu.rowColor = Color.white;
+            menu.button = theme.kit.primary;
+            menu.buttonHover = theme.kit.accent;
+            menu.buttonPressed = theme.kit.secondary;
+            menu.buttonDisabled = theme.kit.neutral;
+            menu.arrowButton = theme.kit.roundSecondary;
+            menu.track = theme.kit.pill;
+            menu.fill = theme.kit.pill;
+            menu.fillColor = theme.palette.gold;
+            menu.knob = theme.kit.disc;
+            menu.checkBox = theme.kit.disc;
+            menu.checkMark = theme.icons.check;
+            menu.headerColor = theme.palette.light;
+            menu.textColor = theme.palette.ink;
+            menu.valueColor = theme.palette.softInk;
+            menu.buttonTextColor = theme.palette.buttonText;
+            menu.errorColor = theme.palette.bad;
+        }
+
+        /// <summary>The fonts of a theme and the materials its labels are drawn with.</summary>
+        private static void TMP_FontAssetOf(MemoryCardsTheme theme, ThemeSpec spec)
+        {
+            TMPro.TMP_FontAsset body = MemoryCardsArtBuilder.Font(spec.BodyFont);
+            TMPro.TMP_FontAsset title = MemoryCardsArtBuilder.Font(spec.TitleFont);
+            if (body == null || title == null)
+            {
+                throw new System.InvalidOperationException($"Memory Cards: the fonts of the {spec.Name} theme are missing; run Rebuild Art first.");
+            }
+            theme.Fonts.body = body;
+            theme.Fonts.bodyMaterial = body.material;
+            theme.Fonts.title = title;
+            theme.Fonts.titleMaterial = MemoryCardsArtBuilder.FontMaterial(spec.TitleFont, "Title");
+            theme.text.outline = MemoryCardsArtBuilder.FontMaterial(spec.BodyFont, "Outline");
+            theme.text.shadow = MemoryCardsArtBuilder.FontMaterial(spec.BodyFont, "Shadow");
+            theme.text.title = theme.Fonts.titleMaterial;
         }
 
         private static MemoryCardsLevel BuildLevel(int index, LevelSpec spec)
@@ -346,7 +545,8 @@ namespace Portfolio.MemoryCards.EditorTools
             }
         }
 
-        private static void BuildGameDefinition()
+        /// <summary>The launcher entry: its words and icon, and the themes it can show (the first is the one it starts with).</summary>
+        private static void BuildGameDefinition(List<MemoryCardsTheme> themes)
         {
             var definition = MemoryCardsAssets.Load<GameDefinition>(GameDefinitionPath);
             if (definition == null)
@@ -359,7 +559,16 @@ namespace Portfolio.MemoryCards.EditorTools
                 MemoryCardsAssets.Set(definition, "description", p => p.stringValue =
                     "Match cute critters across three worlds and 18 levels: memorize, beat the clock, dodge bombs, play wild cards, crack ice and follow the parade.");
                 MemoryCardsAssets.SetObject(definition, "icon", MemoryCardsAssets.LoadSprite("Art/LauncherIcon.png"));
+                if (themes.Count > 0)
+                {
+                    definition.Theme = themes[0];
+                    foreach (MemoryCardsTheme theme in themes)
+                    {
+                        definition.AddTheme(theme);
+                    }
+                }
             });
+            GameThemes.ForgetDefinitions();
         }
     }
 }

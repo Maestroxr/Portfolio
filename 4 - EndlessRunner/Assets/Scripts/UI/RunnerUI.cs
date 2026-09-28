@@ -96,6 +96,14 @@ namespace Portfolio.EndlessRunner
         [SerializeField] internal Sprite heartFull;
         [SerializeField] internal Sprite heartEmpty;
 
+        [Header("Theme")]
+        [SerializeField] internal TMP_Text logoEndless;
+        [SerializeField] internal TMP_Text logoRunner;
+        [Tooltip("The film grain over the screen; it flickers while its colour is visible.")]
+        [SerializeField] internal Image grain;
+        [Tooltip("The shared menu's re-skinning, applied before the pause menu buttons get their colours.")]
+        [SerializeField] internal ThemedMenu themedMenu;
+
         private BaseGameState shownState = BaseGameState.Initialization;
         private readonly List<LevelSummary> summaries = new List<LevelSummary>();
         private bool endlessRun;
@@ -119,8 +127,12 @@ namespace Portfolio.EndlessRunner
         private float resetConfirmUntil = -1f;
         private Vector2 heartsRest;
         private float resultStatsSize = 36f;
+        private RunnerGameTheme look;
 
         private RunnerGameManager Runner => Manager as RunnerGameManager;
+
+        /// <summary>The theme the interface is drawn in, once the manager applied one.</summary>
+        public RunnerGameTheme Look => look;
 
         protected override void Awake()
         {
@@ -176,6 +188,136 @@ namespace Portfolio.EndlessRunner
                 button.onClick.AddListener(action);
             }
         }
+
+        #region Theme
+
+        /// <summary>
+        /// Draws the interface in the look of <paramref name="theme"/>: the star and heart sprites, the gradients of
+        /// the title, the pause menu's skin and the colours of its buttons, and the fonts of the settings fields. The
+        /// panels, icons and texts of the canvas follow the theme by themselves (they carry themed components); the
+        /// level select is drawn again when the manager shows it.
+        /// </summary>
+        public void ApplyTheme(RunnerGameTheme theme)
+        {
+            if (theme == null)
+            {
+                return;
+            }
+            look = theme;
+            InterfaceSprites sprites = theme.Sprites;
+            InterfaceColors colors = theme.Colors;
+            starFull = sprites.star != null ? sprites.star : starFull;
+            starEmpty = sprites.starEmpty != null ? sprites.starEmpty : starEmpty;
+            heartFull = sprites.heart != null ? sprites.heart : heartFull;
+            heartEmpty = sprites.heartEmpty != null ? sprites.heartEmpty : heartEmpty;
+            Gradient(logoEndless, colors.logoEndlessTop, colors.logoEndlessBottom);
+            Gradient(logoRunner, colors.logoRunnerTop, colors.logoRunnerBottom);
+            if (themedMenu != null)
+            {
+                themedMenu.Refresh();
+            }
+            foreach (Button button in GetComponentsInChildren<Button>(true))
+            {
+                // The skin draws every button in the theme's button shape; the pause menu's four get their own colours,
+                // the rest (the settings panel's, the arrows of the choices) the theme's neutral one.
+                if (button != PauseButton)
+                {
+                    Tint(button, colors.menuSettings);
+                }
+            }
+            Tint(ReturnToGame, colors.menuResume);
+            Tint(StartNewGame, colors.menuRestart);
+            Tint(SettingsButton, colors.menuSettings);
+            Tint(ExitButton, colors.menuQuit);
+            foreach (TMP_InputField field in GetComponentsInChildren<TMP_InputField>(true))
+            {
+                theme.Fonts.Apply(field.textComponent, TextRole.Body);
+                theme.Fonts.Apply(field.placeholder as TMP_Text, TextRole.Body);
+            }
+            StyleSettingsPanel(colors);
+            Transform input = MenuSkin.Find(transform, "InputPanel");
+            if (input != null)
+            {
+                // The labels and values of the settings rows, which the skin does not reach in this game's layout.
+                foreach (TMP_Text text in input.GetComponentsInChildren<TMP_Text>(true))
+                {
+                    if (text.GetComponentInParent<TMP_InputField>(true) == null && text.GetComponentInParent<Button>(true) == null)
+                    {
+                        theme.Fonts.Apply(text, TextRole.Body);
+                        if (MenuSkin.IsSet(theme.Menu.textColor))
+                        {
+                            text.color = text.name == "Value" && MenuSkin.IsSet(theme.Menu.valueColor) ? theme.Menu.valueColor : theme.Menu.textColor;
+                        }
+                    }
+                }
+            }
+            shownHearts = shownMaxHearts = -1;
+        }
+
+        /// <summary><paramref name="text"/> in the words of the theme the interface is drawn in.</summary>
+        private string Say(string text)
+        {
+            return look != null ? look.Say(text) : text;
+        }
+
+        /// <summary>
+        /// The settings panel's own parts the menu skin does not reach: the boxes and words of the input fields and the
+        /// legacy words of its buttons. Their own colours are kept the first time, and come back with a theme that
+        /// leaves these colours clear.
+        /// </summary>
+        private void StyleSettingsPanel(InterfaceColors colors)
+        {
+            foreach (TMP_InputField field in GetComponentsInChildren<TMP_InputField>(true))
+            {
+                Recolor(field.targetGraphic, colors.field);
+                Recolor(field.textComponent, colors.fieldText);
+            }
+            foreach (Text words in GetComponentsInChildren<Text>(true))
+            {
+                Button owner = words.GetComponentInParent<Button>(true);
+                // The custom settings button's words are green or red by the state of the settings: the panel's own.
+                if (owner != null && owner.name != "Custom Settings")
+                {
+                    Recolor(words, colors.menuText);
+                }
+            }
+        }
+
+        private readonly Dictionary<Graphic, Color> ownColors = new Dictionary<Graphic, Color>();
+
+        private void Recolor(Graphic graphic, Color color)
+        {
+            if (graphic == null)
+            {
+                return;
+            }
+            if (!ownColors.TryGetValue(graphic, out Color own))
+            {
+                own = graphic.color;
+                ownColors[graphic] = own;
+            }
+            graphic.color = MenuSkin.IsSet(color) ? color : own;
+        }
+
+        private static void Gradient(TMP_Text text, Color top, Color bottom)
+        {
+            if (text == null)
+            {
+                return;
+            }
+            text.enableVertexGradient = true;
+            text.colorGradient = new VertexGradient(top, top, bottom, bottom);
+        }
+
+        private static void Tint(Button button, Color color)
+        {
+            if (button != null && button.targetGraphic != null)
+            {
+                button.targetGraphic.color = color;
+            }
+        }
+
+        #endregion
 
         #region Screens
 
@@ -272,7 +414,7 @@ namespace Portfolio.EndlessRunner
                 card.gameObject.SetActive(used);
                 if (used)
                 {
-                    card.Show(summaries[i], summaries[i].Index == selected, starFull, starEmpty);
+                    card.Show(summaries[i], summaries[i].Index == selected, starFull, starEmpty, look != null ? look.Colors.locked : (Color?)null);
                 }
             }
             SetLabel(starsTotal, $"{totalStars} / {maxStars}");
@@ -289,16 +431,16 @@ namespace Portfolio.EndlessRunner
             {
                 detailWorld.color = Color.Lerp(summary.Accent, Color.white, 0.35f);
             }
-            SetLabel(detailDescription, summary.Description);
+            SetLabel(detailDescription, Say(summary.Description));
             if (summary.Endless)
             {
                 string best = summary.BestDistance > 0f ? $"Best run: <b>{summary.BestDistance:0} m</b>  ({summary.BestScore} points)" : "No record yet - set one!";
-                SetLabel(detailGoals, $"Run as far as you can.\nThe world changes as you go.\n{best}");
+                SetLabel(detailGoals, Say($"Run as far as you can.\nThe world changes as you go.\n{best}"));
             }
             else
             {
                 SetLabel(detailGoals,
-                    $"- Reach the finish ({summary.Length:0} m)\n- Collect {summary.CoinGoal} coins\n- Finish without a scratch");
+                    Say($"- Reach the finish ({summary.Length:0} m)\n- Collect {summary.CoinGoal} coins\n- Finish without a scratch"));
             }
             for (int i = 0; i < detailStars.Length; i++)
             {
@@ -454,7 +596,7 @@ namespace Portfolio.EndlessRunner
             {
                 return;
             }
-            toastText.text = text;
+            toastText.text = Say(text);
             toastText.color = Color.Lerp(color, Color.white, 0.25f);
             toastText.gameObject.SetActive(true);
             toastTime = 0f;
@@ -462,7 +604,7 @@ namespace Portfolio.EndlessRunner
 
         public void ShowHint(string text)
         {
-            SetLabel(hintText, text);
+            SetLabel(hintText, Say(text));
             hintTime = 0f;
         }
 
@@ -586,6 +728,12 @@ namespace Portfolio.EndlessRunner
                 SetLabel(resultGoals, Tips[UnityEngine.Random.Range(0, Tips.Length)]);
                 resultStarCount = 0;
             }
+            if (look != null)
+            {
+                // The stats, goals and tips in the theme's words.
+                SetLabel(resultStats, Say(resultStats != null ? resultStats.text : string.Empty));
+                SetLabel(resultGoals, Say(resultGoals != null ? resultGoals.text : string.Empty));
+            }
             if (resultStarsRoot != null)
             {
                 resultStarsRoot.gameObject.SetActive(!result.Endless && !result.Online);
@@ -673,6 +821,12 @@ namespace Portfolio.EndlessRunner
 
             curtainAlpha = Mathf.MoveTowards(curtainAlpha, 0f, deltaTime * 2.5f);
             SetAlpha(curtain, curtainAlpha);
+
+            if (grain != null && grain.color.a > 0.001f && Time.frameCount % 3 == 0)
+            {
+                // Film grain: the tiled noise jumps a few pixels every few frames.
+                grain.rectTransform.anchoredPosition = new Vector2(UnityEngine.Random.Range(-12f, 12f), UnityEngine.Random.Range(-12f, 12f));
+            }
 
             if (resetConfirmUntil > 0f && Time.unscaledTime > resetConfirmUntil)
             {

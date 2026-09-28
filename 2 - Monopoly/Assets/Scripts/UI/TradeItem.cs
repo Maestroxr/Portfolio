@@ -44,7 +44,7 @@ namespace Portfolio.Monopoly
             }
             colorBar.color = MonopolyStyle.GroupColor(data.group);
             nameText.text = data.name;
-            detail.text = deed.mortgaged ? $"{MonopolyStyle.Money(data.price)}  <color=#E4002B>mortgaged</color>" : MonopolyStyle.Money(data.price);
+            detail.text = deed.mortgaged ? $"{MonopolyStyle.Money(data.price)}  <color={MonopolyStyle.RedTag}>mortgaged</color>" : MonopolyStyle.Money(data.price);
             changed = onChanged;
             Paint();
         }
@@ -53,7 +53,7 @@ namespace Portfolio.Monopoly
         {
             if (background != null)
             {
-                background.color = IsOn ? MonopolyStyle.Tint(MonopolyStyle.Gold, 0.55f) : Color.white;
+                background.color = IsOn ? MonopolyStyle.Tint(MonopolyStyle.Gold, 0.55f) : MonopolyStyle.Paper;
             }
         }
     }

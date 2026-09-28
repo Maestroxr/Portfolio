@@ -116,6 +116,31 @@ namespace Portfolio.Heroes.UI
             ShowHud(false);
         }
 
+        /// <summary>
+        /// Throws the whole interface away and builds it again from the art of the active theme, the title (and the
+        /// valley behind it) showing again if it showed before. For the title screen and the screens before a scenario
+        /// only: a scenario in progress keeps its interface.
+        /// </summary>
+        public void Rebuild()
+        {
+            if (canvas == null)
+            {
+                return;
+            }
+            bool titleShown = title != null && title.IsShown;
+            title?.Hide();
+            TooltipBox.Hide(this);
+            Destroy(canvas.gameObject);
+            canvas = null;
+            Prepare();
+            if (titleShown && title != null)
+            {
+                title.Show();
+            }
+            cursorSet = false;
+            SetCursor(CursorKind.Default);
+        }
+
         /// <summary>A scenario is starting: the panels are cleared and pointed at it.</summary>
         public void Bind(HeroesGameManager owner)
         {
@@ -769,7 +794,7 @@ namespace Portfolio.Heroes.UI
             }
             cursor = kind;
             cursorSet = true;
-            manager.Art.UseCursor(kind);
+            manager.UseCursor(kind);
         }
 
         /// <summary>The tooltip of what stands on a cell, with its picture; nothing for bare ground.</summary>

@@ -22,6 +22,7 @@ namespace Portfolio.EndlessRunner
         private readonly List<RunnerGameManager.RaceMember> members = new List<RunnerGameManager.RaceMember>();
         private readonly Dictionary<int, int> trackCoins = new Dictionary<int, int>();
         private List<RoomLevelChoice> levelChoices;
+        private RunnerGameTheme choicesTheme;
 
         public RunnerGameManager Runner => BaseManager as RunnerGameManager;
 
@@ -32,17 +33,20 @@ namespace Portfolio.EndlessRunner
         {
             get
             {
-                if (levelChoices != null)
+                // The names are the active theme's; they are made again when the theme changed.
+                if (levelChoices != null && choicesTheme == RunnerGameTheme.Active)
                 {
                     return levelChoices;
                 }
+                choicesTheme = RunnerGameTheme.Active;
                 levelChoices = new List<RoomLevelChoice>();
                 ICampaign campaign = BaseManager != null ? BaseManager.Campaign : null;
                 for (int i = 0; campaign != null && i < campaign.Count; i++)
                 {
                     if (campaign[i] is RunnerLevel level)
                     {
-                        levelChoices.Add(new RoomLevelChoice(i, level.IsEndless ? level.Title : $"{i + 1}. {level.Title} ({level.Length:0} m)"));
+                        string title = RunnerGameTheme.TitleFor(level);
+                        levelChoices.Add(new RoomLevelChoice(i, level.IsEndless ? title : $"{i + 1}. {title} ({level.Length:0} m)"));
                     }
                 }
                 return levelChoices;

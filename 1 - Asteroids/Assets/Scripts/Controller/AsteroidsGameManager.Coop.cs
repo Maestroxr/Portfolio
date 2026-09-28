@@ -351,7 +351,7 @@ namespace Portfolio.Asteroids
             coopWavesCleared = Mathf.Max(coopWavesCleared, wavesCleared);
             if (wave > coopWave && wave > 1 && IsMissionActive)
             {
-                ui?.Announce($"WAVE {wave}", string.Empty, Mission != null && Mission.Theme != null ? Mission.Theme.Accent : Color.cyan);
+                ui?.Announce($"WAVE {wave}", string.Empty, Mission != null ? AsteroidsThemes.Accent(Mission.Theme, Color.cyan) : Color.cyan);
                 sounds?.WaveStart();
             }
             coopWave = Mathf.Max(coopWave, wave);

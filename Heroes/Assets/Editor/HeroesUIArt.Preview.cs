@@ -1,6 +1,7 @@
 using System.IO;
 using Portfolio.Heroes.UI;
 using TMPro;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.UI;
@@ -17,10 +18,26 @@ namespace Portfolio.Heroes.EditorTools
     {
         private const int PreviewLayer = 31;
 
-        public static void Preview(HeroesArt art, string file)
+        /// <summary>Draws the kit of the Grim Realm, in its own colours, into Logs/shots/uikit-grim.png.</summary>
+        [MenuItem("Heroes/Art/Interface Preview (Grim Realm)", false, 44)]
+        public static void PreviewGrimMenu()
+        {
+            HeroesThemeSpec spec = HeroesThemeSpec.GrimRealm;
+            HeroesArt art = HeroesAssets.Load<HeroesArt>(spec.ArtAsset);
+            if (art == null)
+            {
+                Debug.LogWarning($"Heroes: the art of the {spec.DisplayName} theme is not built yet.");
+                return;
+            }
+            Preview(art, Path.Combine(Directory.GetCurrentDirectory(), "Logs", "shots", "uikit-grim.png"), spec.Palette);
+        }
+
+        public static void Preview(HeroesArt art, string file, HeroesTheme.Palette palette = null)
         {
             HeroesArt previous = UIKit.Art;
+            HeroesTheme.Palette colours = HeroesTheme.Palette.Active;
             UIKit.Art = art;
+            HeroesTheme.Palette.Active = palette ?? colours;
             try
             {
                 // The widgets are made in a scene of their own that is thrown away afterwards, so the open scene is not
@@ -30,6 +47,7 @@ namespace Portfolio.Heroes.EditorTools
             finally
             {
                 UIKit.Art = previous;
+                HeroesTheme.Palette.Active = colours;
             }
         }
 

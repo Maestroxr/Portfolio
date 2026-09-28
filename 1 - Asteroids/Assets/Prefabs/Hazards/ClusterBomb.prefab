@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 6581942961187273344}
   - component: {fileID: 1495245776671431627}
   - component: {fileID: 9171526787675213143}
+  - component: {fileID: 4364382372033854997}
   m_Layer: 0
   m_Name: Core
   m_TagString: Untagged
@@ -90,6 +91,21 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &4364382372033854997
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 943383863933654545}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Materials/Beacon
+  slot: 0
 --- !u!1 &2890940387551645234
 GameObject:
   m_ObjectHideFlags: 0
@@ -101,6 +117,8 @@ GameObject:
   - component: {fileID: 5849838318637350254}
   - component: {fileID: 2516559414756064773}
   - component: {fileID: 8348848024429437331}
+  - component: {fileID: 7578359069340312265}
+  - component: {fileID: 1048164063393436214}
   m_Layer: 0
   m_Name: Model
   m_TagString: Untagged
@@ -180,6 +198,35 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &7578359069340312265
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2890940387551645234}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: StarSparrow/Materials/BonusContent/Mine Sample 2
+  slot: 0
+--- !u!114 &1048164063393436214
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2890940387551645234}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68a8cc4438b7cdf40b6a35c7fa61b5cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedMesh
+  game: 0
+  mesh: StarSparrow/Meshes/BonusContent/MinesSample#SpaceMine11
 --- !u!1 &3911017174152698110
 GameObject:
   m_ObjectHideFlags: 0
@@ -267,6 +314,7 @@ GameObject:
   - component: {fileID: 3971697441006782598}
   - component: {fileID: 662301768196885102}
   - component: {fileID: 4523884190518698580}
+  - component: {fileID: 417543417512198123}
   m_Layer: 0
   m_Name: Range
   m_TagString: Untagged
@@ -346,6 +394,21 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &417543417512198123
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6267106253992922105}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616fa585a683d634085be491480f3d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.ThemedRenderer
+  game: 0
+  material: Materials/DangerRing
+  slot: 0
 --- !u!1 &7700757728186322709
 GameObject:
   m_ObjectHideFlags: 0

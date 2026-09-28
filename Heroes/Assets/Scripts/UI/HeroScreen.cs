@@ -92,7 +92,7 @@ namespace Portfolio.Heroes.UI
             TextMeshProUGUI expCaption = UIKit.Label(area, "ExperienceCaption", $"{UIKit.Glyph("experience")} Experience", 17f, UIKit.Dim,
                 TextAlignmentOptions.BottomLeft);
             Beside((RectTransform)expCaption.transform, 82f, 24f);
-            experience = UIKit.Meter(area, "Experience", new Color(0.9f, 0.74f, 0.32f));
+            experience = UIKit.Meter(area, "Experience", HeroesTheme.Palette.Active.Accent(new Color(0.9f, 0.74f, 0.32f)));
             RectTransform meter = (RectTransform)experience.transform.parent;
             meter.anchorMin = new Vector2(0f, 1f);
             meter.anchorMax = new Vector2(1f, 1f);
