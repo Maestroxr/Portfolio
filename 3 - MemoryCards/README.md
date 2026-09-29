@@ -209,6 +209,10 @@ both (the content builder sets them; `Gamebox > Themes > Choose...` or the theme
 Players pick a look with the theme button of the game's entry in the launcher or with the **Look** row of the settings
 panel (the settings button of the level select, or Settings in the pause menu); the pick is remembered on the device.
 `-gamebox-theme "After Dark"` picks a theme for one run of a development player or a tour.
+Each theme carries a picture from the game for the launcher's card (`Settings/Themes/Screenshots/`, taken by BaseGame's
+screenshot tour, `-gamebox-screenshots <folder>`): the board is interface here, so the manager poses for it itself
+(`MemoryCardsGameManager.PoseForScreenshot`, in `MemoryCardsGameManager.Screenshot.cs`): it deals the first level,
+turns half of the cards face up in a checkerboard and hides the HUD, the banners and the tips.
 
 **What changes when.** A theme change redraws the level select, the menus, the HUD, the backdrop and the world at once,
 and the backs and frames of the cards on the board; the faces of a board in play stay until the next deal. A saved game

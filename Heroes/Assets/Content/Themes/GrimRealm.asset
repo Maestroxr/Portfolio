@@ -15,6 +15,7 @@ MonoBehaviour:
   displayName: Grim Realm
   description: 'A darker realm: overcast skies, weathered armies, mud and ash, black leather and cold iron.'
   preview: {fileID: 21300000, guid: 59457d54ec870f14ab4ade9d6064eb6c, type: 3}
+  screenshot: {fileID: 21300000, guid: 8fae8ad89d3bbf141911e7d464d84210, type: 3}
   fonts:
     body: {fileID: 11400000, guid: 3fa20b8cbcd85fb4999176088d851f92, type: 2}
     bodyMaterial: {fileID: 2100000, guid: 7f0025b3ca2b4a548a65ac6682cd12d3, type: 2}
@@ -37,6 +38,9 @@ MonoBehaviour:
     buttonPressed: {fileID: 21300000, guid: f103183283cb35e46b0abead753f3b97, type: 3}
     buttonDisabled: {fileID: 21300000, guid: a236b5a658cc6a640b255ff412a339ea, type: 3}
     arrowButton: {fileID: 21300000, guid: 826d9136c0d72864a9aca6c9c4c867b0, type: 3}
+    inputBox: {fileID: 0}
+    inputColor: {r: 0, g: 0, b: 0, a: 0}
+    inputTextColor: {r: 0, g: 0, b: 0, a: 0}
     track: {fileID: 21300000, guid: c2f19578732142740af7938647a297ca, type: 3}
     fill: {fileID: 21300000, guid: 2ef4ca7698fe1464f8ffd38944a70382, type: 3}
     fillColor: {r: 0.76, g: 0.8, b: 0.88, a: 1}
@@ -48,6 +52,25 @@ MonoBehaviour:
     valueColor: {r: 0.76, g: 0.8, b: 0.88, a: 1}
     buttonTextColor: {r: 0.86, g: 0.84, b: 0.78, a: 1}
     errorColor: {r: 0.85, g: 0.3, b: 0.25, a: 1}
+  lobby:
+    font: {fileID: 0}
+    bodyFont: {fileID: 0}
+    dim: {r: 0, g: 0, b: 0, a: 0}
+    window: {r: 0, g: 0, b: 0, a: 0}
+    row: {r: 0, g: 0, b: 0, a: 0}
+    accent: {r: 0, g: 0, b: 0, a: 0}
+    good: {r: 0, g: 0, b: 0, a: 0}
+    warn: {r: 0, g: 0, b: 0, a: 0}
+    text: {r: 0, g: 0, b: 0, a: 0}
+    muted: {r: 0, g: 0, b: 0, a: 0}
+    buttonText: {r: 0, g: 0, b: 0, a: 0}
+    windowSprite: {fileID: 0}
+    rowSprite: {fileID: 0}
+    buttonSprite: {fileID: 0}
+    inputSprite: {fileID: 0}
+    tileSprites: 0
+    replaceSprites: 0
+    spriteTint: -1
   slots:
     sprites: []
     materials: []

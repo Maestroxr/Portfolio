@@ -15,6 +15,7 @@ MonoBehaviour:
   displayName: Galactic Trade
   description: 'A space station trading floor: a dark board with glowing lanes, holographic cards, spacecraft tokens and domes and towers with lit windows.'
   preview: {fileID: 21300000, guid: e51a50b2a8d3e3549bef31518744bcba, type: 3}
+  screenshot: {fileID: 21300000, guid: b3b03104095b65148b2b4e9d94b94570, type: 3}
   fonts:
     body: {fileID: 11400000, guid: c210b065f6b4916418734e517568696a, type: 2}
     bodyMaterial: {fileID: 3851310824078109650, guid: c210b065f6b4916418734e517568696a, type: 2}
@@ -37,6 +38,9 @@ MonoBehaviour:
     buttonPressed: {fileID: 21300000, guid: 773edbb392815fc45a80cd2060f2fa0a, type: 3}
     buttonDisabled: {fileID: 21300000, guid: 773edbb392815fc45a80cd2060f2fa0a, type: 3}
     arrowButton: {fileID: 21300000, guid: 78125b60406104340b15c0d9acf6a8cb, type: 3}
+    inputBox: {fileID: 0}
+    inputColor: {r: 0, g: 0, b: 0, a: 0}
+    inputTextColor: {r: 0, g: 0, b: 0, a: 0}
     track: {fileID: 21300000, guid: 773edbb392815fc45a80cd2060f2fa0a, type: 3}
     fill: {fileID: 21300000, guid: 773edbb392815fc45a80cd2060f2fa0a, type: 3}
     fillColor: {r: 0.27058825, g: 1, b: 0.65882355, a: 1}
@@ -48,6 +52,25 @@ MonoBehaviour:
     valueColor: {r: 0.54509807, g: 0.6392157, b: 0.78039217, a: 1}
     buttonTextColor: {r: 0.9019608, g: 0.95686275, b: 1, a: 1}
     errorColor: {r: 1, g: 0.23921569, b: 0.43137255, a: 1}
+  lobby:
+    font: {fileID: 0}
+    bodyFont: {fileID: 0}
+    dim: {r: 0, g: 0, b: 0, a: 0}
+    window: {r: 0, g: 0, b: 0, a: 0}
+    row: {r: 0, g: 0, b: 0, a: 0}
+    accent: {r: 0, g: 0, b: 0, a: 0}
+    good: {r: 0, g: 0, b: 0, a: 0}
+    warn: {r: 0, g: 0, b: 0, a: 0}
+    text: {r: 0, g: 0, b: 0, a: 0}
+    muted: {r: 0, g: 0, b: 0, a: 0}
+    buttonText: {r: 0, g: 0, b: 0, a: 0}
+    windowSprite: {fileID: 0}
+    rowSprite: {fileID: 0}
+    buttonSprite: {fileID: 0}
+    inputSprite: {fileID: 0}
+    tileSprites: 0
+    replaceSprites: 0
+    spriteTint: -1
   slots:
     sprites: []
     materials: []

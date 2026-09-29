@@ -15,6 +15,7 @@ MonoBehaviour:
   displayName: Classic
   description: 'Old gold on dark leather, parchment and clear skies: the game as it was drawn.'
   preview: {fileID: 21300000, guid: 5e84ebc3bfe4eef43b70a7b9dfcc0335, type: 3}
+  screenshot: {fileID: 21300000, guid: 44672b0975034db43b2f1fd84ed8d62f, type: 3}
   fonts:
     body: {fileID: 11400000, guid: bc5e36c3e29424c45b10ea02aec06869, type: 2}
     bodyMaterial: {fileID: 2100000, guid: 7b70f98fe22816e439182eb7e8a1ca18, type: 2}
@@ -37,6 +38,9 @@ MonoBehaviour:
     buttonPressed: {fileID: 21300000, guid: c6bd2b2365c77854eb6a8fc068668151, type: 3}
     buttonDisabled: {fileID: 21300000, guid: 50f721a4eeecf374fadc24a828b62d31, type: 3}
     arrowButton: {fileID: 21300000, guid: 92f4c0a528e3782429c4055971e30bdb, type: 3}
+    inputBox: {fileID: 0}
+    inputColor: {r: 0, g: 0, b: 0, a: 0}
+    inputTextColor: {r: 0, g: 0, b: 0, a: 0}
     track: {fileID: 21300000, guid: 5e5901eb226829c45bf4f829557e3441, type: 3}
     fill: {fileID: 21300000, guid: a4db1aa17c58a31498ff6eef597b00e8, type: 3}
     fillColor: {r: 0.88, g: 0.74, b: 0.4, a: 1}
@@ -48,6 +52,25 @@ MonoBehaviour:
     valueColor: {r: 0.88, g: 0.74, b: 0.4, a: 1}
     buttonTextColor: {r: 0.94, g: 0.9, b: 0.8, a: 1}
     errorColor: {r: 0.92, g: 0.45, b: 0.38, a: 1}
+  lobby:
+    font: {fileID: 0}
+    bodyFont: {fileID: 0}
+    dim: {r: 0, g: 0, b: 0, a: 0}
+    window: {r: 0, g: 0, b: 0, a: 0}
+    row: {r: 0, g: 0, b: 0, a: 0}
+    accent: {r: 0, g: 0, b: 0, a: 0}
+    good: {r: 0, g: 0, b: 0, a: 0}
+    warn: {r: 0, g: 0, b: 0, a: 0}
+    text: {r: 0, g: 0, b: 0, a: 0}
+    muted: {r: 0, g: 0, b: 0, a: 0}
+    buttonText: {r: 0, g: 0, b: 0, a: 0}
+    windowSprite: {fileID: 0}
+    rowSprite: {fileID: 0}
+    buttonSprite: {fileID: 0}
+    inputSprite: {fileID: 0}
+    tileSprites: 0
+    replaceSprites: 0
+    spriteTint: -1
   slots:
     sprites: []
     materials: []

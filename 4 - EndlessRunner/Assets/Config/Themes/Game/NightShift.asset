@@ -15,6 +15,7 @@ MonoBehaviour:
   displayName: Night Shift
   description: 'A courier''s run through the night city: wet streets, the subway, the docks, the highway and the rooftops at dawn.'
   preview: {fileID: 21300000, guid: 49a45a381fa578f47a626ac169fce8fb, type: 3}
+  screenshot: {fileID: 21300000, guid: 6a8d33da501e3954d862a7d154817da3, type: 3}
   fonts:
     body: {fileID: 11400000, guid: 80f7083f931d8844684709f765e8462f, type: 2}
     bodyMaterial: {fileID: 2100000, guid: 852a3cc5101ad234ea27f1a56ea975aa, type: 2}
@@ -37,6 +38,9 @@ MonoBehaviour:
     buttonPressed: {fileID: 21300000, guid: e318fd49262cc0a4eb5c5bd0257120e9, type: 3}
     buttonDisabled: {fileID: 21300000, guid: 3d9d7365b7b16c644bf8a7fcf0de9300, type: 3}
     arrowButton: {fileID: 21300000, guid: 16bb3b04a74c9ea499aebf685ab5f9c0, type: 3}
+    inputBox: {fileID: 0}
+    inputColor: {r: 0, g: 0, b: 0, a: 0}
+    inputTextColor: {r: 0, g: 0, b: 0, a: 0}
     track: {fileID: 21300000, guid: 9886274c57584fe42bc0b8fcab565535, type: 3}
     fill: {fileID: 21300000, guid: 16bb3b04a74c9ea499aebf685ab5f9c0, type: 3}
     fillColor: {r: 1, g: 0.72, b: 0.25, a: 1}
@@ -48,6 +52,25 @@ MonoBehaviour:
     valueColor: {r: 1, g: 0.72, b: 0.25, a: 1}
     buttonTextColor: {r: 1, g: 1, b: 1, a: 1}
     errorColor: {r: 1, g: 0.4, b: 0.3, a: 1}
+  lobby:
+    font: {fileID: 0}
+    bodyFont: {fileID: 0}
+    dim: {r: 0, g: 0, b: 0, a: 0}
+    window: {r: 0, g: 0, b: 0, a: 0}
+    row: {r: 0, g: 0, b: 0, a: 0}
+    accent: {r: 0, g: 0, b: 0, a: 0}
+    good: {r: 0, g: 0, b: 0, a: 0}
+    warn: {r: 0, g: 0, b: 0, a: 0}
+    text: {r: 0, g: 0, b: 0, a: 0}
+    muted: {r: 0, g: 0, b: 0, a: 0}
+    buttonText: {r: 0, g: 0, b: 0, a: 0}
+    windowSprite: {fileID: 0}
+    rowSprite: {fileID: 0}
+    buttonSprite: {fileID: 0}
+    inputSprite: {fileID: 0}
+    tileSprites: 0
+    replaceSprites: 0
+    spriteTint: -1
   slots:
     sprites: []
     materials: []

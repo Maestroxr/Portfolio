@@ -15,6 +15,7 @@ MonoBehaviour:
   displayName: After Dark
   description: 'A grown-up night out: black, gold and deep red, art deco frames, velvet and lace, and a deck of thirty boudoir and burlesque keepsakes.'
   preview: {fileID: 21300000, guid: 75b7d7e949ab103419ffc842b9a1a588, type: 3}
+  screenshot: {fileID: 21300000, guid: b39da799c80360248a3b8a66219dc4f0, type: 3}
   fonts:
     body: {fileID: 11400000, guid: 44061bb9d4d3f4142937e43adf549f9c, type: 2}
     bodyMaterial: {fileID: 5634308896489120375, guid: 44061bb9d4d3f4142937e43adf549f9c, type: 2}
@@ -37,6 +38,9 @@ MonoBehaviour:
     buttonPressed: {fileID: 21300000, guid: b3578d4c39556ed40b2ea45d7ba0ba93, type: 3}
     buttonDisabled: {fileID: 21300000, guid: b28a74c3fabd33d43a9ec932fa699311, type: 3}
     arrowButton: {fileID: 21300000, guid: c874cb3e1fce88d44ab84a7bb5ec2211, type: 3}
+    inputBox: {fileID: 0}
+    inputColor: {r: 0, g: 0, b: 0, a: 0}
+    inputTextColor: {r: 0, g: 0, b: 0, a: 0}
     track: {fileID: 21300000, guid: 4c440d61e8374d345808abab3da2243a, type: 3}
     fill: {fileID: 21300000, guid: 4c440d61e8374d345808abab3da2243a, type: 3}
     fillColor: {r: 0.9529412, g: 0.85882354, b: 0.54901963, a: 1}
@@ -48,6 +52,25 @@ MonoBehaviour:
     valueColor: {r: 0.7254902, g: 0.627451, b: 0.47843137, a: 1}
     buttonTextColor: {r: 0.95686275, g: 0.90588236, b: 0.8117647, a: 1}
     errorColor: {r: 1, g: 0.36078432, b: 0.43137255, a: 1}
+  lobby:
+    font: {fileID: 0}
+    bodyFont: {fileID: 0}
+    dim: {r: 0, g: 0, b: 0, a: 0}
+    window: {r: 0, g: 0, b: 0, a: 0}
+    row: {r: 0, g: 0, b: 0, a: 0}
+    accent: {r: 0, g: 0, b: 0, a: 0}
+    good: {r: 0, g: 0, b: 0, a: 0}
+    warn: {r: 0, g: 0, b: 0, a: 0}
+    text: {r: 0, g: 0, b: 0, a: 0}
+    muted: {r: 0, g: 0, b: 0, a: 0}
+    buttonText: {r: 0, g: 0, b: 0, a: 0}
+    windowSprite: {fileID: 0}
+    rowSprite: {fileID: 0}
+    buttonSprite: {fileID: 0}
+    inputSprite: {fileID: 0}
+    tileSprites: 0
+    replaceSprites: 0
+    spriteTint: -1
   slots:
     sprites: []
     materials: []

@@ -15,6 +15,7 @@ MonoBehaviour:
   displayName: Classic
   description: 'The original look: thirty cute critters, sunny worlds and the rounded Kenney interface.'
   preview: {fileID: 21300000, guid: 3d7eb40c4f4a82e40bd525ec217cce7d, type: 3}
+  screenshot: {fileID: 21300000, guid: 07f243d316ba3c94cb5c35a63286de13, type: 3}
   fonts:
     body: {fileID: 11400000, guid: b9a4bf8ac25744741b294782bb52975f, type: 2}
     bodyMaterial: {fileID: -3538276870722313020, guid: b9a4bf8ac25744741b294782bb52975f, type: 2}
@@ -37,6 +38,9 @@ MonoBehaviour:
     buttonPressed: {fileID: 21300000, guid: 96dfada9c7db48e59607d9512e7f1551, type: 3}
     buttonDisabled: {fileID: 21300000, guid: 2cc8b31ae1e64dc7a8f33053041b250b, type: 3}
     arrowButton: {fileID: 21300000, guid: 79064d3e19424d40b205c3f32edfd042, type: 3}
+    inputBox: {fileID: 0}
+    inputColor: {r: 0, g: 0, b: 0, a: 0}
+    inputTextColor: {r: 0, g: 0, b: 0, a: 0}
     track: {fileID: 21300000, guid: d428140f6111a194abd7bf497d523b7f, type: 3}
     fill: {fileID: 21300000, guid: d428140f6111a194abd7bf497d523b7f, type: 3}
     fillColor: {r: 1, g: 0.7882353, b: 0.2, a: 1}
@@ -48,6 +52,25 @@ MonoBehaviour:
     valueColor: {r: 0.41960785, g: 0.43529412, b: 0.5254902, a: 1}
     buttonTextColor: {r: 1, g: 1, b: 1, a: 1}
     errorColor: {r: 1, g: 0.38, b: 0.32, a: 1}
+  lobby:
+    font: {fileID: 0}
+    bodyFont: {fileID: 0}
+    dim: {r: 0, g: 0, b: 0, a: 0}
+    window: {r: 0, g: 0, b: 0, a: 0}
+    row: {r: 0, g: 0, b: 0, a: 0}
+    accent: {r: 0, g: 0, b: 0, a: 0}
+    good: {r: 0, g: 0, b: 0, a: 0}
+    warn: {r: 0, g: 0, b: 0, a: 0}
+    text: {r: 0, g: 0, b: 0, a: 0}
+    muted: {r: 0, g: 0, b: 0, a: 0}
+    buttonText: {r: 0, g: 0, b: 0, a: 0}
+    windowSprite: {fileID: 0}
+    rowSprite: {fileID: 0}
+    buttonSprite: {fileID: 0}
+    inputSprite: {fileID: 0}
+    tileSprites: 0
+    replaceSprites: 0
+    spriteTint: -1
   slots:
     sprites: []
     materials: []

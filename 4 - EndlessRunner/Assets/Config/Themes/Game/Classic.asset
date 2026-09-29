@@ -15,6 +15,7 @@ MonoBehaviour:
   displayName: Classic
   description: 'The bright cartoon runner: five sunny, snowy, moonlit and fiery worlds, a kid in a hoodie and gold coins.'
   preview: {fileID: 21300000, guid: ff0f2497ed1c95744a62c6ef5b8f771c, type: 3}
+  screenshot: {fileID: 21300000, guid: 4e34c6947b6bb8b4c997f58e9c043b79, type: 3}
   fonts:
     body: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
     bodyMaterial: {fileID: 2100000, guid: 4ea317a7d7c90804d8e520c3fe793d14, type: 2}
@@ -37,6 +38,9 @@ MonoBehaviour:
     buttonPressed: {fileID: 21300000, guid: 7d442ea7b18d7f04fbabfcafebff1094, type: 3}
     buttonDisabled: {fileID: 21300000, guid: 704782ec40aa74c44ba8859bc6487e90, type: 3}
     arrowButton: {fileID: 21300000, guid: 6e235f3200219e3459e6a4ff7088ab8f, type: 3}
+    inputBox: {fileID: 0}
+    inputColor: {r: 0, g: 0, b: 0, a: 0}
+    inputTextColor: {r: 0, g: 0, b: 0, a: 0}
     track: {fileID: 21300000, guid: f1114c4144525d94d8f3d26a8eb20257, type: 3}
     fill: {fileID: 21300000, guid: 6e235f3200219e3459e6a4ff7088ab8f, type: 3}
     fillColor: {r: 1, g: 0.83, b: 0.26, a: 1}
@@ -48,6 +52,25 @@ MonoBehaviour:
     valueColor: {r: 1, g: 0.83, b: 0.26, a: 1}
     buttonTextColor: {r: 1, g: 1, b: 1, a: 1}
     errorColor: {r: 1, g: 0.45, b: 0.4, a: 1}
+  lobby:
+    font: {fileID: 0}
+    bodyFont: {fileID: 0}
+    dim: {r: 0, g: 0, b: 0, a: 0}
+    window: {r: 0, g: 0, b: 0, a: 0}
+    row: {r: 0, g: 0, b: 0, a: 0}
+    accent: {r: 0, g: 0, b: 0, a: 0}
+    good: {r: 0, g: 0, b: 0, a: 0}
+    warn: {r: 0, g: 0, b: 0, a: 0}
+    text: {r: 0, g: 0, b: 0, a: 0}
+    muted: {r: 0, g: 0, b: 0, a: 0}
+    buttonText: {r: 0, g: 0, b: 0, a: 0}
+    windowSprite: {fileID: 0}
+    rowSprite: {fileID: 0}
+    buttonSprite: {fileID: 0}
+    inputSprite: {fileID: 0}
+    tileSprites: 0
+    replaceSprites: 0
+    spriteTint: -1
   slots:
     sprites: []
     materials: []
@@ -155,3 +178,8 @@ MonoBehaviour:
     menuRestart: {r: 0.98, g: 0.58, b: 0.2, a: 1}
     menuSettings: {r: 0.26, g: 0.55, b: 0.95, a: 1}
     menuQuit: {r: 0.9, g: 0.32, b: 0.32, a: 1}
+    menuText: {r: 1, g: 1, b: 1, a: 0}
+    field: {r: 1, g: 1, b: 1, a: 0}
+    fieldText: {r: 1, g: 1, b: 1, a: 0}
+  levels: []
+  words: []
