@@ -14,8 +14,9 @@ namespace Portfolio.Heroes
     /// game outside its battles and saves a screenshot of each into the folder, then quits; without the argument it
     /// does nothing. It looks at the title, the credits and the settings, the campaign and the skirmish maps, then
     /// starts the first chapter and looks at the adventure screen, what the pointer shows over the map and the
-    /// interface, a few moves, the log, the hero's book, the town with its market and tavern, the questions the rules
-    /// ask, the next day, the pause menu, the results of a game, the online lobby and the title it goes back to. To have
+    /// interface, a few moves, the log, the hero's way home into his town, his book, the town with its market and
+    /// tavern, the questions the rules ask, the next day, the pause menu, the results of a game, the online lobby and
+    /// the title it goes back to. To have
     /// something to show it gives the hero skills, spells and artifacts and the town a few buildings, behind the rules'
     /// back; the questions and the results are shown without being asked.
     /// </summary>
@@ -74,6 +75,7 @@ namespace Portfolio.Heroes
             manager.Settings = own;
             yield return Title();
             yield return Adventure();
+            yield return Homecoming();
             yield return Screens();
             yield return Questions();
             yield return Menus();
@@ -239,7 +241,7 @@ namespace Portfolio.Heroes
         }
 
         /// <summary>Points at a cell of the map, as the mouse would, and takes the tooltip it shows.</summary>
-        private IEnumerator HoverCell(int cell, string name)
+        private IEnumerator HoverCell(int cell, string name, bool click = false)
         {
             Camera view = manager.Rig != null ? manager.Rig.View : Camera.main;
             if (view == null || manager.Map == null)
@@ -257,9 +259,41 @@ namespace Portfolio.Heroes
             TooltipBox.Pointer = new Vector2(at.x, at.y);
             yield return new WaitForSeconds(0.9f);
             yield return Shot(name);
+            if (click)
+            {
+                UI.TourClick = true;
+                yield return null;
+            }
             UI.TourPointer = null;
             TooltipBox.Pointer = null;
             yield return null;
+        }
+
+        /// <summary>
+        /// The hero goes home: over his town the pointer says a click sends him in, and the click walks him into its
+        /// gate and opens the town with him in it. He is given the movement for the way behind the rules' back.
+        /// </summary>
+        private IEnumerator Homecoming()
+        {
+            HeroState hero = FirstHero();
+            PlayerState me = manager.ViewerState;
+            TownState town = me != null && me.towns.Count > 0 ? Game.State.Town(me.towns[0]) : null;
+            if (hero == null || town == null || hero.cell == town.cell)
+            {
+                Write("No way home to show: no hero, no town, or the hero never left it.");
+                yield break;
+            }
+            hero.movement = Mathf.Max(hero.movement, hero.maxMovement);
+            // The camera glides to the hero in hand: the pointer is placed once it has come to rest.
+            manager.Select(hero);
+            yield return new WaitForSeconds(2f);
+            yield return HoverCell(town.center, "hover_own_town", true);
+            yield return WaitForTurn(20f);
+            yield return new WaitForSeconds(0.6f);
+            HeroState visitor = Game.State.HeroAt(town.cell);
+            Write($"A click on {town.name}: town open {UI.Town.IsOpen}, visitor {(visitor != null ? visitor.Name : "none")}.");
+            yield return Shot("town_entered");
+            UI.Town.Close();
         }
 
         // ------------------------------------------------------------------ the hero and the town

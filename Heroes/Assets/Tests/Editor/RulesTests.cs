@@ -326,6 +326,47 @@ namespace Portfolio.Heroes.Tests
             Assert.That(hero.movement, Is.LessThan(before));
         }
 
+        [Test]
+        public void AHeroWalksBackIntoHisTownFromAnyPartOfIt()
+        {
+            HeroesGame game = Start(808);
+            HeroState hero = game.State.heroes[0];
+            TownState town = game.State.Town(game.State.Player(hero.owner).towns[0]);
+            Assert.That(hero.cell, Is.EqualTo(town.cell), "the hero does not start in the gate of his town");
+            int outside = -1;
+            foreach (int cell in game.Grid.Neighbors(town.cell))
+            {
+                MovePlan leaving = game.State.ObjectAt(cell) == null ? game.PlanPath(hero, cell) : null;
+                if (leaving != null && leaving.End == PathEnd.Move && leaving.ReachesToday)
+                {
+                    outside = cell;
+                    break;
+                }
+            }
+            Assert.That(outside, Is.GreaterThanOrEqualTo(0), "no way out of the gate");
+            Assert.That(game.Apply(GameCommand.Move(hero.owner, hero.id, outside)), Is.True);
+            Assert.That(game.State.HeroAt(town.cell), Is.Null);
+            game.TakeEvents();
+
+            // Every cell of the town leads to its gate, where the hero stands as its visitor.
+            foreach (int cell in game.State.Object(town.objectId).footprint)
+            {
+                MovePlan back = game.PlanPath(hero, cell);
+                Assert.That(back, Is.Not.Null, $"no way into the town from cell {cell}");
+                Assert.That(back.End, Is.EqualTo(PathEnd.EnterTown));
+                Assert.That(back.Destination, Is.EqualTo(town.cell));
+                Assert.That(back.ReachesToday, Is.True);
+            }
+            Assert.That(game.Apply(GameCommand.Move(hero.owner, hero.id, town.center)), Is.True);
+            Assert.That(game.State.HeroAt(town.cell), Is.SameAs(hero));
+            bool entered = false;
+            foreach (GameEvent what in game.TakeEvents())
+            {
+                entered |= what.kind == EventKind.ObjectVisited && what.a == hero.id && what.b == town.objectId;
+            }
+            Assert.That(entered, Is.True, "the town was not told of its visitor");
+        }
+
         // ------------------------------------------------------------------ turns
 
         [Test]

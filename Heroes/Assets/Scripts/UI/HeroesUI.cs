@@ -38,6 +38,8 @@ namespace Portfolio.Heroes.UI
         private bool busy;
         private int hoverCell = -1;
         private MovePlan plan;
+        /// <summary>The town a click on the map sent the hero in hand into (its id), or -1: its screen opens as he arrives.</summary>
+        private int enteringTown = -1;
         private CursorKind cursor = CursorKind.Default;
         private bool cursorSet;
         private BaseGameState shownState = BaseGameState.Initialization;
@@ -672,6 +674,9 @@ namespace Portfolio.Heroes.UI
         /// </summary>
         public Vector3? TourPointer { get; set; }
 
+        /// <summary>Development tours only: a click at <see cref="TourPointer"/>, taken on the next frame the map is read.</summary>
+        public bool TourClick { get; set; }
+
         /// <summary>The cell the pointer is over, or -1 when it is over the interface or off the map.</summary>
         private int PointerCell()
         {
@@ -707,16 +712,22 @@ namespace Portfolio.Heroes.UI
                 MapTip(cell);
             }
             SetCursor(cell < 0 ? CursorKind.Default : CursorFor(cell, hero));
-            if (cell >= 0 && Input.GetMouseButtonDown(0) && !manager.Rig.IsDragging)
+            bool click = TourClick || Input.GetMouseButtonDown(0);
+            TourClick = false;
+            if (cell >= 0 && click && !manager.Rig.IsDragging)
             {
                 Click(cell);
             }
         }
 
-        /// <summary>A click on the map: pick up a hero or a town of your own, else send the hero there.</summary>
+        /// <summary>
+        /// A click on the map: pick up a hero of your own, send the hero in hand into a town of your own he gets to
+        /// today (its screen opens as he arrives) or open the town when he does not, else send the hero there.
+        /// </summary>
         private void Click(int cell)
         {
             GameState state = Game.State;
+            enteringTown = -1;
             HeroState standing = state.HeroAt(cell);
             if (standing != null && standing.owner == manager.Viewer)
             {
@@ -734,10 +745,17 @@ namespace Portfolio.Heroes.UI
             if (what != null && what.kind == ObjectKind.Town)
             {
                 TownState here = state.Town(what.subtype);
-                if (here != null && here.owner == manager.Viewer &&
-                    (manager.Selected == null || manager.Selected.cell != cell))
+                if (here != null && here.owner == manager.Viewer)
                 {
-                    town.Open(here);
+                    if (WalksIn(here, manager.Selected))
+                    {
+                        enteringTown = here.id;
+                        Commands?.MoveHero(manager.Selected.id, cell);
+                    }
+                    else
+                    {
+                        town.Open(here);
+                    }
                     return;
                 }
             }
@@ -745,6 +763,32 @@ namespace Portfolio.Heroes.UI
             {
                 Commands?.MoveHero(manager.Selected.id, cell);
             }
+        }
+
+        /// <summary>
+        /// Whether a click on <paramref name="here"/>, a town of the player's own under the pointer, sends
+        /// <paramref name="hero"/> in rather than opening its screen: he can be given an order, he is not in it already,
+        /// and the trail under the pointer ends in its gate today. A town out of his reach, or with another hero in its
+        /// gate, opens as it does with no hero in hand; the list of towns opens any of them without moving anyone.
+        /// </summary>
+        private bool WalksIn(TownState here, HeroState hero)
+        {
+            return hero != null && hero.cell != here.cell && CanCommand && plan != null && plan.End == PathEnd.EnterTown &&
+                   plan.Destination == here.cell && plan.ReachesToday;
+        }
+
+        /// <summary>
+        /// A hero of the player at this device walked into <paramref name="entered"/>: when a click on the town sent
+        /// him, its screen opens with him in it, his army next to the garrison.
+        /// </summary>
+        public void EnteredTown(TownState entered)
+        {
+            if (entered == null || entered.id != enteringTown)
+            {
+                return;
+            }
+            enteringTown = -1;
+            town.Open(entered);
         }
 
         /// <summary>The pointer of the map: what a click on the cell would do.</summary>
@@ -758,9 +802,9 @@ namespace Portfolio.Heroes.UI
                 return CursorKind.Hand;
             }
             if (what != null && what.kind == ObjectKind.Town && state.Town(what.subtype) is TownState here &&
-                here.owner == manager.Viewer && (hero == null || hero.cell != cell))
+                here.owner == manager.Viewer)
             {
-                return CursorKind.Hand;
+                return WalksIn(here, hero) ? CursorKind.Visit : CursorKind.Hand;
             }
             if (hero == null)
             {
@@ -807,6 +851,15 @@ namespace Portfolio.Heroes.UI
             }
             if (MapTips.Describe(manager, cell, out string heading, out string body, out Sprite picture))
             {
+                // A town of the player's own says what a click on it does: the hero in hand walks in, or it opens.
+                MapObject what = Game.State.ObjectAt(cell);
+                if (what != null && what.kind == ObjectKind.Town && Game.State.HeroAt(cell) == null &&
+                    Game.State.Town(what.subtype) is TownState here && here.owner == manager.Viewer)
+                {
+                    body += WalksIn(here, manager.Selected)
+                        ? $"\n<i>Click to send {manager.Selected.Name} in.</i>"
+                        : "\n<i>Click to open the town.</i>";
+                }
                 TooltipBox.Show(this, heading, body, picture);
             }
             else

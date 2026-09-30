@@ -84,6 +84,12 @@ namespace Portfolio.Heroes
                         {
                             sound?.Play(Sfx.Treasure, 0.7f);
                         }
+                        // A hero sent into a town of his own by a click on it: the town opens with him in it.
+                        MapObject visited = Game.State.Object(what.b);
+                        if (visited != null && visited.kind == ObjectKind.Town && what.player == Viewer)
+                        {
+                            ui.EnteredTown(Game.State.Town(visited.subtype));
+                        }
                     }
                     break;
                 case EventKind.ObjectCaptured:
