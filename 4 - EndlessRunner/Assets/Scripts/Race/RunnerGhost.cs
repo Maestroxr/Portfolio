@@ -89,8 +89,8 @@ namespace Portfolio.EndlessRunner
             {
                 DestroyImmediate(body);
             }
-            ghost.Tint(tint);
-            ghost.AddLabel(label, tint, labelMaterial);
+            Tint(ghost.animator, copy.transform, tint);
+            AddLabel(copy.transform, label, tint, labelMaterial);
             copy.transform.SetParent(parent, false);
             Destroy(holder);
             return ghost;
@@ -127,23 +127,35 @@ namespace Portfolio.EndlessRunner
             }
         }
 
-        private void Tint(Color tint)
+        /// <summary>
+        /// Tints the model of a runner in the colour of its seat (a ghost of an online race, a runner of a local race), or
+        /// takes the tint off again with null.
+        /// </summary>
+        internal static void Tint(RunnerAnimator animator, Transform runner, Color? tint)
         {
-            Transform model = animator != null && animator.body != null ? animator.body : transform;
+            Transform model = animator != null && animator.body != null ? animator.body : runner;
             var block = new MaterialPropertyBlock();
             foreach (Renderer part in model.GetComponentsInChildren<Renderer>(true))
             {
                 part.GetPropertyBlock(block);
-                block.SetColor(BaseColor, Color.Lerp(Color.white, tint, TintStrength));
+                if (tint.HasValue)
+                {
+                    block.SetColor(BaseColor, Color.Lerp(Color.white, tint.Value, TintStrength));
+                }
+                else
+                {
+                    block.Clear();
+                }
                 part.SetPropertyBlock(block);
             }
         }
 
-        private void AddLabel(string text, Color tint, Material material)
+        /// <summary>Puts the name of a runner's player over its head, in the colour of its seat, facing the camera.</summary>
+        internal static GameObject AddLabel(Transform runner, string text, Color tint, Material material)
         {
             var labelObject = new GameObject("Name");
-            labelObject.layer = gameObject.layer;
-            labelObject.transform.SetParent(transform, false);
+            labelObject.layer = runner.gameObject.layer;
+            labelObject.transform.SetParent(runner, false);
             labelObject.transform.localPosition = new Vector3(0f, LabelHeight, 0f);
             var label = labelObject.AddComponent<TextMeshPro>();
             if (material != null)
@@ -159,6 +171,7 @@ namespace Portfolio.EndlessRunner
             label.overflowMode = TextOverflowModes.Overflow;
             label.rectTransform.sizeDelta = new Vector2(8f, 1f);
             labelObject.AddComponent<Billboard>().pulse = 0f;
+            return labelObject;
         }
 
         private void Update()

@@ -99,6 +99,9 @@ namespace Portfolio.Asteroids
         [SerializeField] internal Image bossFill;
         [SerializeField] internal TMP_Text bossNoScanner;
         [SerializeField] internal TMP_Text warningText;
+        [Tooltip("Parts of the strike HUD about the one ship at this device (special, phase shields, energy, megabombs): hidden in " +
+                 "local co-op, where the pilots list shows every pilot.")]
+        [SerializeField] internal GameObject[] shipHudParts = new GameObject[0];
 
         [Header("Results")]
         [SerializeField] internal TMP_Text resultTitle;
@@ -893,6 +896,19 @@ namespace Portfolio.Asteroids
         }
 
 
+        /// <summary>The strike HUD of a local co-op mission (<paramref name="local"/>) leaves out the parts about one ship.</summary>
+        public void ShowLocalHud(bool local)
+        {
+            foreach (GameObject part in shipHudParts)
+            {
+                if (part != null && part.activeSelf == local)
+                {
+                    part.SetActive(!local);
+                }
+            }
+        }
+
+
         /// <summary>A blinking warning on the HUD ("SHIELD LOW", "WEAPON DESTROYED").</summary>
         public void Warn(string text)
         {
@@ -966,7 +982,8 @@ namespace Portfolio.Asteroids
             SetLabel(resultStats,
                 $"{T("Hostiles destroyed")}  <b>{result.HostilesDestroyed} / {result.HostilesEntered}</b> ({share}%)\n" +
                 $"{T("Damage taken")}  <b>{Mathf.RoundToInt(result.DamageTaken)}</b>     {T("Time")}  <b>{MissionObjective.FormatTime(result.Time)}</b>");
-            if (result.Coop)
+            bool together = result.Coop || result.Local;
+            if (together)
             {
                 SetLabel(resultGoals, result.Standings);
             }
@@ -980,7 +997,7 @@ namespace Portfolio.Asteroids
             SetLabel(resultMissionsLabel, result.Coop ? T("Room") : T("Missions"));
             if (resultSupply != null)
             {
-                resultSupply.gameObject.SetActive(!result.Coop);
+                resultSupply.gameObject.SetActive(!together);
             }
             if (resultRetry != null)
             {
@@ -988,15 +1005,15 @@ namespace Portfolio.Asteroids
             }
             if (resultNext != null)
             {
-                resultNext.gameObject.SetActive(result.HasNext && !result.Coop);
+                resultNext.gameObject.SetActive(result.HasNext && !together);
                 resultNext.interactable = !result.NextLocked;
             }
             SetLabel(resultNextLabel, result.NextLocked ? T("LOCKED") : T("NEXT"));
-            if (result.NextLocked && result.HasNext && !result.Coop)
+            if (result.NextLocked && result.HasNext && !together)
             {
                 SetLabel(resultGoals, (resultGoals != null ? resultGoals.text : string.Empty) + $"\n<color=#FFB24D>{result.NextLockReason}</color>");
             }
-            resultStarCount = result.Coop ? 0 : result.Stars;
+            resultStarCount = together ? 0 : result.Stars;
             starsPopped = 0;
             resultsTime = 0f;
             foreach (Image star in resultStars)
@@ -1005,7 +1022,7 @@ namespace Portfolio.Asteroids
                 {
                     star.sprite = StarEmpty;
                     star.transform.localScale = Vector3.one;
-                    star.gameObject.SetActive(!result.Coop);
+                    star.gameObject.SetActive(!together);
                 }
             }
         }

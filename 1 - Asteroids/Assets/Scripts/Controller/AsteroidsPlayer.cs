@@ -63,6 +63,7 @@ namespace Portfolio.Asteroids
         private readonly List<Barrel> barrels = new List<Barrel>(12);
         private PlayerSimulation simulation;
         private IShipInput input;
+        private IShipInput ownControls;
         private ShipTouchControls touchControls;
         private int points;
         private float health = 100f;
@@ -145,12 +146,42 @@ namespace Portfolio.Asteroids
 
         public PlayerSimulation Simulation => simulation ??= new PlayerSimulation(this, PlayerSettings);
 
-        /// <summary>Where the commands come from: the player's controls unless something else (the autopilot) flies.</summary>
+        /// <summary>
+        /// Where the commands come from: the pilot's controls (<see cref="OwnControls"/>, else the player's) unless something
+        /// else (the autopilot) flies. Null hands the ship back to the pilot's controls.
+        /// </summary>
         public IShipInput Input
         {
-            get => input ??= new PlayerShipInput { Touch = touchControls };
+            get => input ??= ownControls ?? new PlayerShipInput { Touch = touchControls };
             set => input = value;
         }
+
+        /// <summary>
+        /// The controls of the pilot of a local co-op mission (<see cref="LocalShipInput"/>), which the ship flies by and
+        /// goes back to when the autopilot lets go; null for the player's own controls of the single player game. Setting
+        /// it hands the ship to them at once.
+        /// </summary>
+        internal IShipInput OwnControls
+        {
+            get => ownControls;
+            set
+            {
+                ownControls = value;
+                input = null;
+            }
+        }
+
+        /// <summary>
+        /// A ship of a local co-op mission besides the player's own (<see cref="SpaceField.Wingmen"/>): flown and hurt at this
+        /// device like it, with the kills, pickups and blasts of its pilot (<see cref="PlayerBase.Seat"/>) counted for them.
+        /// </summary>
+        internal bool IsWingman { get; set; }
+
+        /// <summary>
+        /// The seat a hit by this ship counts for (<see cref="DamageInfo.Seat"/>): the pilot's of a stand-in of an online room
+        /// or of a wingman of local co-op; null for the player's own ship.
+        /// </summary>
+        internal int? HitSeat => IsRemote || IsWingman ? Seat : (int?)null;
 
         /// <summary>The on-screen controls of phones and tablets, read by the player's controls.</summary>
         public ShipTouchControls TouchControls
@@ -592,7 +623,7 @@ namespace Portfolio.Asteroids
                 return;
             }
             SetBombs(Bombs - 1);
-            Field.Nova(Position, novaDamage, novaBossDamage);
+            Field.Nova(Position, novaDamage, novaBossDamage, HitSeat);
             Field.Effects?.Nova(Position);
             Field.Sounds?.Nova();
             Field.CameraRig?.Shake(0.8f);

@@ -271,7 +271,8 @@ namespace Portfolio.Heroes
             {
                 yield break;
             }
-            if (player.human && !InSession)
+            // (A hot seat has handed the device over already, before the turn was played out.)
+            if (player.human && !InSession && !IsHotSeat)
             {
                 Viewer = player.index;
                 Map.Fog.Show(player);

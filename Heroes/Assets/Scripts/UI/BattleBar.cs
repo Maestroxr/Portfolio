@@ -556,8 +556,11 @@ namespace Portfolio.Heroes.UI
                 Heroes();
             }
             Queue();
-            status.text = Words.T(OurTurn() ? "Your move" : stack == null ? "" : Local(shown.PlayerOf(stack.side)) ? "Your troops act" :
-                shown.PlayerOf(stack.side) < 0 ? "The wilds move" : "The enemy moves");
+            // In a hot seat the troops of a person are theirs by name, in their colour: both may sit at the screen.
+            string mover = stack != null ? manager.HotSeatName(shown.PlayerOf(stack.side)) : null;
+            status.text = mover != null ? Words.F("{0}'s move", mover)
+                : Words.T(OurTurn() ? "Your move" : stack == null ? "" : Local(shown.PlayerOf(stack.side)) ? "Your troops act" :
+                    shown.PlayerOf(stack.side) < 0 ? "The wilds move" : "The enemy moves");
         }
 
         private void Heroes()

@@ -11,7 +11,7 @@ namespace Portfolio.EndlessRunner
 
         protected override void OnTouched(RunnerGameManager manager, RunnerPlayer player)
         {
-            manager.CollectPowerUp(this);
+            manager.CollectPowerUp(this, player);
         }
     }
 }

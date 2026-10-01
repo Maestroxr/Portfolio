@@ -16,8 +16,9 @@ offers an endless run and free play with your own rules.
 - **Versus.** Two to four players share a board and take turns. A set scores for whoever found it (sets in a row
   build the combo) and lets them go again; a mistake shows for a moment and passes the turn, a bomb costs points and
   the turn, and so does running out of time: every turn has a clock. The most points win when the board is cleared.
-  The **players** button of the level select steps from one player to a versus game for up to four at this device,
-  on any level but the endless run; **online** opens the lobby to play against people elsewhere.
+  The **versus** button of the level select sets up a game for two to four at this device (BaseGame's shared local
+  play setup: names, people or computers, the turn clock, the hand-over screen), on any level but the endless run;
+  **online** opens the lobby to play against people elsewhere.
 
 | Twist | What it does |
 | --- | --- |
@@ -100,6 +101,7 @@ scene, so the Quit button closes a build of the game on its own; in the editor i
 | `Scripts/MemoryCardsGameManager.cs` | Level select, dealing, memorize, clicks through the rules engine, animations, results, progress, save and load |
 | `Scripts/Model/VersusMatch.cs` | The rules of several players at one board: turns, scores per player, the clock of a turn, the standings; the server judges online flips with the same code |
 | `Scripts/Model/BoardOptions.cs` | The board of an online room in the room's options: written by the host's client, read back by the server |
+| `Scripts/LocalVersus.cs`, `Scripts/MemoryCardsComputer.cs` | A versus game at one device as the shared setup made it (seats, clock, when a turn begins behind the hand-over screen, who may flip), and the computer player of a computer seat |
 | `Scripts/MemoryCardsGameManager.Versus.cs`, `Scripts/UI/VersusHud.cs` | Versus games at one device and online: the seats, the turn clock, the flips the server judged, the scoreboard, the results |
 | `Scripts/MemoryCardsOnlineController.cs` | The online game: rooms and levels for the lobby, the board of the room, flip events, turns and scores from the server (a turn reaches the manager after the flip that ended the last one) |
 | `Scripts/Flippable.cs`, `Scripts/View/*` | The card (flip, deal, shuffle, match, mistake, ice, explosion), board layout, UI particles, backdrop, audio |
@@ -147,7 +149,15 @@ the standings go by score, then by sets found (equal on both is a draw).
 
 - **At one device** the round of the manager judges every flip as it does for one player, the versus game books the
   result for the player whose turn it is, and the players pass the device around. A click during a mistake only turns
-  the cards back, because the next card belongs to the next player. A turn lasts 20 seconds.
+  the cards back, because the next card belongs to the next player. The setup is BaseGame's local play setup
+  (`LocalVersus.CreateRules`): two to four players with names, each a person or the computer (Easy, Normal or Hard,
+  at least one person), the turn clock (off, 10, 15, 20 or 30 seconds; 20 at first) and the hand-over screen (off at
+  first, since the board is the same for everybody): with it on, a person's turn begins behind BaseGame's curtain, and
+  the clock and the cards wait until they are ready. On a computer's turn only the computer flips
+  (`MemoryCardsComputer`): it remembers only cards it saw (anyone's flips, the memorize phase, peeks), Easy, Normal and
+  Hard remember 4, 10 and every card and slip 35, 15 and 4 percent of the time, never turns a bomb it knows and turns
+  a card about every second. Versus games keep no stars or best scores; the sets of the lifetime record count only the
+  people's.
 - **Online** the server deals the board and judges every flip with the rules of the game itself (the model is compiled
   into the server module, see "Server"), so nobody can look at a card they have not turned and the two sides cannot
   disagree. The host picks a level and the seconds a turn lasts in the lobby (the shared lobby of BaseGame); the host's

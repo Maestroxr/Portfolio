@@ -50,7 +50,9 @@ namespace Portfolio.Asteroids
         public string NextLockReason;
         /// <summary>A mission flown with other pilots: no stars and records, but everybody's scores.</summary>
         public bool Coop;
-        /// <summary>The pilots of a shared mission by place, a line each.</summary>
+        /// <summary>A mission flown by several pilots at this device: no stars and records, everybody's scores, and a retry.</summary>
+        public bool Local;
+        /// <summary>The pilots of a shared or local mission by place, a line each.</summary>
         public string Standings;
     }
 
@@ -168,7 +170,9 @@ namespace Portfolio.Asteroids
         public string NextLockReason;
         /// <summary>A mission flown with other pilots: no Supply Room button, everybody's money.</summary>
         public bool Coop;
-        /// <summary>The pilots of a shared mission by place, a line each.</summary>
+        /// <summary>A mission flown by several pilots at this device: no stars or Supply Room button, everybody's money, a retry.</summary>
+        public bool Local;
+        /// <summary>The pilots of a shared or local mission by place, a line each.</summary>
         public string Standings;
     }
 }

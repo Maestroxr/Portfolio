@@ -414,11 +414,11 @@ namespace Portfolio.MemoryCards.EditorTools
 
             ui.continueButton = Button(root, "Continue", "kit.accent", "CONTINUE", "icons.play", new Vector2(1f, 0f),
                 new Vector2(0.5f, 0f), new Vector2(-640f, 14f), new Vector2(330f, 94f), 34f, AccentTextKey, out _);
-            // Several players: at this device (the button steps from one to four), or online.
-            ui.playersButton = Button(root, "Players", "kit.secondary", "1 PLAYER", null, new Vector2(1f, 0f),
-                new Vector2(0.5f, 0f), new Vector2(-1112f, 14f), new Vector2(200f, 94f), 28f, ButtonTextKey, out TextMeshProUGUI playersLabel);
-            ui.playersLabel = playersLabel;
-            playersLabel.textWrappingMode = TextWrappingModes.NoWrap;
+            // Several players: at this device (the button opens the shared local play setup), or online.
+            ui.versusButton = Button(root, "Versus", "kit.secondary", "VERSUS", null, new Vector2(1f, 0f),
+                new Vector2(0.5f, 0f), new Vector2(-1112f, 14f), new Vector2(200f, 94f), 28f, ButtonTextKey, out TextMeshProUGUI versusLabel);
+            ui.versusLabel = versusLabel;
+            versusLabel.textWrappingMode = TextWrappingModes.NoWrap;
             ui.onlineButton = Button(root, "Online", "kit.primary", "ONLINE", null, new Vector2(1f, 0f),
                 new Vector2(0.5f, 0f), new Vector2(-908f, 14f), new Vector2(190f, 94f), 28f, ButtonTextKey, out _);
             ui.titleSettingsButton = RoundButton(root, "Settings", "kit.roundSecondary", "icons.settings", ButtonTextKey, new Vector2(1f, 0f), new Vector2(-190f, 70f), 104f);

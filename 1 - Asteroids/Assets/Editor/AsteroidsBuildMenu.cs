@@ -195,6 +195,26 @@ namespace Portfolio.Asteroids.EditorTools
             return null;
         }
 
+        /// <summary>
+        /// Reads the game's words (Localization/Asteroids.csv) into its string tables, and only those (the shared table is
+        /// BaseGame's). Batch mode: <c>-executeMethod Portfolio.Asteroids.EditorTools.AsteroidsBuildMenu.ImportWords</c>.
+        /// </summary>
+        [MenuItem("Asteroids/Import Words", priority = 30)]
+        public static void ImportWords()
+        {
+            foreach (string csv in Gamebox.Editor.LocalizationTools.FindCsvFiles())
+            {
+                if (Path.GetFileName(csv) == "Asteroids.csv")
+                {
+                    Gamebox.Editor.LocalizationTools.ImportCsv(csv);
+                    AssetDatabase.SaveAssets();
+                    Debug.Log($"Asteroids: the words of {csv} are in the string tables.");
+                    return;
+                }
+            }
+            Debug.LogError("Asteroids: Asteroids.csv was not found.");
+        }
+
         /// <summary>Gives every campaign mission three stars in this editor's saved progress (for trying later sectors).</summary>
         [MenuItem("Asteroids/Debug/Unlock All Missions", priority = 100)]
         public static void UnlockAll()

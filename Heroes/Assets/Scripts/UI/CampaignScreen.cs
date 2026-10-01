@@ -466,6 +466,8 @@ namespace Portfolio.Heroes.UI
             }
             int level = picked;
             base.Close();
+            // A game alone: whatever hot seat there was is over.
+            Manager.EndLocalMatch();
             Manager.BeginScenario(null, level);
         }
     }

@@ -246,7 +246,7 @@ namespace Portfolio.Asteroids
             MegabombCooldown = StrikeRules.MegabombCooldown;
             // The strike form of the nova: every enemy shot on screen cleared, 50 to every targetable enemy and every boss
             // piece, no push. On a guest the simulator is told through the ship signal and deals the damage there.
-            field.Nova(ship.Position, StrikeRules.MegabombDamage, StrikeRules.MegabombDamage);
+            field.Nova(ship.Position, StrikeRules.MegabombDamage, StrikeRules.MegabombDamage, ship.HitSeat);
             field.Effects?.MegabombFlash();
             field.Sounds?.Megabomb();
             field.CameraRig?.Shake(1f);
@@ -422,7 +422,7 @@ namespace Portfolio.Asteroids
                 ship.Beam.ShowZap(from, to);
             }
             field.Sounds?.LaserZap();
-            target.TakeHit(new DamageInfo(info.Damage, direction, to - direction * target.Radius * 0.5f, DamageSource.PlayerShot, true));
+            target.TakeHit(new DamageInfo(info.Damage, direction, to - direction * target.Radius * 0.5f, DamageSource.PlayerShot, true) { Seat = ship.HitSeat });
             return 1;
         }
 
@@ -560,7 +560,7 @@ namespace Portfolio.Asteroids
                 beamDamage[b] += info.Damage * deltaTime;
                 if (dealt && target != null && beamDamage[b] > 0f)
                 {
-                    target.TakeHit(new DamageInfo(beamDamage[b], Vector2.up, to, DamageSource.PlayerShot, true));
+                    target.TakeHit(new DamageInfo(beamDamage[b], Vector2.up, to, DamageSource.PlayerShot, true) { Seat = ship.HitSeat });
                     field.Effects?.Spark(to, new Color(1f, 0.5f, 0.9f), 0.7f);
                 }
                 if (dealt)

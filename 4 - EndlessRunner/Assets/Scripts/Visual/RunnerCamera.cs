@@ -5,7 +5,9 @@ namespace Portfolio.EndlessRunner
     /// <summary>
     /// Camera of the runner: looks at the character from the front in the menu, swings behind it for the run and
     /// follows it with a little lag, widens the view with speed, circles it at the finish and shakes on crashes. When
-    /// the local runner is done with a race it can watch the ghost of another runner instead (<see cref="Watch"/>).
+    /// the local runner is done with a race it can watch another runner instead (<see cref="Watch{T}"/>): the ghost of a
+    /// runner of an online race, or another runner of a local race. In a local race every runner has a camera of its
+    /// own, each drawing its part of the screen.
     /// </summary>
     public class RunnerCamera : MonoBehaviour
     {
@@ -38,25 +40,37 @@ namespace Portfolio.EndlessRunner
         private bool snap = true;
         private float shake;
         private float orbit;
-        private RunnerGhost watched;
+        private MonoBehaviour watched;
 
         public Mode CurrentMode => mode;
 
         /// <summary>The ghost the camera watches instead of its target, or null.</summary>
-        public RunnerGhost Watched => watched != null ? watched : null;
+        public RunnerGhost Watched => watched != null ? watched as RunnerGhost : null;
 
-        /// <summary>
-        /// Chases <paramref name="ghost"/> instead of the target, swinging over from where the camera is; null returns to
-        /// the target. A ghost that goes away (its player left) does the same.
-        /// </summary>
+        /// <summary>The runner the camera watches instead of its target (a ghost, or another runner of a local race), or null.</summary>
+        public MonoBehaviour WatchedRunner => watched != null ? watched : null;
+
+        /// <summary>Chases the ghost of a runner of an online race; null returns to the target.</summary>
         public void Watch(RunnerGhost ghost)
         {
-            if (ghost == watched)
+            Watch<RunnerGhost>(ghost);
+        }
+
+        /// <summary>The camera of a runner of a local race: it draws only its part of the screen.</summary>
+        public Camera View => view;
+
+        /// <summary>
+        /// Chases <paramref name="runner"/> instead of the target, swinging over from where the camera is; null returns to
+        /// the target. A runner that goes away (its player left) does the same.
+        /// </summary>
+        public void Watch<T>(T runner) where T : MonoBehaviour, IRunnerMotion
+        {
+            if (runner == watched)
             {
                 return;
             }
-            watched = ghost;
-            SetMode(ghost != null ? Mode.Chase : mode);
+            watched = runner;
+            SetMode(runner != null ? Mode.Chase : mode);
         }
 
         public void SetMode(Mode newMode, bool instant = false)
@@ -87,7 +101,7 @@ namespace Portfolio.EndlessRunner
                 return;
             }
             float deltaTime = Time.deltaTime;
-            IRunnerMotion subject = watched != null ? watched : (IRunnerMotion)target;
+            IRunnerMotion subject = watched != null ? (IRunnerMotion)watched : target;
             Vector3 player = watched != null ? watched.transform.position : target.transform.position;
             if (snap)
             {

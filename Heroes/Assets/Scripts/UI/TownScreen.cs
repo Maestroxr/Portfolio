@@ -342,7 +342,7 @@ namespace Portfolio.Heroes.UI
             townName.text = Words.Name(town.name);
             string faction = Words.T(Land.FactionName(town.faction));
             townLine.text = owner == null ? Words.F("A {0} town, held by no one", faction)
-                : owner.index == Manager.Viewer ? Words.F("A {0} town, yours", faction)
+                : owner.index == Manager.Viewer && !Manager.IsHotSeat ? Words.F("A {0} town, yours", faction)
                 : Words.F("A {0} town, held by {1}", faction, Words.Name(owner.name));
             income.text = Words.F("{0} a day", "+" + Buildings.Income(town).ToString("N0"));
             int bonus = Buildings.GrowthBonus(town);

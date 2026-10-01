@@ -54,7 +54,7 @@ namespace Portfolio.Asteroids
             }
             if (paid > 0 && manager != null)
             {
-                manager.AddMoney(paid, Position);
+                manager.AddMoney(paid, Position, player);
             }
         }
 

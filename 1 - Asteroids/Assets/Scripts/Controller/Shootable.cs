@@ -259,10 +259,13 @@ namespace Portfolio.Asteroids
         }
 
 
-        /// <summary>The seat a hit by <paramref name="player"/> counts for: set for the stand-in of a pilot on another device.</summary>
+        /// <summary>
+        /// The seat a hit by <paramref name="player"/> counts for: set for the stand-in of a pilot on another device and for a
+        /// wingman of local co-op (<see cref="AsteroidsPlayer.HitSeat"/>).
+        /// </summary>
         protected static int? SeatOf(AsteroidsPlayer player)
         {
-            return player != null && player.IsRemote ? player.Seat : (int?)null;
+            return player != null ? player.HitSeat : null;
         }
 
 

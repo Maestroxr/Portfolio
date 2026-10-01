@@ -133,8 +133,8 @@ namespace Portfolio.Asteroids
         /// <summary>Whether the kill counts for the player (their shots, their nova, chains they set off).</summary>
         public bool ByPlayer;
         /// <summary>
-        /// In a shared mission: the seat of the pilot on another device the hit counts for; null when it counts for the
-        /// ship at this device.
+        /// In a shared mission: the seat of the pilot on another device the hit counts for; in local co-op the seat of the
+        /// wingman whose hit it is (<see cref="AsteroidsPlayer.HitSeat"/>); null when it counts for the player's own ship.
         /// </summary>
         public int? Seat;
 

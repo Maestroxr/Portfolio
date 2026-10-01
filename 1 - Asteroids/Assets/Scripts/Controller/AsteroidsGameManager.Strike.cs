@@ -102,8 +102,11 @@ namespace Portfolio.Asteroids
         /// <summary>The boss of the mission while it is in play (tests and tours).</summary>
         public Boss ActiveBoss => boss != null && boss.InPlay ? boss : null;
 
-        /// <summary>The difficulty the current strike mission is flown at (the room's in co-op, else the pilot's).</summary>
-        public StrikeDifficulty MissionDifficulty => IsCoop ? coop.Difficulty : Pilot.Difficulty;
+        /// <summary>
+        /// The difficulty the current strike mission is flown at: the room's in co-op, the setup's in local co-op, else the
+        /// pilot's.
+        /// </summary>
+        public StrikeDifficulty MissionDifficulty => IsCoop ? coop.Difficulty : IsLocal ? LocalCoopRules.Difficulty(LocalMatch) : Pilot.Difficulty;
 
         /// <summary>The storage the progress lives on (the tour backs up and restores the keys it touches); null without one.</summary>
         internal IStorageStrategy ProgressDisk => Disk;
@@ -568,7 +571,7 @@ namespace Portfolio.Asteroids
             working.Difficulty = difficulty;
             working.EnsureLaunchEnergy();
             walletAtStart = working.Money;
-            spawner.BossHealthScale = StrikeRules.BossHealthScale(difficulty, IsCoop ? Mathf.Max(1, coop.Pilots) : 1);
+            spawner.BossHealthScale = StrikeRules.BossHealthScale(difficulty, IsCoop ? Mathf.Max(1, coop.Pilots) : IsLocal ? localPilots.Count : 1);
             spawner.BossBurstScale = StrikeRules.BossBurstScale(difficulty);
 
             lives = 1;
@@ -619,8 +622,12 @@ namespace Portfolio.Asteroids
         {
             missionTime += deltaTime;
             field.WorldTimeScale = 1f;
-            ship.Simulate(deltaTime);
+            SimulateShips(deltaTime);
             AdvanceScroll(deltaTime);
+            if (IsLocal)
+            {
+                UpdateLocalPilots(deltaTime);
+            }
             field.Tick(deltaTime);
             Terrain?.SetDistance(field.ScrollDistance);
             UpdateHints(deltaTime);
@@ -675,10 +682,10 @@ namespace Portfolio.Asteroids
         }
 
 
-        /// <summary>The SHIELD LOW warning, from the working copy.</summary>
+        /// <summary>The SHIELD LOW warning, from the working copy (not in local co-op, where the pilots list shows every pilot's energy).</summary>
         private void WatchPilot()
         {
-            if (working == null)
+            if (working == null || IsLocal)
             {
                 return;
             }
@@ -706,10 +713,7 @@ namespace Portfolio.Asteroids
                 {
                     // Free flight: every pickup on screen drifts to the ships (40 m pull).
                     field.PickupPull = StrikeRules.EndPickupPull;
-                    if (ship.IsAlive)
-                    {
-                        ship.Simulate(deltaTime);
-                    }
+                    SimulateShips(deltaTime);
                     if (phaseTime >= StrikeRules.FreeFlightTime)
                     {
                         BeginFlyOff();
@@ -758,6 +762,17 @@ namespace Portfolio.Asteroids
             if (ship.IsAlive)
             {
                 ship.Simulation?.Stop();
+            }
+            foreach (LocalPilot pilot in localPilots)
+            {
+                pilot.FlyOffFrom = pilot.Ship.Position;
+                if (pilot.Ship.IsAlive)
+                {
+                    pilot.Ship.Simulation?.Stop();
+                }
+            }
+            if (IsLocal ? AnyLocalShipAlive : ship.IsAlive)
+            {
                 sounds?.FlyBy();
             }
             sounds?.SetBeam(false);
@@ -793,17 +808,26 @@ namespace Portfolio.Asteroids
         private void FlyOff(float deltaTime)
         {
             flyOffTime += deltaTime;
-            if (!ship.IsAlive)
+            float t = Mathf.Clamp01(flyOffTime / StrikeRules.FlyOffTime);
+            float top = Playground != null ? Playground.Top : StrikeRules.HalfSize.y;
+            if (IsLocal)
+            {
+                // The ships of a local mission close up into a row and climb out side by side.
+                Vector2 halfSize = Playground != null ? Playground.HalfSize : StrikeRules.HalfSize;
+                for (int i = 0; i < localPilots.Count; i++)
+                {
+                    LocalPilot pilot = localPilots[i];
+                    ClimbOut(pilot.Ship, pilot.FlyOffFrom, FieldMath.RowPoint(i, localPilots.Count, halfSize).x, t, top);
+                }
+            }
+            else if (!ship.IsAlive)
             {
                 return;
             }
-            float t = Mathf.Clamp01(flyOffTime / StrikeRules.FlyOffTime);
-            float top = Playground != null ? Playground.Top : StrikeRules.HalfSize.y;
-            // Centre in the first half, then accelerate out past the top edge.
-            float x = Mathf.Lerp(flyOffFrom.x, 0f, Tween.InOutCubic(Mathf.Clamp01(t * 1.6f)));
-            float y = Mathf.Lerp(flyOffFrom.y, top + 6f, t * t * t);
-            ship.Position = new Vector2(x, y);
-            ship.transform.rotation = Quaternion.identity;
+            else
+            {
+                ClimbOut(ship, flyOffFrom, 0f, t, top);
+            }
             if (t >= 1f && !landed)
             {
                 Land();
@@ -811,9 +835,41 @@ namespace Portfolio.Asteroids
         }
 
 
-        /// <summary>The ship of a won mission is home: the working copy with the mission's money becomes the saved pilot.</summary>
+        /// <summary>
+        /// Where <paramref name="flying"/> is <paramref name="t"/> of the way through the fly-off from <paramref name="from"/>:
+        /// over to <paramref name="x"/> in the first half, then accelerating out past the top edge.
+        /// </summary>
+        private static void ClimbOut(AsteroidsPlayer flying, Vector2 from, float x, float t, float top)
+        {
+            if (flying == null || !flying.IsAlive)
+            {
+                return;
+            }
+            float across = Mathf.Lerp(from.x, x, Tween.InOutCubic(Mathf.Clamp01(t * 1.6f)));
+            float up = Mathf.Lerp(from.y, top + 6f, t * t * t);
+            flying.Position = new Vector2(across, up);
+            flying.transform.rotation = Quaternion.identity;
+        }
+
+
+        /// <summary>
+        /// The ship of a won mission is home: the working copy with the mission's money becomes the saved pilot. In local
+        /// co-op the ships are home when one of them is: only the money the squad earned goes into the saved pilot's
+        /// wallet (once), the rest of the saved pilot stays as it was (the pilots flew copies of its kit).
+        /// </summary>
         private void Land()
         {
+            if (IsLocal)
+            {
+                if (landed || working == null || !AnyLocalShipAlive)
+                {
+                    return;
+                }
+                landed = true;
+                Pilot.CommitMission(null, squad.TeamScore);
+                progress?.SavePilot(Pilot);
+                return;
+            }
             if (landed || working == null || !ship.IsAlive)
             {
                 return;
@@ -902,7 +958,7 @@ namespace Portfolio.Asteroids
             var state = new StrikeHudState
             {
                 Wallet = walletAtStart,
-                MissionMoney = score.Score,
+                MissionMoney = IsLocal && squad != null ? squad.TeamScore : score.Score,
                 Energy = Mathf.Clamp01(working.Energy / StrikeRules.MaxEnergy),
                 Shield = working.PhaseShields > 0 ? Mathf.Clamp01(working.ShieldPoints / StrikeRules.PhaseShieldPoints) : 0f,
                 PhaseShields = working.PhaseShields,
@@ -931,15 +987,15 @@ namespace Portfolio.Asteroids
             {
                 hostilesDestroyed++;
             }
-            // The kill of a pilot on another device pays on their device.
-            if (hit.Seat.HasValue)
+            // The kill of a pilot on another device pays on their device; a local wingman's pays that pilot.
+            if (hit.Seat.HasValue && !IsLocal)
             {
                 return;
             }
             int bounty = target is StrikeBoss && spawner != null && spawner.BossBounty > 0 ? spawner.BossBounty : target.Score;
             if (bounty > 0)
             {
-                AddMoney(bounty, target.Position);
+                AddMoney(bounty, target.Position, IsLocal ? LocalPilotOf(hit)?.Ship : null);
             }
         }
 
@@ -960,11 +1016,21 @@ namespace Portfolio.Asteroids
         /// </summary>
         public void AddMoney(int amount, Vector2 at)
         {
+            AddMoney(amount, at, null);
+        }
+
+
+        /// <summary>
+        /// Mission money that <paramref name="earner"/> earned: in local co-op it is that ship's pilot's (the first pilot's
+        /// when the ship is none of theirs), otherwise the mission's like any other.
+        /// </summary>
+        public void AddMoney(int amount, Vector2 at, AsteroidsPlayer earner)
+        {
             if (amount <= 0 || !IsMissionActiveOrEnding)
             {
                 return;
             }
-            score.Add(amount);
+            (IsLocal ? LocalScoreOf(earner) : score).Add(amount);
             SyncScore();
             Color color = amount >= 10000 ? new Color(1f, 0.85f, 0.3f) : new Color(0.75f, 1f, 0.6f);
             effects?.Popup(at, $"${amount:N0}", color, amount >= 10000 ? 1.4f : amount >= 1000 ? 1f : 0.8f);

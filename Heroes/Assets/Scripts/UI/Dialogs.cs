@@ -380,18 +380,120 @@ namespace Portfolio.Heroes.UI
         }
 
         private (bool won, int stars, int days)? shown;
+        private (GameState state, int days)? shownHotSeat;
 
         /// <summary>The results shown, written again in the new language when it changes.</summary>
         public void RefreshTexts()
         {
-            if (IsOpen && shown.HasValue)
+            if (IsOpen && shownHotSeat.HasValue)
+            {
+                ShowHotSeat(shownHotSeat.Value.state, shownHotSeat.Value.days);
+            }
+            else if (IsOpen && shown.HasValue)
             {
                 Show(shown.Value.won, shown.Value.stars, shown.Value.days);
             }
         }
 
+        /// <summary>
+        /// The end of a hot seat: who won (a person by name, or the computer), and the standings of every realm in its
+        /// colour, with their towns, battles and the creatures they slew. Play Again starts the same setup over; nothing
+        /// counts toward the campaign.
+        /// </summary>
+        public void ShowHotSeat(GameState state, int days)
+        {
+            shown = null;
+            shownHotSeat = (state, days);
+            ClearBody();
+            ClearButtons();
+            PlayerState winner = state.Player(state.winner);
+            bool personWon = winner != null && winner.human;
+            Heading.text = Words.T(personWon ? "Victory" : "Defeat");
+
+            TextMeshProUGUI verdict = UIKit.Heading(Body, "Verdict",
+                winner != null ? Words.F("{0} wins!", Words.Name(winner.name)) : Words.T("Nobody wins."), 34f);
+            UIKit.Pin((RectTransform)verdict.transform, new Vector2(0.5f, 1f), new Vector2(0f, -4f), new Vector2(760f, 46f));
+            UIKit.FitLine(verdict, 34f, 20f);
+            float y = -54f;
+            string line = winner != null && !winner.human ? Words.T("Every person at the table has fallen.")
+                : Words.F("{0} days of war", days);
+            TextMeshProUGUI under = UIKit.Label(Body, "Days", line, 21f, UIKit.Dim, TextAlignmentOptions.Center);
+            UIKit.Pin((RectTransform)under.transform, new Vector2(0.5f, 1f), new Vector2(0f, y), new Vector2(760f, 30f));
+            UIKit.FitLine(under, 21f, 14f);
+            y -= 42f;
+
+            Image plate = UIKit.Card(Body, "Standings");
+            List<PlayerState> standings = HotSeat.Standings(state);
+            float height = 22f + (standings.Count + 1) * 40f;
+            UIKit.Pin((RectTransform)plate.transform, new Vector2(0.5f, 1f), new Vector2(0f, y), new Vector2(780f, height));
+            RectTransform rows = UIKit.Content(plate, 8f);
+            UIKit.Layout<VerticalLayoutGroup>(rows, 4f).childForceExpandWidth = true;
+            Standing(rows, null, 0, state);
+            for (int i = 0; i < standings.Count; i++)
+            {
+                Standing(rows, standings[i], i + 1, state);
+            }
+            y -= height + 14f;
+            Window.sizeDelta = new Vector2(Window.sizeDelta.x, Mathf.Max(400f, 70f - y + 24f + ButtonRow + 40f));
+
+            Button again = Answer("Play Again", () =>
+            {
+                Close();
+                Manager.PlayHotSeatAgain();
+            });
+            UIKit.Fit((RectTransform)again.transform, 260f, ButtonRow - 4f);
+            Button leave = Answer("Back to the Title", Leave);
+            UIKit.Fit((RectTransform)leave.transform, 300f, ButtonRow - 4f);
+            Open();
+        }
+
+        /// <summary>
+        /// A row of the standings: the place, the realm's name in its colour (a person's or the computer's) and how it
+        /// stands; without a realm, the row of headings over the others.
+        /// </summary>
+        private static void Standing(RectTransform parent, PlayerState realm, int place, GameState state)
+        {
+            RectTransform row = UIKit.Rect(parent, realm != null ? $"Realm{realm.index}" : "Headings");
+            UIKit.Fit(row, 0f, 36f, true);
+            float size = realm != null ? 21f : 17f;
+            Color ink = realm != null ? UIKit.Ink : UIKit.Dim;
+            if (realm != null)
+            {
+                Color color = HeroesArt.PlayerColor((int)realm.color);
+                Image chip = UIKit.Rect(row, "Colour").gameObject.AddComponent<Image>();
+                chip.color = color;
+                chip.raycastTarget = false;
+                UIKit.Pin((RectTransform)chip.transform, new Vector2(0f, 0.5f), new Vector2(10f, 0f), new Vector2(26f, 26f));
+                TextMeshProUGUI number = UIKit.Label(chip.transform, "Place", place.ToString(), 17f, Color.white, TextAlignmentOptions.Center, true);
+                UIKit.Stretch((RectTransform)number.transform);
+                string who = realm.human ? realm.name : Words.F("{0} (computer)", Words.Name(realm.name));
+                TextMeshProUGUI name = UIKit.Label(row, "Name", who, size, Color.Lerp(color, Color.white, 0.25f), TextAlignmentOptions.MidlineLeft, true);
+                UIKit.Pin((RectTransform)name.transform, new Vector2(0f, 0.5f), new Vector2(48f, 0f), new Vector2(250f, 34f));
+                UIKit.FitLine(name, size, 13f);
+                Cell(row, "State", realm.index == state.winner ? Words.T("Winner") : realm.alive ? Words.T("Standing") : Words.T("Defeated"),
+                    300f, 120f, size, realm.alive ? UIKit.Ink : UIKit.Dim);
+                Cell(row, "Towns", realm.towns.Count.ToString(), 420f, 110f, size, ink);
+                Cell(row, "Battles", realm.battlesWon.ToString(), 530f, 110f, size, ink);
+                Cell(row, "Slain", realm.creaturesKilled.ToString("N0"), 640f, 110f, size, ink);
+                return;
+            }
+            Cell(row, "Realm", Words.T("Realm"), 48f, 250f, size, ink, TextAlignmentOptions.MidlineLeft);
+            Cell(row, "Towns", Words.T("Towns held"), 420f, 110f, size, ink);
+            Cell(row, "Battles", Words.T("Battles won"), 530f, 110f, size, ink);
+            Cell(row, "Slain", Words.T("Creatures slain"), 640f, 110f, size, ink);
+        }
+
+        private static void Cell(RectTransform row, string name, string text, float x, float width, float size, Color color,
+            TextAlignmentOptions align = TextAlignmentOptions.Center)
+        {
+            TextMeshProUGUI cell = UIKit.Label(row, name, text, size, color, align);
+            UIKit.Pin((RectTransform)cell.transform, new Vector2(0f, 0.5f), new Vector2(x, 0f), new Vector2(width, 34f));
+            UIKit.FitLine(cell, size, 12f);
+        }
+
         public void Show(bool won, int stars, int days)
         {
+            shownHotSeat = null;
             shown = (won, stars, days);
             ClearBody();
             ClearButtons();

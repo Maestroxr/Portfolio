@@ -2,6 +2,7 @@ using System.Collections;
 using System.Linq;
 using Gamebox;
 using Gamebox.Online;
+using Gamebox.UI;
 using UnityEngine;
 
 namespace Portfolio.EndlessRunner
@@ -17,8 +18,13 @@ namespace Portfolio.EndlessRunner
     /// races in the room. The log says who got which coins and what the track looked like, to compare between the
     /// players: no coin may count twice, and together they cannot have more than the track holds.
     /// <c>-runner-online solo &lt;folder&gt;</c> plays the first level (or the one after <c>-runner-level</c>) alone and
-    /// offline the same way, after a picture of every world of the campaign behind the level select. Run the players with
-    /// <c>-gamebox-identity</c> to tell them apart, and <c>-gamebox-server</c> / <c>-gamebox-database</c> for a test server.
+    /// offline the same way, after a picture of every world of the campaign behind the level select.
+    /// <c>-runner-online local &lt;folder&gt;</c> plays races at one device (<see cref="LocalRace"/>): the setup,
+    /// the controls page, then a race for each count of <c>-runner-local-players</c> (default <c>2,4,3</c>) with an
+    /// autopilot on every runner; the first race checks that each seat's keys move its own runner, that Escape pauses and
+    /// that Retry races again, the race of four lets one runner run out of hearts and watch the others, and a run alone
+    /// afterwards checks that the game for one is back. Run the players with <c>-gamebox-identity</c> to tell them apart,
+    /// and <c>-gamebox-server</c> / <c>-gamebox-database</c> for a test server.
     /// </summary>
     public class RunnerOnlineTour : OnlineTour
     {
@@ -26,6 +32,7 @@ namespace Portfolio.EndlessRunner
         private const string LevelArgument = "-runner-level";
         private const string GiveUpArgument = "-runner-give-up";
         private const string RacesArgument = "-runner-races";
+        private const string LocalPlayersArgument = "-runner-local-players";
 
         private RunnerGameManager manager;
         private RunnerAutopilot pilot;
@@ -51,6 +58,11 @@ namespace Portfolio.EndlessRunner
             if (Role == "solo")
             {
                 yield return Solo();
+                yield break;
+            }
+            if (Role == "local")
+            {
+                yield return Local();
                 yield break;
             }
             if (manager.online == null)
@@ -279,6 +291,172 @@ namespace Portfolio.EndlessRunner
             yield return SwitchLanguage("10_level_select");
             Note("done");
             Quit();
+        }
+
+        /// <summary>Races at this device: the setup, the controls page, a race per count of players, and the game alone again.</summary>
+        private IEnumerator Local()
+        {
+            int level = Mathf.Clamp(NumberArgument(LevelArgument, 0), 0, Mathf.Max(0, manager.LevelCount - 1));
+            manager.SelectLevel(level);
+            yield return new WaitForSeconds(0.5f);
+            string players = MobilePlatform.ArgumentValue(LocalPlayersArgument);
+            int[] counts = (string.IsNullOrEmpty(players) ? "2,4,3" : players).Split(',')
+                .Select(count => int.TryParse(count, out int value) ? value : 0).Where(count => count >= 2 && count <= 4).ToArray();
+            for (int i = 0; i < counts.Length; i++)
+            {
+                yield return RaceAtThisDevice(counts[i], i == 0);
+                if (left)
+                {
+                    yield break;
+                }
+            }
+
+            manager.PlayLevel(level);
+            yield return WaitFor(() => manager.IsGameRunning, 10f, "the run alone");
+            yield return new WaitForSeconds(5f);
+            Note($"alone again: in a local race {manager.InLocalRace}, {manager.Players.Count} players, main camera {Camera.main.rect}, "
+                + $"at {manager.Distance:0} m with {manager.Coins} coins");
+            yield return Shot("40_alone_again");
+            manager.ReturnToLevelSelect();
+            yield return new WaitForSecondsRealtime(1f);
+            Note("done");
+            Quit();
+        }
+
+        /// <summary>A race of <paramref name="count"/> runners at this device, from the setup to the level select.</summary>
+        private IEnumerator RaceAtThisDevice(int count, bool first)
+        {
+            string tag = $"{count}p";
+            // The setup opens on what was set up last: a race of this many.
+            PlayerPrefs.SetString(LocalMatch.Key(GameType.EndlessRunner), $"count={count}\n");
+            manager.OpenLocalPlay();
+            yield return new WaitForSecondsRealtime(1f);
+            LocalPlayUI setup = LocalPlayUI.For(manager);
+            if (!setup.IsOpen)
+            {
+                left = true;
+                yield return Fail("the local play setup did not open");
+                yield break;
+            }
+            yield return Shot($"{tag}_10_setup");
+            if (first)
+            {
+                setup.ShowControls(0);
+                yield return new WaitForSecondsRealtime(0.8f);
+                yield return Shot($"{tag}_11_controls_player1");
+                setup.ShowControls(1);
+                yield return new WaitForSecondsRealtime(0.5f);
+                yield return Shot($"{tag}_12_controls_player2");
+                setup.ShowSetup();
+                yield return new WaitForSecondsRealtime(0.3f);
+            }
+            if (!setup.StartMatch())
+            {
+                left = true;
+                yield return Fail("the local race did not start");
+                yield break;
+            }
+            yield return WaitFor(() => manager.InLocalRace && manager.IsGameRunning, 10f, "the local race");
+            LocalRace race = manager.LocalRace;
+            Note($"local race of {race.Runs.Count} on level {manager.LevelIndex}: "
+                + string.Join(", ", race.Runs.Select(run => $"{run.Seat.Name} lane {run.Runner.Lane} viewport {run.Camera.View.rect}")));
+            yield return new WaitForSeconds(1.2f);
+            yield return Shot($"{tag}_13_countdown");
+            yield return WaitFor(() => race.Runs.All(run => run.Runner.IsRunning), 10f, "the start");
+            if (first)
+            {
+                yield return PressSeatKeys(race);
+            }
+            foreach (RunnerRun run in race.Runs)
+            {
+                if (run.Runner.GetComponent<RunnerAutopilot>() == null)
+                {
+                    run.Runner.gameObject.AddComponent<RunnerAutopilot>();
+                }
+            }
+            yield return WaitOrEnd(6f);
+            LocalProgress(race);
+            yield return Shot($"{tag}_14_running");
+            if (first)
+            {
+                // Escape pauses a race at one device like a run alone.
+                manager.Back();
+                yield return new WaitForSecondsRealtime(0.8f);
+                float pausedAt = race.Runs[0].Distance;
+                yield return Shot($"{tag}_15_paused");
+                yield return new WaitForSecondsRealtime(0.8f);
+                Note($"paused: state {manager.State}, time scale {Time.timeScale}, moved {race.Runs[0].Distance - pausedAt:0.00} m");
+                manager.Back();
+                yield return new WaitForSecondsRealtime(0.3f);
+            }
+            if (count == 4)
+            {
+                // The last runner runs on its own: it is soon out of hearts and watches the others.
+                Destroy(race.Runs[3].Runner.GetComponent<RunnerAutopilot>());
+                yield return WaitFor(() => race.Runs[3].Done || Ended, 60f, "the last runner out of hearts");
+                yield return new WaitForSeconds(1.5f);
+                LocalProgress(race);
+                yield return Shot($"{tag}_16_out_and_watching");
+            }
+            yield return WaitOrEnd(10f);
+            if (!Ended)
+            {
+                LocalProgress(race);
+                yield return Shot($"{tag}_17_later");
+            }
+            yield return WaitFor(() => Ended || race.Runs.Any(run => run.Done && run.Finished), 240f, "the first runner over the line");
+            if (!Ended)
+            {
+                yield return new WaitForSeconds(1.5f);
+                LocalProgress(race);
+                yield return Shot($"{tag}_18_first_done");
+            }
+            yield return WaitFor(() => Ended, 300f, "the end of the local race");
+            yield return new WaitForSeconds(2f);
+            yield return Shot($"{tag}_19_results");
+            Note($"result: {manager.State}; " + string.Join(", ", race.Ranking.Select(racer =>
+                $"{Standings.Ordinal(racer.Place)} {racer.Name} {racer.Score} ({racer.Distance:0} m, {racer.Coins} coins)")));
+            if (first)
+            {
+                yield return SwitchLanguage($"{tag}_19_results");
+                manager.RetryLevel();
+                yield return WaitFor(() => manager.IsGameRunning, 10f, "the race again");
+                yield return new WaitForSeconds(2f);
+                Note($"retry: in a local race {manager.InLocalRace} of {manager.LocalRace?.Runs.Count}; state {manager.State}");
+                yield return Shot($"{tag}_20_retry");
+                yield return WaitFor(() => Ended, 300f, "the end of the race again");
+                yield return new WaitForSeconds(1f);
+            }
+            manager.ReturnToLevelSelect();
+            yield return new WaitForSecondsRealtime(1.5f);
+            Note($"back in the level select: in a local race {manager.InLocalRace}, {manager.Players.Count} players, main camera {Camera.main.rect}");
+            yield return Shot($"{tag}_21_level_select");
+        }
+
+        /// <summary>The keys of the first two seats as people would press them: each runner changes lanes on its own keys.</summary>
+        private IEnumerator PressSeatKeys(LocalRace race)
+        {
+            var keys = new ScriptedInput();
+            ControlInput.Source = keys;
+            int first = race.Runs[0].Runner.Lane;
+            int second = race.Runs[1].Runner.Lane;
+            // Player 1 goes right (D), player 2 goes right (the right arrow).
+            keys.Press(KeyCode.D);
+            keys.Press(KeyCode.RightArrow);
+            // The runners read the keys in the next frame; after it they are only held.
+            yield return null;
+            keys.EndFrame();
+            keys.ReleaseAll();
+            yield return null;
+            Note($"keys: player 1 lane {first} -> {race.Runs[0].Runner.Lane}, player 2 lane {second} -> {race.Runs[1].Runner.Lane}"
+                + (race.Runs.Count > 2 ? $", player 3 lane {race.Runs[2].Runner.Lane}" : string.Empty));
+            ControlInput.Source = null;
+        }
+
+        private void LocalProgress(LocalRace race)
+        {
+            Note(string.Join(", ", race.Runs.Select(run =>
+                $"{run.Seat.Name} {run.Phase} {run.Distance:0} m {run.Coins} c {run.Hearts} h p{run.Racer.Place}")));
         }
 
         private void Progress()

@@ -43,6 +43,10 @@ namespace Portfolio.Asteroids
             public long Score;
             public bool Flying;
             public bool Local;
+            /// <summary>Ships left, shown after the score; null shows none (online, and a strike pilot has one).</summary>
+            public int? Lives;
+            /// <summary>The ship's hull (or a strike ship's energy), 0 to 1, shown by the seat's chip; null for a full chip.</summary>
+            public float? Gauge;
         }
 
 

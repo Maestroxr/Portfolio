@@ -13,7 +13,8 @@ namespace Portfolio.Asteroids
     /// Development players only. Started with <c>-asteroids-tour &lt;folder&gt;</c>, it flies the offline game by itself
     /// with the <see cref="StrikeAutopilot"/> (or the asteroid autopilot for field missions) and saves screenshots and a
     /// tour.log into the folder, then quits. <c>-asteroids-tour-plan</c> lists the steps (<c>menu</c>,
-    /// <c>strike:&lt;index&gt;</c>, <c>shop</c>, <c>boss:&lt;index&gt;</c>, <c>field:&lt;index&gt;</c>);
+    /// <c>strike:&lt;index&gt;</c>, <c>shop</c>, <c>boss:&lt;index&gt;</c>, <c>field:&lt;index&gt;</c>, and the local co-op steps
+    /// <c>local</c>, <c>localsetup</c>, <c>localfield</c>, <c>localstrike</c> of AsteroidsTour.Local.cs);
     /// <c>-asteroids-tour-god</c>, <c>-asteroids-tour-speed &lt;x&gt;</c> (at most 3), <c>-asteroids-tour-money &lt;n&gt;</c>
     /// and <c>-asteroids-tour-timeout &lt;s&gt;</c> tune it. It backs up the strike progress keys and restores them, also
     /// when a step fails (the tour then ends early) or the process quits before the plan is done.
@@ -21,7 +22,7 @@ namespace Portfolio.Asteroids
     /// all in order); a field step takes the campaign index of the field mission. The default plan is
     /// <c>menu,shop,strike:1,boss:1,field:0</c>.
     /// </summary>
-    public class AsteroidsTour : MonoBehaviour
+    public partial class AsteroidsTour : MonoBehaviour
     {
         /// <summary>The command line argument that starts the tour.</summary>
         public const string Argument = "-asteroids-tour";
@@ -167,6 +168,20 @@ namespace Portfolio.Asteroids
                         break;
                     case "field":
                         yield return Field(ParseInt(argument, 0));
+                        break;
+                    case "local":
+                        yield return LocalField();
+                        yield return LocalStrike();
+                        break;
+                    case "localsetup":
+                        yield return LocalSetup(false);
+                        LocalPlayUI.For(manager).Hide();
+                        break;
+                    case "localfield":
+                        yield return LocalField();
+                        break;
+                    case "localstrike":
+                        yield return LocalStrike();
                         break;
                     default:
                         Note($"unknown step {step}");
@@ -690,6 +705,7 @@ namespace Portfolio.Asteroids
         /// </summary>
         private void Restore()
         {
+            RestoreLocalPlay();
             if (!backedUp || restored)
             {
                 return;

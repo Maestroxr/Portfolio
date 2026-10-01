@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Gamebox;
 using Gamebox.UI;
 using TMPro;
@@ -161,6 +162,8 @@ namespace Portfolio.Heroes.UI
             manager = owner;
             Prepare();
             hud.ClearLog();
+            chronicles.Clear();
+            chronicleOf = -1;
             CloseAll();
             title.Hide();
             ShowHud(true);
@@ -552,9 +555,66 @@ namespace Portfolio.Heroes.UI
             {
                 return;
             }
+            if (manager != null && manager.IsHotSeat)
+            {
+                Chronicle(chronicleOf).Add((text, player));
+            }
+            Write(text, player);
+        }
+
+        private void Write(string text, int player)
+        {
             // On the parchment a player's lines are written in a darker ink of their colour.
             int color = PlayerColorOf(player);
             hud.Log(text, player >= 0 && color >= 0 ? LogInk(HeroesArt.PlayerColor(color)) : UIKit.InkOnParchment);
+        }
+
+        // ------------------------------------------------------------------ a chronicle for every person of a hot seat
+
+        /// <summary>The most lines a person's chronicle keeps (the log shows fewer).</summary>
+        private const int ChronicleLines = 60;
+
+        /// <summary>
+        /// The lines of the log of each person of a hot seat, by seat; -1 holds what was written before anybody had the
+        /// device (the goal of the map), which every chronicle begins with.
+        /// </summary>
+        private readonly Dictionary<int, List<(string text, int player)>> chronicles =
+            new Dictionary<int, List<(string text, int player)>>();
+
+        private int chronicleOf = -1;
+
+        private List<(string text, int player)> Chronicle(int seat)
+        {
+            if (!chronicles.TryGetValue(seat, out var lines))
+            {
+                lines = seat >= 0 && chronicles.TryGetValue(-1, out var common)
+                    ? new List<(string text, int player)>(common)
+                    : new List<(string text, int player)>();
+                chronicles[seat] = lines;
+            }
+            if (lines.Count > ChronicleLines)
+            {
+                lines.RemoveRange(0, lines.Count - ChronicleLines);
+            }
+            return lines;
+        }
+
+        /// <summary>
+        /// The device went to another person of a hot seat: the log shows their own chronicle, what they found and what
+        /// they saw happen, and none of what the others did.
+        /// </summary>
+        public void SwitchChronicle(int seat)
+        {
+            if (hud == null || seat == chronicleOf)
+            {
+                return;
+            }
+            chronicleOf = seat;
+            hud.ClearLog();
+            foreach ((string text, int player) in Chronicle(seat))
+            {
+                Write(text, player);
+            }
         }
 
         private int PlayerColorOf(int player)
@@ -618,7 +678,8 @@ namespace Portfolio.Heroes.UI
             {
                 if (player.name == body)
                 {
-                    return player.index == manager.Viewer ? Words.T("Your turn") : Words.F("{0}'s turn", Words.Name(player.name));
+                    // In a hot seat every person is called by name.
+                    return player.index == manager.Viewer && !manager.IsHotSeat ? Words.T("Your turn") : Words.F("{0}'s turn", Words.Name(player.name));
                 }
             }
             return Words.Sentence(body);
@@ -661,6 +722,32 @@ namespace Portfolio.Heroes.UI
         {
             CloseAll();
             results.Show(won, stars, days);
+        }
+
+        /// <summary>The end of a hot seat: who won, and how every realm stood.</summary>
+        public void ShowHotSeatEnd(GameState state, int days)
+        {
+            CloseAll();
+            results.ShowHotSeat(state, days);
+        }
+
+        /// <summary>
+        /// Closes the screens a person may have open over the map (a town, a hero, a meeting, a dwelling, a message), so
+        /// the next person of a hot seat finds none of them.
+        /// </summary>
+        public void CloseScreens()
+        {
+            town?.Close();
+            heroSheet?.Close();
+            meeting?.Close();
+            dwelling?.Close();
+            split?.Close();
+            message?.Close();
+            choice?.Close();
+            hud?.HideAnnouncement();
+            TooltipBox.Hide(this);
+            manager?.Path?.Clear();
+            hoverCell = -1;
         }
 
         public void OpenHero()
@@ -751,7 +838,8 @@ namespace Portfolio.Heroes.UI
 
         private void AdventureHover()
         {
-            int cell = busy || ScreenOpen ? -1 : PointerCell();
+            // Nothing on the map answers the pointer behind the hand-over screen of a hot seat, nor the click that lifts it.
+            int cell = busy || ScreenOpen || manager.IsPassing ? -1 : PointerCell();
             HeroState hero = manager.Selected;
             if (cell != hoverCell)
             {

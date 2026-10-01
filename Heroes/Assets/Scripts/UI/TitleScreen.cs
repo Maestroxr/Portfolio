@@ -8,8 +8,8 @@ namespace Portfolio.Heroes.UI
 {
     /// <summary>
     /// The first screen of the game: a small living valley behind it (<see cref="TitleDiorama"/>), the name of the game
-    /// in its decorative capitals, and the ways in: Continue, the campaign, the skirmish maps, the online lobby, the
-    /// settings, the credits and the way out. It takes the place of the shared menu while the game is not running.
+    /// in its decorative capitals, and the ways in: Continue, the campaign, the skirmish maps, the hot seat for several
+    /// people at this device, the online lobby, the settings, the credits and the way out. It takes the place of the shared menu while the game is not running.
     /// </summary>
     public sealed class TitleScreen : MonoBehaviour
     {
@@ -27,6 +27,7 @@ namespace Portfolio.Heroes.UI
         private Button resume;
         private Tooltip resumeTip;
         private Button online;
+        private Button hotSeat;
         private TitleDiorama diorama;
         private Texture2D ramp;
         private float shownAt;
@@ -95,7 +96,7 @@ namespace Portfolio.Heroes.UI
             UIKit.Look(tagline, TextLook.Shadow);
 
             menu = UIKit.Rect(area, "Menu");
-            UIKit.Pin(menu, new Vector2(0f, 1f), new Vector2(Left + (Column - ButtonWidth) * 0.5f, -384f), new Vector2(ButtonWidth, 7f * 76f));
+            UIKit.Pin(menu, new Vector2(0f, 1f), new Vector2(Left + (Column - ButtonWidth) * 0.5f, -384f), new Vector2(ButtonWidth, 8f * 76f));
             VerticalLayoutGroup layout = UIKit.Layout<VerticalLayoutGroup>(menu, 12f);
             layout.childAlignment = TextAnchor.UpperCenter;
             layout.childForceExpandWidth = true;
@@ -104,6 +105,7 @@ namespace Portfolio.Heroes.UI
             resumeTip = resume.GetComponent<Tooltip>();
             Entry("Campaign", () => ui.OpenCampaign(false), "The Shattered Crown\nEight chapters, one after the other.");
             Entry("Skirmish", () => ui.OpenCampaign(true), "Skirmish\nA single map against the computer.");
+            hotSeat = Entry("Hot Seat", () => manager.OpenLocalPlay(), "Hot Seat\nTwo to four people take turns at this device.");
             online = Entry("Play Online", () => manager.OpenOnline(), "Play Online\nA room on the server, with players on other devices.");
             Entry("Settings", ui.ShowSettings, "Settings\nWhere battles are fought, speeds, sound, and the rules of a skirmish.");
             Entry("Credits", ui.OpenCredits, "Credits\nWho made what the game shows and plays.");
@@ -179,33 +181,23 @@ namespace Portfolio.Heroes.UI
             if (saved)
             {
                 HeroesLevel scenario = manager.Campaign is HeroesCampaign campaign ? campaign.Scenario(level) : null;
-                resumeTip.Title = scenario != null ? Words.F("Continue: {0}", Words.T(scenario.Title)) : "Continue";
+                string name = scenario == null ? null
+                    : manager.ContinuesHotSeat ? Words.F("{0}, hot seat", Words.T(scenario.Title))
+                    : Words.T(scenario.Title);
+                resumeTip.Title = name != null ? Words.F("Continue: {0}", name) : "Continue";
                 resumeTip.Text = "The scenario you left, where you left it.";
             }
             online.gameObject.SetActive(manager.Online != null);
+            hotSeat.gameObject.SetActive(manager.LocalPlay != null);
         }
 
         /// <summary>
-        /// The level whose save Continue takes up: the one saved last, or -1. The manager is pointed at it, which only
-        /// decides which save the load reads.
+        /// The level whose save Continue takes up: the one saved last (a game alone or a hot seat), or -1. The manager is
+        /// pointed at it, which only decides which save the load reads.
         /// </summary>
         private int SavedLevel()
         {
-            IStorageStrategy disk = manager.Storage?.SelectedStorage;
-            if (disk == null || manager.InSession)
-            {
-                return -1;
-            }
-            int level = disk.GetInt(manager.LastSavedLevelKey, manager.LevelIndex);
-            if (level < 0)
-            {
-                return -1;
-            }
-            if (manager.LevelIndex != level)
-            {
-                manager.LoadLevel(level);
-            }
-            return manager.DoesSaveGameExist() ? level : -1;
+            return manager.ContinueLevel();
         }
 
         private void Continue()
@@ -235,12 +227,13 @@ namespace Portfolio.Heroes.UI
             }
         }
 
-        /// <summary>Whether a window lies over the title: the campaign, the credits, the settings or the online lobby.</summary>
+        /// <summary>Whether a window lies over the title: the campaign, the credits, the settings, the hot seat or the online lobby.</summary>
         private bool Covered
         {
             get
             {
-                if (ui.Campaign != null && ui.Campaign.IsOpen || ui.Message != null && ui.Message.IsOpen || ui.IsSettingsShown)
+                if (ui.Campaign != null && ui.Campaign.IsOpen || ui.Message != null && ui.Message.IsOpen || ui.IsSettingsShown ||
+                    manager.IsLocalSetupOpen)
                 {
                     return true;
                 }

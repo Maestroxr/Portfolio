@@ -69,6 +69,9 @@ namespace Portfolio.Asteroids
 
         public bool IsEnemy => enemy;
 
+        /// <summary>The seat the shot's hits count for (<see cref="AsteroidsPlayer.HitSeat"/> of the ship that fired it).</summary>
+        private int? Seat => FiredBy != null ? FiredBy.HitSeat : null;
+
         /// <summary>
         /// The layers the shot can hit now. Starts as the prefab's <see cref="reach"/>; a spawner may change it before the
         /// shot is added to the field, and it goes back to the prefab's when the shot returns to its pool.
@@ -270,7 +273,7 @@ namespace Portfolio.Asteroids
             Vector2 point = target.Position - direction * target.Radius * 0.8f;
             if (!IsGhost)
             {
-                target.TakeHit(new DamageInfo(damage, direction, point, DamageSource.PlayerShot, true, this));
+                target.TakeHit(new DamageInfo(damage, direction, point, DamageSource.PlayerShot, true, this) { Seat = Seat });
             }
             ShotHitEvent?.Invoke(this, target.gameObject);
             if (Field != null && Field.Effects != null)
@@ -291,6 +294,7 @@ namespace Portfolio.Asteroids
                     PlayerDamage = 0f,
                     Push = 2.5f,
                     ByPlayer = true,
+                    Seat = Seat,
                     Source = target,
                     Tint = impactTint,
                     Layers = Reach
@@ -363,6 +367,7 @@ namespace Portfolio.Asteroids
                 PlayerDamage = 0f,
                 Push = 0f,
                 ByPlayer = !enemy,
+                Seat = enemy ? null : Seat,
                 Tint = impactTint,
                 Layers = Altitude.Ground
             });

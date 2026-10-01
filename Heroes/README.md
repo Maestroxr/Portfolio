@@ -24,8 +24,8 @@ are built by code (see "Building").
 ## Playing
 
 - **The title screen** stands in front of a small valley with a town, a rider, soldiers and a dragon, seen by a slowly
-  drifting camera. Its buttons: Continue (the scenario left last, where it was left), Campaign, Skirmish, Play Online,
-  Settings, Credits and Exit.
+  drifting camera. Its buttons: Continue (the scenario left last, where it was left), Campaign, Skirmish, Hot Seat,
+  Play Online, Settings, Credits and Exit.
 - **The campaign screen** lists the eight chapters of *The Shattered Crown* as cards, each with the stars it was won
   with and locked until the one before it is won, or, on its other page, the four skirmish maps, which can be played
   straight away. The story of the one picked is on parchment beside them, with the realms that play it. A skirmish is
@@ -157,6 +157,30 @@ game on every device.
 - **Victory** is set per scenario: defeat everyone, take a town, slay a monster, gather gold or find an artifact. When
   every person at the table has lost, a computer player has won.
 
+## Hot seat
+
+**Hot Seat** on the title screen plays a skirmish map with several people at one device, through BaseGame's shared local
+play setup (`HeroesHotSeatRules`): the map (which fixes how many realms play), its size, the battles (on the map or on a
+battlefield, for this game only) and the hand-over screen (on at first), and for each realm a name and whether a person
+or the computer (Easy, Normal or Hard) plays it, at least two people; each realm shows its faction and colour.
+
+- **Taking turns.** Whenever the device has to go to another person (their turn, a question for them such as a level up
+  or a chest, or a battle they are attacked in on someone else's turn) the director stops and covers the map with
+  BaseGame's hand-over screen ("Bob's turn - pass the device to Bob", with the day or the reason); the map is shrouded
+  and the side panels hidden behind it, even under the pause menu. Once they are ready the view becomes theirs: their
+  fog, their resources and panels, their chronicle, their last hero and camera spot. Computer turns are watched through
+  the fog of the next person, who already holds the device. The rules of who must hold the device are plain C#
+  (`Model/HotSeat.cs`: `HandOverTo`, `NextPerson`, `Standings`) and tested outside Unity. Two people who fight each
+  other share the screen for the battle: no curtain, and the battle bar names whose stack moves.
+- **Names.** Every person is called by name, never "you": the turn banner and top bar ("Alice's turn"), the battle bar
+  ("Bob's move"), map tips and towns ("held by Alice"). Solo and online games say what they always said.
+- **Saving.** A hot seat saves in a slot of its own per map (`HotSeat.<level>`, with its setup beside it), so the solo
+  save of the same map stays; Continue takes up whichever was saved last and rebuilds the match (names, people, the
+  hand-over screen), starting behind the curtain.
+- **The end.** No stars, records or campaign progress. The results name the winner ("Bob wins!", or the computer) and
+  rank the realms in their colours with their towns, battles won and creatures slain, with Play Again (same setup) and
+  Back to the Title.
+
 ## Multiplayer
 
 **Play Online** on the title screen opens the lobby shared by all Gamebox games (`BaseGameManager.OpenOnline`). A room
@@ -210,7 +234,7 @@ faster until it catches up. There is no saving and no pausing online: the menu i
 | `Scripts/Model` | The rules: the grid, the content tables (with the battlefields' obstacles and walls, `Content/Battlefields.cs`), the state, the commands and events, the rules engine (`Rules/HeroesGame.*.cs`, the battlefield layout and sieges in `HeroesGame.Battlefield.cs`), the map generator, the computer players and the lockstep table. No Unity; it references only `Gamebox.Lockstep`. |
 | `Scripts/View` | What is seen: the terrain built from the cells, the hexagonal grid (Terrain Grid System 2), the fog of war, the map, the paths, the puppets that animate the models, the effects. The battle view (`BattleView.cs`) shows both styles through `IBattlefield` (`Battlefield.cs`): `MapBattlefield` on the map, and `BattlefieldScene` with `BattlefieldGround` and `BattlefieldGrid` in the HeroesBattle scene. |
 | `Scripts/UI` | The interface, built from code when it is first needed: the title screen and its valley (`TitleScreen.cs`), the adventure screen (`AdventureHud.cs`, `Sidebar.cs`, `MapTips.cs`), the campaign, the town with its tavern and marketplace, the hero's book, the dialogs, and the battle screen (`BattleBar.cs`, `BattleCards.cs`, `BattleOverlay.cs`, `BattleSpellbook.cs`, `BattleResults.cs`), all put together from `UIKit.cs`. |
-| `Scripts` | The manager (`HeroesGameManager.cs`, which directs a game; `.Events.cs` plays the events out, `.Battle.cs` opens and closes battles, `.Online.cs` is the online half), the controllers, the settings, the art and sound assets, and the development tours (`HeroesTour.cs`, `HeroesUITour.cs`, `HeroesOnlineTour.cs`). |
+| `Scripts` | The manager (`HeroesGameManager.cs`, which directs a game; `.Events.cs` plays the events out, `.Battle.cs` opens and closes battles, `.Online.cs` is the online half, `.HotSeat.cs` the hot seat with `HeroesHotSeatRules.cs`), the controllers, the settings, the art and sound assets, and the development tours (`HeroesTour.cs`, `HeroesUITour.cs`, `HeroesOnlineTour.cs`). |
 | `Scripts/Server` | The generated bindings of the game's server and the client stamped for them. |
 | `Scenes` | `Heroes.unity`, and `HeroesBattle.unity` with the prefabs of a town's gatehouse, the ruin of a tower, loose stones and the banners of the five colours, and its colour grading (`Scenes/HeroesBattle/`). |
 | `Editor` | The builders: the art (`HeroesArtBuilder.cs`, with `HeroesObjectArt`, `HeroesBattleArt`, `HeroesPortraits` and `HeroesUIArt` for the interface, its fonts and its pointers), the scenarios (`HeroesContentBuilder.cs`), the two scenes (`HeroesSceneBuilder.cs`), contact sheets, and the menu that runs them all. |
@@ -255,6 +279,9 @@ without these arguments, and in a release player, nothing of it runs:
   tower shot down, a battle taken up again from a copy of the game made in the middle of it, and a scenario left for
   the title while its battle loads, is up and shows its results. `skirmish`, only when asked for, starts a skirmish on
   a large, rich and hard setting. The tour changes a copy of the settings, never the defaults or the player's own.
+- `-heroes-hotseat <folder>` (`HeroesHotSeatTour.cs`) sets up a hot seat of two people and a computer, and shoots the
+  setup, the hand-over screens, each person's view, the pause menu over a hand-over, both sides of a battle between the
+  people, the results and the title's Continue of a saved hot seat.
 - `-heroes-ui-tour <folder>` walks through every screen outside the battles: the title, the credits, the settings,
   the campaign and the skirmish maps, the adventure screen and its tooltips, the hero's book, the town with its market
   and tavern, the questions, the next day, the pause menu and the results of a game, and at last the title switched to

@@ -23,6 +23,9 @@ namespace Portfolio.EndlessRunner
             }
         }
 
+        /// <summary>Every runner of a local race bounces on the pad, not only the first.</summary>
+        protected override bool StaysForOthers => true;
+
         protected override bool CanTouch(RunnerPlayer player)
         {
             // Only a runner on (or just above) the pad bounces; one flying over it does not.
@@ -32,7 +35,7 @@ namespace Portfolio.EndlessRunner
         protected override void OnTouched(RunnerGameManager manager, RunnerPlayer player)
         {
             squash = 1f;
-            manager.Launch(this);
+            manager.Launch(this, player);
         }
 
         private void Update()

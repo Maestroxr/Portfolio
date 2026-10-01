@@ -358,6 +358,8 @@ namespace Portfolio.MemoryCards
             phase = Phase.Menu;
             ClearBoard();
             ClearVersus();
+            // Back at the level select, a versus game at this device is over.
+            EndLocalMatch();
             particles?.Clear();
             round = null;
             unflipTimer = -1f;
@@ -581,7 +583,7 @@ namespace Portfolio.MemoryCards
             }
             gameUI.ShowLevelSelect(worlds, selectedWorld, levels, selectedLevel, campaign.TotalStars(progress), campaign.MaxStars,
                 progress.SetsFound, DoesSaveGameExist());
-            RefreshPlayers();
+            RefreshVersusButton();
         }
 
 
@@ -939,6 +941,7 @@ namespace Portfolio.MemoryCards
                         Learn(face);
                     }
                 }
+                localVersus?.SeeAll(round.Cards);
                 sounds?.Play(sounds.fan, 0.8f);
                 for (int i = 0; i < views.Count; i++)
                 {
@@ -985,12 +988,22 @@ namespace Portfolio.MemoryCards
             }
             else if (versus != null)
             {
-                After(1f, AnnounceTurn);
+                BeginLocalTurn(1f);
             }
         }
 
 
         private void OnCardClicked(Flippable view)
+        {
+            Flip(view, false);
+        }
+
+
+        /// <summary>
+        /// Turns the card of <paramref name="view"/> for the player whose turn it is. In a versus game at this device a
+        /// person's click counts on a person's turn once it began, and the computer's on its own turn.
+        /// </summary>
+        private void Flip(Flippable view, bool byComputer)
         {
             if (!IsPlaying || view == null || view.Index < 0 || view.Index >= round.Cards.Count)
             {
@@ -999,6 +1012,10 @@ namespace Portfolio.MemoryCards
             if (IsOnlineVersus)
             {
                 RequestOnlineFlip(view);
+                return;
+            }
+            if (localVersus != null && !localVersus.Accepts(byComputer))
+            {
                 return;
             }
             MemoryCard card = round.Cards[view.Index];
@@ -1014,6 +1031,11 @@ namespace Portfolio.MemoryCards
             if (result.Ignored)
             {
                 return;
+            }
+            if (result.Outcome != FlipOutcome.Cracked)
+            {
+                // The face is up for everybody at the device, the computer players too.
+                localVersus?.See(card);
             }
             PlayFlip(view, result, versus != null ? BookLocalFlip(result).Points : result.Points);
         }
@@ -1252,10 +1274,12 @@ namespace Portfolio.MemoryCards
             particles?.Puff(ParticlePosition(view), new Color(0.75f, 0.55f, 1f));
             gameUI?.ShowBanner(T("PEEK!"), T("Take a good look"), look != null ? look.Colors.peek : new Color(0.8f, 0.65f, 1f), 1.2f);
             var shown = new List<Flippable>();
+            var peeked = new List<MemoryCard>();
             foreach (MemoryCard card in round.Cards)
             {
                 if (card.State == CardState.Hidden)
                 {
+                    peeked.Add(card);
                     Flippable hidden = ViewOf(card);
                     if (hidden != null)
                     {
@@ -1264,6 +1288,7 @@ namespace Portfolio.MemoryCards
                     }
                 }
             }
+            localVersus?.SeeAll(peeked);
             yield return new WaitForSeconds(flipTime + rules.PeekTime);
             for (int i = 0; i < shown.Count; i++)
             {
@@ -1599,10 +1624,10 @@ namespace Portfolio.MemoryCards
         }
 
 
-        /// <summary>Clicks a card as the player would (used by the autopilot).</summary>
+        /// <summary>Clicks a card as a person would (used by the autopilot): on a computer's turn it does nothing.</summary>
         internal void ClickCard(Flippable view)
         {
-            OnCardClicked(view);
+            Flip(view, false);
         }
 
         #endregion

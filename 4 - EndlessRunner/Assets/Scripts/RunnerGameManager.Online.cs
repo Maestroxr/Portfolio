@@ -389,7 +389,7 @@ namespace Portfolio.EndlessRunner
             // A runner on the ground is pressed onto it; the others need not know.
             var velocity = new Vector3(runner.LaneChangeDirection * runner.SideSpeed, runner.IsGrounded ? 0f : runner.VerticalSpeed,
                 runner.IsRunning ? runner.Speed : 0f);
-            online.SendRunnerPose(runner.transform.position, velocity, state, hearts);
+            online.SendRunnerPose(runner.transform.position, velocity, state, Main.Hearts);
         }
 
 
@@ -427,9 +427,8 @@ namespace Portfolio.EndlessRunner
             switch (result.Outcome)
             {
                 case ClaimOutcome.Awarded:
-                    coins += result.Coins;
-                    coinPoints += result.Coins * pointsPerCoin;
-                    PlayerScore = Mathf.Floor(distance) + coinPoints;
+                    Main.AddCoins(result.Coins, pointsPerCoin);
+                    PlayerScore = Main.Score;
                     ui?.PunchCoins();
                     track.Take(piece);
                     break;
@@ -564,7 +563,7 @@ namespace Portfolio.EndlessRunner
                 racer.Coins = claims.CoinsOf(racer.Seat);
                 if (racer.Local)
                 {
-                    racer.Distance = distance;
+                    racer.Distance = Main.Distance;
                     racer.Score = raceFinished ? racer.Reported : Mathf.FloorToInt(PlayerScore);
                     racer.Done |= runEnded;
                     continue;
@@ -603,16 +602,17 @@ namespace Portfolio.EndlessRunner
         private void EndRaceRun(bool victory)
         {
             RunnerLevel level = RunnerLevel;
-            PlayerScore = Mathf.Floor(distance) + coinPoints;
+            RunnerRun run = Main;
+            PlayerScore = run.Score;
             int score = Mathf.FloorToInt(PlayerScore);
             if (level != null && level.IsEndless)
             {
                 // The record of the endless run is about the distance, whoever else was on the track.
-                progress.RecordEndless(distance, score);
+                progress.RecordEndless(run.Distance, score);
             }
             runEnded = true;
             runner.StopRun();
-            online?.FinishRun(distance, score);
+            online?.FinishRun(run.Distance, score);
             phase = RunPhase.Watching;
             phaseTime = 0f;
             if (raceFinished)
@@ -648,9 +648,16 @@ namespace Portfolio.EndlessRunner
         }
 
 
-        /// <summary>The z the track and the world follow: the runner's, or that of the ghost the player watches.</summary>
+        /// <summary>
+        /// The z the track and the world follow: the runner's, or that of the ghost the player watches (the leader's in a
+        /// local race).
+        /// </summary>
         private float FocusZ()
         {
+            if (InLocalRace)
+            {
+                return LocalFocusZ();
+            }
             RunnerGhost watched = phase == RunPhase.Watching && runnerCamera != null ? runnerCamera.Watched : null;
             return watched != null ? watched.transform.position.z : runner.transform.position.z;
         }
@@ -697,7 +704,7 @@ namespace Portfolio.EndlessRunner
                 // The race was ended for everybody while this runner was still out there.
                 runEnded = true;
                 runner.StopRun();
-                ClearPowerUps();
+                ClearPowerUps(Main);
                 sounds?.StopMusic();
                 ShowRaceResults();
             }
@@ -731,8 +738,8 @@ namespace Portfolio.EndlessRunner
                 LevelTitle = level != null ? RunnerGameTheme.TitleFor(level) : string.Empty,
                 Victory = place == 1,
                 Endless = level != null && level.IsEndless,
-                Coins = coins,
-                Distance = distance,
+                Coins = Main.Coins,
+                Distance = Main.Distance,
                 Score = local != null ? (int)local.Score : Mathf.FloorToInt(PlayerScore),
                 Online = true,
                 Place = place,

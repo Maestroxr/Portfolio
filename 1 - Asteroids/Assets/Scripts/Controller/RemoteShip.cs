@@ -1,6 +1,5 @@
 using Gamebox;
 using Gamebox.Online;
-using TMPro;
 using UnityEngine;
 
 namespace Portfolio.Asteroids
@@ -9,7 +8,8 @@ namespace Portfolio.Asteroids
     /// The stand-in of a ship that a pilot flies on another device in a shared mission. It is an instance of the ship
     /// prefab that is never simulated and takes no damage here: it is moved between the poses that arrive from its owner
     /// (<see cref="PoseInterpolator"/>, across the wrapping edges of the playfield), shows what they report (thrust, dash,
-    /// shield, a failing hull, the hull picked in the hangar) and carries the pilot's name in the colour of their seat.
+    /// shield, a failing hull, the hull picked in the hangar) and carries the pilot's name in the colour of their seat
+    /// (<see cref="PilotTag"/>).
     /// Enemies, mines and pickups treat it like any other ship (see <see cref="SpaceField.NearestShip"/>). In a strike
     /// mission the playfield does not wrap, the ship banks with its sideways speed, and a held beam weapon (the pose's
     /// beam bit) is drawn here with its own on and off pulse, up to the first enemy in its column: only a picture, the
@@ -18,8 +18,6 @@ namespace Portfolio.Asteroids
     [RequireComponent(typeof(AsteroidsPlayer))]
     public class RemoteShip : MonoBehaviour
     {
-        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
-
         /// <summary>Sideways speed (m/s) at which a strike stand-in banks all the way.</summary>
         private const float BankSpeed = 17f;
 
@@ -30,7 +28,6 @@ namespace Portfolio.Asteroids
         private AsteroidsPlayer player;
         private SpaceField field;
         private PlayerSettings[] hangar;
-        private TextMeshPro label;
         private Color tint = Color.white;
         private float hullStrength = 100f;
         private ShipPose shown;
@@ -77,8 +74,7 @@ namespace Portfolio.Asteroids
             transform.position = new Vector3(start.x, start.y, 0f);
             transform.rotation = Quaternion.identity;
             ShowHull(0);
-            Tint();
-            BuildLabel(pilotName);
+            PilotTag.Show(gameObject, pilotName, tint);
             shown = new ShipPose { Alive = true, Health = 1f, Shield = 0.5f, Invulnerable = true };
             player.Mirror(shown, hullStrength);
             player.visuals?.ResetVisuals();
@@ -172,12 +168,6 @@ namespace Portfolio.Asteroids
                 }, deltaTime);
             }
             player.TickDrones(deltaTime);
-            if (label != null)
-            {
-                // The name stays upright above the ship however it turns.
-                label.transform.position = transform.position + new Vector3(0f, 1.45f, -0.3f);
-                label.transform.rotation = Quaternion.identity;
-            }
         }
 
 
@@ -236,40 +226,6 @@ namespace Portfolio.Asteroids
             {
                 player.ApplyHull(hull);
             }
-        }
-
-
-        /// <summary>The halo under the ship glows in the colour of the seat.</summary>
-        private void Tint()
-        {
-            Transform halo = transform.Find("Halo");
-            if (halo == null || !halo.TryGetComponent(out Renderer glow))
-            {
-                return;
-            }
-            var block = new MaterialPropertyBlock();
-            block.SetColor(BaseColorId, new Color(tint.r * 1.6f, tint.g * 1.6f, tint.b * 1.6f, 0.5f));
-            glow.SetPropertyBlock(block);
-        }
-
-
-        private void BuildLabel(string pilotName)
-        {
-            if (label == null)
-            {
-                var labelObject = new GameObject("Name");
-                labelObject.transform.SetParent(transform, false);
-                label = labelObject.AddComponent<TextMeshPro>();
-                label.alignment = TextAlignmentOptions.Center;
-                label.fontSize = 3.2f;
-                label.fontStyle = FontStyles.Bold;
-                label.textWrappingMode = TextWrappingModes.NoWrap;
-                label.overflowMode = TextOverflowModes.Overflow;
-                label.rectTransform.sizeDelta = new Vector2(8f, 1f);
-                label.sortingOrder = 5;
-            }
-            label.text = pilotName;
-            label.color = tint;
         }
 
 

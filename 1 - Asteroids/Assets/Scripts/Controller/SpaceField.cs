@@ -15,7 +15,10 @@ namespace Portfolio.Asteroids
         public float PlayerDamage;
         public float Push;
         public bool ByPlayer;
-        /// <summary>In a shared mission: the seat of the pilot on another device who set it off; null for the local ship or nobody.</summary>
+        /// <summary>
+        /// In a shared mission: the seat of the pilot on another device who set it off; in local co-op the wingman's; null
+        /// for the player's own ship or nobody.
+        /// </summary>
         public int? Seat;
         public SpaceBody Source;
         public Color Tint;
@@ -36,6 +39,9 @@ namespace Portfolio.Asteroids
     /// its own copy of the world and decides what hurts that ship; one client simulates the world, and on the others
     /// the bodies are puppets (<see cref="IsReplica"/>). The ships of the other pilots are stand-ins that take no damage
     /// here, but enemies, mines and pickups go for the closest ship of them all (<see cref="NearestShip"/>).
+    ///
+    /// In local co-op several pilots fly at this device: next to <see cref="Player"/> the field has the ships of the other
+    /// pilots (<see cref="Wingmen"/>), which are simulated, hurt and collect pickups here exactly like it.
     /// </summary>
     public class SpaceField : MonoBehaviour
     {
@@ -60,6 +66,7 @@ namespace Portfolio.Asteroids
         private readonly List<Comet> comets = new List<Comet>();
         private readonly Queue<Blast> blasts = new Queue<Blast>();
         private readonly List<AsteroidsPlayer> ships = new List<AsteroidsPlayer>();
+        private readonly List<AsteroidsPlayer> wingmen = new List<AsteroidsPlayer>();
         private readonly List<Shootable> candidates = new List<Shootable>();
         private int busy;
 
@@ -92,6 +99,12 @@ namespace Portfolio.Asteroids
 
         /// <summary>The stand-ins of the other pilots' ships in a shared mission; empty otherwise.</summary>
         public IReadOnlyList<AsteroidsPlayer> RemoteShips => ships;
+
+        /// <summary>The ships of the other pilots of a local co-op mission, flown at this device too; empty otherwise.</summary>
+        public IReadOnlyList<AsteroidsPlayer> Wingmen => wingmen;
+
+        /// <summary>How many ships are flown at this device: the player's (<see cref="LocalShip"/> 0) and the wingmen.</summary>
+        public int LocalShipCount => 1 + wingmen.Count;
 
         /// <summary>Keeps the copies of a shared playfield in step; null in the single player game.</summary>
         public IFieldLink Link { get; set; }
@@ -131,7 +144,14 @@ namespace Portfolio.Asteroids
         public event Action<SpaceBody> HostileEntered;
 
 
-        private bool PlayerAlive => Player != null && Player.IsAlive;
+        /// <summary>Ship <paramref name="index"/> of the ships flown at this device: 0 is <see cref="Player"/>, then the wingmen.</summary>
+        public AsteroidsPlayer LocalShip(int index)
+        {
+            return index == 0 ? Player : index > 0 && index <= wingmen.Count ? wingmen[index - 1] : null;
+        }
+
+
+        private static bool Flies(AsteroidsPlayer ship) => ship != null && ship.IsAlive;
 
 
         private void Awake()
@@ -305,9 +325,13 @@ namespace Portfolio.Asteroids
             }
             ApplyGravity(worldDelta, deltaTime);
             CollidePlayerShots();
-            CollideEnemyShots();
-            CollidePlayer();
-            CollectRewards();
+            for (int i = 0; i < LocalShipCount; i++)
+            {
+                AsteroidsPlayer ship = LocalShip(i);
+                CollideEnemyShots(ship);
+                CollideShip(ship);
+                CollectRewards(ship);
+            }
             ProcessBlasts();
             Exit();
         }
@@ -336,10 +360,14 @@ namespace Portfolio.Asteroids
                         well.Consume(body);
                     }
                 }
-                if (PlayerAlive)
+                for (int i = 0; i < LocalShipCount; i++)
                 {
-                    Player.Push(well.Pull(Player.Position) * deltaTime * 0.8f);
-                    well.AffectPlayer(Player, deltaTime);
+                    AsteroidsPlayer ship = LocalShip(i);
+                    if (Flies(ship))
+                    {
+                        ship.Push(well.Pull(ship.Position) * deltaTime * 0.8f);
+                        well.AffectPlayer(ship, deltaTime);
+                    }
                 }
             }
         }
@@ -383,13 +411,13 @@ namespace Portfolio.Asteroids
         }
 
 
-        private void CollideEnemyShots()
+        private void CollideEnemyShots(AsteroidsPlayer ship)
         {
-            if (!PlayerAlive)
+            if (!Flies(ship))
             {
                 return;
             }
-            Vector2 shipPosition = Player.Position;
+            Vector2 shipPosition = ship.Position;
             for (int s = 0; s < enemyShots.Count; s++)
             {
                 Shot shot = enemyShots[s];
@@ -398,26 +426,27 @@ namespace Portfolio.Asteroids
                     continue;
                 }
                 // A shot that does not stop on the ship (a beam) hurts it in its own tick while it touches.
-                if (!shot.Touches(shipPosition, Player.Radius) || !shot.StopsOnHit)
+                if (!shot.Touches(shipPosition, ship.Radius) || !shot.StopsOnHit)
                 {
                     continue;
                 }
                 Vector2 direction = shot.Velocity.sqrMagnitude > 0.01f ? shot.Velocity.normalized : (shipPosition - shot.Position).normalized;
-                Player.TakeDamage(new DamageInfo(shot.Damage, direction, shot.Position, DamageSource.Enemy, false, shot));
+                ship.TakeDamage(new DamageInfo(shot.Damage, direction, shot.Position, DamageSource.Enemy, false, shot));
                 shot.Impact();
             }
         }
 
 
-        private void CollidePlayer()
+        /// <summary><paramref name="ship"/> against everything it can fly into: rocks, mines and enemies, and comets.</summary>
+        private void CollideShip(AsteroidsPlayer ship)
         {
-            if (!PlayerAlive)
+            if (!Flies(ship))
             {
                 return;
             }
             if (playground != null && !playground.Wraps)
             {
-                RamStrike();
+                RamStrike(ship);
                 return;
             }
             for (int t = 0; t < targets.Count; t++)
@@ -427,16 +456,16 @@ namespace Portfolio.Asteroids
                 {
                     continue;
                 }
-                Vector2 delta = Player.Position - target.Position;
-                float reach = Player.Radius + target.Radius * 0.9f;
+                Vector2 delta = ship.Position - target.Position;
+                float reach = ship.Radius + target.Radius * 0.9f;
                 if (delta.sqrMagnitude > reach * reach)
                 {
                     continue;
                 }
                 float distance = delta.magnitude;
                 Vector2 away = distance > 0.001f ? delta / distance : Vector2.up;
-                bool dashing = Player.IsDashing;
-                bool hurt = !dashing && Player.TakeDamage(new DamageInfo(target.ContactDamage, away, target.Position + away * target.Radius,
+                bool dashing = ship.IsDashing;
+                bool hurt = !dashing && ship.TakeDamage(new DamageInfo(target.ContactDamage, away, target.Position + away * target.Radius,
                     DamageSource.Collision, false));
                 if ((hurt || dashing) && target.IsPuppet)
                 {
@@ -444,17 +473,17 @@ namespace Portfolio.Asteroids
                 }
                 else if (hurt || dashing)
                 {
-                    target.OnRammed(Player, -away, dashing);
+                    target.OnRammed(ship, -away, dashing);
                 }
                 // Bounce apart so the two do not stay inside each other.
                 float overlap = reach - distance;
-                Player.Position += away * overlap;
+                ship.Position += away * overlap;
                 if (hurt)
                 {
-                    Player.Push(away * (4f + target.Radius * 2f));
+                    ship.Push(away * (4f + target.Radius * 2f));
                     target.Velocity -= away * (1.5f / Mathf.Max(0.5f, target.Radius));
                 }
-                if (!PlayerAlive)
+                if (!ship.IsAlive)
                 {
                     return;
                 }
@@ -466,12 +495,12 @@ namespace Portfolio.Asteroids
                 {
                     continue;
                 }
-                float reach = Player.Radius + comet.Radius;
-                Vector2 delta = Player.Position - comet.Position;
+                float reach = ship.Radius + comet.Radius;
+                Vector2 delta = ship.Position - comet.Position;
                 if (delta.sqrMagnitude <= reach * reach)
                 {
-                    comet.HitPlayer(Player);
-                    if (!PlayerAlive)
+                    comet.HitPlayer(ship);
+                    if (!ship.IsAlive)
                     {
                         return;
                     }
@@ -485,7 +514,7 @@ namespace Portfolio.Asteroids
         /// <see cref="StrikeRules.RamUnitDamage"/> (by the player) and the ship takes damage by the unit's size. Nothing
         /// bounces or is pushed; ground units are flown over; boss cores and parts hurt the ship but take nothing.
         /// </summary>
-        private void RamStrike()
+        private void RamStrike(AsteroidsPlayer ship)
         {
             for (int t = 0; t < targets.Count; t++)
             {
@@ -494,15 +523,15 @@ namespace Portfolio.Asteroids
                 {
                     continue;
                 }
-                Vector2 delta = Player.Position - target.Position;
-                float reach = Player.Radius + target.Radius * 0.9f;
+                Vector2 delta = ship.Position - target.Position;
+                float reach = ship.Radius + target.Radius * 0.9f;
                 if (delta.sqrMagnitude > reach * reach || !target.TakeRamTurn(StrikeRules.RamInterval))
                 {
                     continue;
                 }
                 float distance = delta.magnitude;
                 Vector2 away = distance > 0.001f ? delta / distance : Vector2.down;
-                Player.TakeDamage(new DamageInfo(StrikeRules.RamPilotDamage(target.Radius * 2f), away, target.Position + away * target.Radius,
+                ship.TakeDamage(new DamageInfo(StrikeRules.RamPilotDamage(target.Radius * 2f), away, target.Position + away * target.Radius,
                     DamageSource.Collision, false));
                 if (!(target is Boss) && !(target is BossPart))
                 {
@@ -512,10 +541,10 @@ namespace Portfolio.Asteroids
                     }
                     else
                     {
-                        target.OnRammed(Player, -away, false);
+                        target.OnRammed(ship, -away, false);
                     }
                 }
-                if (!PlayerAlive)
+                if (!ship.IsAlive)
                 {
                     return;
                 }
@@ -523,13 +552,13 @@ namespace Portfolio.Asteroids
         }
 
 
-        private void CollectRewards()
+        private void CollectRewards(AsteroidsPlayer ship)
         {
-            if (!PlayerAlive)
+            if (!Flies(ship))
             {
                 return;
             }
-            Vector2 shipPosition = Player.Position;
+            Vector2 shipPosition = ship.Position;
             for (int r = 0; r < rewards.Count; r++)
             {
                 Reward reward = rewards[r];
@@ -537,7 +566,7 @@ namespace Portfolio.Asteroids
                 {
                     continue;
                 }
-                float reach = Player.PickupRadius + reward.Radius;
+                float reach = ship.PickupRadius + reward.Radius;
                 if ((reward.Position - shipPosition).sqrMagnitude > reach * reach)
                 {
                     continue;
@@ -552,7 +581,7 @@ namespace Portfolio.Asteroids
                     }
                     continue;
                 }
-                reward.Collect(Player);
+                reward.Collect(ship);
                 RewardCollected?.Invoke(reward);
             }
         }
@@ -619,7 +648,7 @@ namespace Portfolio.Asteroids
                     target.TakeHit(new DamageInfo(blast.Damage * falloff, direction, target.Position - direction * target.Radius,
                         DamageSource.Explosion, blast.ByPlayer) { Seat = blast.Seat });
                 }
-                HurtPlayer(blast);
+                HurtShips(blast);
             }
             if (blasts.Count > 0 && processed >= maxBlastsPerFrame)
             {
@@ -628,26 +657,34 @@ namespace Portfolio.Asteroids
         }
 
 
-        /// <summary>The part of a blast that is about the ship at this device.</summary>
-        private void HurtPlayer(Blast blast)
+        /// <summary>The part of a blast that is about the ships at this device.</summary>
+        private void HurtShips(Blast blast)
         {
-            if (blast.PlayerDamage <= 0f || !PlayerAlive)
+            if (blast.PlayerDamage <= 0f)
             {
                 return;
             }
-            Vector2 delta = Player.Position - blast.Center;
-            float reach = blast.Radius + Player.Radius;
-            if (delta.sqrMagnitude > reach * reach)
+            for (int i = 0; i < LocalShipCount; i++)
             {
-                return;
-            }
-            float distance = delta.magnitude;
-            float falloff = 1f - 0.5f * Mathf.Clamp01(distance / reach);
-            Vector2 direction = distance > 0.001f ? delta / distance : Vector2.up;
-            if (Player.TakeDamage(new DamageInfo(blast.PlayerDamage * falloff, direction, blast.Center, DamageSource.Explosion, false))
-                && (playground == null || playground.Wraps))
-            {
-                Player.Push(direction * blast.Push * falloff);
+                AsteroidsPlayer ship = LocalShip(i);
+                if (!Flies(ship))
+                {
+                    continue;
+                }
+                Vector2 delta = ship.Position - blast.Center;
+                float reach = blast.Radius + ship.Radius;
+                if (delta.sqrMagnitude > reach * reach)
+                {
+                    continue;
+                }
+                float distance = delta.magnitude;
+                float falloff = 1f - 0.5f * Mathf.Clamp01(distance / reach);
+                Vector2 direction = distance > 0.001f ? delta / distance : Vector2.up;
+                if (ship.TakeDamage(new DamageInfo(blast.PlayerDamage * falloff, direction, blast.Center, DamageSource.Explosion, false))
+                    && (playground == null || playground.Wraps))
+                {
+                    ship.Push(direction * blast.Push * falloff);
+                }
             }
         }
 
@@ -659,7 +696,7 @@ namespace Portfolio.Asteroids
         public void ShowBlast(Blast blast)
         {
             Exploded?.Invoke(blast);
-            HurtPlayer(blast);
+            HurtShips(blast);
         }
 
 
@@ -756,22 +793,47 @@ namespace Portfolio.Asteroids
         }
 
 
+        /// <summary>Adds the ship of another pilot of a local co-op mission, flown at this device like <see cref="Player"/>.</summary>
+        public void AddWingman(AsteroidsPlayer wingman)
+        {
+            if (wingman != null && wingman != Player && !wingmen.Contains(wingman))
+            {
+                wingmen.Add(wingman);
+            }
+        }
+
+
+        public void RemoveWingman(AsteroidsPlayer wingman)
+        {
+            wingmen.Remove(wingman);
+        }
+
+
         /// <summary>
         /// The living ship closest to <paramref name="from"/> across the wrapping edges: the one enemies hunt, mines arm for
         /// and pickups drift to. Null when no ship is alive.
         /// </summary>
         public AsteroidsPlayer NearestShip(Vector2 from)
         {
-            AsteroidsPlayer best = PlayerAlive ? Player : null;
-            if (ships.Count == 0)
+            AsteroidsPlayer best = Flies(Player) ? Player : null;
+            if (ships.Count == 0 && wingmen.Count == 0)
             {
                 return best;
             }
             float bestDistance = best != null ? ShipDistance(from, best) : float.MaxValue;
-            for (int i = 0; i < ships.Count; i++)
+            Nearest(from, wingmen, ref best, ref bestDistance);
+            Nearest(from, ships, ref best, ref bestDistance);
+            return best;
+        }
+
+
+        /// <summary>Whether a living ship of <paramref name="candidates"/> is closer to <paramref name="from"/> than <paramref name="best"/>.</summary>
+        private void Nearest(Vector2 from, List<AsteroidsPlayer> candidates, ref AsteroidsPlayer best, ref float bestDistance)
+        {
+            for (int i = 0; i < candidates.Count; i++)
             {
-                AsteroidsPlayer candidate = ships[i];
-                if (candidate == null || !candidate.IsAlive)
+                AsteroidsPlayer candidate = candidates[i];
+                if (!Flies(candidate))
                 {
                     continue;
                 }
@@ -782,7 +844,6 @@ namespace Portfolio.Asteroids
                     best = candidate;
                 }
             }
-            return best;
         }
 
 

@@ -98,6 +98,13 @@ namespace Portfolio.Asteroids
                 {
                     living.Add(field.Player);
                 }
+                foreach (AsteroidsPlayer wingman in field.Wingmen)
+                {
+                    if (wingman != null && wingman.IsAlive)
+                    {
+                        living.Add(wingman);
+                    }
+                }
                 foreach (AsteroidsPlayer remote in field.RemoteShips)
                 {
                     if (remote != null && remote.IsAlive)

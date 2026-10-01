@@ -5,6 +5,7 @@ using Gamebox.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 using static Portfolio.MemoryCards.MemoryCardsText;
 
@@ -124,9 +125,11 @@ namespace Portfolio.MemoryCards
         [SerializeField] internal Button levelSelectButton;
 
         [Header("Versus")]
-        [Tooltip("Steps through the number of players at this device: one, or a versus game for two to four.")]
-        [SerializeField] internal Button playersButton;
-        [SerializeField] internal TMP_Text playersLabel;
+        [Tooltip("Opens the setup of a versus game for two to four at this device (people or computers).")]
+        [FormerlySerializedAs("playersButton")]
+        [SerializeField] internal Button versusButton;
+        [FormerlySerializedAs("playersLabel")]
+        [SerializeField] internal TMP_Text versusLabel;
         [SerializeField] internal Button onlineButton;
         [SerializeField] internal VersusHud versusHud;
         [Tooltip("What the HUD shows only in a game for one: the score and the clock.")]
@@ -278,7 +281,7 @@ namespace Portfolio.MemoryCards
             Listen(retryButton, () => Cards?.RetryLevel());
             Listen(levelsButton, () => Cards?.ReturnToLevelSelect());
             Listen(levelSelectButton, () => Cards?.ReturnToLevelSelect());
-            Listen(playersButton, () => Cards?.CyclePlayers());
+            Listen(versusButton, () => Cards?.OpenLocalPlay());
             Listen(onlineButton, () => Cards?.OpenOnline());
             // The shared menu buttons are wired by the base class; they only need their click sound here.
             foreach (Button button in new[] { StartNewGame, ReturnToGame, SaveGame, LoadGame, SettingsButton, ExitButton })
@@ -677,13 +680,13 @@ namespace Portfolio.MemoryCards
             ClearPopups();
         }
 
-        /// <summary>The number of players the play button starts a game for; the button is off for levels only one can play.</summary>
-        public void ShowPlayers(int players, bool allowed)
+        /// <summary>The versus button of the level select; it is off for levels only one can play.</summary>
+        public void ShowVersusButton(bool allowed)
         {
-            SetLabel(playersLabel, players <= 1 ? T("1 PLAYER") : F("{0} PLAYERS", players));
-            if (playersButton != null)
+            SetLabel(versusLabel, T("VERSUS"));
+            if (versusButton != null)
             {
-                playersButton.interactable = allowed;
+                versusButton.interactable = allowed;
             }
         }
 

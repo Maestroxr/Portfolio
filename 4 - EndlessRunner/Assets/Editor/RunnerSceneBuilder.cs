@@ -750,7 +750,7 @@ namespace Portfolio.EndlessRunner.EditorTools
             ui.logoRunner = runner;
 
             // Level details
-            RectTransform details = Panel(root, "Details", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(50f, 110f), new Vector2(580f, 560f));
+            RectTransform details = Panel(root, "Details", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(50f, 80f), new Vector2(580f, 620f));
             ui.detailWorld = Text(details, "World", "SUNNY MEADOWS", 28f, Gold, TextAlignmentOptions.Left, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -26f), new Vector2(520f, 40f), hudFont);
             ui.detailTitle = Text(details, "Title", "1. Sunny Start", 50f, Color.white, TextAlignmentOptions.Left, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -64f), new Vector2(520f, 70f), titleFont);
             ui.detailStars = Stars(details, "Stars", new Vector2(0.5f, 1f), new Vector2(-190f, -170f), 64f, 70f, false);
@@ -760,14 +760,27 @@ namespace Portfolio.EndlessRunner.EditorTools
             ui.playLabel = playLabel;
 
             // Progress and menu buttons
-            RectTransform progress = Panel(root, "Progress", new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-50f, 110f), new Vector2(420f, 560f));
+            RectTransform progress = Panel(root, "Progress", new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-50f, 80f), new Vector2(420f, 620f));
             Text(progress, "Header", "YOUR STARS", 30f, Gold, TextAlignmentOptions.Center, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -24f), new Vector2(380f, 40f), hudFont);
             Image(progress, "StarIcon", RunnerArtBuilder.Icon("Star"), Color.white, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(-110f, -72f), new Vector2(84f, 84f));
             ui.starsTotal = Text(progress, "Total", "0 / 24", 54f, Color.white, TextAlignmentOptions.Left, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(60f, -80f), new Vector2(240f, 70f), titleFont);
+            // The menu buttons in a column that closes up where the local race is hidden (played by touch).
+            var buttonSize = new Vector2(340f, 78f);
+            RectTransform menu = Rect(progress, "Menu", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -170f), new Vector2(340f, 4f * buttonSize.y + 3f * 8f));
+            var column = menu.gameObject.AddComponent<VerticalLayoutGroup>();
+            column.spacing = 8f;
+            column.childAlignment = TextAnchor.UpperCenter;
+            column.childControlWidth = false;
+            column.childControlHeight = false;
+            column.childForceExpandWidth = false;
+            column.childForceExpandHeight = false;
             // A race against other players, in a room of the game's server.
-            ui.multiplayerButton = Button(progress, "Multiplayer", "Multiplayer", RunnerArtBuilder.Icon("Runner"), Orange, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -178f), new Vector2(340f, 82f), 32f, out _);
-            ui.titleSettingsButton = Button(progress, "Settings", "Settings", RunnerArtBuilder.Icon("Settings"), Blue, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -276f), new Vector2(340f, 82f), 34f, out _);
-            ui.titleExitButton = Button(progress, "Exit", "Quit", RunnerArtBuilder.Icon("Exit"), Red, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -374f), new Vector2(340f, 82f), 34f, out _);
+            ui.multiplayerButton = Button(menu, "Multiplayer", "Multiplayer", RunnerArtBuilder.Icon("Runner"), Orange, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), Vector2.zero, buttonSize, 32f, out _);
+            // A race of two to four runners at this device, in split screen: it needs keys or pads, so not by touch.
+            ui.localPlayButton = Button(menu, "LocalPlay", "Local Play", RunnerArtBuilder.Icon("Flag"), colors.badge, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), Vector2.zero, buttonSize, 32f, out _);
+            UIBuildUtils.ShowOnly(ui.localPlayButton.gameObject, TouchLayout.Visibility.WithoutTouch);
+            ui.titleSettingsButton = Button(menu, "Settings", "Settings", RunnerArtBuilder.Icon("Settings"), Blue, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), Vector2.zero, buttonSize, 34f, out _);
+            ui.titleExitButton = Button(menu, "Exit", "Quit", RunnerArtBuilder.Icon("Exit"), Red, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), Vector2.zero, buttonSize, 34f, out _);
             ui.resetProgressButton = TextButton(progress, "ResetProgress", "Reset progress", new Vector2(0.5f, 0f), new Vector2(0f, 58f), new Vector2(300f, 40f), 22f, out TextMeshProUGUI resetLabel);
             ui.resetProgressLabel = resetLabel;
             TextMeshProUGUI keys = Text(progress, "Controls", "Arrows / WASD / Space - or swipe", 20f, colors.hint, TextAlignmentOptions.Center, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 18f), new Vector2(390f, 34f), null, false);
@@ -833,7 +846,12 @@ namespace Portfolio.EndlessRunner.EditorTools
             StretchFull(flash.rectTransform);
             flash.raycastTarget = false;
             ui.damageFlash = flash;
-            root = UIBuildUtils.CreateSafeArea(root);
+            Transform safeArea = UIBuildUtils.CreateSafeArea(root);
+            // What the runner alone sees; a local race hides it for a HUD per runner over each part of the screen.
+            RectTransform run = Rect(safeArea, "Run", Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero);
+            StretchFull(run);
+            ui.runHud = run.gameObject;
+            root = run;
 
             RectTransform coins = Panel(root, "Coins", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(28f, -24f), new Vector2(330f, 96f));
             Image coinIcon = Image(coins, "Icon", RunnerArtBuilder.Icon("Coin"), Color.white, new Vector2(0f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(56f, 0f), new Vector2(78f, 78f));
@@ -884,7 +902,7 @@ namespace Portfolio.EndlessRunner.EditorTools
             ui.hearts = heartImages.ToArray();
             ui.heartsRoot = hearts;
 
-            Image pause = Image(root, "Pause", RunnerArtBuilder.Icon("Pause"), Color.white, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-26f, -24f), new Vector2(86f, 86f));
+            Image pause = Image(safeArea, "Pause", RunnerArtBuilder.Icon("Pause"), Color.white, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-26f, -24f), new Vector2(86f, 86f));
             var pauseButton = pause.gameObject.AddComponent<Button>();
             pauseButton.targetGraphic = pause;
             pauseButton.colors = ButtonColors();
@@ -918,10 +936,10 @@ namespace Portfolio.EndlessRunner.EditorTools
             }
             ui.powerUpSlots = slots.ToArray();
 
-            TextMeshProUGUI countdown = Text(root, "Countdown", "3", 230f, Gold, TextAlignmentOptions.Center, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 80f), new Vector2(1000f, 320f), titleFont);
+            TextMeshProUGUI countdown = Text(safeArea, "Countdown", "3", 230f, Gold, TextAlignmentOptions.Center, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 80f), new Vector2(1000f, 320f), titleFont);
             countdown.gameObject.SetActive(false);
             ui.countdownText = countdown;
-            TextMeshProUGUI toast = Text(root, "Toast", "Toast", 72f, Color.white, TextAlignmentOptions.Center, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 150f), new Vector2(1500f, 240f), titleFont);
+            TextMeshProUGUI toast = Text(safeArea, "Toast", "Toast", 72f, Color.white, TextAlignmentOptions.Center, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 150f), new Vector2(1500f, 240f), titleFont);
             toast.gameObject.SetActive(false);
             ui.toastText = toast;
 

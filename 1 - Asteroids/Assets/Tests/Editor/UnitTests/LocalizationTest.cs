@@ -157,6 +157,17 @@ namespace Portfolio.Asteroids.Tests
             words.Add("the boss");
             words.Add("Ships per pilot");
             words.Add("Strike difficulty");
+            // The local co-op setup: its title, hints, options and the actions of the controls page.
+            var local = new AsteroidsLocalRules();
+            words.Add(local.Title);
+            foreach (MissionMode mode in new[] { MissionMode.Field, MissionMode.Strike })
+            {
+                local.ForMode(mode);
+                words.Add(local.Hint);
+                words.AddRange(local.Options.Select(option => option.Label));
+            }
+            words.AddRange(LocalCoopRules.Scheme.Actions.Select(action => action.Label));
+            words.Add("Local Play");
             Assert.That(words.Count, Is.GreaterThan(100), "The data was found.");
             List<string> missing = words.Where(word => !string.IsNullOrWhiteSpace(word) && !keys.Contains(word)).Distinct().ToList();
             Assert.That(missing, Is.Empty, "Data words missing from Asteroids.csv: " + string.Join(" | ", missing));

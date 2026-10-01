@@ -13,7 +13,8 @@ namespace Portfolio.Asteroids
     /// ship, the waves, hazards and bosses, scoring and combos, pickups and lives), the victory or defeat, the results
     /// and the campaign progress. The menu, pause, settings and level flow come from <see cref="BaseGameManager"/>;
     /// the campaign is an <see cref="AsteroidsCampaign"/> and the progress an <see cref="AsteroidsProgress"/>.
-    /// Missions flown together with other pilots online are in AsteroidsGameManager.Coop.cs.
+    /// Missions flown together with other pilots online are in AsteroidsGameManager.Coop.cs, missions flown by several
+    /// pilots at this device in AsteroidsGameManager.Local.cs.
     /// </summary>
     public partial class AsteroidsGameManager : BaseGameManager
     {
@@ -211,6 +212,14 @@ namespace Portfolio.Asteroids
             {
                 ship.visuals.SetModel(ship.visuals.Hull);
             }
+            // The wingmen of a local co-op mission too.
+            foreach (LocalPilot pilot in localPilots)
+            {
+                if (pilot.Wingman && pilot.Ship != null && pilot.Ship.visuals != null && pilot.Ship.visuals.Hull != null)
+                {
+                    pilot.Ship.visuals.SetModel(pilot.Ship.visuals.Hull);
+                }
+            }
             if (field != null)
             {
                 foreach (SpaceBody body in field.Bodies)
@@ -388,7 +397,7 @@ namespace Portfolio.Asteroids
             {
                 case MissionPhase.Briefing:
                     UpdateCountdown();
-                    ship.Simulate(deltaTime);
+                    SimulateShips(deltaTime);
                     field.Tick(deltaTime);
                     break;
                 case MissionPhase.Playing:
@@ -402,7 +411,7 @@ namespace Portfolio.Asteroids
                     break;
                 case MissionPhase.Victory:
                     field.WorldTimeScale = Mathf.MoveTowards(field.WorldTimeScale, 0.35f, deltaTime);
-                    ship.Simulate(deltaTime, false);
+                    SimulateShips(deltaTime, false);
                     field.Tick(deltaTime);
                     if (phaseTime > 2.6f)
                     {
@@ -428,6 +437,8 @@ namespace Portfolio.Asteroids
 
         private void EnterMenu()
         {
+            // Back at the mission select a local co-op match is over (AsteroidsGameManager.Local.cs).
+            EndLocalMatch();
             phase = MissionPhase.Menu;
             director?.Stop();
             spawner?.ClearPending();
@@ -931,6 +942,11 @@ namespace Portfolio.Asteroids
                     lives = Mathf.Clamp(coop.Lives, 1, AsteroidSettings.LivesLimit);
                 }
             }
+            if (IsLocal)
+            {
+                // The wingmen, the pilots' scores and ships, the starts (AsteroidsGameManager.Local.cs).
+                PrepareLocalMission(strike);
+            }
             livesLost = 0;
             score.Reset();
             ResetScore();
@@ -1010,9 +1026,9 @@ namespace Portfolio.Asteroids
             }
             missionTime += deltaTime;
             // A world shared with other pilots keeps its pace: no chrono field there.
-            float chrono = !IsCoop && ship.IsPowerUpActive(PowerUpType.Chrono) ? chronoTimeScale : 1f;
+            float chrono = !IsCoop && ChronoActive ? chronoTimeScale : 1f;
             field.WorldTimeScale = Mathf.MoveTowards(field.WorldTimeScale, chrono, deltaTime * 2f);
-            ship.Simulate(deltaTime);
+            SimulateShips(deltaTime);
             if (Simulates)
             {
                 spawner.Tick(deltaTime * field.WorldTimeScale);
@@ -1023,6 +1039,10 @@ namespace Portfolio.Asteroids
             if (score.Multiplier < lastMultiplier)
             {
                 lastMultiplier = score.Multiplier;
+            }
+            if (IsLocal)
+            {
+                UpdateLocalPilots(deltaTime);
             }
             if (objective.Type == LevelObjective.Survive)
             {
@@ -1039,7 +1059,7 @@ namespace Portfolio.Asteroids
             {
                 Win();
             }
-            if (Mission != null && Mission.IsEndless && !recordAnnounced && progress.EndlessBestScore > 1000 && score.Score > progress.EndlessBestScore)
+            if (!IsLocal && Mission != null && Mission.IsEndless && !recordAnnounced && progress.EndlessBestScore > 1000 && score.Score > progress.EndlessBestScore)
             {
                 recordAnnounced = true;
                 ui?.Toast(T("NEW RECORD!"), new Color(1f, 0.85f, 0.25f));
@@ -1051,7 +1071,8 @@ namespace Portfolio.Asteroids
         private void UpdateHints(float deltaTime)
         {
             AsteroidsLevel mission = Mission;
-            if (mission == null || hintIndex >= mission.HintCount)
+            // The hints name the keys of the single player game: the pilots of a local mission have keys of their own.
+            if (mission == null || hintIndex >= mission.HintCount || IsLocal)
             {
                 return;
             }
@@ -1075,13 +1096,19 @@ namespace Portfolio.Asteroids
             if (IsStrike)
             {
                 RefreshStrikeHud();
+                if (IsLocal)
+                {
+                    ShowLocalPilots();
+                }
                 return;
             }
+            // In local co-op the HUD shows the squad's score; every pilot's own is on the pilots list.
+            bool local = IsLocal;
             var hud = new HudState
             {
-                Score = score.Score,
-                Multiplier = score.Multiplier,
-                ComboTime = score.Combo > 0 ? score.ComboTime / ScoreKeeper.ComboWindow : 0f,
+                Score = local ? squad.TeamScore : score.Score,
+                Multiplier = local ? 1 : score.Multiplier,
+                ComboTime = !local && score.Combo > 0 ? score.ComboTime / ScoreKeeper.ComboWindow : 0f,
                 Objective = FollowsSimulator ? objective.Status(Mathf.Max(1, coopWave), coopProgress) : objective.Status(director != null ? director.WaveNumber : 1),
                 ObjectiveProgress = FollowsSimulator ? coopProgress : objective.Progress,
                 Hull = ship.MaxHealth > 0f ? Mathf.Clamp01(ship.Health / ship.MaxHealth) : 0f,
@@ -1095,12 +1122,16 @@ namespace Portfolio.Asteroids
                 BossName = boss != null ? boss.DisplayName : string.Empty,
                 BossHealth = boss != null ? boss.BarFraction : 0f
             };
-            for (int i = 0; i < PowerUps.Count; i++)
+            for (int i = 0; i < PowerUps.Count && !local; i++)
             {
                 var type = (PowerUpType)i;
                 ui.SetPowerUp(type, ship.PowerUpTime(type) / PowerUps.Duration(type));
             }
             ui.UpdateHud(hud);
+            if (local)
+            {
+                ShowLocalPilots();
+            }
         }
 
 
@@ -1117,7 +1148,13 @@ namespace Portfolio.Asteroids
             else
             {
                 int bonus = lives * lifeBonus;
-                if (bonus > 0 && Mission != null && !Mission.IsEndless)
+                if (IsLocal)
+                {
+                    // Every pilot still flying scores the bonus for the ships they have left.
+                    localLifeBonus = Mission != null && !Mission.IsEndless ? squad.Victory(lifeBonus) : 0;
+                    SyncScore();
+                }
+                else if (bonus > 0 && Mission != null && !Mission.IsEndless)
                 {
                     score.Add(bonus);
                     SyncScore();
@@ -1181,6 +1218,11 @@ namespace Portfolio.Asteroids
 
         private void ShowResults(bool victory)
         {
+            if (IsLocal)
+            {
+                ShowLocalResults(victory);
+                return;
+            }
             // A strike mission flown with other pilots shows its results through ShowCoopResults.
             if (IsStrike && !IsCoop)
             {
@@ -1273,7 +1315,14 @@ namespace Portfolio.Asteroids
         {
             objective?.WaveCleared();
             int bonus = Mathf.RoundToInt(waveBonus * wave);
-            score.Add(bonus);
+            if (IsLocal)
+            {
+                squad.WaveCleared(bonus);
+            }
+            else
+            {
+                score.Add(bonus);
+            }
             SyncScore();
             if (Mission != null && Mission.Objective == LevelObjective.ClearWaves && objective.IsComplete)
             {
@@ -1359,7 +1408,11 @@ namespace Portfolio.Asteroids
                 return;
             }
             // The kill of a pilot on another device scores on their device; what it drops is the same for everybody.
-            if (!hit.Seat.HasValue)
+            if (IsLocal)
+            {
+                ScoreLocalKill(target, LocalPilotOf(hit));
+            }
+            else if (!hit.Seat.HasValue)
             {
                 ScoreKill(target);
             }
@@ -1400,13 +1453,19 @@ namespace Portfolio.Asteroids
 
         private void OnShotLanded(Shot shot)
         {
-            score.ShotLanded();
+            (IsLocal ? LocalScoreOf(shot.FiredBy) : score).ShotLanded();
         }
 
 
+        // The scene ship's own handlers below stand aside in local co-op, where every pilot's ship is heard on its own
+        // (AsteroidsGameManager.Local.cs).
+
         private void OnVolleyFired(int count)
         {
-            score.ShotFired(count);
+            if (!IsLocal)
+            {
+                score.ShotFired(count);
+            }
         }
 
 
@@ -1423,6 +1482,10 @@ namespace Portfolio.Asteroids
 
         private void OnCrystalCollected(PointReward crystal)
         {
+            if (IsLocal)
+            {
+                return;
+            }
             score.AddCrystal();
             score.Add(crystal.PointsAward);
             SyncScore();
@@ -1433,6 +1496,10 @@ namespace Portfolio.Asteroids
 
         private void OnLifeAwarded()
         {
+            if (IsLocal)
+            {
+                return;
+            }
             lives = Mathf.Min(AsteroidSettings.LivesLimit, lives + 1);
         }
 
@@ -1448,7 +1515,7 @@ namespace Portfolio.Asteroids
 
         private void OnWeaponChanged()
         {
-            if (!IsMissionActive || ship == null)
+            if (!IsMissionActive || ship == null || IsLocal)
             {
                 return;
             }
@@ -1458,6 +1525,10 @@ namespace Portfolio.Asteroids
 
         private void OnShipDamaged(DamageInfo hit)
         {
+            if (IsLocal)
+            {
+                return;
+            }
             if (IsStrike)
             {
                 CountStrikeDamage(hit);
@@ -1472,7 +1543,7 @@ namespace Portfolio.Asteroids
 
         private void OnShipDestroyed(AsteroidsPlayer lost)
         {
-            if (!IsMissionActive)
+            if (!IsMissionActive || IsLocal)
             {
                 return;
             }
@@ -1575,6 +1646,20 @@ namespace Portfolio.Asteroids
 
         private void SyncScore()
         {
+            if (IsLocal && squad != null)
+            {
+                // The squad's score is the game's; every ship carries its own pilot's.
+                PlayerScore = squad.TeamScore;
+                foreach (LocalPilot pilot in localPilots)
+                {
+                    if (pilot.Record != null)
+                    {
+                        pilot.Ship.Points = pilot.Record.Score.Score;
+                    }
+                }
+                UpdateScore();
+                return;
+            }
             PlayerScore = score.Score;
             if (ship != null)
             {
@@ -1603,6 +1688,11 @@ namespace Portfolio.Asteroids
             if (InSession)
             {
                 UI?.UpdateError(T("A mission flown with other pilots cannot be saved."));
+                return;
+            }
+            if (InLocalMatch)
+            {
+                UI?.UpdateError(T("A local co-op mission cannot be saved."));
                 return;
             }
             if (IsStrike)
@@ -1673,6 +1763,12 @@ namespace Portfolio.Asteroids
             if (disk == null || !DoesSaveGameExist())
             {
                 UI?.UpdateError(T("There is no saved game to load."));
+                return;
+            }
+            if (InLocalMatch)
+            {
+                // A saved mission is the single player's: it is continued from the mission select.
+                UI?.UpdateError(T("A saved mission is continued alone, from the mission select."));
                 return;
             }
             int level = disk.GetInt(SaveKey("Level"));

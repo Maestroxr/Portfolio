@@ -81,12 +81,20 @@ namespace Portfolio.Asteroids
                 return;
             }
             Stretch();
-            AsteroidsPlayer ship = Field.Player;
-            if (ship == null || !ship.IsAlive || !Touches(ship.Position, ship.Radius) || burnTime <= 0f)
+            if (burnTime <= 0f)
             {
                 return;
             }
-            ship.TakeDamage(new DamageInfo(damage / burnTime * burn, Vector2.down, ship.Position, DamageSource.Enemy, false, this), true);
+            // Every ship flown at this device that the column touches burns (the player's, and the wingmen of local co-op).
+            for (int i = 0; i < Field.LocalShipCount; i++)
+            {
+                AsteroidsPlayer ship = Field.LocalShip(i);
+                if (ship == null || !ship.IsAlive || !Touches(ship.Position, ship.Radius))
+                {
+                    continue;
+                }
+                ship.TakeDamage(new DamageInfo(damage / burnTime * burn, Vector2.down, ship.Position, DamageSource.Enemy, false, this), true);
+            }
         }
 
 

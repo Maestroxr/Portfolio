@@ -37,7 +37,8 @@ namespace Portfolio.EndlessRunner
         [SerializeField] internal GameObject superJumpAura;
         [SerializeField] internal ParticleSystem runDust;
 
-        private readonly RunnerInput input = new RunnerInput();
+        private readonly RunnerInput ownInput = new RunnerInput();
+        private IRunnerInput input;
         private CharacterController body;
         private float targetSpeed;
         private int previousLane;
@@ -81,6 +82,19 @@ namespace Portfolio.EndlessRunner
             body = GetComponent<CharacterController>();
             PreviousPosition = transform.position;
         }
+
+        /// <summary>
+        /// Where the moves come from: the keys and swipes of a runner played alone, unless a local race hands the runner
+        /// the controls of its seat (<see cref="SeatInput"/>); null gives the runner its own keys and swipes back.
+        /// </summary>
+        internal IRunnerInput InputSource
+        {
+            get => input ?? ownInput;
+            set => input = value;
+        }
+
+        /// <summary>The runner's body, for the runners of a local race to run through each other.</summary>
+        internal CharacterController Body => body != null ? body : body = GetComponent<CharacterController>();
 
         public void ApplySettings(RunnerSettings settings)
         {
@@ -204,7 +218,7 @@ namespace Portfolio.EndlessRunner
         /// <summary>Presses a control from code: on-screen buttons or the autopilot.</summary>
         public void Press(RunnerAction action)
         {
-            input.Press(action);
+            InputSource.Press(action);
         }
 
         /// <summary><see cref="Press(RunnerAction)"/> by name ("Left", "Right", "Jump", "Slide"), for SendMessage.</summary>
@@ -244,20 +258,21 @@ namespace Portfolio.EndlessRunner
                 return;
             }
 
-            input.Read();
-            if (input.Left)
+            IRunnerInput moves = InputSource;
+            moves.Read();
+            if (moves.Left)
             {
                 ChangeLane(-1);
             }
-            if (input.Right)
+            if (moves.Right)
             {
                 ChangeLane(1);
             }
-            if (input.Jump)
+            if (moves.Jump)
             {
                 jumpRequestTime = Time.time;
             }
-            if (input.Slide)
+            if (moves.Slide)
             {
                 RequestSlide();
             }
@@ -318,7 +333,7 @@ namespace Portfolio.EndlessRunner
 
             if (transform.position.y < fallLimit)
             {
-                Runner?.PlayerFell();
+                Runner?.PlayerFell(this);
             }
         }
 
@@ -335,7 +350,7 @@ namespace Portfolio.EndlessRunner
             {
                 animator.OnLaneChange(direction);
             }
-            Runner?.PlayerChangedLane();
+            Runner?.PlayerChangedLane(this);
         }
 
         private void DoJump()
@@ -358,7 +373,7 @@ namespace Portfolio.EndlessRunner
             {
                 animator.OnJump(SuperJump);
             }
-            Runner?.PlayerJumped();
+            Runner?.PlayerJumped(this);
         }
 
         private void RequestSlide()
@@ -383,7 +398,7 @@ namespace Portfolio.EndlessRunner
             {
                 animator.OnSlide();
             }
-            Runner?.PlayerSlid();
+            Runner?.PlayerSlid(this);
         }
 
         private void EndSlide()
@@ -423,7 +438,7 @@ namespace Portfolio.EndlessRunner
             {
                 animator.OnLand(impactSpeed);
             }
-            Runner?.PlayerLanded(impactSpeed);
+            Runner?.PlayerLanded(this, impactSpeed);
         }
 
         private void OnControllerColliderHit(ControllerColliderHit hit)
@@ -447,13 +462,13 @@ namespace Portfolio.EndlessRunner
             bool tall = top > feet + body.stepOffset;
             if (obstacle.IsHazard && tall && normal.z < -0.6f && hit.point.y < top - 0.1f)
             {
-                Runner?.PlayerCrashed(obstacle, hit.point);
+                Runner?.PlayerCrashed(this, obstacle, hit.point);
                 return;
             }
             if (tall && Mathf.Abs(normal.x) > 0.6f && bumpCooldown <= 0f && LaneChangeDirection != 0
                 && (int)Mathf.Sign(-normal.x) == LaneChangeDirection && hit.point.y > feet + body.stepOffset * 0.5f)
             {
-                Runner?.PlayerBumped(obstacle, hit.point);
+                Runner?.PlayerBumped(this, obstacle, hit.point);
             }
         }
 
@@ -480,7 +495,7 @@ namespace Portfolio.EndlessRunner
                 Obstacle obstacle = collider.GetComponentInParent<Obstacle>();
                 if (obstacle != null && !obstacle.IsKnocked)
                 {
-                    Runner?.PlayerCrashed(obstacle, collider.ClosestPoint(center));
+                    Runner?.PlayerCrashed(this, obstacle, collider.ClosestPoint(center));
                     return;
                 }
             }

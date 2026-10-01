@@ -3,6 +3,7 @@ using System.Collections;
 using System.IO;
 using Gamebox;
 using Gamebox.Online;
+using Gamebox.UI;
 using UnityEngine;
 
 namespace Portfolio.MemoryCards
@@ -10,9 +11,10 @@ namespace Portfolio.MemoryCards
     /// <summary>
     /// Started with <c>-memorycards-tour &lt;folder&gt;</c>, it walks through the game with the
     /// <see cref="MemoryCardsAutopilot"/> (level select, memorize, a win, bombs, the parade, triplets, ice, the pause
-    /// menu and settings, the wild card, the endless run, a loss and a versus game for three at one device) and saves a
-    /// screenshot of every step into the folder, then quits. <c>-memorycards-versus &lt;folder&gt;</c> plays only the
-    /// versus game. The player's saved progress is cleared at the end. Without an argument it does nothing.
+    /// menu and settings, the wild card, the endless run, a loss and a versus game for three at one device: two people
+    /// and a computer, set up on the shared local play screen, with the hand-over screen on) and saves a screenshot of
+    /// every step into the folder, then quits. <c>-memorycards-versus &lt;folder&gt;</c> plays only the versus game. The
+    /// player's saved progress is cleared at the end. Without an argument it does nothing.
     /// </summary>
     public class MemoryCardsTour : MonoBehaviour
     {
@@ -161,7 +163,11 @@ namespace Portfolio.MemoryCards
             yield return Finish(levels);
         }
 
-        /// <summary>A versus game for three at one device: the scoreboard, a turn nobody uses, the results.</summary>
+        /// <summary>
+        /// A versus game for three at one device: the setup (two people and a computer, the hand-over screen on), the
+        /// curtain before a person's turn, the computer's turn, a turn nobody uses, the results. The autopilot plays the
+        /// people's turns (on the computer's it is ignored) and the tour lifts the curtain for them.
+        /// </summary>
         private IEnumerator Versus()
         {
             pilot.enabled = false;
@@ -172,34 +178,72 @@ namespace Portfolio.MemoryCards
             }
             manager.SelectWorld(0);
             manager.SelectLevel(1);
-            manager.CyclePlayers();
-            manager.CyclePlayers();
             yield return new WaitForSeconds(0.8f);
             yield return Shot("17_versus_select");
-            manager.PlaySelectedLevel();
+
+            // The setup as the players would leave it; the screen opens on the last setup of the game.
+            var setup = new LocalMatch(GameType.MemoryCards, manager.LocalPlay) { Count = 3, HandOver = true };
+            setup[0].Name = "Maya";
+            setup[1].Name = "Leo";
+            setup[2].Kind = SeatKind.Computer;
+            setup[2].Level = 1;
+            setup.SetOption(LocalVersus.ClockOption, LocalVersus.ClockIndex(15f));
+            setup.Remember();
+            manager.OpenLocalPlay();
+            yield return new WaitForSecondsRealtime(0.8f);
+            yield return Shot("18_versus_setup");
+            LocalPlayUI ui = LocalPlayUI.For(manager);
+            Write($"setup: {ui.Match.Count} players, hand-over {ui.Match.HandOver}, {ui.Match.Humans} people");
+            ui.StartMatch();
+
             pilot.mistakeRate = 0.35f;
             pilot.interval = 0.5f;
             pilot.enabled = true;
             Write("playing a versus game for three");
-            yield return WaitFor(() => manager.IsVersus && manager.IsPlaying, 15f);
-            yield return WaitFor(() => !manager.IsVersus || manager.Versus.TurnNumber >= 3, 60f);
-            yield return new WaitForSeconds(0.7f);
-            yield return Shot("18_versus_playing");
+            yield return WaitFor(() => manager.IsHandingOver, 20f);
+            yield return new WaitForSecondsRealtime(0.6f);
+            yield return Shot("19_versus_hand_over");
+            TurnCurtain curtain = TurnCurtain.For(manager);
+            curtain.Lift();
 
-            // Nobody moves: the clock of the turn runs out and the next player is up.
-            pilot.enabled = false;
-            int turn = manager.IsVersus ? manager.Versus.TurnNumber : 0;
-            yield return WaitFor(() => !manager.IsVersus || manager.Versus.TurnNumber > turn, VersusMatch.DefaultTurnSeconds + 8f);
-            yield return new WaitForSeconds(0.4f);
-            yield return Shot("19_versus_time_up");
-            Write(manager.IsVersus ? $"turn {turn} ran out, now turn {manager.Versus.TurnNumber} of seat {manager.Versus.Current}" : "the versus game is gone");
-
-            pilot.mistakeRate = 0.1f;
-            pilot.interval = 0.3f;
-            pilot.enabled = true;
-            yield return WaitFor(() => !manager.IsGameRunning, 180f);
+            // Turns go round; the curtain is lifted for every person, and the computer plays its own.
+            bool computerShown = false;
+            bool timeUpShown = false;
+            float start = Time.realtimeSinceStartup;
+            while (manager.IsVersus && (manager.IsGameRunning || manager.IsHandingOver) && Time.realtimeSinceStartup - start < 300f)
+            {
+                if (manager.IsHandingOver)
+                {
+                    yield return new WaitForSecondsRealtime(0.7f);
+                    if (!timeUpShown && manager.Versus.TurnNumber >= 4)
+                    {
+                        // Nobody moves: the clock, which started only once the player was ready, runs out.
+                        timeUpShown = true;
+                        pilot.enabled = false;
+                        curtain.Lift();
+                        int turn = manager.Versus.TurnNumber;
+                        yield return WaitFor(() => !manager.IsVersus || manager.Versus.TurnNumber > turn, 15f + 8f);
+                        yield return new WaitForSeconds(0.4f);
+                        yield return Shot("21_versus_time_up");
+                        Write(manager.IsVersus ? $"turn {turn} ran out, now turn {manager.Versus.TurnNumber} of seat {manager.Versus.Current}" : "the versus game is gone");
+                        pilot.mistakeRate = 0.1f;
+                        pilot.interval = 0.3f;
+                        pilot.enabled = true;
+                        continue;
+                    }
+                    curtain.Lift();
+                }
+                if (!computerShown && manager.IsComputerTurn && manager.Round != null && manager.Round.Revealed.Count > 0)
+                {
+                    computerShown = true;
+                    yield return new WaitForSeconds(0.5f);
+                    yield return Shot("20_versus_computer");
+                }
+                yield return null;
+            }
+            yield return WaitFor(() => !manager.IsGameRunning, 30f);
             yield return new WaitForSeconds(2.4f);
-            yield return Shot("20_versus_results");
+            yield return Shot("22_versus_results");
             if (manager.IsVersus)
             {
                 foreach (VersusSeat seat in manager.Versus.Standings())
@@ -208,12 +252,11 @@ namespace Portfolio.MemoryCards
                 }
             }
 
-            // One player again, for whoever plays next.
+            // Back to the level select: the game at this device is over.
             pilot.enabled = false;
             manager.ReturnToLevelSelect();
             yield return new WaitForSeconds(0.5f);
-            manager.CyclePlayers();
-            manager.CyclePlayers();
+            Write(manager.InLocalMatch ? "the local match is still on" : "the local match ended");
         }
 
         private IEnumerator Finish(int levels)

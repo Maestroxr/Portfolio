@@ -357,21 +357,23 @@ namespace Portfolio.Asteroids.EditorTools
             // Buttons
             RectTransform buttons = Rect(root, "Buttons", new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-60f, 34f), new Vector2(1210f, 84f));
             var row = buttons.gameObject.AddComponent<HorizontalLayoutGroup>();
-            row.spacing = 18f;
+            row.spacing = 14f;
             row.childAlignment = TextAnchor.MiddleRight;
             row.childControlWidth = false;
             row.childControlHeight = false;
             row.childForceExpandWidth = false;
             row.childForceExpandHeight = false;
-            ui.continueButton = Button(buttons, "Continue", "Continue", AsteroidsArtBuilder.Icon("Retry"), Green, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(230f, 80f), 28f, out _);
+            ui.continueButton = Button(buttons, "Continue", "Continue", AsteroidsArtBuilder.Icon("Retry"), Green, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(215f, 80f), 28f, out _);
             // Missions flown together with other pilots: opens the lobby of the game's server.
-            ui.onlineButton = Button(buttons, "Multiplayer", "Multiplayer", AsteroidsArtBuilder.Icon("Ship"), Orange, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(290f, 80f), 28f, out _);
-            ui.hangarButton = Button(buttons, "Hangar", "Hangar", AsteroidsArtBuilder.Icon("Hangar"), Blue, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(215f, 80f), 28f, out _);
-            ui.titleSettingsButton = Button(buttons, "Settings", "Settings", AsteroidsArtBuilder.Icon("Settings"), Blue, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(225f, 80f), 28f, out _);
-            ui.titleExitButton = Button(buttons, "Quit", "Quit", AsteroidsArtBuilder.Icon("Exit"), Red, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(175f, 80f), 28f, out _);
+            ui.onlineButton = Button(buttons, "Multiplayer", "Multiplayer", AsteroidsArtBuilder.Icon("Ship"), Orange, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(265f, 80f), 28f, out _);
+            // Missions flown by several pilots at this device: opens the shared local play setup (hidden with touch).
+            ui.localPlayButton = Button(buttons, "LocalPlay", "Local Play", AsteroidsArtBuilder.Icon("Drones"), Orange, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(250f, 80f), 28f, out _);
+            ui.hangarButton = Button(buttons, "Hangar", "Hangar", AsteroidsArtBuilder.Icon("Hangar"), Blue, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(200f, 80f), 28f, out _);
+            ui.titleSettingsButton = Button(buttons, "Settings", "Settings", AsteroidsArtBuilder.Icon("Settings"), Blue, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(215f, 80f), 28f, out _);
+            ui.titleExitButton = Button(buttons, "Quit", "Quit", AsteroidsArtBuilder.Icon("Exit"), Red, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(165f, 80f), 28f, out _);
             // The hints keep clear of the button row, which reaches this far left when there is a mission to continue.
             TextMeshProUGUI keys = Text(root, "Controls", "W A S D / ARROWS fly    SPACE fire    SHIFT dash    B nova bomb    ESC pause", 21f, Dim, TextAlignmentOptions.Left,
-                new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(60f, 40f), new Vector2(570f, 70f), null, false);
+                new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(60f, 34f), new Vector2(410f, 96f), null, false);
             UIBuildUtils.ShowOnly(keys.gameObject, TouchLayout.Visibility.WithoutTouch);
             TextMeshProUGUI thumbs = Text(root, "TouchControls", "LEFT THUMB steer and thrust    HOLD FIRE to shoot    DASH    NOVA bomb    BACK pause", 21f, Dim,
                 TextAlignmentOptions.Left, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(60f, 40f), new Vector2(570f, 70f), null, false);

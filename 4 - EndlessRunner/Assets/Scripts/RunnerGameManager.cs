@@ -47,27 +47,23 @@ namespace Portfolio.EndlessRunner
         public int Runners;
         /// <summary>The runners of the race by place, a line each.</summary>
         public string Standings;
+
+        /// <summary>The run was a race of several runners at this device: the results are the standings.</summary>
+        public bool Local;
+        /// <summary>The name of the winner of a local race in the colour of the seat, or null when the first place is shared.</summary>
+        public string Winner;
     }
 
 
     /// <summary>
     /// Endless Runner game module. Runs the level select, the countdown, the run itself (track, pickups, power-ups,
     /// hearts), the finish and the results, and keeps the campaign progress. The menu, pause and state flow come from
-    /// <see cref="BaseGameManager"/>. Races against the runners of an online room are in RunnerGameManager.Online.cs.
+    /// <see cref="BaseGameManager"/>. What belongs to the runner (hearts, coins, power-ups, distance) is its
+    /// <see cref="RunnerRun"/>. Races against the runners of an online room are in RunnerGameManager.Online.cs, races of
+    /// several runners at this device in split screen in RunnerGameManager.Local.cs.
     /// </summary>
     public partial class RunnerGameManager : BaseGameManager
     {
-        private enum RunPhase
-        {
-            Menu,
-            Countdown,
-            Running,
-            Finishing,
-            Dying,
-            /// <summary>The local run of a race is over; the player watches the runners who are still out there.</summary>
-            Watching
-        }
-
         #region Field Members
         [SerializeField] private RunnerSettings runnerSettings;
         [SerializeField] private RunnerController controller;
@@ -98,20 +94,15 @@ namespace Portfolio.EndlessRunner
         private RunnerSettings activeSettings;
         private CampaignProgress progress;
         private readonly Dictionary<int, LevelData> levelData = new Dictionary<int, LevelData>();
-        private readonly float[] powerUpTimers = new float[PowerUps.Count];
+        // The phase of the game; a local race keeps the phase of each runner in its run.
         private RunPhase phase = RunPhase.Menu;
         private float phaseTime;
         private readonly Countdown countdown = new Countdown();
-        private int coins;
-        private float coinPoints;
-        private float distance;
-        private int hearts;
-        private int maxHearts;
-        private int heartsLost;
+        // The run of the runner of the scene: the game alone, an online race, the first seat of a local race.
+        private RunnerRun main;
         private int coinGoal;
         private bool trackReady;
         private int trackLevel = -1;
-        private bool recordAnnounced;
         private bool menuVisited;
         #endregion
 
@@ -141,14 +132,17 @@ namespace Portfolio.EndlessRunner
 
         public int LevelCount => campaign != null ? campaign.Count : 0;
 
-        public int Coins => coins;
+        public int Coins => Main.Coins;
 
-        public float Distance => distance;
+        public float Distance => Main.Distance;
 
         public bool IsPowerUpActive(PowerUpType type)
         {
-            return powerUpTimers[(int)type] > 0f;
+            return Main.IsPowerUpActive(type);
         }
+
+        /// <summary>The run of the runner of the scene.</summary>
+        internal RunnerRun Main => main ?? (main = new RunnerRun(runner, runnerCamera));
 
         private static Vector3 StartPosition => new Vector3(0f, 0.05f, 0f);
 
@@ -194,6 +188,13 @@ namespace Portfolio.EndlessRunner
                 return;
             }
             ApplyLook(look);
+            if (InLocalRace)
+            {
+                foreach (RunnerRun run in localRace.Runs)
+                {
+                    run.Hud?.ApplyTheme(look);
+                }
+            }
             if (phase == RunPhase.Menu && State != null && State.Is(BaseGameState.Initialization))
             {
                 PreviewLevel(LevelIndex, true);
@@ -203,7 +204,7 @@ namespace Portfolio.EndlessRunner
 
         /// <summary>
         /// The language changed: the interface wrote its screens again (RunnerUI.RefreshTexts); the standings of a
-        /// race's results are written here, where the racers are.
+        /// race's results and the HUDs of a local race are written here, where the racers are.
         /// </summary>
         protected override void OnLanguageChanged()
         {
@@ -211,6 +212,17 @@ namespace Portfolio.EndlessRunner
             if (raceResultsShown)
             {
                 ui?.UpdateStandings(RaceStandingsText());
+            }
+            if (InLocalRace)
+            {
+                foreach (RunnerRun run in localRace.Runs)
+                {
+                    run.Hud?.Redraw();
+                }
+                if (localResultsShown)
+                {
+                    ui?.UpdateStandings(LocalStandingsText());
+                }
             }
         }
 
@@ -237,6 +249,9 @@ namespace Portfolio.EndlessRunner
 
         protected override void OnDestroy()
         {
+            // The glows face the main camera again in the next scene.
+            Billboard.FaceEveryCamera = false;
+            StepAsideInViews(false);
             if (track != null)
             {
                 track.HintReached -= OnHintReached;
@@ -278,7 +293,14 @@ namespace Portfolio.EndlessRunner
                     UpdateCountdown();
                     break;
                 case RunPhase.Running:
-                    UpdateRun(deltaTime);
+                    if (InLocalRace)
+                    {
+                        UpdateLocalRace(deltaTime);
+                    }
+                    else
+                    {
+                        UpdateRun(deltaTime);
+                    }
                     break;
                 case RunPhase.Finishing:
                     UpdateTrackAround(runner.transform.position.z);
@@ -303,8 +325,10 @@ namespace Portfolio.EndlessRunner
 
         private void EnterMenu()
         {
+            // Back in the menu, a local race is over: the other runners and their views go.
+            EndLocalMatch();
             phase = RunPhase.Menu;
-            ClearPowerUps();
+            ClearPowerUps(Main);
             int level = LevelIndex;
             if (!menuVisited)
             {
@@ -515,9 +539,16 @@ namespace Portfolio.EndlessRunner
             }
             trackReady = false;
             ResetRun();
-            int slot = LocalSlot;
-            runner.ResetToStart(StartPositionOf(slot), StartLane(slot));
-            runnerCamera.SetMode(RunnerCamera.Mode.Chase);
+            if (InLocalRace)
+            {
+                LineUpLocalRunners();
+            }
+            else
+            {
+                int slot = LocalSlot;
+                runner.ResetToStart(StartPositionOf(slot), StartLane(slot));
+                runnerCamera.SetMode(RunnerCamera.Mode.Chase);
+            }
             phase = RunPhase.Countdown;
             phaseTime = 0f;
             countdown.Restart();
@@ -526,11 +557,15 @@ namespace Portfolio.EndlessRunner
             {
                 sounds.PlayMusic(sounds.runMusic);
             }
-            ui?.BeginRun(RunnerGameTheme.TitleFor(level), LevelIndex, level.IsEndless, maxHearts, level.IsEndless ? progress.EndlessBestDistance : level.Length);
+            ui?.BeginRun(RunnerGameTheme.TitleFor(level), LevelIndex, level.IsEndless, Main.MaxHearts, level.IsEndless ? progress.EndlessBestDistance : level.Length);
             RefreshHud();
             if (race != null)
             {
                 BeginRace();
+            }
+            if (InLocalRace)
+            {
+                BeginLocalRace();
             }
         }
 
@@ -554,6 +589,7 @@ namespace Portfolio.EndlessRunner
         private void ApplySettings()
         {
             runner?.ApplySettings(RunnerSettings);
+            ApplyLocalSettings();
         }
 
 
@@ -573,7 +609,7 @@ namespace Portfolio.EndlessRunner
             }
             themes?.Apply(track.ThemeAt(0f), true);
             // The coins of a race are shared, so there is no goal of one's own to reach.
-            coinGoal = level.IsEndless || race != null ? 0 : Mathf.Max(1, Mathf.CeilToInt(track.LevelCoins * level.CoinGoal));
+            coinGoal = level.IsEndless || race != null || InLocalRace ? 0 : Mathf.Max(1, Mathf.CeilToInt(track.LevelCoins * level.CoinGoal));
             trackReady = true;
             trackLevel = LevelIndex;
         }
@@ -581,14 +617,12 @@ namespace Portfolio.EndlessRunner
 
         private void ResetRun()
         {
-            coins = 0;
-            coinPoints = 0f;
-            distance = 0f;
-            maxHearts = Mathf.Clamp(RunnerSettings.Hearts, 1, RunnerSettings.HeartLimit);
-            hearts = maxHearts;
-            heartsLost = 0;
-            recordAnnounced = false;
-            ClearPowerUps();
+            int hearts = Mathf.Clamp(RunnerSettings.Hearts, 1, RunnerSettings.HeartLimit);
+            foreach (RunnerRun run in Runs)
+            {
+                run.Reset(hearts);
+                ClearPowerUps(run);
+            }
             ResetScore();
         }
 
@@ -608,27 +642,32 @@ namespace Portfolio.EndlessRunner
             sounds?.Play(sounds.go);
             phase = RunPhase.Running;
             phaseTime = 0f;
-            runner.BeginRun();
+            foreach (RunnerRun run in Runs)
+            {
+                run.Enter(RunPhase.Running);
+                run.Runner.BeginRun();
+            }
         }
 
 
         private void UpdateRun(float deltaTime)
         {
+            RunnerRun run = Main;
             float z = runner.transform.position.z;
-            distance = Mathf.Max(distance, z);
+            run.RunTo(z);
             runner.SetTargetSpeed(RunnerSettings.SpeedAtDistance(z));
             UpdateTrackAround(z);
             track.CheckHints(z);
-            UpdatePickups(deltaTime);
-            UpdateMovingObstacles();
-            UpdatePowerUps(deltaTime);
+            UpdatePickups(run, deltaTime);
+            UpdateMovingObstacles(run);
+            UpdatePowerUps(run, deltaTime);
             UpdateWorld(z);
-            PlayerScore = Mathf.Floor(distance) + coinPoints;
+            PlayerScore = run.Score;
             UpdateScore();
             RefreshHud();
-            if (RunnerLevel.IsEndless && !recordAnnounced && progress.EndlessBestDistance > 50f && distance > progress.EndlessBestDistance)
+            if (RunnerLevel.IsEndless && !run.RecordAnnounced && progress.EndlessBestDistance > 50f && run.Distance > progress.EndlessBestDistance)
             {
-                recordAnnounced = true;
+                run.RecordAnnounced = true;
                 RunnerGameTheme look = ThemeAs<RunnerGameTheme>();
                 ui?.Toast(RunnerText.T("NEW RECORD!"), look != null ? look.Colors.accent : new Color(1f, 0.85f, 0.2f));
                 sounds?.Play(sounds.star);
@@ -646,25 +685,42 @@ namespace Portfolio.EndlessRunner
             {
                 return;
             }
-            RunnerLevel level = RunnerLevel;
-            float progress01 = level != null && !level.IsEndless ? Mathf.Clamp01(distance / Mathf.Max(1f, track.FinishZ)) : 0f;
-            ui.UpdateRun(coins, coinGoal, Mathf.FloorToInt(PlayerScore), distance, progress01, hearts, maxHearts,
-                IsPowerUpActive(PowerUpType.Multiplier));
+            RunnerRun run = Main;
+            ui.UpdateRun(run.Coins, coinGoal, Mathf.FloorToInt(PlayerScore), run.Distance, RunProgress(run), run.Hearts, run.MaxHearts,
+                run.IsPowerUpActive(PowerUpType.Multiplier));
             for (int i = 0; i < PowerUps.Count; i++)
             {
-                float duration = i < powerUpDurations.Length ? powerUpDurations[i] : 10f;
-                ui.SetPowerUp((PowerUpType)i, powerUpTimers[i] > 0f ? powerUpTimers[i] / duration : 0f);
+                ui.SetPowerUp((PowerUpType)i, PowerUpFraction(run, (PowerUpType)i));
             }
         }
 
 
-        /// <summary>Swept test of every live pickup against the runner, plus the magnet's pull.</summary>
-        private void UpdatePickups(float deltaTime)
+        /// <summary>How far along the level <paramref name="run"/> is, from 0 to 1; 0 on the endless run.</summary>
+        private float RunProgress(RunnerRun run)
         {
+            RunnerLevel level = RunnerLevel;
+            return level != null && !level.IsEndless ? Mathf.Clamp01(run.Distance / Mathf.Max(1f, track.FinishZ)) : 0f;
+        }
+
+
+        /// <summary>What is left of a power-up of <paramref name="run"/>, from 1 when it was picked up to 0 when it is gone.</summary>
+        private float PowerUpFraction(RunnerRun run, PowerUpType type)
+        {
+            int index = (int)type;
+            float duration = index < powerUpDurations.Length ? powerUpDurations[index] : 10f;
+            float left = run.PowerUpLeft(type);
+            return left > 0f ? left / duration : 0f;
+        }
+
+
+        /// <summary>Swept test of every live pickup against the runner of <paramref name="run"/>, plus the magnet's pull.</summary>
+        private void UpdatePickups(RunnerRun run, float deltaTime)
+        {
+            RunnerPlayer runner = run.Runner;
             Vector3 from = runner.PreviousPosition;
             Vector3 to = runner.transform.position;
             float height = runner.Height;
-            bool magnet = IsPowerUpActive(PowerUpType.Magnet);
+            bool magnet = run.IsPowerUpActive(PowerUpType.Magnet);
             Vector3 chest = to + Vector3.up * (height * 0.55f);
             IReadOnlyList<Collidable> pickups = track.Pickups;
             for (int i = 0; i < pickups.Count; i++)
@@ -713,8 +769,9 @@ namespace Portfolio.EndlessRunner
 
 
         /// <summary>Carts move into the runner on their own, which the controller's sweep does not always see.</summary>
-        private void UpdateMovingObstacles()
+        private void UpdateMovingObstacles(RunnerRun run)
         {
+            RunnerPlayer runner = run.Runner;
             Vector3 feet = runner.transform.position;
             float height = runner.Height;
             var runnerBounds = new Bounds(feet + Vector3.up * (height * 0.5f), new Vector3(0.6f, height, 0.6f));
@@ -729,38 +786,29 @@ namespace Portfolio.EndlessRunner
                 Bounds bounds = obstacle.GetBounds();
                 if (bounds.Intersects(runnerBounds) && feet.y < bounds.max.y - 0.2f)
                 {
-                    PlayerCrashed(obstacle, bounds.ClosestPoint(runnerBounds.center));
+                    PlayerCrashed(runner, obstacle, bounds.ClosestPoint(runnerBounds.center));
                     return;
                 }
             }
         }
 
 
-        private void UpdatePowerUps(float deltaTime)
+        private static void UpdatePowerUps(RunnerRun run, float deltaTime)
         {
-            for (int i = 0; i < powerUpTimers.Length; i++)
-            {
-                if (powerUpTimers[i] <= 0f)
-                {
-                    continue;
-                }
-                powerUpTimers[i] = Mathf.Max(0f, powerUpTimers[i] - deltaTime);
-            }
-            runner.SuperJump = IsPowerUpActive(PowerUpType.SuperJump);
-            runner.SetAuras(IsPowerUpActive(PowerUpType.Shield), IsPowerUpActive(PowerUpType.Magnet), runner.SuperJump);
+            run.TickPowerUps(deltaTime);
+            RunnerPlayer runner = run.Runner;
+            runner.SuperJump = run.IsPowerUpActive(PowerUpType.SuperJump);
+            runner.SetAuras(run.IsPowerUpActive(PowerUpType.Shield), run.IsPowerUpActive(PowerUpType.Magnet), runner.SuperJump);
         }
 
 
-        private void ClearPowerUps()
+        private static void ClearPowerUps(RunnerRun run)
         {
-            for (int i = 0; i < powerUpTimers.Length; i++)
+            run.ClearPowerUps();
+            if (run.Runner != null)
             {
-                powerUpTimers[i] = 0f;
-            }
-            if (runner != null)
-            {
-                runner.SuperJump = false;
-                runner.SetAuras(false, false, false);
+                run.Runner.SuperJump = false;
+                run.Runner.SetAuras(false, false, false);
             }
         }
 
@@ -787,7 +835,7 @@ namespace Portfolio.EndlessRunner
             sounds?.StopMusic();
             sounds?.Play(sounds.victory);
             ui?.ShowCountdown(RunnerText.T("FINISH!"));
-            ClearPowerUps();
+            ClearPowerUps(Main);
         }
 
 
@@ -806,8 +854,14 @@ namespace Portfolio.EndlessRunner
         }
 
 
-        private void Die()
+        /// <summary>The runner of <paramref name="run"/> is out of hearts.</summary>
+        private void Die(RunnerRun run)
         {
+            if (InLocalRace)
+            {
+                KnockOut(run);
+                return;
+            }
             phase = RunPhase.Dying;
             phaseTime = 0f;
             runner.StopRun();
@@ -815,7 +869,7 @@ namespace Portfolio.EndlessRunner
             runnerCamera.SetMode(RunnerCamera.Mode.Crash);
             sounds?.StopMusic();
             sounds?.Play(sounds.gameOver);
-            ClearPowerUps();
+            ClearPowerUps(Main);
         }
 
 
@@ -827,22 +881,23 @@ namespace Portfolio.EndlessRunner
                 return;
             }
             RunnerLevel level = RunnerLevel;
+            RunnerRun run = Main;
             int score = Mathf.FloorToInt(PlayerScore);
             var result = new RunResult
             {
                 LevelTitle = RunnerGameTheme.TitleFor(level),
                 Victory = victory,
                 Endless = level.IsEndless,
-                Coins = coins,
+                Coins = run.Coins,
                 CoinGoal = coinGoal,
-                Distance = distance,
+                Distance = run.Distance,
                 Score = score,
-                CoinGoalReached = coins >= coinGoal,
-                Flawless = heartsLost == 0
+                CoinGoalReached = run.Coins >= coinGoal,
+                Flawless = run.HeartsLost == 0
             };
             if (level.IsEndless)
             {
-                result.NewBest = progress.RecordEndless(distance, score);
+                result.NewBest = progress.RecordEndless(run.Distance, score);
                 result.BestDistance = progress.EndlessBestDistance;
             }
             else if (victory)
@@ -863,16 +918,33 @@ namespace Portfolio.EndlessRunner
 
         #region Runner events
 
-        internal void CollectCoin(Coin coin)
+        /// <summary>The run of <paramref name="player"/>: the runner of the scene's, or that of a runner of a local race.</summary>
+        private RunnerRun RunOf(RunnerPlayer player)
+        {
+            return InLocalRace ? localRace.RunOf(player) : Main;
+        }
+
+
+        /// <summary>Whether the runner of <paramref name="run"/> is out on the track: what happens to it counts.</summary>
+        private bool IsRunning(RunnerRun run)
+        {
+            return run != null && phase == RunPhase.Running && (!InLocalRace || run.Phase == RunPhase.Running);
+        }
+
+
+        internal void CollectCoin(Coin coin, RunnerPlayer player)
         {
             if (race != null)
             {
                 ClaimCoin(coin);
                 return;
             }
-            int multiplier = IsPowerUpActive(PowerUpType.Multiplier) ? 2 : 1;
-            coins += coin.Value * multiplier;
-            coinPoints += coin.Value * pointsPerCoin * multiplier;
+            RunnerRun run = RunOf(player);
+            if (run == null)
+            {
+                return;
+            }
+            run.Collect(coin.Value, pointsPerCoin);
             Vector3 position = coin.transform.position;
             if (coin.IsGem)
             {
@@ -883,64 +955,76 @@ namespace Portfolio.EndlessRunner
                 effects?.Coin(position);
             }
             sounds?.Coin(coin.IsGem);
-            ui?.PunchCoins();
+            if (run.Hud != null)
+            {
+                run.Hud.PunchCoins();
+            }
+            else
+            {
+                ui?.PunchCoins();
+            }
             track.Recycle(coin);
         }
 
 
-        internal void CollectPowerUp(PowerUpPickup pickup)
+        internal void CollectPowerUp(PowerUpPickup pickup, RunnerPlayer player)
         {
+            RunnerRun run = RunOf(player);
+            if (run == null)
+            {
+                return;
+            }
             int index = (int)pickup.Type;
-            powerUpTimers[index] = index < powerUpDurations.Length ? powerUpDurations[index] : 10f;
+            run.GivePowerUp(pickup.Type, index < powerUpDurations.Length ? powerUpDurations[index] : 10f);
             Color color = PowerUpColor(pickup.Type);
             effects?.PowerUp(pickup.transform.position, color);
             sounds?.Play(sounds.powerUp);
-            ui?.Toast($"{RunnerText.Say(PowerUps.Title(pickup.Type))}!\n<size=60%>{RunnerText.Say(PowerUps.Description(pickup.Type))}</size>", color);
+            Toast(run, $"{RunnerText.Say(PowerUps.Title(pickup.Type))}!\n<size=60%>{RunnerText.Say(PowerUps.Description(pickup.Type))}</size>", color);
             track.Recycle(pickup);
-            UpdatePowerUps(0f);
+            UpdatePowerUps(run, 0f);
         }
 
 
-        internal void Launch(JumpPad pad)
+        internal void Launch(JumpPad pad, RunnerPlayer player)
         {
-            runner.Launch(pad.LaunchHeight);
+            player.Launch(pad.LaunchHeight);
             effects?.Bounce(pad.transform.position + Vector3.up * 0.2f);
             sounds?.Play(sounds.bounce);
         }
 
 
         /// <summary>The runner ran into the front of an obstacle.</summary>
-        internal void PlayerCrashed(Obstacle obstacle, Vector3 point)
+        internal void PlayerCrashed(RunnerPlayer runner, Obstacle obstacle, Vector3 point)
         {
-            if (phase != RunPhase.Running || obstacle == null || obstacle.IsKnocked)
+            RunnerRun run = RunOf(runner);
+            if (!IsRunning(run) || obstacle == null || obstacle.IsKnocked)
             {
                 return;
             }
             RemoveAttached(obstacle);
             effects?.Crash(point);
-            runnerCamera.Shake(0.7f);
+            run.Camera.Shake(0.7f);
             if (runner.IsInvulnerable)
             {
                 obstacle.Knock(point, runner.Speed);
                 sounds?.Play(sounds.bump);
                 return;
             }
-            if (IsPowerUpActive(PowerUpType.Shield))
+            if (run.IsPowerUpActive(PowerUpType.Shield))
             {
-                powerUpTimers[(int)PowerUpType.Shield] = 0f;
+                run.GivePowerUp(PowerUpType.Shield, 0f);
                 obstacle.Knock(point, runner.Speed);
                 effects?.ShieldBreak(runner.transform.position + Vector3.up);
                 sounds?.Play(sounds.shieldBreak);
                 runner.MakeInvulnerable(0.8f);
-                ui?.Toast(RunnerText.Say("Shield saved you!"), PowerUpColor(PowerUpType.Shield));
-                UpdatePowerUps(0f);
+                Toast(run, RunnerText.Say("Shield saved you!"), PowerUpColor(PowerUpType.Shield));
+                UpdatePowerUps(run, 0f);
                 return;
             }
             sounds?.Play(sounds.crash);
-            LoseHeart();
-            if (hearts <= 0)
+            if (LoseHeart(run))
             {
-                Die();
+                Die(run);
                 return;
             }
             obstacle.Knock(point, runner.Speed);
@@ -951,22 +1035,24 @@ namespace Portfolio.EndlessRunner
 
 
         /// <summary>The runner switched lanes into the side of an obstacle: it bounces back, no harm done.</summary>
-        internal void PlayerBumped(Obstacle obstacle, Vector3 point)
+        internal void PlayerBumped(RunnerPlayer runner, Obstacle obstacle, Vector3 point)
         {
-            if (phase != RunPhase.Running)
+            RunnerRun run = RunOf(runner);
+            if (!IsRunning(run))
             {
                 return;
             }
             runner.BumpBack();
-            runnerCamera.Shake(0.25f);
+            run.Camera.Shake(0.25f);
             sounds?.Play(sounds.bump, 0.7f);
         }
 
 
         /// <summary>The runner fell into a chasm: it costs a heart and the runner is put back on the far side.</summary>
-        internal void PlayerFell()
+        internal void PlayerFell(RunnerPlayer runner)
         {
-            if (phase != RunPhase.Running)
+            RunnerRun run = RunOf(runner);
+            if (!IsRunning(run))
             {
                 return;
             }
@@ -974,39 +1060,38 @@ namespace Portfolio.EndlessRunner
             RunnerTheme theme = track.ThemeAt(position.z);
             effects?.Splash(new Vector3(position.x, -0.5f, position.z), theme != null && theme.chasmFill != null ? theme.chasmFill.color : Color.white);
             sounds?.Play(sounds.splash);
-            LoseHeart();
-            if (hearts <= 0)
+            if (LoseHeart(run))
             {
-                Die();
+                Die(run);
                 return;
             }
             float respawnZ = track.TryGetGap(position.z, out Vector2 gap) ? gap.y + 1.5f : position.z + 3f;
             runner.Respawn(new Vector3(runner.Lane * runner.LaneWidth, 0.05f, respawnZ));
             runner.Slow(0.6f);
             runner.MakeInvulnerable(2f);
-            runnerCamera.Shake(0.4f);
+            run.Camera.Shake(0.4f);
         }
 
 
-        internal void PlayerJumped()
+        internal void PlayerJumped(RunnerPlayer runner)
         {
             sounds?.Play(sounds.jump, 0.7f);
         }
 
 
-        internal void PlayerSlid()
+        internal void PlayerSlid(RunnerPlayer runner)
         {
             sounds?.Play(sounds.slide, 0.7f);
         }
 
 
-        internal void PlayerChangedLane()
+        internal void PlayerChangedLane(RunnerPlayer runner)
         {
             sounds?.Play(sounds.whoosh, 0.35f);
         }
 
 
-        internal void PlayerLanded(float impactSpeed)
+        internal void PlayerLanded(RunnerPlayer runner, float impactSpeed)
         {
             if (impactSpeed < 6f || runner == null)
             {
@@ -1018,11 +1103,33 @@ namespace Portfolio.EndlessRunner
         }
 
 
-        private void LoseHeart()
+        /// <summary>The runner of <paramref name="run"/> loses a heart; true when it was the last one.</summary>
+        private bool LoseHeart(RunnerRun run)
         {
-            hearts = Mathf.Max(0, hearts - 1);
-            heartsLost++;
-            ui?.HeartLost(hearts, maxHearts);
+            bool last = run.LoseHeart();
+            if (run.Hud != null)
+            {
+                run.Hud.HeartLost();
+            }
+            else
+            {
+                ui?.HeartLost(run.Hearts, run.MaxHearts);
+            }
+            return last;
+        }
+
+
+        /// <summary>A word for the player of <paramref name="run"/>: over its own view in a local race.</summary>
+        private void Toast(RunnerRun run, string text, Color color)
+        {
+            if (run.Hud != null)
+            {
+                run.Hud.Toast(text, color);
+            }
+            else
+            {
+                ui?.Toast(text, color);
+            }
         }
 
 
@@ -1043,7 +1150,8 @@ namespace Portfolio.EndlessRunner
 
         private void OnHintReached(string hint)
         {
-            if (phase == RunPhase.Running || phase == RunPhase.Countdown)
+            // The hints teach a runner alone; a local race shares the screen and leaves them out.
+            if (!InLocalRace && (phase == RunPhase.Running || phase == RunPhase.Countdown))
             {
                 ui?.ShowHint(hint);
             }

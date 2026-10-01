@@ -36,7 +36,7 @@ namespace Portfolio.Heroes.UI
                 bool mine = hero.owner == manager.Viewer;
                 string className = Words.T(HeroData.Class(heroClass).Name);
                 body = (owner == null ? Words.F("Level {0} {1}", hero.level, className)
-                           : owner.index == manager.Viewer ? Words.F("Level {0} {1} of you", hero.level, className)
+                           : owner.index == manager.Viewer && !manager.IsHotSeat ? Words.F("Level {0} {1} of you", hero.level, className)
                            : Words.F("Level {0} {1} of {2}", hero.level, className, Words.Name(owner.name))) + "\n" +
                        (mine
                            ? $"{UIKit.Glyph("movement")} {hero.movement} / {hero.maxMovement}   {UIKit.Glyph("mana")} {hero.mana}"
@@ -62,7 +62,7 @@ namespace Portfolio.Heroes.UI
                     picture = art.TownPortrait(town.faction, owner != null ? (int)owner.color : 4);
                     string faction = Words.T(Land.FactionName(town.faction));
                     body = (owner == null ? Words.F("A {0} town, held by no one", faction)
-                               : owner.index == manager.Viewer ? Words.F("A {0} town, held by you", faction)
+                               : owner.index == manager.Viewer && !manager.IsHotSeat ? Words.F("A {0} town, held by you", faction)
                                : Words.F("A {0} town, held by {1}", faction, Words.Name(owner.name))) +
                            (town.owner != manager.Viewer && !town.garrison.IsEmpty
                                ? "\n" + Words.F("A garrison of {0}", Headcount(town.garrison.TotalCreatures)) + Threat(manager, game.Strength(town.garrison))
@@ -92,7 +92,7 @@ namespace Portfolio.Heroes.UI
                     title = Words.T(MapObjects.MineName(kind));
                     body = Words.F("{0} a day to its owner", $"{UIKit.Glyph(kind)} {MapObjects.MineYield(kind)}") + "\n" +
                            (owner == null ? Words.T("Held by no one")
-                               : owner.index == manager.Viewer ? Words.T("Held by you")
+                               : owner.index == manager.Viewer && !manager.IsHotSeat ? Words.T("Held by you")
                                : Words.F("Held by {0}", Words.Name(owner.name)));
                     return true;
                 }

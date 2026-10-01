@@ -74,6 +74,8 @@ namespace Portfolio.Asteroids
         [SerializeField] internal Button titleSettingsButton;
         [SerializeField] internal Button titleExitButton;
         [SerializeField] internal Button onlineButton;
+        [Tooltip("Local co-op: opens the setup for several pilots at this device (hidden with touch, which has one pair of thumbs).")]
+        [SerializeField] internal Button localPlayButton;
         [SerializeField] internal Button resetProgressButton;
         [SerializeField] internal TMP_Text resetProgressLabel;
 
@@ -119,6 +121,9 @@ namespace Portfolio.Asteroids
         [Tooltip("The pilots of a mission flown with others: a line each, hidden otherwise.")]
         [SerializeField] internal GameObject pilotsPanel;
         [SerializeField] internal PilotSlot[] pilotSlots = new PilotSlot[0];
+        [Tooltip("Parts of the HUD about the one ship at this device (hull, shield, dash, weapon, bombs, lives, power-ups): hidden in " +
+                 "local co-op, where the pilots list shows every pilot.")]
+        [SerializeField] internal GameObject[] shipHudParts = new GameObject[0];
 
         [Header("Touch")]
         [Tooltip("The on-screen stick and buttons, shown when the game is played by touch.")]
@@ -231,6 +236,7 @@ namespace Portfolio.Asteroids
         private string shownSectorTitle;
         private string shownBriefing;
         private string shownBossName;
+        private bool localHud;
 
         private AsteroidsGameManager Asteroids => Manager as AsteroidsGameManager;
 
@@ -259,6 +265,7 @@ namespace Portfolio.Asteroids
             Listen(titleSettingsButton, ShowSettings);
             Listen(titleExitButton, () => Asteroids?.QuitToLauncher());
             Listen(onlineButton, () => Asteroids?.OpenOnline());
+            Listen(localPlayButton, () => Asteroids?.OpenLocalPlay());
             Listen(resetProgressButton, OnResetProgress);
             Listen(pauseButton, OnPauseClicked);
             Listen(nextButton, () => Asteroids?.PlayNextMission());
@@ -305,9 +312,10 @@ namespace Portfolio.Asteroids
 
         private void Update()
         {
-            if (Asteroids != null && (Asteroids.IsLobbyOpen || Asteroids.InSession))
+            ShowLocalPlayButton();
+            if (Asteroids != null && (Asteroids.IsLobbyOpen || Asteroids.InSession || Asteroids.InLocalMatch || Asteroids.IsLocalSetupOpen))
             {
-                // The keys below restart, save, load and launch single player missions.
+                // The keys below restart, save, load and launch single player missions (and some of them are the pilots' controls).
                 Animate(Time.unscaledDeltaTime);
                 return;
             }
@@ -365,10 +373,10 @@ namespace Portfolio.Asteroids
                 case BaseGameState.Paused:
                     SetInteractable(ReturnToGame, true);
                     SetInteractable(SaveGame, true);
-                    // A strike mission is neither saved nor loaded in flight.
-                    bool strikeMission = Asteroids != null && Asteroids.IsStrike;
-                    SetVisible(SaveGame, !strikeMission);
-                    SetVisible(LoadGame, !strikeMission);
+                    // A strike mission is neither saved nor loaded in flight, and neither is a local co-op one.
+                    bool unsaved = Asteroids != null && (Asteroids.IsStrike || Asteroids.InLocalMatch);
+                    SetVisible(SaveGame, !unsaved);
+                    SetVisible(LoadGame, !unsaved);
                     ShowScreen(hudScreen);
                     ShowMenu();
                     break;
@@ -490,6 +498,10 @@ namespace Portfolio.Asteroids
             bool field = mode == MissionMode.Field;
             SetActive(fieldMenuParts, field);
             SetActive(fieldHudParts, field);
+            if (localHud)
+            {
+                SetActive(shipHudParts, false);
+            }
             if (!field && continueButton != null)
             {
                 continueButton.gameObject.SetActive(false);
@@ -499,6 +511,28 @@ namespace Portfolio.Asteroids
             if (strike != null)
             {
                 strike.ShowMode(mode);
+            }
+        }
+
+
+        /// <summary>
+        /// The HUD of a local co-op mission (<paramref name="local"/>): the parts about one ship go, since the pilots list
+        /// shows every pilot; false brings them back.
+        /// </summary>
+        internal void ShowLocalHud(bool local)
+        {
+            localHud = local;
+            SetActive(shipHudParts, !local && ShownMode == MissionMode.Field);
+        }
+
+
+        /// <summary>The Local Play button shows where the game is played with keys and pads, not by touch.</summary>
+        private void ShowLocalPlayButton()
+        {
+            bool visible = !MobilePlatform.UsesTouch;
+            if (localPlayButton != null && localPlayButton.gameObject.activeSelf != visible)
+            {
+                localPlayButton.gameObject.SetActive(visible);
             }
         }
 
@@ -976,6 +1010,14 @@ namespace Portfolio.Asteroids
                 if (slot.chip != null)
                 {
                     slot.chip.color = pilot.Flying ? color : new Color(color.r, color.g, color.b, 0.25f);
+                    // A local pilot's chip is a gauge of the ship's hull (a strike ship's energy).
+                    slot.chip.type = pilot.Gauge.HasValue ? Image.Type.Filled : Image.Type.Simple;
+                    if (pilot.Gauge.HasValue)
+                    {
+                        slot.chip.fillMethod = Image.FillMethod.Vertical;
+                        slot.chip.fillOrigin = (int)Image.OriginVertical.Bottom;
+                        slot.chip.fillAmount = pilot.Flying ? Mathf.Max(0.08f, pilot.Gauge.Value) : 1f;
+                    }
                 }
                 if (slot.nameText != null)
                 {
@@ -984,7 +1026,8 @@ namespace Portfolio.Asteroids
                 }
                 if (slot.scoreText != null)
                 {
-                    slot.scoreText.text = pilot.Flying ? pilot.Score.ToString("N0") : F("{0:N0}  LOST", pilot.Score);
+                    slot.scoreText.text = !pilot.Flying ? F("{0:N0}  LOST", pilot.Score)
+                        : pilot.Lives.HasValue ? F("{0:N0}  x{1}", pilot.Score, pilot.Lives.Value) : pilot.Score.ToString("N0");
                     slot.scoreText.color = pilot.Flying ? color : new Color(1f, 0.45f, 0.4f, 0.9f);
                 }
             }
@@ -1042,12 +1085,13 @@ namespace Portfolio.Asteroids
             {
                 strike.HideResults();
             }
-            // A shared mission goes back to its room, where the host starts the next one.
+            // A shared mission goes back to its room, where the host starts the next one; a local one can be flown again.
             SetLabel(missionsLabel, result.Coop ? T("Room") : T("Missions"));
             if (retryButton != null)
             {
                 retryButton.gameObject.SetActive(!result.Coop);
             }
+            bool together = result.Coop || result.Local;
             SetLabel(resultTitle, result.Endless ? T("RUN OVER") : result.Victory ? T("MISSION COMPLETE") : T("MISSION FAILED"));
             if (resultTitle != null)
             {
@@ -1067,7 +1111,7 @@ namespace Portfolio.Asteroids
                 stats += $"\n{T("Wave reached")}  <b>{result.Wave}</b>     {T("Record")}  <b>{F("wave {0}", result.BestWave)}</b>";
             }
             SetLabel(resultStats, stats);
-            if (result.Coop)
+            if (together)
             {
                 ShowStandings(result.Standings);
             }
@@ -1091,7 +1135,7 @@ namespace Portfolio.Asteroids
                 {
                     star.sprite = StarEmpty;
                     star.transform.localScale = Vector3.one;
-                    star.gameObject.SetActive(!result.Endless && !result.Coop);
+                    star.gameObject.SetActive(!result.Endless && !together);
                 }
             }
             if (nextButton != null)

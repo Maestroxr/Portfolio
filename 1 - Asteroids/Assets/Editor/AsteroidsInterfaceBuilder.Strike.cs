@@ -56,6 +56,8 @@ namespace Portfolio.Asteroids.EditorTools
             ui.fieldMenuParts = Children(titleSafe, "Details", "SectorMap", "Stars", "Controls", "TouchControls");
             ui.fieldHudParts = Children(hudSafe, "Score", "Mission", "Objective", "ObjectiveBack", "ObjectiveFill", "Lives", "ShipStatus", "Dash", "DashRing",
                 "Weapon", "PowerUps");
+            // In local co-op the pilots list stands in for the parts about one ship.
+            ui.shipHudParts = Children(hudSafe, "Lives", "ShipStatus", "Dash", "DashRing", "Weapon", "PowerUps");
             ui.fieldResultParts = Children(resultSafe, "Panel");
         }
 
@@ -509,6 +511,9 @@ namespace Portfolio.Asteroids.EditorTools
             warning.characterSpacing = 10f;
             warning.gameObject.SetActive(false);
             strike.warningText = warning;
+            // In local co-op the pilots list stands in for the parts about one ship.
+            strike.shipHudParts = Children(root, "Special", "PhaseShields", "PhaseBack", "PhaseFill", "PhaseIcon", "EnergyBack", "EnergyFill", "EnergyIcon",
+                "EnergyValue", "Megabombs");
             screen.gameObject.SetActive(false);
         }
 

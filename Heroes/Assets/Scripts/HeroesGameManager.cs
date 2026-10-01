@@ -232,8 +232,11 @@ namespace Portfolio.Heroes
             // A map asked for as it is, or the scenario's as the settings shape it.
             MapSpec spec = pendingMap != null ? pendingMap.Clone() : NewGameMap(scenario);
             pendingMap = null;
-            // The rules keep the style for the whole game, so a saved game goes on the way it began.
-            spec.rules.battleStyle = (BattleStyle)Mathf.Clamp(Options.battleStyle, 0, 1);
+            // The rules keep the style for the whole game, so a saved game goes on the way it began. A hot seat chose its
+            // own; anything else fights where the settings say.
+            int style = pendingBattleStyle ?? Options.battleStyle;
+            pendingBattleStyle = null;
+            spec.rules.battleStyle = (BattleStyle)Mathf.Clamp(style, 0, 1);
             if (spec.seed == 0)
             {
                 spec.seed = (uint)Random.Range(1, int.MaxValue);
@@ -276,10 +279,15 @@ namespace Portfolio.Heroes
             savedDay = -1;
             refused = 0;
             brain = new AdventureAI();
+            // The slot Continue pointed at has been read: the game saves where its own kind of game saves.
+            continuesHotSeat = false;
 
             Build();
-            // Online the screen belongs to the seat of the player at this device, from the first frame.
-            Viewer = IsOnlineGame && localSeat >= 0 ? localSeat : FirstHuman(game);
+            // Online the screen belongs to the seat of the player at this device, from the first frame; in a hot seat to
+            // the person who plays next, whom the hand-over screen asks for before anything shows.
+            Viewer = IsOnlineGame && localSeat >= 0 ? localSeat
+                : IsHotSeat && HotSeat.NextPerson(game.State, game.State.currentPlayer) is int next && next >= 0 ? next
+                : FirstHuman(game);
             Map.Sync();
             Map.Fog.Show(game.State.Player(Viewer));
             ui.Bind(this);
@@ -301,6 +309,8 @@ namespace Portfolio.Heroes
 
             TransitionState(new Gamebox.GameState(BaseGameState.Running));
             sound?.PlayAdventureMusic();
+            // A hot seat starts behind the hand-over screen, raised before the first frame shows the map.
+            HandOverIfDue();
             // A lobby in the scene does not make a game online; a lockstep game does.
             director = StartCoroutine(IsOnlineGame ? DirectOnline() : Run());
         }
@@ -353,6 +363,7 @@ namespace Portfolio.Heroes
             StopDirecting();
             CloseBattleNow(false);
             LeaveOnline();
+            EndLocalMatch();
             Game = null;
             if (Map != null)
             {
@@ -373,11 +384,22 @@ namespace Portfolio.Heroes
         private IEnumerator Run()
         {
             yield return null;
+            // A hot seat waits for its first person before anything shows.
+            while (Game != null && passing)
+            {
+                yield return null;
+            }
             // A game saved in the middle of a battle goes on with the battle on the screen.
             yield return ResumeBattle();
             while (Game != null)
             {
                 if (!IsGameRunning)
+                {
+                    yield return null;
+                    continue;
+                }
+                // In a hot seat the device goes to the next person before the game goes on with them.
+                if (HandOverIfDue())
                 {
                     yield return null;
                     continue;
@@ -461,7 +483,7 @@ namespace Portfolio.Heroes
         /// <summary>Waits for the player at this device, showing the choice, the battle or the map as it stands.</summary>
         private IEnumerator Human(int who)
         {
-            if (Viewer != who && !InSession && !Game.InBattle)
+            if (Viewer != who && !InSession && !Game.InBattle && !IsHotSeat)
             {
                 // A hot seat: the screen changes hands, so the fog and the panels follow the player (not from stack to
                 // stack of a battle of two players here, which has a screen of its own and no fog).
@@ -528,6 +550,11 @@ namespace Portfolio.Heroes
                 yield return FinishOnline(state, days);
                 yield break;
             }
+            if (IsHotSeat)
+            {
+                yield return FinishHotSeat(state, days);
+                yield break;
+            }
             bool won = state.winner >= 0 && state.Player(state.winner) != null && state.Player(state.winner).human;
             HeroesLevel scenario = Scenario;
             int stars = won && scenario != null ? scenario.StarsFor(days) : 0;
@@ -550,8 +577,8 @@ namespace Portfolio.Heroes
 
         // ------------------------------------------------------------------ saving
 
-        /// <summary>Where the game of the scenario being played is saved.</summary>
-        private string SaveSlot => SaveKey(LevelIndex.ToString(CultureInfo.InvariantCulture));
+        /// <summary>Where the game of the scenario being played is saved: a hot seat game apart from the game alone.</summary>
+        private string SaveSlot => IsHotSeat || continuesHotSeat ? HotSeatSlot(LevelIndex) : SaveKey(LevelIndex.ToString(CultureInfo.InvariantCulture));
 
         /// <summary>Where the scenario of the last save is noted, for the title screen to offer it.</summary>
         internal string LastSavedLevelKey => SaveKey("Level");
@@ -584,6 +611,11 @@ namespace Portfolio.Heroes
             }
             Disk.SetString(SaveSlot, JsonUtility.ToJson(Game.State));
             Disk.SetInt(LastSavedLevelKey, LevelIndex);
+            Disk.SetInt(LastSavedHotSeatKey, IsHotSeat ? 1 : 0);
+            if (IsHotSeat)
+            {
+                Disk.SetString(HotSeatSetupKey(LevelIndex), LocalMatch.Save());
+            }
             PersistSavedGame();
         }
 
@@ -607,8 +639,15 @@ namespace Portfolio.Heroes
             if (state == null || state.version != GameState.Version)
             {
                 ClearSave();
+                continuesHotSeat = false;
                 return;
             }
+            if (continuesHotSeat)
+            {
+                ResumeHotSeat(state);
+                return;
+            }
+            EndLocalMatch();
             Continue(state);
         }
 

@@ -13,7 +13,9 @@ namespace Portfolio.EndlessRunner
     /// <summary>
     /// Interface of the Endless Runner: the level select, the HUD of a run and the results screen. The shared menu of
     /// <see cref="GameUI"/> serves as the pause menu and hosts the settings panel. A race against the runners of an
-    /// online room adds the scoreboard of the <see cref="RaceHud"/> and shows the standings as its results.
+    /// online room adds the scoreboard of the <see cref="RaceHud"/> and shows the standings as its results; a race of
+    /// several runners at this device hides the HUD of the runner alone for a <see cref="RunnerSeatHud"/> over each
+    /// runner's part of the screen (<see cref="ShowSplitScreen"/>) and shows its standings as its results.
     /// </summary>
     public class RunnerUI : GameUI
     {
@@ -52,6 +54,8 @@ namespace Portfolio.EndlessRunner
         [SerializeField] internal Button playButton;
         [SerializeField] internal TMP_Text playLabel;
         [SerializeField] internal Button multiplayerButton;
+        [Tooltip("A race of several runners at this device; shown where there are keys or pads to play it with.")]
+        [SerializeField] internal Button localPlayButton;
         [SerializeField] internal Button titleSettingsButton;
         [SerializeField] internal Button titleExitButton;
         [SerializeField] internal Button resetProgressButton;
@@ -77,6 +81,8 @@ namespace Portfolio.EndlessRunner
         [SerializeField] internal TMP_Text hintText;
         [SerializeField] internal Image damageFlash;
         [SerializeField] internal RaceHud raceHud;
+        [Tooltip("The HUD of the runner alone (coins, score, hearts, power-ups, progress, hints); a local race hides it.")]
+        [SerializeField] internal GameObject runHud;
 
         [Header("Results")]
         [SerializeField] internal TMP_Text resultTitle;
@@ -137,6 +143,7 @@ namespace Portfolio.EndlessRunner
         private RunResult shownResult;
         private bool hasResult;
         private int tipIndex;
+        private RectTransform splitScreenRoot;
 
         private RunnerGameManager Runner => Manager as RunnerGameManager;
 
@@ -148,6 +155,7 @@ namespace Portfolio.EndlessRunner
             base.Awake();
             Listen(playButton, () => Runner?.PlaySelectedLevel());
             Listen(multiplayerButton, () => Runner?.OpenOnline());
+            Listen(localPlayButton, () => Runner?.OpenLocalPlay());
             Listen(titleSettingsButton, ShowSettings);
             Listen(titleExitButton, () => GameManager?.ExitGame());
             Listen(resetProgressButton, OnResetProgress);
@@ -718,6 +726,37 @@ namespace Portfolio.EndlessRunner
             }
         }
 
+        /// <summary>
+        /// Where the HUDs of the runners of a local race go: a rect over the whole screen in the HUD, under the pause
+        /// button, the countdown and the words for everybody.
+        /// </summary>
+        public Transform SplitScreenRoot
+        {
+            get
+            {
+                if (splitScreenRoot == null && hudScreen != null)
+                {
+                    splitScreenRoot = OverlayKit.Rect(hudScreen.transform, "SplitScreen");
+                    OverlayKit.Stretch(splitScreenRoot);
+                    splitScreenRoot.SetSiblingIndex(damageFlash != null ? damageFlash.transform.GetSiblingIndex() + 1 : 0);
+                }
+                return splitScreenRoot;
+            }
+        }
+
+        /// <summary>A local race shares the screen: the HUD of the runner alone makes way for one HUD per runner.</summary>
+        public void ShowSplitScreen(bool split)
+        {
+            if (runHud != null && runHud.activeSelf == split)
+            {
+                runHud.SetActive(!split);
+            }
+            if (split)
+            {
+                HideRace();
+            }
+        }
+
         public void PunchCoins()
         {
             coinPunch = 1f;
@@ -751,7 +790,7 @@ namespace Portfolio.EndlessRunner
             WriteResults(result);
             if (resultStarsRoot != null)
             {
-                resultStarsRoot.gameObject.SetActive(!result.Endless && !result.Online);
+                resultStarsRoot.gameObject.SetActive(!result.Endless && !result.Online && !result.Local);
             }
             foreach (Image star in resultStars)
             {
@@ -777,12 +816,13 @@ namespace Portfolio.EndlessRunner
             {
                 retryButton.gameObject.SetActive(!result.Online);
             }
+            bool standings = result.Online || result.Local;
             if (resultStats != null)
             {
                 // The standings are a line a runner, however long the names are.
-                resultStats.enableAutoSizing = result.Online;
-                resultStats.textWrappingMode = result.Online ? TextWrappingModes.NoWrap : TextWrappingModes.Normal;
-                if (result.Online)
+                resultStats.enableAutoSizing = standings;
+                resultStats.textWrappingMode = standings ? TextWrappingModes.NoWrap : TextWrappingModes.Normal;
+                if (standings)
                 {
                     resultStats.fontSizeMax = resultStatsSize;
                     resultStats.fontSizeMin = 16f;
@@ -793,7 +833,16 @@ namespace Portfolio.EndlessRunner
                 }
             }
             string levelTitle = RunnerText.T(result.LevelTitle);
-            if (result.Online)
+            if (result.Local)
+            {
+                // A race at this device: the winner in the colour of the seat, the standings, and Retry for the same race.
+                SetLabel(resultTitle, result.Winner != null ? RunnerText.F("{0} WINS!", result.Winner) : RunnerText.T("IT'S A TIE!"));
+                SetLabel(resultSubtitle, RunnerText.F("{0} - local race of {1}", levelTitle, result.Runners));
+                SetLabel(resultStats, result.Standings);
+                SetLabel(resultGoals, RunnerText.T("Retry races again with the same players."));
+                resultStarCount = 0;
+            }
+            else if (result.Online)
             {
                 // A race: the places are the server's, and the next one starts from the room.
                 SetLabel(resultTitle, result.Runners < 2 ? RunnerText.T("RUN OVER") : result.Place == 1 ? RunnerText.T("YOU WIN!")
@@ -836,7 +885,7 @@ namespace Portfolio.EndlessRunner
         /// <summary>The standings of a race again, in the language shown now.</summary>
         public void UpdateStandings(string standings)
         {
-            if (hasResult && shownResult.Online)
+            if (hasResult && (shownResult.Online || shownResult.Local))
             {
                 shownResult.Standings = standings;
                 WriteResults(shownResult);
