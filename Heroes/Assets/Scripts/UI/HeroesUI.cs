@@ -254,7 +254,7 @@ namespace Portfolio.Heroes.UI
                 return;
             }
             leaveWords ??= label.text;
-            label.text = on ? "Leave and Lose the Battle" : leaveWords;
+            label.text = on ? Words.T("Leave and Lose the Battle") : leaveWords;
         }
 
         // ------------------------------------------------------------------ the title, the menus and the way back
@@ -441,7 +441,7 @@ namespace Portfolio.Heroes.UI
         {
             Prepare();
             TextAsset credits = manager.Art != null ? manager.Art.credits : null;
-            message.ShowCredits(credits != null ? credits.text : "Heroes");
+            message.ShowCredits(credits != null ? credits.text : Words.T("Heroes"));
         }
 
         public void EndTurn()
@@ -476,6 +476,29 @@ namespace Portfolio.Heroes.UI
                 TooltipBox.Hide(this);
             }
             Refresh();
+        }
+
+        /// <summary>
+        /// The language changed: before a scenario the interface is built again in it (as for a new theme); during one,
+        /// everything code wrote is written again (the static words follow by themselves, see TranslatedLabel).
+        /// </summary>
+        public override void RefreshTexts()
+        {
+            base.RefreshTexts();
+            leaveWords = null;
+            if (canvas == null)
+            {
+                return;
+            }
+            if (Game == null)
+            {
+                Rebuild();
+                return;
+            }
+            Refresh();
+            battleBar?.RefreshTexts();
+            choice?.RefreshTexts();
+            results?.RefreshTexts();
         }
 
         /// <summary>Redraws everything that shows a number: resources, the date, the heroes, the little map.</summary>
@@ -544,7 +567,7 @@ namespace Portfolio.Heroes.UI
         /// <summary>The banner that names the day, the week or the town that just changed hands.</summary>
         public void Announce(string heading, string body)
         {
-            hud?.Announce(heading, TurnLine(body));
+            hud?.Announce(Words.T(heading), TurnLine(body));
         }
 
         /// <summary>
@@ -556,16 +579,16 @@ namespace Portfolio.Heroes.UI
             GameState state = Game?.State;
             if (state == null || string.IsNullOrEmpty(body))
             {
-                return body;
+                return Words.Sentence(body);
             }
             foreach (PlayerState player in state.players)
             {
                 if (player.name == body)
                 {
-                    return player.index == manager.Viewer ? "Your turn" : $"{player.name}'s turn";
+                    return player.index == manager.Viewer ? Words.T("Your turn") : Words.F("{0}'s turn", Words.Name(player.name));
                 }
             }
-            return body;
+            return Words.Sentence(body);
         }
 
         public void ShowTurn(int who)
@@ -856,9 +879,9 @@ namespace Portfolio.Heroes.UI
                 if (what != null && what.kind == ObjectKind.Town && Game.State.HeroAt(cell) == null &&
                     Game.State.Town(what.subtype) is TownState here && here.owner == manager.Viewer)
                 {
-                    body += WalksIn(here, manager.Selected)
-                        ? $"\n<i>Click to send {manager.Selected.Name} in.</i>"
-                        : "\n<i>Click to open the town.</i>";
+                    body += "\n<i>" + (WalksIn(here, manager.Selected)
+                        ? Words.F("Click to send {0} in.", Words.Name(manager.Selected.Name))
+                        : Words.T("Click to open the town.")) + "</i>";
                 }
                 TooltipBox.Show(this, heading, body, picture);
             }

@@ -6,6 +6,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
+using static Portfolio.MemoryCards.MemoryCardsText;
 
 namespace Portfolio.MemoryCards
 {
@@ -26,12 +27,12 @@ namespace Portfolio.MemoryCards
 
         private static readonly string[] Tips =
         {
-            "Tip: flip cards you have not seen yet before guessing.",
-            "Tip: matches in a row build a combo worth up to x5 points.",
-            "Tip: click anywhere after a mistake to flip the cards back sooner.",
-            "Tip: a wild card clears every card of the {0} you pair it with.",
-            "Tip: remember where the bombs are - they stay put until a shuffle.",
-            "Tip: in a parade, keep finding pairs even when they are not next."
+            K("Tip: flip cards you have not seen yet before guessing."),
+            K("Tip: matches in a row build a combo worth up to x5 points."),
+            K("Tip: click anywhere after a mistake to flip the cards back sooner."),
+            K("Tip: a wild card clears every card of the {0} you pair it with."),
+            K("Tip: remember where the bombs are - they stay put until a shuffle."),
+            K("Tip: in a parade, keep finding pairs even when they are not next.")
         };
 
         [Header("Screens")]
@@ -175,6 +176,8 @@ namespace Portfolio.MemoryCards
         private MemoryCardsTheme.Palette palette = new MemoryCardsTheme.Palette();
         private string faceWord = "animal";
 
+        private MemoryCardsTheme shownLook;
+
         private MemoryCardsGameManager Cards => Manager as MemoryCardsGameManager;
 
 
@@ -190,6 +193,7 @@ namespace Portfolio.MemoryCards
             {
                 return;
             }
+            shownLook = look;
             palette = look.Colors;
             faceWord = string.IsNullOrEmpty(look.Say.face) ? faceWord : look.Say.face;
             starFull = Or(look.Hud.starFull, starFull);
@@ -202,12 +206,12 @@ namespace Portfolio.MemoryCards
             {
                 modeIcons = look.Hud.modeIcons.ToArray();
             }
-            SetLabel(logoName, look.Title.words);
+            SetLabel(logoName, T(look.Title.words));
             if (logoName != null)
             {
                 logoName.colorGradient = new VertexGradient(look.Title.gradientTop, look.Title.gradientTop, look.Title.gradientBottom, look.Title.gradientBottom);
             }
-            SetLabel(logoSubtitle, look.Title.subtitle);
+            SetLabel(logoSubtitle, T(look.Title.subtitle));
             if (logoOrnament != null)
             {
                 logoOrnament.sprite = Or(look.Title.ornament, logoOrnament.sprite);
@@ -321,6 +325,8 @@ namespace Portfolio.MemoryCards
             {
                 memorizeRoot.SetActive(false);
             }
+            // The reset button's words come from the scene; they are written in the language shown from the start.
+            GameLanguages.WhenReady(() => SetLabel(resetProgressLabel, T("Reset progress")));
         }
 
         private static void Listen(Button button, UnityAction action)
@@ -329,6 +335,36 @@ namespace Portfolio.MemoryCards
             {
                 button.onClick.AddListener(action);
             }
+        }
+
+        /// <summary>
+        /// The language changed: the words this interface wrote with code are written again (the manager redraws the
+        /// level select and the title of the round).
+        /// </summary>
+        public override void RefreshTexts()
+        {
+            base.RefreshTexts();
+            if (shownLook != null)
+            {
+                SetLabel(logoName, T(shownLook.Title.words));
+                SetLabel(logoSubtitle, T(shownLook.Title.subtitle));
+            }
+            resetConfirmUntil = -1f;
+            SetLabel(resetProgressLabel, T("Reset progress"));
+        }
+
+        /// <summary>Writes the title of the round again in the language shown (the HUD keeps everything else).</summary>
+        public void RetitleRound(string title, string versusLabel)
+        {
+            hud.Title = title;
+            hud.VersusLabel = versusLabel;
+            WriteRoundTitle();
+        }
+
+        private void WriteRoundTitle()
+        {
+            SetLabel(levelText, hud.Title);
+            SetLabel(modeText, hud.Versus ? hud.VersusLabel : hud.Endless ? F("BOARD {0}", hud.Board) : ModeName(hud.Mode));
         }
 
         #region Screens
@@ -410,13 +446,13 @@ namespace Portfolio.MemoryCards
             if (Time.unscaledTime < resetConfirmUntil)
             {
                 resetConfirmUntil = -1f;
-                SetLabel(resetProgressLabel, "Reset progress");
+                SetLabel(resetProgressLabel, T("Reset progress"));
                 Cards?.ResetProgress();
                 return;
             }
             Cards?.PlayClick();
             resetConfirmUntil = Time.unscaledTime + 3f;
-            SetLabel(resetProgressLabel, MobilePlatform.Pick("Click again to reset", "Tap again to reset"));
+            SetLabel(resetProgressLabel, MobilePlatform.Pick(T("Click again to reset"), T("Tap again to reset")));
         }
 
         /// <summary>Fades a curtain in the world colour over everything; it clears by itself.</summary>
@@ -479,7 +515,7 @@ namespace Portfolio.MemoryCards
                 ((RectTransform)card.transform).anchoredPosition = position;
             }
             SetLabel(starsTotal, $"{totalStars} / {maxStars}");
-            SetLabel(lifetimeText, setsFound > 0 ? $"{setsFound.ToString("N0", CultureInfo.InvariantCulture)} sets found" : "Welcome!");
+            SetLabel(lifetimeText, setsFound > 0 ? F("{0} sets found", N(setsFound)) : T("Welcome!"));
             if (continueButton != null)
             {
                 continueButton.gameObject.SetActive(canContinue);
@@ -516,7 +552,7 @@ namespace Portfolio.MemoryCards
             {
                 detailNewRoot.SetActive(isNew);
             }
-            SetLabel(detailNew, isNew ? $"NEW: {level.Introduces}" : string.Empty);
+            SetLabel(detailNew, isNew ? F("NEW: {0}", level.Introduces) : string.Empty);
             SetLabel(detailBoard, string.IsNullOrEmpty(level.Twists) ? level.Board : $"{level.Board}   <color=#00000066>|</color>   {level.Twists}");
             bool campaign = level.Kind == LevelKind.Campaign;
             if (detailGoalsRoot != null)
@@ -540,22 +576,22 @@ namespace Portfolio.MemoryCards
             if (level.Kind == LevelKind.Endless)
             {
                 SetLabel(detailBest, level.EndlessBoards > 0
-                    ? $"Best run: <b>{level.EndlessBoards}</b> boards, <b>{level.EndlessScore.ToString("N0", CultureInfo.InvariantCulture)}</b> points"
-                    : "No record yet - set one!");
+                    ? F("Best run: <b>{0}</b> boards, <b>{1}</b> points", level.EndlessBoards, N(level.EndlessScore))
+                    : T("No record yet - set one!"));
             }
             else if (campaign)
             {
-                SetLabel(detailBest, level.BestScore > 0 ? $"Best score: <b>{level.BestScore.ToString("N0", CultureInfo.InvariantCulture)}</b>" : string.Empty);
+                SetLabel(detailBest, level.BestScore > 0 ? F("Best score: <b>{0}</b>", N(level.BestScore)) : string.Empty);
             }
             else
             {
-                SetLabel(detailBest, "Change the rules in Settings.");
+                SetLabel(detailBest, T("Change the rules in Settings."));
             }
             if (playButton != null)
             {
                 playButton.interactable = level.Unlocked;
             }
-            SetLabel(playLabel, level.Unlocked ? "PLAY" : "LOCKED");
+            SetLabel(playLabel, level.Unlocked ? T("PLAY") : T("LOCKED"));
             if (!level.Unlocked && !string.IsNullOrEmpty(level.LockReason))
             {
                 SetLabel(detailBest, level.LockReason);
@@ -566,13 +602,13 @@ namespace Portfolio.MemoryCards
         {
             switch (mode)
             {
-                case LevelMode.TimeAttack: return "TIME ATTACK";
-                case LevelMode.Survival: return "SURVIVAL";
-                case LevelMode.MoveLimit: return "MOVE LIMIT";
-                case LevelMode.Parade: return "PARADE";
-                case LevelMode.Endless: return "ENDLESS";
-                case LevelMode.FreePlay: return "FREE PLAY";
-                default: return "CLASSIC";
+                case LevelMode.TimeAttack: return T("TIME ATTACK");
+                case LevelMode.Survival: return T("SURVIVAL");
+                case LevelMode.MoveLimit: return T("MOVE LIMIT");
+                case LevelMode.Parade: return T("PARADE");
+                case LevelMode.Endless: return T("ENDLESS");
+                case LevelMode.FreePlay: return T("FREE PLAY");
+                default: return T("CLASSIC");
             }
         }
 
@@ -589,8 +625,7 @@ namespace Portfolio.MemoryCards
         public void BeginRound(RoundHud setup)
         {
             hud = setup;
-            SetLabel(levelText, setup.Title);
-            SetLabel(modeText, setup.Versus ? setup.VersusLabel : setup.Endless ? $"BOARD {setup.Board}" : ModeName(setup.Mode));
+            WriteRoundTitle();
             if (modeIcon != null)
             {
                 modeIcon.sprite = ModeIcon(setup.Mode);
@@ -645,7 +680,7 @@ namespace Portfolio.MemoryCards
         /// <summary>The number of players the play button starts a game for; the button is off for levels only one can play.</summary>
         public void ShowPlayers(int players, bool allowed)
         {
-            SetLabel(playersLabel, players <= 1 ? "1 PLAYER" : $"{players} PLAYERS");
+            SetLabel(playersLabel, players <= 1 ? T("1 PLAYER") : F("{0} PLAYERS", players));
             if (playersButton != null)
             {
                 playersButton.interactable = allowed;
@@ -903,34 +938,37 @@ namespace Portfolio.MemoryCards
             string title;
             if (result.Kind == LevelKind.Endless)
             {
-                title = result.NewBest ? "NEW RECORD!" : "TIME'S UP!";
+                title = result.NewBest ? T("NEW RECORD!") : T("TIME'S UP!");
             }
             else if (result.Victory)
             {
-                title = result.Stars >= 3 ? "PERFECT!" : result.Stars == 2 ? "GREAT JOB!" : "CLEARED!";
+                title = result.Stars >= 3 ? T("PERFECT!") : result.Stars == 2 ? T("GREAT JOB!") : T("CLEARED!");
             }
             else
             {
                 switch (result.End)
                 {
-                    case RoundEnd.OutOfHearts: title = "OUT OF HEARTS"; break;
-                    case RoundEnd.OutOfMoves: title = "OUT OF MOVES"; break;
-                    default: title = "TIME'S UP!"; break;
+                    case RoundEnd.OutOfHearts: title = T("OUT OF HEARTS"); break;
+                    case RoundEnd.OutOfMoves: title = T("OUT OF MOVES"); break;
+                    default: title = T("TIME'S UP!"); break;
                 }
             }
             SetLabel(resultTitle, title);
             SetLabel(resultSubtitle, result.LevelTitle);
 
-            string score = result.Score.ToString("N0", CultureInfo.InvariantCulture);
-            string bonus = result.Bonus > 0 ? $"  <size=70%><color=#2E9E4F>(+{result.Bonus.ToString("N0", CultureInfo.InvariantCulture)} bonus)</color></size>" : string.Empty;
+            string score = N(result.Score);
+            string bonus = result.Bonus > 0 ? "  <size=70%><color=#2E9E4F>" + F("(+{0} bonus)", N(result.Bonus)) + "</color></size>" : string.Empty;
             string time = FormatTime(result.Time);
             if (result.Kind == LevelKind.Endless)
             {
-                SetLabel(resultStats, $"Boards cleared   <b>{result.Boards}</b>\nScore   <b>{score}</b>\nBest streak   <b>{result.BestCombo}</b>");
+                SetLabel(resultStats, F("Boards cleared   <b>{0}</b>", result.Boards) + "\n" + F("Score   <b>{0}</b>", score) + "\n"
+                    + F("Best streak   <b>{0}</b>", result.BestCombo));
             }
             else
             {
-                SetLabel(resultStats, $"Score   <b>{score}</b>{bonus}\n{(result.Countdown ? "Time left" : "Time")}   <b>{time}</b>      Mistakes   <b>{result.Mistakes}</b>\nMoves   <b>{result.Moves}</b>      Best streak   <b>{result.BestCombo}</b>");
+                string clock = result.Countdown ? F("Time left   <b>{0}</b>", time) : F("Time   <b>{0}</b>", time);
+                SetLabel(resultStats, F("Score   <b>{0}</b>", score) + bonus + "\n" + clock + "      " + F("Mistakes   <b>{0}</b>", result.Mistakes) + "\n"
+                    + F("Moves   <b>{0}</b>", result.Moves) + "      " + F("Best streak   <b>{0}</b>", result.BestCombo));
             }
             bool campaign = result.Kind == LevelKind.Campaign;
             for (int i = 0; i < resultGoals.Length; i++)
@@ -952,15 +990,15 @@ namespace Portfolio.MemoryCards
             }
             if (result.Kind == LevelKind.Endless)
             {
-                SetLabel(resultBest, result.NewBest ? "You beat your best run!" : $"Best: {result.Best.ToString("N0", CultureInfo.InvariantCulture)} points");
+                SetLabel(resultBest, result.NewBest ? T("You beat your best run!") : F("Best: {0} points", N(result.Best)));
             }
             else if (result.Victory && campaign)
             {
-                SetLabel(resultBest, result.NewBest ? "New best score!" : $"Best: {result.Best.ToString("N0", CultureInfo.InvariantCulture)}");
+                SetLabel(resultBest, result.NewBest ? T("New best score!") : F("Best: {0}", N(result.Best)));
             }
             else if (!result.Victory)
             {
-                SetLabel(resultBest, ForInput(string.Format(Tips[Random.Range(0, Tips.Length)], faceWord)));
+                SetLabel(resultBest, ForInput(F(Tips[Random.Range(0, Tips.Length)], T(faceWord))));
             }
             else
             {
@@ -1041,7 +1079,7 @@ namespace Portfolio.MemoryCards
             SetLabel(resultStats, result.VersusStandings);
             FitResultStats(true);
             PlaceResultButtons(true);
-            SetLabel(resultBest, result.Online ? "Back to the room for another game." : string.Empty);
+            SetLabel(resultBest, result.Online ? T("Back to the room for another game.") : string.Empty);
             foreach (TMP_Text goal in resultGoals)
             {
                 if (goal != null)
@@ -1173,7 +1211,7 @@ namespace Portfolio.MemoryCards
             if (resetConfirmUntil > 0f && Time.unscaledTime > resetConfirmUntil)
             {
                 resetConfirmUntil = -1f;
-                SetLabel(resetProgressLabel, "Reset progress");
+                SetLabel(resetProgressLabel, T("Reset progress"));
             }
 
             AnimateResults(dt);

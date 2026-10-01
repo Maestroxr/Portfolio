@@ -45,7 +45,14 @@ namespace Portfolio.Heroes.UI
             shown.characterSpacing = 1f;
 
             var choice = box.gameObject.AddComponent<ChoiceSelector>();
-            choice.Setup(shown, previous, next, options);
+            // The options are English keys: the choice shows them in the language of the moment (the screens that hold a
+            // stepper are built again when the language changes).
+            var words = new string[options.Length];
+            for (int i = 0; i < options.Length; i++)
+            {
+                words[i] = Words.T(options[i]);
+            }
+            choice.Setup(shown, previous, next, words);
             return choice;
         }
 

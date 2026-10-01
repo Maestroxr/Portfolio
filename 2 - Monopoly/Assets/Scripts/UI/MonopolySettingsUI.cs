@@ -85,7 +85,7 @@ namespace Portfolio.Monopoly
             {
                 return;
             }
-            CustomSettingsButtonText.text = usingDefault ? "Edit house rules" : "Back to the standard rules";
+            CustomSettingsButtonText.text = usingDefault ? L.T("Edit house rules") : L.T("Back to the standard rules");
             CustomSettingsButtonText.color = Color.white;
         }
 

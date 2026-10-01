@@ -101,7 +101,7 @@ namespace Portfolio.Heroes.UI
             bool attackerWon = result == BattleResult.AttackerWon || result == BattleResult.DefenderFled;
             bool won = attackerWon ? mySide == 0 : mySide == 1;
             bool fled = result == BattleResult.AttackerFled && mySide == 0 || result == BattleResult.DefenderFled && mySide == 1;
-            ribbonText.text = fled ? "Retreat" : won ? "Victory" : "Defeat";
+            ribbonText.text = Words.T(fled ? "Retreat" : won ? "Victory" : "Defeat");
             ribbon.color = won ? Color.white : new Color(0.62f, 0.62f, 0.7f);
             verdict.text = Verdict(ended, end, result, state);
             for (int side = 0; side < 2; side++)
@@ -111,7 +111,7 @@ namespace Portfolio.Heroes.UI
             HeroState winner = state.Hero(end.HeroOf(attackerWon ? 0 : 1));
             int gained = (attackerWon ? end.defenderLostHealth : end.attackerLostHealth) + (end.town >= 0 && attackerWon ? 500 : 0);
             experience.text = winner != null && winner.alive && gained > 0
-                ? $"<sprite name=\"experience\"> {winner.Name} gains {gained} experience."
+                ? $"<sprite name=\"experience\"> {Words.F("{0} gains {1} experience.", Words.Name(winner.Name), gained)}"
                 : "";
             gameObject.SetActive(true);
             transform.SetAsLastSibling();
@@ -123,7 +123,7 @@ namespace Portfolio.Heroes.UI
         {
             if (!string.IsNullOrEmpty(ended.text))
             {
-                return ended.text;
+                return Words.Sentence(ended.text);
             }
             string attacker = Name(end, 0, state, out bool attackers);
             string defender = Name(end, 1, state, out bool defenders);
@@ -131,16 +131,16 @@ namespace Portfolio.Heroes.UI
             switch (result)
             {
                 case BattleResult.AttackerWon:
-                    line = $"{attacker} {(attackers ? "carry" : "carries")} the field against {defender}.";
+                    line = Words.F(attackers ? "{0} carry the field against {1}." : "{0} carries the field against {1}.", attacker, defender);
                     break;
                 case BattleResult.DefenderWon:
-                    line = $"{defender} {(defenders ? "stand" : "stands")} firm against {attacker}.";
+                    line = Words.F(defenders ? "{0} stand firm against {1}." : "{0} stands firm against {1}.", defender, attacker);
                     break;
                 case BattleResult.AttackerFled:
-                    line = $"{attacker} {(attackers ? "withdraw" : "withdraws")} from the field.";
+                    line = Words.F(attackers ? "{0} withdraw from the field." : "{0} withdraws from the field.", attacker);
                     break;
                 default:
-                    line = $"{defender} {(defenders ? "withdraw" : "withdraws")} from the field.";
+                    line = Words.F(defenders ? "{0} withdraw from the field." : "{0} withdraws from the field.", defender);
                     break;
             }
             return char.ToUpperInvariant(line[0]) + line.Substring(1);
@@ -153,22 +153,22 @@ namespace Portfolio.Heroes.UI
             HeroState hero = state.Hero(end.HeroOf(side));
             if (hero != null)
             {
-                return hero.Name;
+                return Words.Name(hero.Name);
             }
             TownState town = side == 1 ? state.Town(end.town) : null;
             if (town != null)
             {
-                return $"the garrison of {town.name}";
+                return Words.F("the garrison of {0}", Words.Name(town.name));
             }
             foreach (BattleStack stack in end.stacks)
             {
                 if (stack.side == side && !stack.IsTower)
                 {
                     plural = true;
-                    return $"the {stack.Def.Plural}";
+                    return Words.F("the {0}", Words.Name(stack.Def.Plural));
                 }
             }
-            return "the wilds";
+            return Words.T("the wilds");
         }
 
         private void ShowSide(BattleState end, int side, GameState state)
@@ -181,12 +181,12 @@ namespace Portfolio.Heroes.UI
             if (hero != null)
             {
                 BattleHeroBlock.Picture(portraits[side], art != null ? art.HeroPortrait(hero.Def != null ? hero.Def.Class : HeroClass.Knight) : null);
-                names[side].text = hero.Name;
+                names[side].text = Words.Name(hero.Name);
             }
             else if (town != null)
             {
                 BattleHeroBlock.Picture(portraits[side], art != null ? art.TownPortrait(town.faction, color) : null);
-                names[side].text = town.name;
+                names[side].text = Words.Name(town.name);
             }
             else
             {
@@ -199,7 +199,7 @@ namespace Portfolio.Heroes.UI
                     }
                 }
                 BattleHeroBlock.Picture(portraits[side], leader != null && art != null ? art.Portrait((CreatureId)leader.creature) : null);
-                names[side].text = leader != null ? $"Wandering {leader.Def.Plural}" : "The wilds";
+                names[side].text = leader != null ? Words.F("Wandering {0}", Words.Name(leader.Def.Plural)) : Words.T("The wilds");
             }
             names[side].color = Color.Lerp(Color.white, HeroesArt.PlayerColor(color), 0.35f);
 
@@ -228,7 +228,7 @@ namespace Portfolio.Heroes.UI
                 Image face = UIKit.PortraitFrame(chip, "Portrait", art != null ? art.Portrait((CreatureId)slot.creature) : null);
                 UIKit.Pin((RectTransform)face.transform.parent.parent, new Vector2(0.5f, 1f), Vector2.zero, new Vector2(66f, 66f));
                 CreatureDef def = Creatures.Get(slot.creature);
-                Tooltip.Attach(face.transform.parent.gameObject, def != null ? $"{slot.count} {def.NameFor(slot.count)}" : "");
+                Tooltip.Attach(face.transform.parent.gameObject, def != null ? $"{slot.count} {Words.Name(def.NameFor(slot.count))}" : "");
                 TextMeshProUGUI count = UIKit.Label(chip, "Count", slot.count.ToString(), 21f, UIKit.Ink, TextAlignmentOptions.Center);
                 count.fontStyle = FontStyles.Bold;
                 UIKit.Pin((RectTransform)count.transform, new Vector2(0.5f, 0f), Vector2.zero, new Vector2(68f, 24f));

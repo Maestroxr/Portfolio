@@ -51,7 +51,7 @@ namespace Portfolio.MemoryCards
                     if (level != null && level.IsCampaign && level.Settings != null)
                     {
                         RoundRules rules = VersusMatch.RulesFor(level.Settings.ToRules());
-                        choices.Add(new RoomLevelChoice(i, $"{level.Title} ({rules.Columns}x{rules.Rows})"));
+                        choices.Add(new RoomLevelChoice(i, $"{MemoryCardsText.T(level.Title)} ({rules.Columns}x{rules.Rows})"));
                     }
                 }
                 return choices;
@@ -82,7 +82,7 @@ namespace Portfolio.MemoryCards
 
         public override string DescribeRoom(RoomInfo room)
         {
-            string set = room.Option(BoardOptions.MatchKey, 2) >= 3 ? "triplets" : "pairs";
+            string set = room.Option(BoardOptions.MatchKey, 2) >= 3 ? MemoryCardsText.T("triplets") : MemoryCardsText.T("pairs");
             return $"{base.DescribeRoom(room)}, {set}";
         }
 
@@ -154,7 +154,7 @@ namespace Portfolio.MemoryCards
             MemoryBoard dealt = connection != null ? connection.Db.MemoryBoard.RoomId.Find(room.Id) : null;
             if (manager == null || dealt == null)
             {
-                Report("The board of the game did not arrive.");
+                Report(MemoryCardsText.T("The board of the game did not arrive."));
                 return;
             }
 
@@ -173,7 +173,7 @@ namespace Portfolio.MemoryCards
             if (names.Count < VersusMatch.MinPlayers || localSeat < 0)
             {
                 // The other player dropped between the start and its arrival here; the server is ending the game already.
-                Report("The other player left before the game began.");
+                Report(MemoryCardsText.T("The other player left before the game began."));
                 return;
             }
             var frozen = new bool[dealt.Cards];

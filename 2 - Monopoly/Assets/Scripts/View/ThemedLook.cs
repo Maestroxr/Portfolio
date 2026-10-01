@@ -74,6 +74,37 @@ namespace Portfolio.Monopoly
         public bool IsEmpty => string.IsNullOrEmpty(sprite) && string.IsNullOrEmpty(color) && string.IsNullOrEmpty(font)
             && string.IsNullOrEmpty(material) && string.IsNullOrEmpty(words) && string.IsNullOrEmpty(effect);
 
+        private void Awake()
+        {
+            if (!string.IsNullOrEmpty(words))
+            {
+                GameLanguages.Changed += OnLanguageChanged;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            GameLanguages.Changed -= OnLanguageChanged;
+        }
+
+        /// <summary>The words of the theme follow the language: drawn again now, or when the part shows next.</summary>
+        private void OnLanguageChanged()
+        {
+            if (this == null)
+            {
+                GameLanguages.Changed -= OnLanguageChanged;
+                return;
+            }
+            if (isActiveAndEnabled)
+            {
+                Redraw();
+            }
+            else
+            {
+                drawnWith = null;
+            }
+        }
+
         /// <summary>Draws the part from the active theme even when it was drawn with it already.</summary>
         public void Redraw()
         {
@@ -139,7 +170,7 @@ namespace Portfolio.Monopoly
                 string line = look.WordOf(words);
                 if (line != null)
                 {
-                    text.text = line;
+                    text.text = L.Data(line);
                 }
             }
         }

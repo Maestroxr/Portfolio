@@ -39,8 +39,6 @@ namespace Portfolio.Monopoly
 
         private Action again;
         private Action menu;
-        private string againText;
-        private string menuText;
 
         private void Awake()
         {
@@ -53,16 +51,13 @@ namespace Portfolio.Monopoly
         {
             again = onAgain;
             menu = onMenu;
-            // The labels of the scene are the ones of a game at this device.
-            againText ??= againLabel != null ? againLabel.text : "";
-            menuText ??= menuLabel != null ? menuLabel.text : "";
             if (againLabel != null)
             {
-                againLabel.text = online ? "BACK TO ROOM" : againText;
+                againLabel.text = online ? L.T("BACK TO ROOM") : L.T("PLAY AGAIN");
             }
             if (menuLabel != null)
             {
-                menuLabel.text = online ? "LEAVE ROOM" : menuText;
+                menuLabel.text = online ? L.T("LEAVE ROOM") : L.T("MAIN MENU");
             }
             List<PlayerState> standings = match.Standings();
             PlayerState winner = match.winner >= 0 ? match.players[match.winner] : standings.FirstOrDefault();
@@ -71,11 +66,13 @@ namespace Portfolio.Monopoly
                 winnerBadge.color = MonopolyStyle.PlayerColor(winner.color);
                 winnerToken.sprite = tokens?.Invoke(winner.token);
                 winnerToken.color = MonopolyStyle.TextOn(winnerBadge.color);
-                headline.text = $"{winner.name} {MonopolyStyle.Verb(winner, "wins")}!";
+                headline.text = MonopolyStyle.Say(winner, "{0} wins!", $"{winner.name} {MonopolyStyle.Verb(winner, "wins")}!", MonopolyStyle.NameOf(winner));
                 bool byWorth = match.rules.DecidedByNetWorth && match.ActiveCount > 1;
+                string worth = MonopolyStyle.Money(match.NetWorth(winner.index));
                 subline.text = byWorth
-                    ? $"{modeName}: richest after {(match.rules.roundLimit > 0 ? Rounds(match.round) : "the second bankruptcy")}, worth {MonopolyStyle.Money(match.NetWorth(winner.index))}"
-                    : $"{modeName}: the last tycoon standing, after {Rounds(match.round)}";
+                    ? match.rules.roundLimit > 0 ? L.F("{0}: richest after {1}, worth {2}", modeName, Rounds(match.round), worth)
+                        : L.F("{0}: richest after the second bankruptcy, worth {1}", modeName, worth)
+                    : L.F("{0}: the last tycoon standing, after {1}", modeName, Rounds(match.round));
             }
             for (int i = 0; i < rows.Length; i++)
             {
@@ -91,11 +88,12 @@ namespace Portfolio.Monopoly
                 row.badge.color = MonopolyStyle.PlayerColor(player.color);
                 row.token.sprite = tokens?.Invoke(player.token);
                 row.token.color = MonopolyStyle.TextOn(row.badge.color);
-                row.name.text = player.name + (player.bot ? $" <size=70%><color={MonopolyStyle.ColorTag(MonopolyStyle.Muted)}>{player.level.ToString().ToUpperInvariant()}</color></size>" : "");
+                row.name.text = MonopolyStyle.NameOf(player) + (player.bot ? $" <size=70%><color={MonopolyStyle.ColorTag(MonopolyStyle.Muted)}>{MonopolyStyle.LevelName(player.level)}</color></size>" : "");
                 int properties = match.PropertiesOf(player.index).Count();
                 row.detail.text = player.bankrupt
-                    ? $"Bankrupt in round {player.bankruptRound}"
-                    : $"{properties} {(properties == 1 ? "property" : "properties")}  •  rent collected {MonopolyStyle.Money(player.rentCollected)}";
+                    ? L.F("Bankrupt in round {0}", player.bankruptRound)
+                    : properties == 1 ? L.F("1 property  •  rent collected {0}", MonopolyStyle.Money(player.rentCollected))
+                    : L.F("{0} properties  •  rent collected {1}", properties, MonopolyStyle.Money(player.rentCollected));
                 row.worth.text = player.bankrupt ? "" : MonopolyStyle.Money(match.NetWorth(player.index));
             }
             for (int i = 0; i < stars.Length; i++)
@@ -105,16 +103,16 @@ namespace Portfolio.Monopoly
             }
             if (starsCaption != null)
             {
-                starsCaption.text = online ? "Online match  •  back in the room the host starts the next game"
-                    : earned > 0 ? $"{earned} {(earned == 1 ? "star" : "stars")} earned" + (newBest ? "  •  new best!" : "")
-                    : winner != null && winner.bot ? "The computer won this time. Try again!" : "Beat computer players to earn stars.";
+                starsCaption.text = online ? L.T("Online match  •  back in the room the host starts the next game")
+                    : earned > 0 ? (earned == 1 ? L.T("1 star earned") : L.F("{0} stars earned", earned)) + (newBest ? "  •  " + L.T("new best!") : "")
+                    : winner != null && winner.bot ? L.T("The computer won this time. Try again!") : L.T("Beat computer players to earn stars.");
             }
             Open();
         }
 
         private static string Rounds(int count)
         {
-            return count == 1 ? "1 round" : $"{count} rounds";
+            return count == 1 ? L.T("1 round") : L.F("{0} rounds", count);
         }
     }
 }

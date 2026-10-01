@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Gamebox;
 using UnityEngine;
+using static Portfolio.Asteroids.AsteroidsText;
 
 namespace Portfolio.Asteroids
 {
@@ -345,13 +346,13 @@ namespace Portfolio.Asteroids
                 int bonus = Mathf.RoundToInt(waveBonus * wavesCleared);
                 score.Add(bonus);
                 SyncScore();
-                ui?.Announce("WAVE CLEARED", $"+{bonus}", new Color(0.5f, 1f, 0.65f));
+                ui?.Announce(T("WAVE CLEARED"), $"+{bonus}", new Color(0.5f, 1f, 0.65f));
                 sounds?.WaveClear();
             }
             coopWavesCleared = Mathf.Max(coopWavesCleared, wavesCleared);
             if (wave > coopWave && wave > 1 && IsMissionActive)
             {
-                ui?.Announce($"WAVE {wave}", string.Empty, Mission != null ? AsteroidsThemes.Accent(Mission.Theme, Color.cyan) : Color.cyan);
+                ui?.Announce(F("WAVE {0}", wave), string.Empty, Mission != null ? AsteroidsThemes.Accent(Mission.Theme, Color.cyan) : Color.cyan);
                 sounds?.WaveStart();
             }
             coopWave = Mathf.Max(coopWave, wave);
@@ -471,10 +472,10 @@ namespace Portfolio.Asteroids
                     Win();
                     break;
                 case MissionOutcome.Failed:
-                    FailCoop("MISSION FAILED", "Every ship was lost");
+                    FailCoop(T("MISSION FAILED"), T("Every ship was lost"));
                     break;
                 case MissionOutcome.Abandoned:
-                    FailCoop("MISSION ABORTED", "The host left the mission");
+                    FailCoop(T("MISSION ABORTED"), T("The host left the mission"));
                     break;
             }
         }
@@ -522,7 +523,7 @@ namespace Portfolio.Asteroids
         {
             phase = MissionPhase.Watching;
             phaseTime = 0f;
-            ui?.Announce(IsStrike ? "SHIP DESTROYED" : "OUT OF SHIPS", "Watching the other pilots", new Color(1f, 0.35f, 0.3f));
+            ui?.Announce(IsStrike ? T("SHIP DESTROYED") : T("OUT OF SHIPS"), T("Watching the other pilots"), new Color(1f, 0.35f, 0.3f));
             sounds?.GameOver();
             online?.PilotOut(score.Score);
         }

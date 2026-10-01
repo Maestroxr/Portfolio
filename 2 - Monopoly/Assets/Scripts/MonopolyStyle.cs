@@ -209,12 +209,97 @@ namespace Portfolio.Monopoly
         {
             switch (group)
             {
-                case ColorGroup.LightBlue: return "Light Blue";
-                case ColorGroup.DarkBlue: return "Dark Blue";
-                case ColorGroup.Railroad: return "Stations";
-                case ColorGroup.Utility: return "Utilities";
-                default: return group.ToString();
+                case ColorGroup.LightBlue: return L.T("Light Blue");
+                case ColorGroup.DarkBlue: return L.T("Dark Blue");
+                case ColorGroup.Railroad: return L.T("Stations");
+                case ColorGroup.Utility: return L.T("Utilities");
+                default: return L.Data(group.ToString());
             }
+        }
+
+        /// <summary>A space's name in the language shown.</summary>
+        public static string SpaceName(SpaceData space)
+        {
+            return space == null ? "" : L.Data(space.name);
+        }
+
+        /// <summary>The city (or the line under the name) of a space in the language shown.</summary>
+        public static string CityName(SpaceData space)
+        {
+            return space == null ? "" : L.Data(space.city);
+        }
+
+        /// <summary>A token's name in the language shown.</summary>
+        public static string TokenName(int token)
+        {
+            string[] names = TokenNames;
+            return L.Data(names[Mathf.Clamp(token, 0, names.Length - 1)]);
+        }
+
+        /// <summary>
+        /// A player's name as shown: the default names ("You", the computer players' names, "Player 2") in the language
+        /// shown, a name somebody typed as it is.
+        /// </summary>
+        public static string DisplayName(string name)
+        {
+            if (string.IsNullOrEmpty(name) || L.English)
+            {
+                return name;
+            }
+            string trimmed = name.Trim();
+            if (MatchSetup.IsYou(trimmed))
+            {
+                return L.T("name|You");
+            }
+            if (System.Array.IndexOf(MatchSetup.BotNames, trimmed) >= 0)
+            {
+                return L.T("name|" + trimmed);
+            }
+            if (trimmed.StartsWith("Player ", System.StringComparison.Ordinal) && int.TryParse(trimmed.Substring(7), out int number))
+            {
+                return L.F("Player {0}", number);
+            }
+            return name;
+        }
+
+        /// <summary>A player's name as shown (see <see cref="DisplayName(string)"/>).</summary>
+        public static string NameOf(PlayerState player)
+        {
+            return player == null ? "" : DisplayName(player.name);
+        }
+
+        /// <summary>A computer player's level as shown (EASY, NORMAL, HARD).</summary>
+        public static string LevelName(BotLevel level)
+        {
+            return L.T(level.ToString().ToUpperInvariant());
+        }
+
+        /// <summary>
+        /// A sentence about <paramref name="subject"/> in the language shown: English as the code wrote it
+        /// (<paramref name="english"/>, with its "you" grammar), a translation from <paramref name="key"/> otherwise, whose
+        /// variant with the context "you|" speaks to the player called "You".
+        /// </summary>
+        public static string Say(PlayerState subject, string key, string english, params object[] args)
+        {
+            if (L.English)
+            {
+                return english;
+            }
+            return L.F(IsYou(subject) ? "you|" + key : key, args);
+        }
+
+        /// <summary>
+        /// Like <see cref="Say"/> for a sentence with an object too: the "you|" variant when the subject is "You", the
+        /// "toyou|" one when the object is.
+        /// </summary>
+        public static string SayTo(PlayerState subject, PlayerState target, string key, string english, params object[] args)
+        {
+            if (L.English)
+            {
+                return english;
+            }
+            string context = IsYou(subject) ? "you|" : IsYou(target) ? "toyou|" : "";
+            return L.F(context + key, args);
         }
 
         /// <summary>The sets in board order, for rows of set chips (and the order of a theme's group looks).</summary>
@@ -279,7 +364,7 @@ namespace Portfolio.Monopoly
         /// <summary>A player's name in their colour, for rich text.</summary>
         public static string Named(PlayerState player)
         {
-            return player == null ? "" : Colored(player, player.name);
+            return player == null ? "" : Colored(player, NameOf(player));
         }
 
         /// <summary>
@@ -324,7 +409,7 @@ namespace Portfolio.Monopoly
         /// <summary>"Ada's" or "Your".</summary>
         public static string Possessive(PlayerState player, bool capital = true)
         {
-            return IsYou(player) ? capital ? "Your" : "your" : player.name + "'s";
+            return IsYou(player) ? capital ? "Your" : "your" : NameOf(player) + "'s";
         }
 
         private static string Colored(PlayerState player, string text)

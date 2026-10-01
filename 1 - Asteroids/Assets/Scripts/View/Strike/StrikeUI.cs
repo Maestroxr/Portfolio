@@ -4,6 +4,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
+using static Portfolio.Asteroids.AsteroidsText;
 
 namespace Portfolio.Asteroids
 {
@@ -294,6 +295,21 @@ namespace Portfolio.Asteroids
         }
 
 
+        /// <summary>
+        /// The language changed: the Supply Room and the HUD write their words again (the manager redraws the mission
+        /// select, the fixed texts follow the canvas's LocalizedTexts).
+        /// </summary>
+        public void RefreshTexts()
+        {
+            if (IsSupplyOpen)
+            {
+                RefreshSupply();
+            }
+            shownSpecial = (StrikeItem)255;
+            bossNameShown = false;
+        }
+
+
         /// <summary>Hides every strike screen.</summary>
         public void HideAll()
         {
@@ -413,7 +429,7 @@ namespace Portfolio.Asteroids
                 if (i < sectorGates.Length && sectorGates[i] != null)
                 {
                     int required = used ? sectors[i].SectorStars : 0;
-                    sectorGates[i].text = !used ? string.Empty : required <= 0 ? "OPEN" : stars >= required ? $"{required} STARS - OPEN" : $"NEEDS {required} STARS";
+                    sectorGates[i].text = !used ? string.Empty : required <= 0 ? T("OPEN") : stars >= required ? F("{0} STARS - OPEN", required) : F("NEEDS {0} STARS", required);
                     sectorGates[i].color = required <= 0 || stars >= required ? new Color(0.6f, 1f, 0.7f, 0.8f) : new Color(1f, 0.75f, 0.35f);
                 }
             }
@@ -424,9 +440,9 @@ namespace Portfolio.Asteroids
         {
             if (shown == null)
             {
-                SetLabel(detailSector, "PLANET STRIKE");
-                SetLabel(detailTitle, "No missions");
-                SetLabel(detailDescription, "The strike campaign has no missions yet.");
+                SetLabel(detailSector, T("PLANET STRIKE"));
+                SetLabel(detailTitle, T("No missions"));
+                SetLabel(detailDescription, T("The strike campaign has no missions yet."));
                 SetLabel(detailBoss, string.Empty);
                 SetLabel(detailGoals, string.Empty);
                 SetLabel(detailBest, string.Empty);
@@ -435,7 +451,7 @@ namespace Portfolio.Asteroids
                 {
                     launchButton.interactable = false;
                 }
-                SetLabel(launchLabel, "LAUNCH");
+                SetLabel(launchLabel, T("LAUNCH"));
                 return;
             }
             StrikeMissionSummary summary = shown.Value;
@@ -444,25 +460,25 @@ namespace Portfolio.Asteroids
             {
                 detailAccent.color = accent;
             }
-            SetLabel(detailSector, $"{summary.SectorTitle.ToUpperInvariant()}  -  MISSION {summary.Number}");
+            SetLabel(detailSector, F("{0}  -  MISSION {1}", summary.SectorTitle.ToUpperInvariant(), summary.Number));
             if (detailSector != null)
             {
                 detailSector.color = accent;
             }
             SetLabel(detailTitle, summary.Title);
             SetLabel(detailDescription, summary.Description);
-            SetLabel(detailBoss, string.IsNullOrEmpty(summary.BossName) ? string.Empty : $"<color=#FF8A7A>BOSS</color>  {summary.BossName}");
+            SetLabel(detailBoss, string.IsNullOrEmpty(summary.BossName) ? string.Empty : $"<color=#FF8A7A>{T("BOSS")}</color>  {summary.BossName}");
             SetLabel(detailGoals,
-                "<color=#FFD45E>STARS</color>  Complete the mission\n" +
-                $"<color=#FFD45E>+</color>  Destroy {Mathf.RoundToInt(StrikeRules.StarKillShare * 100f)}% of the hostiles\n" +
-                $"<color=#FFD45E>+</color>  Take at most {StrikeRules.StarDamage:0} damage");
-            SetLabel(detailBest, summary.BestMoney > 0 ? $"BEST  ${summary.BestMoney:N0}" : "Not flown yet");
+                $"<color=#FFD45E>{T("STARS")}</color>  {T("Complete the mission")}\n" +
+                $"<color=#FFD45E>+</color>  {F("Destroy {0}% of the hostiles", Mathf.RoundToInt(StrikeRules.StarKillShare * 100f))}\n" +
+                $"<color=#FFD45E>+</color>  {F("Take at most {0:0} damage", StrikeRules.StarDamage)}");
+            SetLabel(detailBest, summary.BestMoney > 0 ? F("BEST  ${0:N0}", summary.BestMoney) : T("Not flown yet"));
             SetStars(detailStars, summary.Stars);
             if (launchButton != null)
             {
                 launchButton.interactable = summary.Unlocked;
             }
-            SetLabel(launchLabel, summary.Unlocked ? "LAUNCH" : "LOCKED");
+            SetLabel(launchLabel, summary.Unlocked ? T("LAUNCH") : T("LOCKED"));
             if (!summary.Unlocked)
             {
                 SetLabel(detailBest, $"<color=#FFB24D>{summary.LockReason}</color>");
@@ -488,9 +504,9 @@ namespace Portfolio.Asteroids
         {
             switch (difficulty)
             {
-                case StrikeDifficulty.Rookie: return "Half the damage, weaker bosses.";
-                case StrikeDifficulty.Elite: return "More hostiles and no energy regeneration.";
-                default: return "The campaign as it was meant to be flown.";
+                case StrikeDifficulty.Rookie: return T("Half the damage, weaker bosses.");
+                case StrikeDifficulty.Elite: return T("More hostiles and no energy regeneration.");
+                default: return T("The campaign as it was meant to be flown.");
             }
         }
 
@@ -628,7 +644,7 @@ namespace Portfolio.Asteroids
             if (supplyEmpty != null)
             {
                 supplyEmpty.gameObject.SetActive(offers.Count == 0);
-                supplyEmpty.text = selling ? "Nothing to sell." : "Nothing for sale.";
+                supplyEmpty.text = selling ? T("Nothing to sell.") : T("Nothing for sale.");
             }
             ShowItem(offers.Count > 0 ? selectedItem : (StrikeItem?)null);
             ShowPilot();
@@ -661,15 +677,15 @@ namespace Portfolio.Asteroids
                 itemIcon.sprite = ItemSprite(item);
                 itemIcon.enabled = itemIcon.sprite != null;
             }
-            SetLabel(itemTitle, info.Title);
+            SetLabel(itemTitle, T(info.Title));
             SetLabel(itemGroup, GroupText(info));
-            SetLabel(itemDescription, info.Description);
+            SetLabel(itemDescription, T(info.Description));
             int count = pilot != null ? pilot.Count(item) : 0;
             if (selling)
             {
                 int pay = StrikeArmory.SellPrice(pilot, item);
-                SetLabel(itemPrice, item == StrikeItem.EnergyModule ? $"PAYS  ${pay:N0}  for {StrikeArmory.EnergySellAmount} energy" : $"PAYS  ${pay:N0}");
-                SetLabel(actionLabel, "SELL");
+                SetLabel(itemPrice, item == StrikeItem.EnergyModule ? F("PAYS  ${0:N0}  for {1} energy", pay, StrikeArmory.EnergySellAmount) : F("PAYS  ${0:N0}", pay));
+                SetLabel(actionLabel, T("SELL"));
             }
             else
             {
@@ -678,18 +694,18 @@ namespace Portfolio.Asteroids
                 string price = afford ? $"${cost:N0}" : $"<color=#FF7A66>${cost:N0}</color>";
                 if (item == StrikeItem.EnergyModule)
                 {
-                    SetLabel(itemPrice, cost > 0 ? $"PRICE  {price}  ({StrikeArmory.Price(item)} a point)" : "ENERGY FULL");
+                    SetLabel(itemPrice, cost > 0 ? F("PRICE  {0}  ({1} a point)", price, StrikeArmory.Price(item)) : T("ENERGY FULL"));
                 }
                 else
                 {
-                    SetLabel(itemPrice, $"PRICE  {price}");
+                    SetLabel(itemPrice, F("PRICE  {0}", price));
                 }
-                SetLabel(actionLabel, "BUY");
+                SetLabel(actionLabel, T("BUY"));
             }
             string owned = ShopCard.OwnedText(info, count);
             SetLabel(itemOwned, item == StrikeItem.EnergyModule
-                ? $"ENERGY  {Mathf.RoundToInt(pilot != null ? pilot.Energy : 0f)} / {StrikeRules.MaxEnergy}"
-                : string.IsNullOrEmpty(owned) ? "Not owned" : $"OWNED  {owned}");
+                ? F("ENERGY  {0} / {1}", Mathf.RoundToInt(pilot != null ? pilot.Energy : 0f), StrikeRules.MaxEnergy)
+                : string.IsNullOrEmpty(owned) ? T("Not owned") : F("OWNED  {0}", owned));
         }
 
 
@@ -714,13 +730,13 @@ namespace Portfolio.Asteroids
         {
             switch (info.Group)
             {
-                case ItemGroup.AlwaysOn: return "PRIMARY WEAPON  -  ALWAYS FIRES";
+                case ItemGroup.AlwaysOn: return T("PRIMARY WEAPON  -  ALWAYS FIRES");
                 case ItemGroup.Special:
                     Altitude mask = StrikeWeaponRules.Mask(info.Item);
-                    string layers = mask == Altitude.Air ? "AIR" : mask == Altitude.Ground ? "GROUND" : "AIR + GROUND";
-                    return $"SPECIAL WEAPON  -  {layers}";
-                case ItemGroup.Consumable: return "SUPPLIES";
-                default: return "EQUIPMENT";
+                    string layers = mask == Altitude.Air ? T("AIR") : mask == Altitude.Ground ? T("GROUND") : T("AIR + GROUND");
+                    return F("SPECIAL WEAPON  -  {0}", layers);
+                case ItemGroup.Consumable: return T("SUPPLIES");
+                default: return T("EQUIPMENT");
             }
         }
 
@@ -828,7 +844,7 @@ namespace Portfolio.Asteroids
             {
                 shownSpecial = state.Special;
                 bool none = state.Special == StrikeItem.MachineGun;
-                SetLabel(specialText, none ? "NO SPECIAL" : ShortName(state.Special));
+                SetLabel(specialText, none ? T("NO SPECIAL") : T(ShortName(state.Special)));
                 if (specialText != null)
                 {
                     specialText.color = none ? new Color(1f, 1f, 1f, 0.45f) : new Color(1f, 0.72f, 0.35f);
@@ -861,7 +877,7 @@ namespace Portfolio.Asteroids
                     {
                         bossNameShown = true;
                         shownBossName = state.BossName;
-                        SetLabel(bossName, (state.BossName ?? string.Empty).ToUpperInvariant());
+                        SetLabel(bossName, T(state.BossName ?? string.Empty).ToUpperInvariant());
                     }
                     if (bossFill != null)
                     {
@@ -936,20 +952,20 @@ namespace Portfolio.Asteroids
             ui?.ShowFieldResults(false);
             SetActive(hud, false);
             SetActive(results, true);
-            SetLabel(resultTitle, result.Victory ? "MISSION COMPLETE" : "MISSION FAILED");
+            SetLabel(resultTitle, result.Victory ? T("MISSION COMPLETE") : T("MISSION FAILED"));
             if (resultTitle != null)
             {
                 resultTitle.color = result.Victory ? new Color(0.45f, 1f, 0.65f) : new Color(1f, 0.4f, 0.35f);
             }
-            SetLabel(resultSubtitle, (result.Title ?? string.Empty).ToUpperInvariant());
+            SetLabel(resultSubtitle, T(result.Title ?? string.Empty).ToUpperInvariant());
             resultMoneyTarget = result.Victory ? result.Money : 0;
-            SetLabel(resultMoney, result.Victory ? "+$0" : $"<color=#FF7A66>${result.Money:N0} LOST</color>");
-            string best = result.NewBest ? "<color=#FFD24A>NEW BEST!</color>   " : string.Empty;
-            SetLabel(resultWallet, $"{best}WALLET  ${result.Wallet:N0}");
+            SetLabel(resultMoney, result.Victory ? "+$0" : $"<color=#FF7A66>{F("${0:N0} LOST", result.Money)}</color>");
+            string best = result.NewBest ? $"<color=#FFD24A>{T("NEW BEST!")}</color>   " : string.Empty;
+            SetLabel(resultWallet, best + F("WALLET  ${0:N0}", result.Wallet));
             int share = result.HostilesEntered > 0 ? Mathf.RoundToInt(100f * result.HostilesDestroyed / result.HostilesEntered) : 0;
             SetLabel(resultStats,
-                $"Hostiles destroyed  <b>{result.HostilesDestroyed} / {result.HostilesEntered}</b> ({share}%)\n" +
-                $"Damage taken  <b>{Mathf.RoundToInt(result.DamageTaken)}</b>     Time  <b>{MissionObjective.FormatTime(result.Time)}</b>");
+                $"{T("Hostiles destroyed")}  <b>{result.HostilesDestroyed} / {result.HostilesEntered}</b> ({share}%)\n" +
+                $"{T("Damage taken")}  <b>{Mathf.RoundToInt(result.DamageTaken)}</b>     {T("Time")}  <b>{MissionObjective.FormatTime(result.Time)}</b>");
             if (result.Coop)
             {
                 SetLabel(resultGoals, result.Standings);
@@ -957,11 +973,11 @@ namespace Portfolio.Asteroids
             else
             {
                 SetLabel(resultGoals,
-                    Goal(result.Victory, "Complete the mission") + "\n" +
-                    Goal(result.Victory && result.KillStar, $"Destroy {Mathf.RoundToInt(StrikeRules.StarKillShare * 100f)}% of the hostiles") + "\n" +
-                    Goal(result.Victory && result.DamageStar, $"Take at most {StrikeRules.StarDamage:0} damage"));
+                    Goal(result.Victory, T("Complete the mission")) + "\n" +
+                    Goal(result.Victory && result.KillStar, F("Destroy {0}% of the hostiles", Mathf.RoundToInt(StrikeRules.StarKillShare * 100f))) + "\n" +
+                    Goal(result.Victory && result.DamageStar, F("Take at most {0:0} damage", StrikeRules.StarDamage)));
             }
-            SetLabel(resultMissionsLabel, result.Coop ? "Room" : "Missions");
+            SetLabel(resultMissionsLabel, result.Coop ? T("Room") : T("Missions"));
             if (resultSupply != null)
             {
                 resultSupply.gameObject.SetActive(!result.Coop);
@@ -975,7 +991,7 @@ namespace Portfolio.Asteroids
                 resultNext.gameObject.SetActive(result.HasNext && !result.Coop);
                 resultNext.interactable = !result.NextLocked;
             }
-            SetLabel(resultNextLabel, result.NextLocked ? "LOCKED" : "NEXT");
+            SetLabel(resultNextLabel, result.NextLocked ? T("LOCKED") : T("NEXT"));
             if (result.NextLocked && result.HasNext && !result.Coop)
             {
                 SetLabel(resultGoals, (resultGoals != null ? resultGoals.text : string.Empty) + $"\n<color=#FFB24D>{result.NextLockReason}</color>");

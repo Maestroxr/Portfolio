@@ -166,8 +166,8 @@ namespace Portfolio.Heroes.UI
             RectTransform content = UIKit.Content(panel, 6f);
 
             garrison = ArmyLine(content, "Garrison", 1f, out garrisonPicture, out TextMeshProUGUI garrisonName, out TextMeshProUGUI garrisonLine);
-            garrisonName.text = "Garrison";
-            garrisonLine.text = "Holds the walls";
+            UIKit.Written(garrisonName, "Garrison");
+            UIKit.Written(garrisonLine, "Holds the walls");
             visitor = ArmyLine(content, "Visitor", 0f, out visitorPicture, out visitorName, out visitorLine);
 
             RectTransform doors = UIKit.Rect(content, "Doors");
@@ -321,17 +321,19 @@ namespace Portfolio.Heroes.UI
             }
             GameState state = Manager.Game.State;
             PlayerState owner = state.Player(town.owner);
-            Heading.text = town.name;
+            Heading.text = Words.Name(town.name);
             picture.sprite = Manager.Art.TownPortrait(town.faction, owner != null ? (int)owner.color : 4);
-            townName.text = town.name;
-            townLine.text = $"A {Land.FactionName(town.faction)} town, " +
-                            (owner == null ? "held by no one" : owner.index == Manager.Viewer ? "yours" : $"held by {owner.name}");
-            income.text = $"+{Buildings.Income(town):N0} a day";
+            townName.text = Words.Name(town.name);
+            string faction = Words.T(Land.FactionName(town.faction));
+            townLine.text = owner == null ? Words.F("A {0} town, held by no one", faction)
+                : owner.index == Manager.Viewer ? Words.F("A {0} town, yours", faction)
+                : Words.F("A {0} town, held by {1}", faction, Words.Name(owner.name));
+            income.text = Words.F("{0} a day", "+" + Buildings.Income(town).ToString("N0"));
             int bonus = Buildings.GrowthBonus(town);
-            growth.text = bonus > 0 ? $"Growth +{bonus}%" : "Growth as usual";
+            growth.text = bonus > 0 ? Words.F("Growth +{0}%", bonus) : Words.T("Growth as usual");
             int guildLevel = Buildings.MageGuildLevel(town);
-            guild.text = guildLevel > 0 ? $"Mage Guild {guildLevel}" : "No Mage Guild";
-            today.text = town.builtToday ? "Built today" : "Can build today";
+            guild.text = guildLevel > 0 ? Words.F("Mage Guild {0}", guildLevel) : Words.T("No Mage Guild");
+            today.text = Words.T(town.builtToday ? "Built today" : "Can build today");
             today.color = town.builtToday ? UIKit.Dim : UIKit.Good;
 
             BuildingList(owner);
@@ -362,22 +364,22 @@ namespace Portfolio.Heroes.UI
                 visitor.Bind(Holder.Hero(hero.id));
                 HeroClass heroClass = hero.Def != null ? hero.Def.Class : HeroClass.Knight;
                 visitorPicture.sprite = Manager.Art.HeroPortrait(heroClass);
-                visitorName.text = hero.Name;
-                visitorLine.text = $"Level {hero.level} {HeroData.Class(heroClass).Name}";
+                visitorName.text = Words.Name(hero.Name);
+                visitorLine.text = Words.F("Level {0} {1}", hero.level, Words.T(HeroData.Class(heroClass).Name));
             }
             else
             {
                 visitorPicture.sprite = Manager.Art.Icon("hero");
-                visitorName.text = "No hero visiting";
-                visitorLine.text = "A hero in town can trade troops";
+                visitorName.text = Words.T("No hero visiting");
+                visitorLine.text = Words.T("A hero in town can trade troops");
             }
 
             bool free = Mine && !Manager.HeroesUI.Busy;
             bool hasTavern = town.Has(BuildingId.Tavern);
             bool hasMarket = town.Has(BuildingId.Marketplace);
             Door(tavern, tavernLine, free && hasTavern,
-                hasTavern ? $"Hire a hero for {UIKit.Glyph(ResourceKind.Gold)} {HeroData.HireCost:N0}" : "Not built yet");
-            Door(market, marketLine, free && hasMarket, hasMarket ? "Trade one resource for another" : "Not built yet");
+                hasTavern ? Words.F("Hire a hero for {0}", $"{UIKit.Glyph(ResourceKind.Gold)} {HeroData.HireCost:N0}") : Words.T("Not built yet"));
+            Door(market, marketLine, free && hasMarket, Words.T(hasMarket ? "Trade one resource for another" : "Not built yet"));
         }
 
         private static void Door(Button door, TextMeshProUGUI line, bool open, string text)
@@ -393,7 +395,7 @@ namespace Portfolio.Heroes.UI
         private void BuildingList(PlayerState owner)
         {
             bool free = Mine && !Manager.HeroesUI.Busy;
-            string signature = $"{town.id}|{string.Join(",", town.built)}|{town.builtToday}|{free}|{Held(owner)}";
+            string signature = $"{town.id}|{string.Join(",", town.built)}|{town.builtToday}|{free}|{Held(owner)}|{Gamebox.GameLanguages.Code}";
             if (signature == shownBuildings)
             {
                 return;
@@ -445,15 +447,15 @@ namespace Portfolio.Heroes.UI
             Color color;
             if (built)
             {
-                state = "✓ Built";
+                state = "✓ " + Words.T("Built");
                 color = UIKit.Good;
             }
             else if (!ready)
             {
                 // The card has room for two short lines; the tooltip lists every building still needed.
                 List<string> missing = MissingNames(def);
-                state = $"Needs {missing[0]}" +
-                        (missing.Count == 2 ? $"\nand {missing[1]}" : missing.Count > 2 ? $"\nand {missing.Count - 1} more" : "");
+                state = Words.F("Needs {0}", missing[0]) +
+                        (missing.Count == 2 ? "\n" + Words.F("and {0}", missing[1]) : missing.Count > 2 ? "\n" + Words.F("and {0} more", missing.Count - 1) : "");
                 color = UIKit.Bad;
             }
             else
@@ -541,27 +543,27 @@ namespace Portfolio.Heroes.UI
 
         private string Explain(BuildingDef def, bool built, bool ready, bool affordable)
         {
-            var text = new StringBuilder(def.Description);
+            var text = new StringBuilder(Words.T(def.Description));
             if (built)
             {
-                return text.Append("\n<color=#8CE07E>Built.</color>").ToString();
+                return text.Append("\n<color=#8CE07E>").Append(Words.T("Built.")).Append("</color>").ToString();
             }
-            text.Append("\nCosts ").Append(UIKit.Cost(def.Cost));
+            text.Append("\n").Append(Words.F("Costs {0}", UIKit.Cost(def.Cost)));
             if (!ready)
             {
-                text.Append($"\n<color=#EE7A66>Needs {Missing(def)} first.</color>");
+                text.Append("\n<color=#EE7A66>").Append(Words.F("Needs {0} first.", Missing(def))).Append("</color>");
             }
             else if (!affordable)
             {
-                text.Append("\n<color=#EE7A66>You cannot afford it yet.</color>");
+                text.Append("\n<color=#EE7A66>").Append(Words.T("You cannot afford it yet.")).Append("</color>");
             }
             else if (town.builtToday)
             {
-                text.Append("\nThe town has built today: one building a day.");
+                text.Append("\n").Append(Words.T("The town has built today: one building a day."));
             }
             else if (Mine)
             {
-                text.Append("\nClick to build it.");
+                text.Append("\n").Append(Words.T("Click to build it."));
             }
             return text.ToString();
         }
@@ -574,7 +576,7 @@ namespace Portfolio.Heroes.UI
             {
                 return string.Join("", names);
             }
-            return $"{string.Join(", ", names.GetRange(0, names.Count - 1))} and {names[names.Count - 1]}";
+            return Words.F("{0} and {1}", string.Join(", ", names.GetRange(0, names.Count - 1)), names[names.Count - 1]);
         }
 
         /// <summary>
@@ -607,7 +609,7 @@ namespace Portfolio.Heroes.UI
             {
                 if (!town.Has(need))
                 {
-                    names.Add(Buildings.Get(town.faction, need).Name);
+                    names.Add(Words.T(Buildings.Get(town.faction, need).Name));
                 }
             }
             return names;
@@ -633,7 +635,7 @@ namespace Portfolio.Heroes.UI
             HeroState hero = Manager.Game.State.HeroAt(town.cell);
             bool visiting = hero != null && hero.owner == town.owner;
             bool free = Mine && !Manager.HeroesUI.Busy;
-            string signature = $"{town.id}|{string.Join(",", town.built)}|{string.Join(",", town.available)}|{free}|{visiting}|{Held(owner)}";
+            string signature = $"{town.id}|{string.Join(",", town.built)}|{string.Join(",", town.available)}|{free}|{visiting}|{Held(owner)}|{Gamebox.GameLanguages.Code}";
             if (signature == shownDwellings)
             {
                 return;
@@ -683,7 +685,7 @@ namespace Portfolio.Heroes.UI
             nameRect.offsetMax = new Vector2(74f + 240f, -4f);
             UIKit.FitLine(name, 21f, 13f);
             name.characterSpacing = 1f;
-            TextMeshProUGUI cost = UIKit.Label(content, "Cost", $"{UIKit.Cost(def.Cost, owner != null ? owner.resources : null)} <color=#B8AB8F>each</color>",
+            TextMeshProUGUI cost = UIKit.Label(content, "Cost", $"{UIKit.Cost(def.Cost, owner != null ? owner.resources : null)} <color=#B8AB8F>{Words.T("each")}</color>",
                 18f, UIKit.Ink, TextAlignmentOptions.TopLeft);
             RectTransform costRect = (RectTransform)cost.transform;
             costRect.anchorMin = new Vector2(0f, 0f);
@@ -699,11 +701,11 @@ namespace Portfolio.Heroes.UI
                 TextAlignmentOptions.Center, true);
             UIKit.Stretch((RectTransform)count.transform, 4f, 22f, 4f, 2f);
             UIKit.FitLine(count, 26f, 14f);
-            TextMeshProUGUI week = UIKit.Label(box.transform, "Growth", $"+{def.Growth} a week", 14f, UIKit.Dim, TextAlignmentOptions.Center);
+            TextMeshProUGUI week = UIKit.Label(box.transform, "Growth", Words.F("+{0} a week", def.Growth), 14f, UIKit.Dim, TextAlignmentOptions.Center);
             UIKit.Stretch((RectTransform)week.transform, 4f, 4f, 4f, 36f);
             UIKit.FitLine(week, 14f, 10f);
-            Tooltip.Attach(box.gameObject, "Waiting", $"{waiting} {(waiting == 1 ? def.Name : def.Plural)} can be recruited.\n" +
-                                                      $"The dwelling brings {def.Growth} more every week.");
+            Tooltip.Attach(box.gameObject, "Waiting", Words.F("{0} {1} can be recruited.", waiting, Words.Name(waiting == 1 ? def.Name : def.Plural)) + "\n" +
+                                                      Words.F("The dwelling brings {0} more every week.", def.Growth));
 
             int level = tier;
             int all = most;
@@ -718,13 +720,13 @@ namespace Portfolio.Heroes.UI
             Button one = UIKit.Push(buttons, "One", "Recruit", () => Recruit(level, 1, visiting), 19f);
             UIKit.Fit((RectTransform)one.transform, 104f, 50f);
             UIKit.Enable(one, can);
-            Button every = UIKit.Push(buttons, "All", most > 0 ? $"All {most}" : "All", () => Recruit(level, all, visiting), 19f);
+            Button every = UIKit.Push(buttons, "All", most > 0 ? Words.F("All {0}", most) : "All", () => Recruit(level, all, visiting), 19f);
             UIKit.Fit((RectTransform)every.transform, 104f, 50f);
             UIKit.Enable(every, can);
-            string whereTo = visiting ? "They join the visiting hero's army." : "They join the garrison.";
+            string whereTo = Words.T(visiting ? "They join the visiting hero's army." : "They join the garrison.");
             Tooltip.Attach(one.gameObject, "Recruit one", $"{UIKit.Cost(def.Cost)}\n{whereTo}");
             Tooltip.Attach(every.gameObject, "Recruit all you can",
-                most > 0 ? $"{most} for {UIKit.Cost(def.Cost, null, most)}\n{whereTo}" : "None waiting, or not enough to pay for one.");
+                most > 0 ? Words.F("{0} for {1}", most, UIKit.Cost(def.Cost, null, most)) + "\n" + whereTo : "None waiting, or not enough to pay for one.");
         }
 
         private void Recruit(int tier, int count, bool toHero)
@@ -797,18 +799,18 @@ namespace Portfolio.Heroes.UI
                 return;
             }
             bool free = town.owner == Manager.Viewer && !Manager.HeroesUI.Busy;
-            string signature = $"{string.Join(",", owner.tavern)}|{owner.resources.Gold}|{owner.heroes.Count}|{free}|{Manager.Game.State.HeroAt(town.cell) != null}";
+            string signature = $"{string.Join(",", owner.tavern)}|{owner.resources.Gold}|{owner.heroes.Count}|{free}|{Manager.Game.State.HeroAt(town.cell) != null}|{Gamebox.GameLanguages.Code}";
             if (signature == shown)
             {
                 return;
             }
             shown = signature;
-            Heading.text = $"Tavern of {town.name}";
+            Heading.text = Words.F("Tavern of {0}", Words.Name(town.name));
             bool full = owner.heroes.Count >= 8;
             bool blocked = Manager.Game.State.HeroAt(town.cell) != null;
-            note.text = full ? "You lead as many heroes as a realm may."
-                : blocked ? "A hero stands in the town: a new one has nowhere to go out from."
-                : $"Two heroes wait for a lord who can pay them {UIKit.Glyph(ResourceKind.Gold)} {HeroData.HireCost:N0}.";
+            note.text = full ? Words.T("You lead as many heroes as a realm may.")
+                : blocked ? Words.T("A hero stands in the town: a new one has nowhere to go out from.")
+                : Words.F("Two heroes wait for a lord who can pay them {0}.", $"{UIKit.Glyph(ResourceKind.Gold)} {HeroData.HireCost:N0}");
             UIKit.Clear(cards);
             for (int slot = 0; slot < owner.tavern.Length; slot++)
             {
@@ -837,7 +839,7 @@ namespace Portfolio.Heroes.UI
             nameRect.offsetMin = new Vector2(166f, -40f);
             nameRect.offsetMax = new Vector2(0f, -4f);
             UIKit.FitLine(name, 28f, 16f);
-            TextMeshProUGUI calling = UIKit.Label(content, "Class", $"{heroClass.Name} of the {Land.FactionName(heroClass.Faction)}", 19f,
+            TextMeshProUGUI calling = UIKit.Label(content, "Class", Words.F("{0} of the {1}", Words.T(heroClass.Name), Words.T(Land.FactionName(heroClass.Faction))), 19f,
                 UIKit.Dim, TextAlignmentOptions.TopLeft);
             calling.fontStyle = FontStyles.Italic;
             UIKit.Pin((RectTransform)calling.transform, new Vector2(0f, 1f), new Vector2(166f, -44f), new Vector2(240f, 26f));
@@ -848,10 +850,10 @@ namespace Portfolio.Heroes.UI
             UIKit.Pin(knows, new Vector2(0f, 1f), new Vector2(166f, -78f), new Vector2(240f, 72f));
             VerticalLayoutGroup list = UIKit.Layout<VerticalLayoutGroup>(knows, 2f);
             list.childForceExpandWidth = true;
-            Known(knows, Manager.Art.Skill(def.FirstSkill), $"Basic {HeroData.Skill(def.FirstSkill).Name}", HeroData.Skill(def.FirstSkill).Description);
+            Known(knows, Manager.Art.Skill(def.FirstSkill), Words.SkillName(1, HeroData.Skill(def.FirstSkill).Name), HeroData.Skill(def.FirstSkill).Description);
             if (def.SecondSkill != def.FirstSkill)
             {
-                Known(knows, Manager.Art.Skill(def.SecondSkill), $"Basic {HeroData.Skill(def.SecondSkill).Name}", HeroData.Skill(def.SecondSkill).Description);
+                Known(knows, Manager.Art.Skill(def.SecondSkill), Words.SkillName(1, HeroData.Skill(def.SecondSkill).Name), HeroData.Skill(def.SecondSkill).Description);
             }
 
             // What he starts with in the four primary skills.
@@ -888,7 +890,7 @@ namespace Portfolio.Heroes.UI
             story.overflowMode = TextOverflowModes.Ellipsis;
 
             int which = slot;
-            Button hire = UIKit.Push(content, "Hire", $"Hire for {UIKit.Glyph(ResourceKind.Gold)} {HeroData.HireCost:N0}", () => Hire(which), 22f);
+            Button hire = UIKit.Push(content, "Hire", Words.F("Hire for {0}", $"{UIKit.Glyph(ResourceKind.Gold)} {HeroData.HireCost:N0}"), () => Hire(which), 22f);
             UIKit.Pin((RectTransform)hire.transform, new Vector2(0.5f, 0f), Vector2.zero, new Vector2(300f, 56f));
             UIKit.Enable(hire, can);
         }
@@ -1051,7 +1053,7 @@ namespace Portfolio.Heroes.UI
                 giveTiles[i].Line.text = owner != null ? owner.resources[kind].ToString("N0") : "0";
                 giveTiles[i].Line.color = kind == give ? UIKit.Gold : UIKit.Ink;
                 int rate = Manager.Game.TradeRate(Manager.Viewer, give, kind);
-                takeTiles[i].Line.text = kind == give || rate == 0 ? "-" : rate < 0 ? $"{-rate:N0} each" : $"1 for {rate}";
+                takeTiles[i].Line.text = kind == give || rate == 0 ? "-" : rate < 0 ? Words.F("{0} each", (-rate).ToString("N0")) : Words.F("1 for {0}", rate);
                 takeTiles[i].Line.color = kind == take ? UIKit.Gold : UIKit.Dim;
             }
             int received = Manager.Game.TradeRate(Manager.Viewer, give, take);
@@ -1059,11 +1061,12 @@ namespace Portfolio.Heroes.UI
             // A positive rate is how much has to be given for one unit; a negative one is the gold a unit sells for.
             int price = received < 0 ? 1 : received;
             bool can = give != take && received != 0 && held >= price && !Manager.HeroesUI.Busy;
-            summary.text = give == take ? "Choose two different goods."
-                : received == 0 ? "You have no marketplace."
+            string holding = "<color=#B8AB8F>" + Words.F("you hold {0}", held.ToString("N0")) + "</color>";
+            summary.text = give == take ? Words.T("Choose two different goods.")
+                : received == 0 ? Words.T("You have no marketplace.")
                 : received < 0
-                    ? $"{UIKit.Glyph(give)} 1  →  {UIKit.Glyph(take)} {-received:N0}      <color=#B8AB8F>you hold {held:N0}</color>"
-                    : $"{UIKit.Glyph(give)} {received}  →  {UIKit.Glyph(take)} 1      <color=#B8AB8F>you hold {held:N0}</color>";
+                    ? Words.F("{0}  →  {1}", $"{UIKit.Glyph(give)} 1", $"{UIKit.Glyph(take)} {-received:N0}") + "      " + holding
+                    : Words.F("{0}  →  {1}", $"{UIKit.Glyph(give)} {received}", $"{UIKit.Glyph(take)} 1") + "      " + holding;
             UIKit.Enable(once, can);
             UIKit.Enable(ten, can && held >= price * 10);
         }

@@ -43,7 +43,8 @@ namespace Portfolio.Monopoly
             }
             if (title != null)
             {
-                title.text = $"{MonopolyStyle.Named(from)} {MonopolyStyle.Verb(from, "offers")} {MonopolyStyle.NamedObject(to)} a trade";
+                title.text = MonopolyStyle.SayTo(from, to, "{0} offers {1} a trade", $"{MonopolyStyle.Named(from)} {MonopolyStyle.Verb(from, "offers")} {MonopolyStyle.NamedObject(to)} a trade",
+                    MonopolyStyle.Named(from), MonopolyStyle.Named(to));
             }
             if (getText != null)
             {
@@ -70,8 +71,8 @@ namespace Portfolio.Monopoly
             foreach (int space in spaces.OrderBy(s => s))
             {
                 SpaceData data = match.Space(space);
-                string mortgaged = match.Deed(space).mortgaged ? $" <size=80%><color={MonopolyStyle.RedTag}>(mortgaged)</color></size>" : "";
-                text.Append($"<color={MonopolyStyle.ColorTag(MonopolyStyle.GroupColor(data.group))}>{Icons.Square}</color> {data.name}{mortgaged}\n");
+                string mortgaged = match.Deed(space).mortgaged ? $" <size=80%><color={MonopolyStyle.RedTag}>({L.T("mortgaged")})</color></size>" : "";
+                text.Append($"<color={MonopolyStyle.ColorTag(MonopolyStyle.GroupColor(data.group))}>{Icons.Square}</color> {MonopolyStyle.SpaceName(data)}{mortgaged}\n");
             }
             if (cash > 0)
             {
@@ -79,9 +80,9 @@ namespace Portfolio.Monopoly
             }
             if (cards > 0)
             {
-                text.Append($"{Icons.Ticket} Get Out of Jail Free\n");
+                text.Append($"{Icons.Ticket} {L.T("Get Out of Jail Free")}\n");
             }
-            return text.Length == 0 ? "<color=#8C96A5>Nothing</color>" : text.ToString().TrimEnd('\n');
+            return text.Length == 0 ? $"<color=#8C96A5>{L.T("Nothing")}</color>" : text.ToString().TrimEnd('\n');
         }
     }
 }

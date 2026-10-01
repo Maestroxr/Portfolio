@@ -44,7 +44,7 @@ namespace Portfolio.EndlessRunner
             }
             if (title != null)
             {
-                title.text = summary.Title;
+                title.text = RunnerText.T(summary.Title);
             }
             if (background != null)
             {

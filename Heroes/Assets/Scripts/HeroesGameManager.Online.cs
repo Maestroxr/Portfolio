@@ -386,13 +386,13 @@ namespace Portfolio.Heroes
             int seat = Game.WaitingPlayer;
             if (Game.IsOver)
             {
-                return "Game over";
+                return Words.T("Game over");
             }
             if (seat < 0)
             {
-                return Game.InBattle ? "The wilds move" : "";
+                return Game.InBattle ? Words.T("The wilds move") : "";
             }
-            return seat == localSeat ? Game.InBattle ? "Your move" : "Your turn" : $"{NameOfSeat(seat)}'s turn";
+            return seat == localSeat ? Words.T(Game.InBattle ? "Your move" : "Your turn") : Words.F("{0}'s turn", Words.Sentence(NameOfSeat(seat)));
         }
 
         /// <summary>Whether the player at this device is the one the rules are waiting for, and the map has caught up.</summary>

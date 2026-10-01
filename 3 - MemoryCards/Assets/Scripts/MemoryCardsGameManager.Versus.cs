@@ -5,6 +5,7 @@ using System.Text;
 using Gamebox.Online;
 using Gamebox;
 using UnityEngine;
+using static Portfolio.MemoryCards.MemoryCardsText;
 
 namespace Portfolio.MemoryCards
 {
@@ -212,7 +213,7 @@ namespace Portfolio.MemoryCards
                 var names = new List<string>();
                 for (int i = 0; i < localPlayers; i++)
                 {
-                    names.Add($"Player {i + 1}");
+                    names.Add(F("Player {0}", i + 1));
                 }
                 versus = new VersusMatch(names, VersusMatch.DefaultTurnSeconds);
             }
@@ -312,8 +313,14 @@ namespace Portfolio.MemoryCards
             setup.Hearts = 0;
             setup.MoveLimit = 0;
             setup.Parade = false;
-            setup.VersusLabel = onlineBoard != null ? $"ONLINE - {versus.Seats.Count} PLAYERS" : $"VERSUS - {versus.Seats.Count} PLAYERS";
+            setup.VersusLabel = VersusLabel();
             return setup;
+        }
+
+        /// <summary>What the HUD says under the title of a versus game ("VERSUS - 3 PLAYERS").</summary>
+        private string VersusLabel()
+        {
+            return onlineBoard != null ? F("ONLINE - {0} PLAYERS", versus.Seats.Count) : F("VERSUS - {0} PLAYERS", versus.Seats.Count);
         }
 
         #endregion
@@ -378,7 +385,7 @@ namespace Portfolio.MemoryCards
             }
             unflipTimer = -1f;
             sounds?.Play(sounds.mismatch, 0.7f, 0.85f);
-            gameUI?.ShowBanner("TIME'S UP!", $"{versus.CurrentSeat.Name} ran out of time", Bad, 1.1f);
+            gameUI?.ShowBanner(T("TIME'S UP!"), F("{0} ran out of time", versus.CurrentSeat.Name), Bad, 1.1f);
             versus.PassTurn();
             After(1.1f, AnnounceTurn);
         }
@@ -391,7 +398,7 @@ namespace Portfolio.MemoryCards
             }
             VersusSeat seat = versus.CurrentSeat;
             bool mine = IsOnlineVersus && seat.Seat == localSeat;
-            string title = mine ? "YOUR TURN!" : $"{seat.Name.ToUpperInvariant()}'S TURN";
+            string title = mine ? T("YOUR TURN!") : F("{0}'S TURN", seat.Name.ToUpperInvariant());
             gameUI?.ShowBanner(title, null, gameUI.VersusSeatColor(seat.Seat), 0.9f);
             sounds?.Play(sounds.select, 0.7f, mine || !IsOnlineVersus ? 1.1f : 0.9f);
         }
@@ -439,8 +446,8 @@ namespace Portfolio.MemoryCards
                 if (flip.Outcome == FlipOutcome.TimedOut && flip.Seat >= 0 && flip.Seat < versus.Seats.Count)
                 {
                     sounds?.Play(sounds.mismatch, 0.7f, 0.85f);
-                    string who = flip.Seat == localSeat ? "You" : versus.Seats[flip.Seat].Name;
-                    gameUI?.ShowBanner("TIME'S UP!", $"{who} ran out of time", Bad, 1.1f);
+                    string late = flip.Seat == localSeat ? T("You ran out of time") : F("{0} ran out of time", versus.Seats[flip.Seat].Name);
+                    gameUI?.ShowBanner(T("TIME'S UP!"), late, Bad, 1.1f);
                     bannerBusyUntil = Time.time + 1.1f;
                 }
                 return;
@@ -610,7 +617,7 @@ namespace Portfolio.MemoryCards
             particles?.Confetti(110, ConfettiColors());
             sounds?.Play(sounds.victory);
             List<VersusSeat> winners = versus.Winners();
-            string title = winners.Count > 1 ? "IT'S A DRAW!" : winners[0].Seat == localSeat ? "YOU WIN!" : $"{winners[0].Name.ToUpperInvariant()} WINS!";
+            string title = winners.Count > 1 ? T("IT'S A DRAW!") : winners[0].Seat == localSeat ? T("YOU WIN!") : F("{0} WINS!", winners[0].Name.ToUpperInvariant());
             Color color = winners.Count > 1 ? Gold : gameUI != null ? gameUI.VersusSeatColor(winners[0].Seat) : Gold;
             gameUI?.ShowBanner(title, null, color, 1.6f);
             yield return new WaitForSeconds(1.9f);
@@ -624,7 +631,7 @@ namespace Portfolio.MemoryCards
             {
                 VersusSeat seat = ranking[i];
                 standings.Append(i > 0 ? "\n" : string.Empty).Append(Standings.Line(places[i], seat.Name, seat.Seat == localSeat,
-                    seat.Score.ToString("N0", CultureInfo.InvariantCulture), null, $"{seat.Sets} {(seat.Sets == 1 ? "set" : "sets")}"));
+                    N(seat.Score), null, seat.Sets == 1 ? T("1 set") : F("{0} sets", seat.Sets)));
             }
             MemoryCardsLevel level = CardsLevel;
             int sets = 0;
@@ -640,7 +647,7 @@ namespace Portfolio.MemoryCards
             progress.RecordGame(sets, bestCombo);
             gameUI?.ShowResults(new RoundResult
             {
-                LevelTitle = level.IsCampaign ? $"{CampaignNumber(LevelIndex)}. {TitleOf(LevelIndex)}" : TitleOf(LevelIndex),
+                LevelTitle = RoundTitle(),
                 Kind = level.Kind,
                 Victory = localWon,
                 Accent = winners.Count > 1 ? Gold : color,

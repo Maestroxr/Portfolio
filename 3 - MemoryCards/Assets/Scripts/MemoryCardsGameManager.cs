@@ -6,6 +6,7 @@ using System.Text;
 using Gamebox;
 using Gamebox.UI;
 using UnityEngine;
+using static Portfolio.MemoryCards.MemoryCardsText;
 
 namespace Portfolio.MemoryCards
 {
@@ -145,21 +146,51 @@ namespace Portfolio.MemoryCards
         {
             MemoryCardsLevel level = campaign != null ? campaign.Level(index) : null;
             string own = level != null ? level.Title : string.Empty;
-            return look != null ? look.Say.Title(index, own) : own;
+            return T(look != null ? look.Say.Title(index, own) : own);
         }
 
         private string DescriptionOf(int index)
         {
             MemoryCardsLevel level = campaign != null ? campaign.Level(index) : null;
             string own = level != null ? level.Description : string.Empty;
-            return look != null ? look.Say.Description(index, own) : own;
+            return T(look != null ? look.Say.Description(index, own) : own);
         }
 
         private string TipOf(int index)
         {
             MemoryCardsLevel level = campaign != null ? campaign.Level(index) : null;
             string own = level != null ? level.Tip : string.Empty;
-            return look != null ? look.Say.Tip(index, own) : own;
+            return T(look != null ? look.Say.Tip(index, own) : own);
+        }
+
+        /// <summary>The title of the level played, numbered in the campaign, in the language shown.</summary>
+        private string RoundTitle()
+        {
+            MemoryCardsLevel level = CardsLevel;
+            return level != null && level.IsCampaign ? $"{CampaignNumber(LevelIndex)}. {TitleOf(LevelIndex)}" : TitleOf(LevelIndex);
+        }
+
+        /// <summary>Seconds won or lost, for a popup: "+2s", "-3s".</summary>
+        private static string Seconds(float seconds, bool gained)
+        {
+            string amount = Mathf.Abs(seconds).ToString("0.#", CultureInfo.InvariantCulture);
+            return gained ? F("+{0}s", amount) : F("-{0}s", amount);
+        }
+
+        /// <summary>
+        /// The language changed: the level select is drawn again, or the title of the round in play (the banners and tips
+        /// that show pass by themselves).
+        /// </summary>
+        protected override void OnLanguageChanged()
+        {
+            if (phase == Phase.Menu)
+            {
+                RefreshLevelSelect();
+            }
+            else if (round != null && CardsLevel != null)
+            {
+                gameUI?.RetitleRound(RoundTitle(), versus != null ? VersusLabel() : null);
+            }
         }
 
         /// <summary>Whether cards can be clicked right now.</summary>
@@ -333,7 +364,7 @@ namespace Portfolio.MemoryCards
             pendingShuffle = false;
             if (campaign == null || LevelCount == 0)
             {
-                UI?.UpdateError("The Memory Cards campaign has no levels.");
+                UI?.UpdateError(T("The Memory Cards campaign has no levels."));
                 return;
             }
             bool first = !menuVisited;
@@ -532,8 +563,8 @@ namespace Portfolio.MemoryCards
                 worlds.Add(new WorldSummary
                 {
                     Index = w,
-                    Title = theme != null ? theme.displayName : entry.title,
-                    Tagline = theme != null ? theme.tagline : string.Empty,
+                    Title = T(theme != null ? theme.displayName : entry.title),
+                    Tagline = theme != null ? T(theme.tagline) : string.Empty,
                     Unlocked = campaign.IsWorldUnlocked(w, progress),
                     StarsRequired = entry.starsRequired,
                     Stars = stars,
@@ -565,11 +596,11 @@ namespace Portfolio.MemoryCards
                 Number = CampaignNumber(index),
                 Title = TitleOf(index),
                 Description = DescriptionOf(index),
-                Introduces = level.Introduces,
+                Introduces = T(level.Introduces),
                 Kind = level.Kind,
                 Mode = level.IsFreePlay ? LevelMode.FreePlay : level.Mode,
-                Twists = levelRules != null ? string.Join(", ", MemoryCardsLevel.Twists(levelRules)) : "More twists every board",
-                Board = levelRules != null ? BoardText(levelRules) : "Growing boards",
+                Twists = levelRules != null ? string.Join(", ", MemoryCardsLevel.Twists(levelRules).ConvertAll(twist => T(twist))) : T("More twists every board"),
+                Board = levelRules != null ? BoardText(levelRules) : T("Growing boards"),
                 Unlocked = campaign.IsUnlocked(index, progress),
                 Stars = level.IsCampaign ? progress.Stars(index) : 0,
                 BestScore = progress.BestScore(index),
@@ -578,21 +609,21 @@ namespace Portfolio.MemoryCards
                 CardBack = theme != null ? (theme.levelCardBack != null ? theme.levelCardBack : theme.cardBack) : DefaultBack,
                 Accent = theme != null ? theme.accent : Color.white,
                 AccentDark = theme != null ? theme.accentDark : Color.gray,
-                World = theme != null ? theme.displayName : string.Empty
+                World = theme != null ? T(theme.displayName) : string.Empty
             };
             summary.LockReason = summary.Unlocked ? string.Empty : LockReason(index);
             if (level.IsCampaign)
             {
                 bool countdown = levelRules != null && levelRules.HasTimeLimit;
-                summary.Goals = new[] { level.Goals.Describe(1, countdown), level.Goals.Describe(2, countdown), level.Goals.Describe(3, countdown) };
+                summary.Goals = Goals(level.Goals, countdown);
             }
             else if (level.IsEndless)
             {
-                summary.Goals = new[] { "Clear board after board", "Every cleared board adds time", "Twists join as you go" };
+                summary.Goals = new[] { T("Clear board after board"), T("Every cleared board adds time"), T("Twists join as you go") };
             }
             else
             {
-                summary.Goals = new[] { UsingDefaultSettings ? "Playing the default rules" : "Playing your custom rules" };
+                summary.Goals = new[] { UsingDefaultSettings ? T("Playing the default rules") : T("Playing your custom rules") };
             }
             return summary;
         }
@@ -600,8 +631,15 @@ namespace Portfolio.MemoryCards
 
         private static string BoardText(RoundRules boardRules)
         {
-            string sets = boardRules.MatchSize == 2 ? "pairs" : boardRules.MatchSize == 3 ? "triplets" : $"sets of {boardRules.MatchSize}";
-            return $"{boardRules.Columns}x{boardRules.Rows} board, {boardRules.Sets} {sets}";
+            switch (boardRules.MatchSize)
+            {
+                case 2:
+                    return F("{0}x{1} board, {2} pairs", boardRules.Columns, boardRules.Rows, boardRules.Sets);
+                case 3:
+                    return F("{0}x{1} board, {2} triplets", boardRules.Columns, boardRules.Rows, boardRules.Sets);
+                default:
+                    return F("{0}x{1} board, {2} sets of {3}", boardRules.Columns, boardRules.Rows, boardRules.Sets, boardRules.MatchSize);
+            }
         }
 
 
@@ -628,16 +666,16 @@ namespace Portfolio.MemoryCards
             }
             if (level.IsEndless)
             {
-                return $"Complete {campaign.endlessAfter} levels to open the endless run.";
+                return F("Complete {0} levels to open the endless run.", campaign.endlessAfter);
             }
             int needed = campaign.StarsRequired(index);
             int stars = campaign.TotalStars(progress);
             if (stars < needed)
             {
                 CardWorld theme = WorldOf(level.World);
-                return $"Collect {needed} stars to open {(theme != null ? theme.displayName : "this world")} ({stars} so far).";
+                return F("Collect {0} stars to open {1} ({2} so far).", needed, theme != null ? T(theme.displayName) : T("this world"), stars);
             }
-            return "Clear the level before to unlock this one.";
+            return T("Clear the level before to unlock this one.");
         }
 
 
@@ -671,14 +709,14 @@ namespace Portfolio.MemoryCards
             MemoryCardsLevel level = CardsLevel;
             if (level == null)
             {
-                UI?.UpdateError("The Memory Cards campaign has no level to play.");
+                UI?.UpdateError(T("The Memory Cards campaign has no level to play."));
                 return;
             }
             SetUpVersus(level);
             if (!PrepareRules(level, out string error))
             {
                 ClearVersus();
-                UI?.UpdateError($"Cannot start the game: {error}");
+                UI?.UpdateError(F("Cannot start the game: {0}", RuleMessage(error)));
                 return;
             }
             StopFlow();
@@ -727,7 +765,7 @@ namespace Portfolio.MemoryCards
                 }
                 if (source == null)
                 {
-                    error = "free play has no settings";
+                    error = T("free play has no settings");
                     return false;
                 }
                 settings = source;
@@ -738,7 +776,7 @@ namespace Portfolio.MemoryCards
             {
                 if (level.Settings == null)
                 {
-                    error = $"level {level.Title} has no settings";
+                    error = F("level {0} has no settings", T(level.Title));
                     return false;
                 }
                 rules = level.Settings.ToRules();
@@ -773,7 +811,7 @@ namespace Portfolio.MemoryCards
             MemoryCardsLevel level = CardsLevel;
             var setup = new RoundHud
             {
-                Title = level.IsCampaign ? $"{CampaignNumber(LevelIndex)}. {TitleOf(LevelIndex)}" : TitleOf(LevelIndex),
+                Title = RoundTitle(),
                 Mode = level.IsFreePlay ? LevelMode.FreePlay : MemoryCardsLevel.ModeOf(level.Kind, rules),
                 Countdown = rules.HasTimeLimit,
                 Hearts = rules.Hearts,
@@ -891,7 +929,7 @@ namespace Portfolio.MemoryCards
             {
                 phase = Phase.Preview;
                 // The banner shows before the cards turn, so it never hides a card that is face up.
-                gameUI?.ShowBanner("MEMORIZE!", $"Remember where the {FacesWord} are", Light, 1f);
+                gameUI?.ShowBanner(T("MEMORIZE!"), F("Remember where the {0} are", T(FacesWord)), Light, 1f);
                 yield return new WaitForSeconds(0.9f);
                 if (onlineBoard != null && onlineBoard.Preview != null)
                 {
@@ -922,14 +960,14 @@ namespace Portfolio.MemoryCards
                 yield return new WaitForSeconds(flipTime + views.Count * previewStagger);
             }
 
-            string title = level.IsEndless ? $"BOARD {endlessBoard}" : "GO!";
-            string sub = level.IsEndless ? null : level.IsCampaign && !string.IsNullOrEmpty(level.Introduces) ? $"New: {level.Introduces}" : null;
+            string title = level.IsEndless ? F("BOARD {0}", endlessBoard) : T("GO!");
+            string sub = level.IsEndless ? null : level.IsCampaign && !string.IsNullOrEmpty(level.Introduces) ? F("New: {0}", T(level.Introduces)) : null;
             gameUI?.ShowBanner(title, sub, world != null ? Color.Lerp(world.accent, Light, 0.2f) : Light, 1f);
             sounds?.Play(sounds.go, 0.8f);
             if (versus != null)
             {
-                gameUI?.ShowTip(IsOnlineVersus ? "A set scores and lets you go again. A mistake passes the turn."
-                    : "Take turns: a set scores and lets you go again, a mistake passes the turn.");
+                gameUI?.ShowTip(IsOnlineVersus ? T("A set scores and lets you go again. A mistake passes the turn.")
+                    : T("Take turns: a set scores and lets you go again, a mistake passes the turn."));
             }
             else if (level.IsCampaign && !string.IsNullOrEmpty(TipOf(LevelIndex)) && progress.Stars(LevelIndex) == 0)
             {
@@ -937,7 +975,7 @@ namespace Portfolio.MemoryCards
             }
             else if (rules.Parade && endlessBoard <= 1)
             {
-                gameUI?.ShowTip($"Match the {FacesWord} in the order the parade at the top shows.");
+                gameUI?.ShowTip(F("Match the {0} in the order the parade at the top shows.", T(FacesWord)));
             }
             phase = Phase.Playing;
             SetCardsInteractable(true);
@@ -1087,16 +1125,16 @@ namespace Portfolio.MemoryCards
                 gameUI?.ShowPopup(view.transform.position, $"+{result.Points}", PointsColor, combo >= 2 ? 54f : 46f);
                 if (result.TimeChange > 0f)
                 {
-                    gameUI?.ShowPopup(view.transform.position + Vector3.down * 46f, $"+{result.TimeChange:0.#}s", Good, 34f);
+                    gameUI?.ShowPopup(view.transform.position + Vector3.down * 46f, Seconds(result.TimeChange, true), Good, 34f);
                 }
             });
             if (wild)
             {
-                gameUI?.ShowBanner("WILD!", $"Every {AnimalName(result.Cards)} found", look != null ? look.Colors.wild : new Color(0.85f, 0.55f, 1f), 1.2f);
+                gameUI?.ShowBanner(T("WILD!"), F("Every {0} found", AnimalName(result.Cards)), look != null ? look.Colors.wild : new Color(0.85f, 0.55f, 1f), 1.2f);
             }
             else if (combo >= 2)
             {
-                string label = $"COMBO x{Mathf.Min(combo, MemoryRound.MaxComboMultiplier)}!";
+                string label = F("COMBO x{0}!", Mathf.Min(combo, MemoryRound.MaxComboMultiplier));
                 Color comboColor = look != null ? look.Colors.combo : new Color(1f, 0.55f, 0.85f);
                 After(delay + 0.15f, () => gameUI?.ShowPopup(view.transform.position + Vector3.down * 92f, label, comboColor, 36f));
             }
@@ -1115,17 +1153,14 @@ namespace Portfolio.MemoryCards
                     return Pretty(AnimalSprite(card.Animal));
                 }
             }
-            return FaceWord;
+            return T(FaceWord);
         }
 
 
+        /// <summary>The name of a face in the language shown ("cow"), or the theme's word for a face.</summary>
         private string Pretty(Sprite sprite)
         {
-            if (sprite == null || string.IsNullOrEmpty(sprite.name))
-            {
-                return FaceWord;
-            }
-            return sprite.name.Replace('_', ' ').ToLowerInvariant();
+            return FaceName(sprite, T(FaceWord));
         }
 
 
@@ -1145,7 +1180,7 @@ namespace Portfolio.MemoryCards
             if (wrongOrder)
             {
                 string next = Pretty(AnimalSprite(round.ParadeTarget));
-                gameUI?.ShowBanner("WRONG ORDER!", $"The parade wants the {next} next", Bad, 1.4f);
+                gameUI?.ShowBanner(T("WRONG ORDER!"), F("The parade wants the {0} next", next), Bad, 1.4f);
             }
             if (result.HeartLost)
             {
@@ -1167,7 +1202,7 @@ namespace Portfolio.MemoryCards
                 particles?.Explosion(ParticlePosition(view));
                 shake = 1f;
                 gameUI?.FlashScreen(new Color(1f, 0.55f, 0.2f), 0.28f);
-                string time = round.HasCountdown ? $"-{-result.TimeChange:0.#}s" : $"+{result.TimeChange:0.#}s";
+                string time = round.HasCountdown ? Seconds(-result.TimeChange, false) : Seconds(result.TimeChange, true);
                 if (Mathf.Abs(result.TimeChange) > 0.01f)
                 {
                     gameUI?.ShowPopup(view.transform.position, time, Bad, 50f);
@@ -1182,7 +1217,7 @@ namespace Portfolio.MemoryCards
                     sounds?.Play(sounds.heart, 0.8f);
                 }
             });
-            gameUI?.ShowBanner("BOOM!", result.HeartLost ? "A bomb cost you a heart" : versus != null ? "The turn is over" : "Watch out for bombs", Bad, 1.1f);
+            gameUI?.ShowBanner(T("BOOM!"), result.HeartLost ? T("A bomb cost you a heart") : versus != null ? T("The turn is over") : T("Watch out for bombs"), Bad, 1.1f);
         }
 
 
@@ -1195,7 +1230,7 @@ namespace Portfolio.MemoryCards
             {
                 sounds?.Play(sounds.clock);
                 particles?.Puff(ParticlePosition(view), Good);
-                string time = round.HasCountdown ? $"+{result.TimeChange:0.#}s" : $"-{-result.TimeChange:0.#}s";
+                string time = round.HasCountdown ? Seconds(result.TimeChange, true) : Seconds(-result.TimeChange, false);
                 gameUI?.ShowPopup(view.transform.position, time, Good, 50f);
             });
         }
@@ -1215,7 +1250,7 @@ namespace Portfolio.MemoryCards
             yield return new WaitForSeconds(flipTime + 0.25f);
             sounds?.Play(sounds.peek);
             particles?.Puff(ParticlePosition(view), new Color(0.75f, 0.55f, 1f));
-            gameUI?.ShowBanner("PEEK!", "Take a good look", look != null ? look.Colors.peek : new Color(0.8f, 0.65f, 1f), 1.2f);
+            gameUI?.ShowBanner(T("PEEK!"), T("Take a good look"), look != null ? look.Colors.peek : new Color(0.8f, 0.65f, 1f), 1.2f);
             var shown = new List<Flippable>();
             foreach (MemoryCard card in round.Cards)
             {
@@ -1264,7 +1299,7 @@ namespace Portfolio.MemoryCards
             phase = Phase.Busy;
             yield return new WaitForSeconds(flipTime + 0.1f);
             sounds?.Play(sounds.shuffle);
-            gameUI?.ShowBanner("SHUFFLE!", look != null && !string.IsNullOrEmpty(look.Say.shuffle) ? look.Say.shuffle : "The critters are on the move", Light, 1.2f);
+            gameUI?.ShowBanner(T("SHUFFLE!"), look != null && !string.IsNullOrEmpty(look.Say.shuffle) ? T(look.Say.shuffle) : T("The critters are on the move"), Light, 1.2f);
             List<MemoryCard> moved = round.Shuffle(random);
             for (int i = 0; i < moved.Count; i++)
             {
@@ -1306,7 +1341,7 @@ namespace Portfolio.MemoryCards
             if (round.IsCleared && level.IsEndless)
             {
                 float bonus = EndlessRules.ClearBonus(endlessBoard);
-                gameUI?.ShowBanner("BOARD CLEAR!", $"+{bonus:0}s on the clock", Gold, 1.3f);
+                gameUI?.ShowBanner(T("BOARD CLEAR!"), F("+{0}s on the clock", bonus.ToString("0", CultureInfo.InvariantCulture)), Gold, 1.3f);
                 sounds?.Play(sounds.record, 0.9f);
                 CelebrateCards();
                 particles?.Confetti(60, ConfettiColors());
@@ -1334,7 +1369,7 @@ namespace Portfolio.MemoryCards
                 CelebrateCards();
                 particles?.Confetti(110, ConfettiColors());
                 sounds?.Play(sounds.victory);
-                gameUI?.ShowBanner("CLEARED!", bonus > 0 ? $"+{bonus.ToString("N0", CultureInfo.InvariantCulture)} bonus points" : null, Gold, 1.6f);
+                gameUI?.ShowBanner(T("CLEARED!"), bonus > 0 ? F("+{0} bonus points", N(bonus)) : null, Gold, 1.6f);
                 yield return new WaitForSeconds(1.9f);
                 EndGame(true, bonus);
             }
@@ -1343,9 +1378,9 @@ namespace Portfolio.MemoryCards
                 string title;
                 switch (round.End)
                 {
-                    case RoundEnd.OutOfHearts: title = "OUT OF HEARTS!"; break;
-                    case RoundEnd.OutOfMoves: title = "OUT OF MOVES!"; break;
-                    default: title = "TIME'S UP!"; break;
+                    case RoundEnd.OutOfHearts: title = T("OUT OF HEARTS!"); break;
+                    case RoundEnd.OutOfMoves: title = T("OUT OF MOVES!"); break;
+                    default: title = T("TIME'S UP!"); break;
                 }
                 gameUI?.ShowBanner(title, null, Bad, 1.6f);
                 sounds?.Play(sounds.gameOver);
@@ -1412,7 +1447,7 @@ namespace Portfolio.MemoryCards
             int score = round.Score;
             var result = new RoundResult
             {
-                LevelTitle = level.IsCampaign ? $"{CampaignNumber(LevelIndex)}. {TitleOf(LevelIndex)}" : TitleOf(LevelIndex),
+                LevelTitle = RoundTitle(),
                 Kind = level.Kind,
                 Victory = victory,
                 End = round.End,
@@ -1434,7 +1469,7 @@ namespace Portfolio.MemoryCards
             else if (level.IsCampaign)
             {
                 bool countdown = rules.HasTimeLimit;
-                result.Goals = new[] { level.Goals.Describe(1, countdown), level.Goals.Describe(2, countdown), level.Goals.Describe(3, countdown) };
+                result.Goals = Goals(level.Goals, countdown);
                 result.GoalsReached = new[] { round.IsCleared, level.Goals.SecondStar(round), level.Goals.ThirdStar(round) };
                 if (victory)
                 {
@@ -1597,17 +1632,17 @@ namespace Portfolio.MemoryCards
             }
             if (!State.Is(BaseGameState.Paused))
             {
-                UI?.UpdateError(MobilePlatform.Pick("Pause the game (Escape) to save it.", "Pause the game to save it."));
+                UI?.UpdateError(MobilePlatform.Pick(T("Pause the game (Escape) to save it."), T("Pause the game to save it.")));
                 return;
             }
             if (round == null || round.IsOver || phase == Phase.Finished)
             {
-                UI?.UpdateError("There is no game in progress to save.");
+                UI?.UpdateError(T("There is no game in progress to save."));
                 return;
             }
             if (versus != null)
             {
-                UI?.UpdateError("A game for several players cannot be saved.");
+                UI?.UpdateError(T("A game for several players cannot be saved."));
                 return;
             }
             var animals = new StringBuilder();
@@ -1626,7 +1661,7 @@ namespace Portfolio.MemoryCards
                 }
                 if (global < 0)
                 {
-                    UI?.UpdateError("Cannot save: an animal of this board is not part of the campaign.");
+                    UI?.UpdateError(T("Cannot save: an animal of this board is not part of the campaign."));
                     return;
                 }
                 animals.Append(i > 0 ? "," : string.Empty).Append(global);
@@ -1672,7 +1707,7 @@ namespace Portfolio.MemoryCards
                 return;
             }
             UI?.EnableLoad();
-            UI?.UpdateError("Game saved.");
+            UI?.UpdateError(T("Game saved."));
         }
 
 
@@ -1681,13 +1716,13 @@ namespace Portfolio.MemoryCards
             IStorageStrategy disk = Disk;
             if (disk == null || !DoesSaveGameExist())
             {
-                UI?.UpdateError("There is no saved game to load.");
+                UI?.UpdateError(T("There is no saved game to load."));
                 return;
             }
             int levelIndex = disk.GetInt(SaveKey("Level"));
             if (levelIndex < 0 || levelIndex >= LevelCount)
             {
-                UI?.UpdateError("The saved game belongs to a level that no longer exists.");
+                UI?.UpdateError(T("The saved game belongs to a level that no longer exists."));
                 return;
             }
             LoadLevel(levelIndex);
@@ -1725,12 +1760,12 @@ namespace Portfolio.MemoryCards
             }
             catch (FormatException formatException)
             {
-                UI?.UpdateError($"The saved game is damaged: {formatException.Message}");
+                UI?.UpdateError(F("The saved game is damaged: {0}", formatException.Message));
                 return;
             }
             if (deal.Cards.Count != rules.Cards)
             {
-                UI?.UpdateError("The saved game does not fit the level any more.");
+                UI?.UpdateError(T("The saved game does not fit the level any more."));
                 return;
             }
 
@@ -1762,7 +1797,7 @@ namespace Portfolio.MemoryCards
             }
             gameUI?.BeginRound(new RoundHud
             {
-                Title = level.IsCampaign ? $"{CampaignNumber(LevelIndex)}. {TitleOf(LevelIndex)}" : TitleOf(LevelIndex),
+                Title = RoundTitle(),
                 Mode = level.IsFreePlay ? LevelMode.FreePlay : MemoryCardsLevel.ModeOf(level.Kind, rules),
                 Countdown = rules.HasTimeLimit,
                 Hearts = rules.Hearts,
@@ -1784,9 +1819,9 @@ namespace Portfolio.MemoryCards
         {
             phase = Phase.Busy;
             SetCardsInteractable(false);
-            gameUI?.ShowBanner("READY?", "Your saved game is back", Light, 1.1f);
+            gameUI?.ShowBanner(T("READY?"), T("Your saved game is back"), Light, 1.1f);
             yield return new WaitForSeconds(1.1f);
-            gameUI?.ShowBanner("GO!", null, world != null ? world.accent : Color.white, 0.8f);
+            gameUI?.ShowBanner(T("GO!"), null, world != null ? world.accent : Color.white, 0.8f);
             sounds?.Play(sounds.go, 0.8f);
             phase = Phase.Playing;
             SetCardsInteractable(true);

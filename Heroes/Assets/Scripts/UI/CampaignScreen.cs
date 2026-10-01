@@ -202,7 +202,7 @@ namespace Portfolio.Heroes.UI
         private void Fill()
         {
             HeroesCampaign campaign = Campaign;
-            Heading.text = skirmish ? "Skirmish" : campaign != null ? campaign.Title : "Campaign";
+            Heading.text = Words.T(skirmish ? "Skirmish" : campaign != null ? campaign.Title : "Campaign");
             UIKit.Select(chaptersTab, !skirmish);
             UIKit.Select(skirmishTab, skirmish);
             SetTabInk(chaptersTab, !skirmish);
@@ -304,7 +304,7 @@ namespace Portfolio.Heroes.UI
             if (skirmish)
             {
                 TextMeshProUGUI seats = UIKit.Label(content, "Players",
-                    $"{level.Map.players.Count} players\n{Size(level)}", 18f, UIKit.Dim, TextAlignmentOptions.MidlineRight);
+                    $"{Words.F("{0} players", level.Map.players.Count)}\n{Size(level)}", 18f, UIKit.Dim, TextAlignmentOptions.MidlineRight);
                 RectTransform seatsRect = (RectTransform)seats.transform;
                 seatsRect.anchorMin = new Vector2(1f, 0f);
                 seatsRect.anchorMax = new Vector2(1f, 1f);
@@ -363,15 +363,15 @@ namespace Portfolio.Heroes.UI
                 UIKit.Enable(play, false);
                 return;
             }
-            pageTitle.text = level.Title;
+            pageTitle.text = Words.T(level.Title);
             // The map as a new game would lay it out: a skirmish map at the size, riches and dangers of the settings.
             MapSpec map = Manager.NewGameMap(level);
-            string intro = !string.IsNullOrEmpty(level.Intro) ? level.Intro.Trim() + "\n\n"
-                : skirmish ? $"A land of its own for {map.players.Count} realms, with {Amount(map.treasure, "scarce", "fair", "rich")} " +
-                             $"treasure and {Amount(map.monsters, "few", "some", "many", "hordes of")} wandering armies. Build up your " +
-                             "towns, gather your armies and take the land.\n\n"
+            string intro = !string.IsNullOrEmpty(level.Intro) ? Words.T(level.Intro.Trim()) + "\n\n"
+                : skirmish ? Words.F("A land of its own for {0} realms, with {1} treasure and {2} wandering armies. Build up your towns, gather your armies and take the land.",
+                                 map.players.Count, Words.T(Amount(map.treasure, "treasure|scarce", "treasure|fair", "treasure|rich")),
+                                 Words.T(Amount(map.monsters, "armies|few", "armies|some", "armies|many", "armies|hordes of"))) + "\n\n"
                 : "";
-            story.text = $"{intro}<b>{(skirmish ? "To win" : "Your task")}:</b> {level.Goal}";
+            story.text = $"{intro}<b>{Words.T(skirmish ? "To win" : "Your task")}:</b> {Words.T(level.Goal)}";
             storyScroll.verticalNormalizedPosition = 1f;
 
             Realms(map);
@@ -380,11 +380,11 @@ namespace Portfolio.Heroes.UI
             if (skirmish)
             {
                 TextMeshProUGUI about = UIKit.Label(record, "About",
-                    $"{map.players.Count} realms on a map of {map.columns} by {map.rows}", 22f, UIKit.InkOnParchment,
+                    Words.F("{0} realms on a map of {1} by {2}", map.players.Count, map.columns, map.rows), 22f, UIKit.InkOnParchment,
                     TextAlignmentOptions.Center);
                 UIKit.Stretch((RectTransform)about.transform);
                 UIKit.FitLine(about, 22f, 14f);
-                recordNote.text = "A skirmish is played for its own sake: it gives no stars.";
+                recordNote.text = Words.T("A skirmish is played for its own sake: it gives no stars.");
             }
             else
             {
@@ -398,7 +398,8 @@ namespace Portfolio.Heroes.UI
                 RectTransform row = UIKit.Stars(record, "Stars", stars, 56f, 3, 8f);
                 UIKit.Pin(row, new Vector2(0.5f, 0.5f), new Vector2(0f, 0f), row.sizeDelta);
                 row.pivot = new Vector2(0f, 0.5f);
-                recordNote.text = $"{UIKit.StarText(3)} within {level.ThreeStarDays} days     {UIKit.StarText(2)} within {level.TwoStarDays} days";
+                recordNote.text = Words.F("{0} within {1} days", UIKit.StarText(3), level.ThreeStarDays) + "     " +
+                                  Words.F("{0} within {1} days", UIKit.StarText(2), level.TwoStarDays);
             }
             UIKit.Enable(play, true);
         }
@@ -425,7 +426,8 @@ namespace Portfolio.Heroes.UI
                 titleRect.offsetMin = new Vector2(58f, 0f);
                 titleRect.offsetMax = new Vector2(-2f, -2f);
                 UIKit.FitLine(title, 18f, 11f);
-                string who = player.human ? Land.FactionName(player.faction) : $"{Land.FactionName(player.faction)}, {Skill(player.aiLevel)}";
+                string who = player.human ? Words.T(Land.FactionName(player.faction))
+                    : $"{Words.T(Land.FactionName(player.faction))}, {Words.T(Skill(player.aiLevel))}";
                 TextMeshProUGUI line = UIKit.Label(content, "Who", who, 15f, UIKit.Dim, TextAlignmentOptions.TopLeft);
                 RectTransform lineRect = (RectTransform)line.transform;
                 lineRect.anchorMin = new Vector2(0f, 0f);

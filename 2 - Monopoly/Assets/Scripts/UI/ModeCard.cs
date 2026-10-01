@@ -40,8 +40,8 @@ namespace Portfolio.Monopoly
             iconBackground.color = mode.Accent;
             icon.color = MonopolyStyle.TextOn(mode.Accent);
             icon.text = mode.Icon;
-            title.text = mode.Title;
-            tagline.text = mode.Tagline;
+            title.text = L.Data(mode.Title);
+            tagline.text = L.Data(mode.Tagline);
             for (int i = 0; i < stars.Length; i++)
             {
                 stars[i].color = i < earned ? MonopolyStyle.Gold : MonopolyStyle.WithAlpha(MonopolyStyle.Muted, 0.35f);

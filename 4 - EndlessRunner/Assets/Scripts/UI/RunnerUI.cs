@@ -27,12 +27,12 @@ namespace Portfolio.EndlessRunner
 
         private static readonly string[] Tips =
         {
-            "Tip: coins in an arc show you when to jump.",
-            "Tip: press DOWN in the air to dive and slide as you land.",
-            "Tip: ramps lead onto the wagons - the safest lane is often up top.",
-            "Tip: a shield soaks up one crash.",
-            "Tip: switching lanes into the side of an obstacle only bounces you back.",
-            "Tip: super jump lets you hop onto wagons without a ramp."
+            RunnerText.Key("Tip: coins in an arc show you when to jump."),
+            RunnerText.Key("Tip: press DOWN in the air to dive and slide as you land."),
+            RunnerText.Key("Tip: ramps lead onto the wagons - the safest lane is often up top."),
+            RunnerText.Key("Tip: a shield soaks up one crash."),
+            RunnerText.Key("Tip: switching lanes into the side of an obstacle only bounces you back."),
+            RunnerText.Key("Tip: super jump lets you hop onto wagons without a ramp.")
         };
 
         [Header("Screens")]
@@ -128,6 +128,15 @@ namespace Portfolio.EndlessRunner
         private Vector2 heartsRest;
         private float resultStatsSize = 36f;
         private RunnerGameTheme look;
+        // What the screens show, kept to write it again in another language.
+        private int shownSelected = -1;
+        private int shownTotalStars;
+        private int shownMaxStars;
+        private string runTitle = string.Empty;
+        private int runLevelIndex;
+        private RunResult shownResult;
+        private bool hasResult;
+        private int tipIndex;
 
         private RunnerGameManager Runner => Manager as RunnerGameManager;
 
@@ -254,10 +263,15 @@ namespace Portfolio.EndlessRunner
             shownHearts = shownMaxHearts = -1;
         }
 
-        /// <summary><paramref name="text"/> in the words of the theme the interface is drawn in.</summary>
-        private string Say(string text)
+        /// <summary><paramref name="key"/> in the words of the theme the interface is drawn in, in the language shown.</summary>
+        private string Say(string key)
         {
-            return look != null ? look.Say(text) : text;
+            return RunnerText.Say(look, key);
+        }
+
+        private string SayF(string key, params object[] args)
+        {
+            return RunnerText.SayF(look, key, args);
         }
 
         /// <summary>
@@ -387,12 +401,43 @@ namespace Portfolio.EndlessRunner
             if (Time.unscaledTime < resetConfirmUntil)
             {
                 resetConfirmUntil = -1f;
-                SetLabel(resetProgressLabel, "Reset progress");
+                WriteResetLabel();
                 Runner?.ResetProgress();
                 return;
             }
             resetConfirmUntil = Time.unscaledTime + 3f;
-            SetLabel(resetProgressLabel, MobilePlatform.Pick("Click again to reset", "Tap again to reset"));
+            WriteResetLabel();
+        }
+
+        private void WriteResetLabel()
+        {
+            SetLabel(resetProgressLabel, resetConfirmUntil > 0f
+                ? MobilePlatform.Pick(RunnerText.T("Click again to reset"), RunnerText.T("Tap again to reset"))
+                : RunnerText.T("Reset progress"));
+        }
+
+        /// <summary>
+        /// The language changed: the level select, the line over the HUD, the results and the scoreboard are written
+        /// again (the fixed words of the canvas follow by themselves through its LocalizedTexts).
+        /// </summary>
+        public override void RefreshTexts()
+        {
+            base.RefreshTexts();
+            WriteResetLabel();
+            if (summaries.Count > 0)
+            {
+                WriteLevelSelect();
+            }
+            WriteRunTitle();
+            shownDistance = -1;
+            if (hasResult)
+            {
+                WriteResults(shownResult);
+            }
+            if (raceHud != null)
+            {
+                raceHud.Redraw();
+            }
         }
 
         #endregion
@@ -403,6 +448,16 @@ namespace Portfolio.EndlessRunner
         {
             summaries.Clear();
             summaries.AddRange(levels);
+            shownSelected = selected;
+            shownTotalStars = totalStars;
+            shownMaxStars = maxStars;
+            WriteLevelSelect();
+            curtainAlpha = 0.55f;
+        }
+
+        private void WriteLevelSelect()
+        {
+            int selected = shownSelected;
             for (int i = 0; i < levelCards.Length; i++)
             {
                 LevelCard card = levelCards[i];
@@ -417,16 +472,17 @@ namespace Portfolio.EndlessRunner
                     card.Show(summaries[i], summaries[i].Index == selected, starFull, starEmpty, look != null ? look.Colors.locked : (Color?)null);
                 }
             }
-            SetLabel(starsTotal, $"{totalStars} / {maxStars}");
+            SetLabel(starsTotal, $"{shownTotalStars} / {shownMaxStars}");
+            WriteResetLabel();
             LevelSummary summary = summaries.Find(level => level.Index == selected);
             ShowDetails(summary);
-            curtainAlpha = 0.55f;
         }
 
         private void ShowDetails(LevelSummary summary)
         {
-            SetLabel(detailTitle, summary.Endless ? summary.Title : $"{summary.Index + 1}. {summary.Title}");
-            SetLabel(detailWorld, summary.World);
+            string title = RunnerText.T(summary.Title);
+            SetLabel(detailTitle, summary.Endless ? title : $"{summary.Index + 1}. {title}");
+            SetLabel(detailWorld, RunnerText.T(summary.World));
             if (detailWorld != null)
             {
                 detailWorld.color = Color.Lerp(summary.Accent, Color.white, 0.35f);
@@ -434,13 +490,15 @@ namespace Portfolio.EndlessRunner
             SetLabel(detailDescription, Say(summary.Description));
             if (summary.Endless)
             {
-                string best = summary.BestDistance > 0f ? $"Best run: <b>{summary.BestDistance:0} m</b>  ({summary.BestScore} points)" : "No record yet - set one!";
-                SetLabel(detailGoals, Say($"Run as far as you can.\nThe world changes as you go.\n{best}"));
+                string best = summary.BestDistance > 0f
+                    ? RunnerText.F("Best run: <b>{0:0} m</b>  ({1} points)", summary.BestDistance, summary.BestScore)
+                    : RunnerText.T("No record yet - set one!");
+                SetLabel(detailGoals, SayF("Run as far as you can.\nThe world changes as you go.\n{0}", best));
             }
             else
             {
                 SetLabel(detailGoals,
-                    Say($"- Reach the finish ({summary.Length:0} m)\n- Collect {summary.CoinGoal} coins\n- Finish without a scratch"));
+                    SayF("- Reach the finish ({0:0} m)\n- Collect {1} coins\n- Finish without a scratch", summary.Length, summary.CoinGoal));
             }
             for (int i = 0; i < detailStars.Length; i++)
             {
@@ -455,7 +513,7 @@ namespace Portfolio.EndlessRunner
             {
                 playButton.interactable = summary.Unlocked;
             }
-            SetLabel(playLabel, summary.Unlocked ? "PLAY" : "LOCKED");
+            SetLabel(playLabel, summary.Unlocked ? RunnerText.T("PLAY") : RunnerText.T("LOCKED"));
         }
 
         #endregion
@@ -466,7 +524,10 @@ namespace Portfolio.EndlessRunner
         {
             endlessRun = endless;
             runLength = lengthOrBest;
-            SetLabel(levelText, endless ? "ENDLESS RUN" : $"LEVEL {levelIndex + 1}  -  {title.ToUpperInvariant()}");
+            runTitle = title ?? string.Empty;
+            runLevelIndex = levelIndex;
+            hasResult = false;
+            WriteRunTitle();
             if (progressRoot != null)
             {
                 progressRoot.SetActive(!endless);
@@ -495,6 +556,14 @@ namespace Portfolio.EndlessRunner
             UpdateHearts(maxHearts, maxHearts);
         }
 
+        /// <summary>The line over the HUD: the level's number and name (English in the argument of <see cref="BeginRun"/>).</summary>
+        private void WriteRunTitle()
+        {
+            SetLabel(levelText, endlessRun
+                ? RunnerText.T("ENDLESS RUN")
+                : RunnerText.F("LEVEL {0}  -  {1}", runLevelIndex + 1, RunnerText.T(runTitle).ToUpperInvariant()));
+        }
+
         public void UpdateRun(int coins, int coinGoal, int score, float distance, float progress01, int heartsLeft, int maxHearts, bool multiplier)
         {
             if (coins != shownCoins || coinGoal != shownGoal)
@@ -518,11 +587,13 @@ namespace Portfolio.EndlessRunner
                 shownDistance = meters;
                 if (endlessRun)
                 {
-                    SetLabel(distanceText, runLength > 0f ? $"{meters} m  <size=60%>best {runLength:0} m</size>" : $"{meters} m");
+                    SetLabel(distanceText, runLength > 0f
+                        ? RunnerText.F("{0} m  <size=60%>best {1:0} m</size>", meters, runLength)
+                        : RunnerText.F("{0} m", meters));
                 }
                 else
                 {
-                    SetLabel(distanceText, $"{meters} m");
+                    SetLabel(distanceText, RunnerText.F("{0} m", meters));
                 }
             }
             if (progressFill != null)
@@ -596,15 +667,17 @@ namespace Portfolio.EndlessRunner
             {
                 return;
             }
-            toastText.text = Say(text);
+            // The words are the caller's, in the language and the theme's words already (see RunnerText.Say).
+            toastText.text = text;
             toastText.color = Color.Lerp(color, Color.white, 0.25f);
             toastText.gameObject.SetActive(true);
             toastTime = 0f;
         }
 
-        public void ShowHint(string text)
+        /// <summary>A hint over the track for a while: <paramref name="key"/> is its English (see <see cref="RunnerText.Say(string)"/>).</summary>
+        public void ShowHint(string key)
         {
-            SetLabel(hintText, Say(text));
+            SetLabel(hintText, Say(key));
             hintTime = 0f;
         }
 
@@ -672,7 +745,34 @@ namespace Portfolio.EndlessRunner
 
         public void ShowResults(RunResult result)
         {
-            SetLabel(levelsLabel, result.Online ? "Room" : "Levels");
+            shownResult = result;
+            hasResult = true;
+            tipIndex = UnityEngine.Random.Range(0, Tips.Length);
+            WriteResults(result);
+            if (resultStarsRoot != null)
+            {
+                resultStarsRoot.gameObject.SetActive(!result.Endless && !result.Online);
+            }
+            foreach (Image star in resultStars)
+            {
+                if (star != null)
+                {
+                    star.sprite = starEmpty;
+                    star.transform.localScale = Vector3.one;
+                }
+            }
+            starsPopped = 0;
+            resultsTime = 0f;
+            if (nextButton != null)
+            {
+                nextButton.gameObject.SetActive(result.HasNextLevel);
+            }
+        }
+
+        /// <summary>The words of the results screen, in the language shown and the theme's words.</summary>
+        private void WriteResults(RunResult result)
+        {
+            SetLabel(levelsLabel, result.Online ? RunnerText.T("Room") : RunnerText.T("Levels"));
             if (retryButton != null)
             {
                 retryButton.gameObject.SetActive(!result.Online);
@@ -692,65 +792,54 @@ namespace Portfolio.EndlessRunner
                     resultStats.fontSize = resultStatsSize;
                 }
             }
+            string levelTitle = RunnerText.T(result.LevelTitle);
             if (result.Online)
             {
                 // A race: the places are the server's, and the next one starts from the room.
-                SetLabel(resultTitle, result.Runners < 2 ? "RUN OVER" : result.Place == 1 ? "YOU WIN!" : $"{Standings.Ordinal(result.Place).ToUpperInvariant()} PLACE");
-                SetLabel(resultSubtitle, result.Runners < 2 ? $"{result.LevelTitle} - online" : $"{result.LevelTitle} - race of {result.Runners}");
+                SetLabel(resultTitle, result.Runners < 2 ? RunnerText.T("RUN OVER") : result.Place == 1 ? RunnerText.T("YOU WIN!")
+                    : RunnerText.F("{0} PLACE", Standings.Ordinal(result.Place).ToUpperInvariant(), result.Place));
+                SetLabel(resultSubtitle, result.Runners < 2 ? RunnerText.F("{0} - online", levelTitle) : RunnerText.F("{0} - race of {1}", levelTitle, result.Runners));
                 SetLabel(resultStats, result.Standings);
-                SetLabel(resultGoals, $"You ran <b>{result.Distance:0} m</b> and took <b>{result.Coins}</b> coins.\nThe host starts the next race from the room.");
+                SetLabel(resultGoals, SayF("You ran <b>{0:0} m</b> and took <b>{1}</b> coins.\nThe host starts the next race from the room.", result.Distance, result.Coins));
                 resultStarCount = 0;
             }
             else if (result.Endless)
             {
-                SetLabel(resultTitle, result.NewBest ? "NEW RECORD!" : "RUN OVER");
-                SetLabel(resultSubtitle, "Endless Run");
-                SetLabel(resultStats, $"Distance   <b>{result.Distance:0} m</b>\nCoins   <b>{result.Coins}</b>\nScore   <b>{result.Score}</b>");
-                SetLabel(resultGoals, result.BestDistance > 0f ? $"Best run: {result.BestDistance:0} m" : string.Empty);
+                SetLabel(resultTitle, result.NewBest ? RunnerText.T("NEW RECORD!") : RunnerText.T("RUN OVER"));
+                SetLabel(resultSubtitle, RunnerText.T("Endless Run"));
+                SetLabel(resultStats, SayF("Distance   <b>{0:0} m</b>\nCoins   <b>{1}</b>\nScore   <b>{2}</b>", result.Distance, result.Coins, result.Score));
+                SetLabel(resultGoals, result.BestDistance > 0f ? RunnerText.F("Best run: {0:0} m", result.BestDistance) : string.Empty);
                 resultStarCount = 0;
             }
             else if (result.Victory)
             {
-                SetLabel(resultTitle, "LEVEL COMPLETE!");
-                SetLabel(resultSubtitle, result.LevelTitle);
-                SetLabel(resultStats, $"Coins   <b>{result.Coins}</b>\nScore   <b>{result.Score}</b>{(result.NewBest ? "  <color=#FFD84A>best!</color>" : string.Empty)}");
+                SetLabel(resultTitle, RunnerText.T("LEVEL COMPLETE!"));
+                SetLabel(resultSubtitle, levelTitle);
+                SetLabel(resultStats, SayF("Coins   <b>{0}</b>\nScore   <b>{1}</b>", result.Coins, result.Score)
+                    + (result.NewBest ? $"  <color=#FFD84A>{RunnerText.T("best!")}</color>" : string.Empty));
                 SetLabel(resultGoals,
-                    Goal(true, "Reached the finish") + "\n" +
-                    Goal(result.CoinGoalReached, $"Collected {result.CoinGoal} coins") + "\n" +
-                    Goal(result.Flawless, "Finished without a scratch"));
+                    Goal(true, Say("Reached the finish")) + "\n" +
+                    Goal(result.CoinGoalReached, SayF("Collected {0} coins", result.CoinGoal)) + "\n" +
+                    Goal(result.Flawless, Say("Finished without a scratch")));
                 resultStarCount = result.Stars;
             }
             else
             {
-                SetLabel(resultTitle, "OUCH!");
-                SetLabel(resultSubtitle, result.LevelTitle);
-                SetLabel(resultStats, $"You made it <b>{result.Distance:0} m</b>\nCoins   <b>{result.Coins}</b>");
-                SetLabel(resultGoals, Tips[UnityEngine.Random.Range(0, Tips.Length)]);
+                SetLabel(resultTitle, RunnerText.T("OUCH!"));
+                SetLabel(resultSubtitle, levelTitle);
+                SetLabel(resultStats, SayF("You made it <b>{0:0} m</b>\nCoins   <b>{1}</b>", result.Distance, result.Coins));
+                SetLabel(resultGoals, Say(Tips[Mathf.Clamp(tipIndex, 0, Tips.Length - 1)]));
                 resultStarCount = 0;
             }
-            if (look != null)
+        }
+
+        /// <summary>The standings of a race again, in the language shown now.</summary>
+        public void UpdateStandings(string standings)
+        {
+            if (hasResult && shownResult.Online)
             {
-                // The stats, goals and tips in the theme's words.
-                SetLabel(resultStats, Say(resultStats != null ? resultStats.text : string.Empty));
-                SetLabel(resultGoals, Say(resultGoals != null ? resultGoals.text : string.Empty));
-            }
-            if (resultStarsRoot != null)
-            {
-                resultStarsRoot.gameObject.SetActive(!result.Endless && !result.Online);
-            }
-            foreach (Image star in resultStars)
-            {
-                if (star != null)
-                {
-                    star.sprite = starEmpty;
-                    star.transform.localScale = Vector3.one;
-                }
-            }
-            starsPopped = 0;
-            resultsTime = 0f;
-            if (nextButton != null)
-            {
-                nextButton.gameObject.SetActive(result.HasNextLevel);
+                shownResult.Standings = standings;
+                WriteResults(shownResult);
             }
         }
 
@@ -831,7 +920,7 @@ namespace Portfolio.EndlessRunner
             if (resetConfirmUntil > 0f && Time.unscaledTime > resetConfirmUntil)
             {
                 resetConfirmUntil = -1f;
-                SetLabel(resetProgressLabel, "Reset progress");
+                WriteResetLabel();
             }
 
             AnimateResults(deltaTime);

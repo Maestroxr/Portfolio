@@ -1,5 +1,6 @@
 using Gamebox;
 using UnityEngine;
+using static Portfolio.Asteroids.AsteroidsText;
 
 namespace Portfolio.Asteroids
 {
@@ -43,27 +44,27 @@ namespace Portfolio.Asteroids
         {
             if (Lives < 1 || Lives > LivesLimit)
             {
-                message = $"Lives {Lives} has to be between 1 and {LivesLimit}";
+                message = F("Lives {0} has to be between 1 and {1}", Lives, LivesLimit);
                 return false;
             }
             if (HullStrength < 10f || HullStrength > 1000f)
             {
-                message = $"Hull strength {HullStrength} has to be between 10 and 1000";
+                message = F("Hull strength {0} has to be between 10 and 1000", HullStrength);
                 return false;
             }
             if (AsteroidSpeed < 0.2f || AsteroidSpeed > 4f)
             {
-                message = $"Asteroid speed {AsteroidSpeed} has to be between 0.2 and 4";
+                message = F("Asteroid speed {0} has to be between 0.2 and 4", AsteroidSpeed);
                 return false;
             }
             if (AsteroidSpawnRate <= 0f || AsteroidSpawnRate > 120f)
             {
-                message = $"Asteroid spawn rate {AsteroidSpawnRate} has to be positive and at most 120 seconds";
+                message = F("Asteroid spawn rate {0} has to be positive and at most 120 seconds", AsteroidSpawnRate);
                 return false;
             }
             if (AsteroidExplosionRadius < 0f || AsteroidExplosionRadius > 12f)
             {
-                message = $"Asteroid explosion radius {AsteroidExplosionRadius} has to be between 0 and 12";
+                message = F("Asteroid explosion radius {0} has to be between 0 and 12", AsteroidExplosionRadius);
                 return false;
             }
             message = "OK";

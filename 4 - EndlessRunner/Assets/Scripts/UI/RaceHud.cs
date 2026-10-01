@@ -56,6 +56,17 @@ namespace Portfolio.EndlessRunner
             }
         }
 
+        /// <summary>Writes every row again at the next refresh (the language changed).</summary>
+        public void Redraw()
+        {
+            shownPlace = -1;
+            foreach (Row row in rows)
+            {
+                row.Seat = row.Place = row.Meters = row.Coins = -1;
+                row.Score = -1;
+            }
+        }
+
         public void Hide()
         {
             gameObject.SetActive(false);
@@ -88,7 +99,7 @@ namespace Portfolio.EndlessRunner
                 }
                 if (row.runnerName != null)
                 {
-                    row.runnerName.text = racer.Local ? $"{racer.Name} <size=75%>(you)</size>" : racer.Name;
+                    row.runnerName.text = racer.Local ? RunnerText.F("{0} <size=75%>(you)</size>", racer.Name) : racer.Name;
                     row.runnerName.color = Color.Lerp(color, Color.white, 0.45f);
                 }
                 if (row.highlight != null)
@@ -112,7 +123,7 @@ namespace Portfolio.EndlessRunner
                 row.Meters = meters;
                 row.Coins = racer.Coins;
                 row.Done = racer.Done;
-                SetText(row.detail, racer.Done ? $"{meters} m   {racer.Coins} coins   done" : $"{meters} m   {racer.Coins} coins");
+                SetText(row.detail, racer.Done ? RunnerText.F("{0} m   {1} coins   done", meters, racer.Coins) : RunnerText.F("{0} m   {1} coins", meters, racer.Coins));
             }
             if (racer.Local && shownPlace != racer.Place)
             {

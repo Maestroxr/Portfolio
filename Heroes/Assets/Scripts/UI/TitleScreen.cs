@@ -109,9 +109,13 @@ namespace Portfolio.Heroes.UI
             Entry("Credits", ui.OpenCredits, "Credits\nWho made what the game shows and plays.");
             Entry("Exit", () => manager.ExitGame(), "Exit\nLeave the game.");
 
-            TextMeshProUGUI version = UIKit.Label(area, "Version", $"Version {Application.version}", 16f, new Color(0.72f, 0.67f, 0.56f, 0.6f),
+            TextMeshProUGUI version = UIKit.Label(area, "Version", "", 16f, new Color(0.72f, 0.67f, 0.56f, 0.6f),
                 TextAlignmentOptions.BottomLeft);
+            version.text = Words.F("Version {0}", Application.version);
             UIKit.Pin((RectTransform)version.transform, new Vector2(0f, 0f), new Vector2(24f, 16f), new Vector2(400f, 24f));
+
+            // The flag that switches the language, in the top right corner, which the valley leaves free on any screen.
+            UIKit.LanguageFlag(area, new Vector2(1f, 1f), new Vector2(-28f, -28f), 56f);
         }
 
         /// <summary>A texture that goes from opaque on its left to clear on its right, eased, for the shade behind the words.</summary>
@@ -175,7 +179,7 @@ namespace Portfolio.Heroes.UI
             if (saved)
             {
                 HeroesLevel scenario = manager.Campaign is HeroesCampaign campaign ? campaign.Scenario(level) : null;
-                resumeTip.Title = scenario != null ? $"Continue: {scenario.Title}" : "Continue";
+                resumeTip.Title = scenario != null ? Words.F("Continue: {0}", Words.T(scenario.Title)) : "Continue";
                 resumeTip.Text = "The scenario you left, where you left it.";
             }
             online.gameObject.SetActive(manager.Online != null);

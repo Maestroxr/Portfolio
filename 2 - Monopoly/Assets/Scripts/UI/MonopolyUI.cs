@@ -187,10 +187,55 @@ namespace Portfolio.Monopoly
                 (chosen, mode) => Monopoly?.BeginMatch(chosen, mode), ShowMenu);
         }
 
+        private bool onTitle = true;
+
+        /// <summary>The language changed: the words the interface wrote with code are written again.</summary>
+        public override void RefreshTexts()
+        {
+            base.RefreshTexts();
+            if (menuTitle != null)
+            {
+                menuTitle.text = L.T("PAUSED");
+            }
+            if (startLabel != null)
+            {
+                startLabel.text = onTitle ? L.T("PLAY") : L.T("NEW GAME");
+            }
+            if (loadLabel != null)
+            {
+                loadLabel.text = onTitle ? L.T("CONTINUE") : L.T("LOAD GAME");
+            }
+            setup?.RefreshTexts();
+        }
+
+        /// <summary>
+        /// The flag that switches the language: in the top right corner of the title screen, and at the top centre of
+        /// the pause menu, where the corners hold the player panels.
+        /// </summary>
+        private void PlaceLanguageButton(bool title)
+        {
+            if (languageButton == null && MenuRoot != null)
+            {
+                languageButton = MenuRoot.GetComponentInChildren<LanguageButton>(true);
+            }
+            if (languageButton == null)
+            {
+                return;
+            }
+            var rect = (RectTransform)languageButton.transform;
+            Vector2 anchor = title ? new Vector2(1f, 1f) : new Vector2(0.5f, 1f);
+            rect.anchorMin = rect.anchorMax = rect.pivot = anchor;
+            rect.anchoredPosition = title ? new Vector2(-28f, -24f) : new Vector2(0f, -14f);
+        }
+
+        private LanguageButton languageButton;
+
         public override void UpdateGameState(GameState state)
         {
             base.UpdateGameState(state);
             bool title = state.BaseState == BaseGameState.Initialization;
+            onTitle = title;
+            PlaceLanguageButton(title);
             bool paused = state.BaseState == BaseGameState.Paused;
             bool over = state.BaseState == BaseGameState.GameOver || state.BaseState == BaseGameState.Victory;
             if (hud != null)
@@ -204,7 +249,7 @@ namespace Portfolio.Monopoly
             if (menuTitle != null)
             {
                 menuTitle.gameObject.SetActive(paused);
-                menuTitle.text = "PAUSED";
+                menuTitle.text = L.T("PAUSED");
             }
             SetButtonVisible(ReturnToGame, paused);
             SetButtonVisible(SaveGame, paused);
@@ -215,11 +260,11 @@ namespace Portfolio.Monopoly
             SetButtonVisible(onlineButton, title);
             if (startLabel != null)
             {
-                startLabel.text = title ? "PLAY" : "NEW GAME";
+                startLabel.text = title ? L.T("PLAY") : L.T("NEW GAME");
             }
             if (loadLabel != null)
             {
-                loadLabel.text = title ? "CONTINUE" : "LOAD GAME";
+                loadLabel.text = title ? L.T("CONTINUE") : L.T("LOAD GAME");
             }
             if (footer != null)
             {
@@ -354,7 +399,7 @@ namespace Portfolio.Monopoly
             }
             if (roundText != null)
             {
-                roundText.text = limit > 0 ? $"Round {Mathf.Min(round, limit)} of {limit}" : $"Round {round}";
+                roundText.text = limit > 0 ? L.F("Round {0} of {1}", Mathf.Min(round, limit), limit) : L.F("Round {0}", round);
             }
         }
 

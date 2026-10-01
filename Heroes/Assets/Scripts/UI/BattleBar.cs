@@ -247,7 +247,7 @@ namespace Portfolio.Heroes.UI
             holder.sizeDelta = new Vector2(74f, 110f);
             Button button = UIKit.Icon(holder, "Button", UIKit.Art != null ? UIKit.Art.Icon(icon) : null, onClick);
             UIKit.Pin((RectTransform)button.transform, new Vector2(0.5f, 1f), Vector2.zero, new Vector2(72f, 72f));
-            Tooltip.Attach(button.gameObject, tip, $"Key: {key}");
+            Tooltip.Attach(button.gameObject, tip, Words.F("Key: {0}", key));
             TextMeshProUGUI caption = UIKit.Label(holder, "Key", key, 18f, UIKit.Dim, TextAlignmentOptions.Center);
             caption.textWrappingMode = TextWrappingModes.NoWrap;
             UIKit.Pin((RectTransform)caption.transform, new Vector2(0.5f, 0f), new Vector2(0f, 4f), new Vector2(74f, 26f));
@@ -351,9 +351,25 @@ namespace Portfolio.Heroes.UI
             Hide();
         }
 
+        private int roundShown = 1;
+
         public void SetRound(int number)
         {
-            round.text = $"Round {Mathf.Max(1, number)}";
+            roundShown = number;
+            round.text = Words.F("Round {0}", Mathf.Max(1, number));
+        }
+
+        /// <summary>The language changed: the round, the card and the status are written again.</summary>
+        public void RefreshTexts()
+        {
+            if (round == null)
+            {
+                return;
+            }
+            SetRound(roundShown);
+            cardDrawn = false;
+            tipText = null;
+            DrawLog();
         }
 
         /// <summary>The stack in hand is this device's: work out where it may go and what it may strike, and paint it.</summary>
@@ -405,7 +421,7 @@ namespace Portfolio.Heroes.UI
         /// <summary>The call to arms: who fights whom, across the top of the field.</summary>
         public void Intro(BattleState start, GameState state)
         {
-            banner.Show(start.town >= 0 ? "Siege!" : "To Battle!", $"{SideName(start, 0, state)}  against  {SideName(start, 1, state)}");
+            banner.Show(Words.T(start.town >= 0 ? "Siege!" : "To Battle!"), Words.F("{0}  against  {1}", SideName(start, 0, state), SideName(start, 1, state)));
         }
 
         public void ShowResults(GameEvent ended, BattleState end, int side, GameState state, Action closed)
@@ -431,21 +447,21 @@ namespace Portfolio.Heroes.UI
             HeroState hero = state.Hero(battle.HeroOf(side));
             if (hero != null)
             {
-                return hero.Name;
+                return Words.Name(hero.Name);
             }
             TownState town = side == 1 ? state.Town(battle.town) : null;
             if (town != null)
             {
-                return town.name;
+                return Words.Name(town.name);
             }
             foreach (BattleStack stack in battle.stacks)
             {
                 if (stack.side == side && !stack.IsTower)
                 {
-                    return $"the {stack.Def.Plural}";
+                    return Words.F("the {0}", Words.Name(stack.Def.Plural));
                 }
             }
-            return "the wilds";
+            return Words.T("the wilds");
         }
 
         // ------------------------------------------------------------------ keeping the bar up to date
@@ -540,8 +556,8 @@ namespace Portfolio.Heroes.UI
                 Heroes();
             }
             Queue();
-            status.text = OurTurn() ? "Your move" : stack == null ? "" : Local(shown.PlayerOf(stack.side)) ? "Your troops act" :
-                shown.PlayerOf(stack.side) < 0 ? "The wilds move" : "The enemy moves";
+            status.text = Words.T(OurTurn() ? "Your move" : stack == null ? "" : Local(shown.PlayerOf(stack.side)) ? "Your troops act" :
+                shown.PlayerOf(stack.side) < 0 ? "The wilds move" : "The enemy moves");
         }
 
         private void Heroes()
@@ -760,6 +776,7 @@ namespace Portfolio.Heroes.UI
                 return;
             }
             Color color = side >= 0 && View != null ? Color.Lerp(UIKit.Ink, HeroesArt.PlayerColor(View.SideColor(side)), 0.32f) : UIKit.Dim;
+            // Kept in English where it came so (a line of the rules or of this bar), written in the language shown.
             log.Add((text, color));
             if (log.Count > 40)
             {
@@ -775,7 +792,7 @@ namespace Portfolio.Heroes.UI
             {
                 int index = log.Count - LogLines + i;
                 bool on = index >= 0;
-                logLines[i].text = on ? log[index].text : "";
+                logLines[i].text = on ? Words.Sentence(log[index].text) : "";
                 Color shade = on ? log[index].color : UIKit.Dim;
                 // The older lines fade back.
                 shade.a = i == LogLines - 1 ? 1f : i == LogLines - 2 ? 0.82f : 0.64f;
@@ -1016,7 +1033,7 @@ namespace Portfolio.Heroes.UI
             }
             tipKey = key;
             tipReach = reach;
-            tipText = act == Act.Cast ? SpellEstimate(stack, target) : Estimate(act == Act.Shoot ? "Shoot" : "Attack", stack, target, act == Act.Shoot, steps);
+            tipText = act == Act.Cast ? SpellEstimate(stack, target) : Estimate(act == Act.Shoot ? "Shoot {0}" : "Attack {0}", stack, target, act == Act.Shoot, steps);
             return tipText;
         }
 
@@ -1025,8 +1042,14 @@ namespace Portfolio.Heroes.UI
             Game.DamageEstimate(stack, target, ranged, steps, out int least, out int most, out int fewest, out int mostKills);
             string damage = least == most ? least.ToString() : $"{least}-{most}";
             string kills = fewest == mostKills ? fewest.ToString() : $"{fewest}-{mostKills}";
-            string note = ranged && Game.BattleGrid.Distance(stack.cell, target.cell) > 10 && !stack.IsTower ? "\n<color=#C8B890><i>Far away: half damage</i></color>" : "";
-            return $"<b>{verb} {BattleNumbers.Troop(target)}</b>\n<sprite name=\"damage\"> Damage {damage}   <sprite name=\"health\"> Kills {kills}{note}";
+            string note = ranged && Game.BattleGrid.Distance(stack.cell, target.cell) > 10 && !stack.IsTower ? $"\n<color=#C8B890><i>{Words.T("Far away: half damage")}</i></color>" : "";
+            return $"<b>{Words.F(verb, BattleNumbers.Troop(target))}</b>\n{Numbers(damage, kills)}{note}";
+        }
+
+        /// <summary>The damage and the kills a blow or a spell would make: "Damage 12-18   Kills 2-3", with their icons.</summary>
+        private static string Numbers(object damage, object kills)
+        {
+            return $"<sprite name=\"damage\"> {Words.F("Damage {0}", damage)}   <sprite name=\"health\"> {Words.F("Kills {0}", kills)}";
         }
 
         private string SpellEstimate(BattleStack stack, BattleStack target)
@@ -1041,9 +1064,9 @@ namespace Portfolio.Heroes.UI
             {
                 int damage = Game.SpellDamage(hero, def, target);
                 int kills = Game.Kills(target, damage);
-                return $"<b>{def.Name}: {BattleNumbers.Troop(target)}</b>\n<sprite name=\"damage\"> Damage {damage}   <sprite name=\"health\"> Kills {kills}";
+                return $"<b>{Words.T(def.Name)}: {BattleNumbers.Troop(target)}</b>\n{Numbers(damage, kills)}";
             }
-            return target != null ? $"<b>{def.Name}: {BattleNumbers.Troop(target)}</b>" : $"<b>{def.Name}</b>";
+            return target != null ? $"<b>{Words.T(def.Name)}: {BattleNumbers.Troop(target)}</b>" : $"<b>{Words.T(def.Name)}</b>";
         }
 
         private void Cursor(CursorKind kind)
@@ -1287,10 +1310,11 @@ namespace Portfolio.Heroes.UI
             bool she = hero.Def != null && hero.Def.Female;
             askedFor = battle.current;
             tip.Hide();
-            question.Ask("Retreat?",
-                $"{hero.Name} will flee the field, and every creature in {(she ? "her" : "his")} army will be lost. " +
-                $"{(she ? "She" : "He")} keeps {(she ? "her" : "his")} artifacts, and may be hired again.",
-                "Retreat", KeyCode.R, () =>
+            question.Ask(Words.T("Retreat?"),
+                Words.F(she ? "{0} will flee the field, and every creature in her army will be lost. She keeps her artifacts, and may be hired again."
+                            : "{0} will flee the field, and every creature in his army will be lost. He keeps his artifacts, and may be hired again.",
+                    Words.Name(hero.Name)),
+                Words.T("Retreat"), KeyCode.R, () =>
                 {
                     if (OurTurn() && Game.Battle.current == askedFor)
                     {
@@ -1346,7 +1370,7 @@ namespace Portfolio.Heroes.UI
             Casting = spell;
             computedFor = -1;
             SpellDef def = Spells.Get(spell);
-            Log(def != null ? $"{def.Name}: choose a target, or right click to put the book away." : "", -1);
+            Log(def != null ? Words.F("{0}: choose a target, or right click to put the book away.", Words.T(def.Name)) : "", -1);
             if (OurTurn())
             {
                 Show(Game.Battle);

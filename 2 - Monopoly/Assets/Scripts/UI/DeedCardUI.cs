@@ -128,16 +128,16 @@ namespace Portfolio.Monopoly
             Fill(match, space);
             SpaceData data = match.Space(space);
             bool affordable = match.CanAffordPurchase;
-            SetButtons(true, affordable, true, match.rules.auctions ? "Auction" : "Pass");
+            SetButtons(true, affordable, true, match.rules.auctions ? L.T("Auction") : L.T("Pass"));
             if (buyLabel != null)
             {
-                buyLabel.text = affordable ? $"Buy {MonopolyStyle.Money(data.price)}" : $"Need {MonopolyStyle.Money(data.price)}";
+                buyLabel.text = affordable ? L.F("Buy {0}", MonopolyStyle.Money(data.price)) : L.F("Need {0}", MonopolyStyle.Money(data.price));
             }
             int buyer = match.Decider;
             if (!affordable && ownerText != null && buyer >= 0)
             {
                 int missing = data.price - match.players[buyer].cash;
-                ownerText.text = $"For sale: <b>{MonopolyStyle.Money(data.price)}</b>  •  <color={MonopolyStyle.RedTag}>{MonopolyStyle.Money(missing)} short</color>";
+                ownerText.text = L.F("For sale: {0}", $"<b>{MonopolyStyle.Money(data.price)}</b>") + $"  •  <color={MonopolyStyle.RedTag}>{L.F("{0} short", MonopolyStyle.Money(missing))}</color>";
             }
             if (closeButton != null)
             {
@@ -187,8 +187,39 @@ namespace Portfolio.Monopoly
             }
         }
 
+        private bool mirrored;
+
+        /// <summary>
+        /// Right to left, the rent labels sit on the right and the amounts on the left (each text's alignment mirrors by
+        /// itself, see <see cref="Gamebox.RightToLeftText"/>; the columns are swapped here).
+        /// </summary>
+        private void MirrorColumns()
+        {
+            bool rightToLeft = Gamebox.GameLanguages.IsRightToLeft;
+            if (rightToLeft == mirrored)
+            {
+                return;
+            }
+            mirrored = rightToLeft;
+            foreach (TMP_Text column in new[] { labels, values })
+            {
+                if (column == null)
+                {
+                    continue;
+                }
+                RectTransform rect = column.rectTransform;
+                Vector2 min = rect.anchorMin;
+                Vector2 max = rect.anchorMax;
+                rect.anchorMin = new Vector2(1f - max.x, min.y);
+                rect.anchorMax = new Vector2(1f - min.x, max.y);
+                rect.pivot = new Vector2(1f - rect.pivot.x, rect.pivot.y);
+                rect.anchoredPosition = new Vector2(-rect.anchoredPosition.x, rect.anchoredPosition.y);
+            }
+        }
+
         private void Fill(MonopolyMatch match, int space)
         {
+            MirrorColumns();
             Space = space;
             SpaceData data = match.Space(space);
             DeedState deed = match.Deed(space);
@@ -201,17 +232,17 @@ namespace Portfolio.Monopoly
             Color headerText = street ? MonopolyStyle.GroupTextColor(data.group) : Color.white;
             if (caption != null)
             {
-                caption.text = data.IsProperty ? "TITLE DEED" : data.kind == SpaceKind.Tax ? "TAX" : "SPACE";
+                caption.text = data.IsProperty ? L.T("TITLE DEED") : data.kind == SpaceKind.Tax ? L.T("TAX") : L.T("SPACE");
                 caption.color = MonopolyStyle.WithAlpha(headerText, 0.8f);
             }
             if (nameText != null)
             {
-                nameText.text = data.name.ToUpperInvariant();
+                nameText.text = MonopolyStyle.SpaceName(data).ToUpperInvariant();
                 nameText.color = headerText;
             }
             if (cityText != null)
             {
-                cityText.text = data.kind == SpaceKind.Railroad ? $"{data.city} station" : data.city;
+                cityText.text = data.kind == SpaceKind.Railroad ? L.F("{0} station", MonopolyStyle.CityName(data)) : MonopolyStyle.CityName(data);
                 cityText.color = MonopolyStyle.WithAlpha(headerText, 0.85f);
             }
             if (iconText != null)
@@ -228,17 +259,17 @@ namespace Portfolio.Monopoly
                 case SpaceKind.Street:
                 {
                     bool set = deed.Owned && match.OwnsGroup(deed.owner, data.group);
-                    Row(left, right, "Rent", data.rent[0], deed.Owned && deed.houses == 0 && !set);
-                    Row(left, right, "Rent with the color set", data.rent[0] * 2, deed.Owned && deed.houses == 0 && set);
+                    Row(left, right, L.T("Rent"), data.rent[0], deed.Owned && deed.houses == 0 && !set);
+                    Row(left, right, L.T("Rent with the color set"), data.rent[0] * 2, deed.Owned && deed.houses == 0 && set);
                     for (int h = 1; h <= 4; h++)
                     {
-                        Row(left, right, h == 1 ? "With 1 house" : $"With {h} houses", data.rent[h], deed.houses == h);
+                        Row(left, right, h == 1 ? L.T("With 1 house") : L.F("With {0} houses", h), data.rent[h], deed.houses == h);
                     }
-                    Row(left, right, "With a hotel", data.rent[5], deed.houses == MonopolyMatch.Hotel);
+                    Row(left, right, L.T("With a hotel"), data.rent[5], deed.houses == MonopolyMatch.Hotel);
                     if (footer != null)
                     {
-                        footer.text = $"Houses {MonopolyStyle.Money(data.houseCost)} each  •  Hotels {MonopolyStyle.Money(data.houseCost)} plus {match.HousesForHotel} houses\n" +
-                            $"Mortgage value {MonopolyStyle.Money(data.MortgageValue)}";
+                        footer.text = L.F("Houses {0} each  •  Hotels {0} plus {1} houses", MonopolyStyle.Money(data.houseCost), match.HousesForHotel) + "\n" +
+                            L.F("Mortgage value {0}", MonopolyStyle.Money(data.MortgageValue));
                     }
                     break;
                 }
@@ -247,22 +278,22 @@ namespace Portfolio.Monopoly
                     int owned = deed.Owned ? match.CountOwned(deed.owner, ColorGroup.Railroad) : 0;
                     for (int n = 1; n <= 4; n++)
                     {
-                        Row(left, right, n == 1 ? "Rent" : $"With {n} stations", data.rent[n - 1], owned == n && !deed.mortgaged);
+                        Row(left, right, n == 1 ? L.T("Rent") : L.F("With {0} stations", n), data.rent[n - 1], owned == n && !deed.mortgaged);
                     }
                     if (footer != null)
                     {
-                        footer.text = $"Mortgage value {MonopolyStyle.Money(data.MortgageValue)}";
+                        footer.text = L.F("Mortgage value {0}", MonopolyStyle.Money(data.MortgageValue));
                     }
                     break;
                 }
                 case SpaceKind.Utility:
                 {
                     int owned = deed.Owned ? match.CountOwned(deed.owner, ColorGroup.Utility) : 0;
-                    Row(left, right, "One utility owned", $"{data.rent[0]} × dice", owned == 1 && !deed.mortgaged);
-                    Row(left, right, "Both utilities owned", $"{data.rent[1]} × dice", owned == 2 && !deed.mortgaged);
+                    Row(left, right, L.T("One utility owned"), L.F("{0} × dice", data.rent[0]), owned == 1 && !deed.mortgaged);
+                    Row(left, right, L.T("Both utilities owned"), L.F("{0} × dice", data.rent[1]), owned == 2 && !deed.mortgaged);
                     if (footer != null)
                     {
-                        footer.text = $"Mortgage value {MonopolyStyle.Money(data.MortgageValue)}";
+                        footer.text = L.F("Mortgage value {0}", MonopolyStyle.Money(data.MortgageValue));
                     }
                     break;
                 }
@@ -294,13 +325,14 @@ namespace Portfolio.Monopoly
                 }
                 else if (!deed.Owned)
                 {
-                    ownerText.text = $"For sale: <b>{MonopolyStyle.Money(data.price)}</b>";
+                    ownerText.text = L.F("For sale: {0}", $"<b>{MonopolyStyle.Money(data.price)}</b>");
                 }
                 else
                 {
                     PlayerState owner = match.players[deed.owner];
-                    string rent = deed.mortgaged ? "mortgaged, no rent" : data.kind == SpaceKind.Utility ? "rent by the dice" : $"rent now {MonopolyStyle.Money(now)}";
-                    ownerText.text = $"Owned by {MonopolyStyle.NamedObject(owner)}  •  {rent}";
+                    string rent = deed.mortgaged ? L.T("mortgaged, no rent") : data.kind == SpaceKind.Utility ? L.T("rent by the dice") : L.F("rent now {0}", MonopolyStyle.Money(now));
+                    string by = MonopolyStyle.Say(owner, "Owned by {0}", $"Owned by {MonopolyStyle.NamedObject(owner)}", MonopolyStyle.Named(owner));
+                    ownerText.text = $"{by}  •  {rent}";
                 }
             }
         }
@@ -330,20 +362,20 @@ namespace Portfolio.Monopoly
             switch (data.kind)
             {
                 case SpaceKind.Go:
-                    return $"Collect {MonopolyStyle.Money(match.rules.salary)} every time you pass GO." +
-                        (match.rules.doubleSalaryOnGo ? $"\nLand right on it for {MonopolyStyle.Money(match.rules.salary * 2)}!" : "");
+                    return L.F("Collect {0} every time you pass GO.", MonopolyStyle.Money(match.rules.salary)) +
+                        (match.rules.doubleSalaryOnGo ? "\n" + L.F("Land right on it for {0}!", MonopolyStyle.Money(match.rules.salary * 2)) : "");
                 case SpaceKind.Chance:
-                    return "Draw a Chance card: trips, windfalls and surprises.";
+                    return L.T("Draw a Chance card: trips, windfalls and surprises.");
                 case SpaceKind.CommunityChest:
-                    return "Draw a Community Chest card: mostly money matters.";
+                    return L.T("Draw a Community Chest card: mostly money matters.");
                 case SpaceKind.Tax:
-                    return $"Pay {MonopolyStyle.Money(data.tax)} " + (match.rules.freeParkingJackpot ? "into the Free Parking pot." : "to the bank.");
+                    return match.rules.freeParkingJackpot ? L.F("Pay {0} into the Free Parking pot.", MonopolyStyle.Money(data.tax)) : L.F("Pay {0} to the bank.", MonopolyStyle.Money(data.tax));
                 case SpaceKind.Jail:
-                    return $"Just visiting, unless you were sent here.\nGet out with doubles, a card, or a {MonopolyStyle.Money(match.rules.jailFine)} fine.";
+                    return L.T("Just visiting, unless you were sent here.") + "\n" + L.F("Get out with doubles, a card, or a {0} fine.", MonopolyStyle.Money(match.rules.jailFine));
                 case SpaceKind.FreeParking:
-                    return match.rules.freeParkingJackpot ? $"Jackpot! Land here to win the pot: {MonopolyStyle.Money(match.pot)}." : "A free rest. Nothing happens here.";
+                    return match.rules.freeParkingJackpot ? L.F("Jackpot! Land here to win the pot: {0}.", MonopolyStyle.Money(match.pot)) : L.T("A free rest. Nothing happens here.");
                 case SpaceKind.GoToJail:
-                    return "Go directly to jail. Do not pass GO, do not collect the salary.";
+                    return L.T("Go directly to jail. Do not pass GO, do not collect the salary.");
                 default:
                     return "";
             }

@@ -195,6 +195,31 @@ namespace Portfolio.EndlessRunner
             Note($"in a race: {manager.InRace}; in a session: {manager.InSession}; in a room: {Server.InRoom}");
         }
 
+        /// <summary>
+        /// The flag button's click on a screen: the next language, a shot of the screen redrawn in it, and back (the words
+        /// written by code have to follow as well as the fixed ones).
+        /// </summary>
+        private IEnumerator SwitchLanguage(string shot)
+        {
+            string before = GameLanguages.Code;
+            LanguageButton flag = FindObjectsByType<LanguageButton>(FindObjectsInactive.Include).FirstOrDefault();
+            UnityEngine.UI.Button button = flag != null ? flag.GetComponent<UnityEngine.UI.Button>() : null;
+            if (button == null)
+            {
+                Note("no language button to click");
+                yield break;
+            }
+            button.onClick.Invoke();
+            yield return new WaitForSecondsRealtime(1f);
+            yield return Shot($"{shot}_{GameLanguages.Code}");
+            for (int clicks = 0; clicks < 4 && GameLanguages.Code != before; clicks++)
+            {
+                button.onClick.Invoke();
+                yield return new WaitForSecondsRealtime(1f);
+            }
+            Note($"switched the language from {before} and back to {GameLanguages.Code}");
+        }
+
         /// <summary>A level alone and offline: the game for one has to play as it always did.</summary>
         private IEnumerator Solo()
         {
@@ -247,9 +272,11 @@ namespace Portfolio.EndlessRunner
             yield return new WaitForSeconds(2.5f);
             yield return Shot("09_results");
             Note($"result: {manager.State}; {manager.Distance:0} m, {manager.Coins} coins, score {manager.PlayerScore:0}");
+            yield return SwitchLanguage("09_results");
             manager.ReturnToLevelSelect();
             yield return new WaitForSeconds(1.5f);
             yield return Shot("10_level_select");
+            yield return SwitchLanguage("10_level_select");
             Note("done");
             Quit();
         }

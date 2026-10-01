@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Gamebox;
 using UnityEngine;
+using static Portfolio.Asteroids.AsteroidsText;
 
 namespace Portfolio.Asteroids
 {
@@ -168,7 +169,7 @@ namespace Portfolio.Asteroids
         {
             if (phase != MissionPhase.Menu || InSession || IsLobbyOpen)
             {
-                ui?.UpdateError("The Supply Room is closed during a mission and inside an online room.");
+                ui?.UpdateError(T("The Supply Room is closed during a mission and inside an online room."));
                 sounds?.Denied();
                 return;
             }
@@ -224,19 +225,19 @@ namespace Portfolio.Asteroids
                 case BuyResult.Bought:
                     progress?.SavePilot(Pilot);
                     sounds?.ShopBuy();
-                    StrikeScreens?.Quartermaster(item == StrikeItem.EnergyModule ? "Topped up. Fly careful." : $"{StrikeArmory.Title(item)} - ${price:N0}. Good hunting.");
+                    StrikeScreens?.Quartermaster(item == StrikeItem.EnergyModule ? T("Topped up. Fly careful.") : F("{0} - ${1:N0}. Good hunting.", T(StrikeArmory.Title(item)), price));
                     break;
                 case BuyResult.NoMoney:
                     sounds?.Denied();
-                    StrikeScreens?.Quartermaster("Credit's no good here, pilot. Come back with cash.", false);
+                    StrikeScreens?.Quartermaster(T("Credit's no good here, pilot. Come back with cash."), false);
                     break;
                 case BuyResult.Full:
                     sounds?.Denied();
-                    StrikeScreens?.Quartermaster(item == StrikeItem.EnergyModule ? "Your energy is full already." : "You can't carry any more of those.", false);
+                    StrikeScreens?.Quartermaster(item == StrikeItem.EnergyModule ? T("Your energy is full already.") : T("You can't carry any more of those."), false);
                     break;
                 default:
                     sounds?.Denied();
-                    StrikeScreens?.Quartermaster("That's not for sale.", false);
+                    StrikeScreens?.Quartermaster(T("That's not for sale."), false);
                     break;
             }
             RefreshSupply(item);
@@ -256,18 +257,18 @@ namespace Portfolio.Asteroids
             {
                 // The wallet is capped: the sale would pay only part of the price (or nothing) and still take the item.
                 sounds?.Denied();
-                StrikeScreens?.Quartermaster("Your wallet is full, pilot. Spend some first.", false);
+                StrikeScreens?.Quartermaster(T("Your wallet is full, pilot. Spend some first."), false);
             }
             else if (StrikeArmory.Sell(Pilot, item))
             {
                 progress?.SavePilot(Pilot);
                 sounds?.ShopSell();
-                StrikeScreens?.Quartermaster($"Sold for ${price:N0}. Pleasure doing business.");
+                StrikeScreens?.Quartermaster(F("Sold for ${0:N0}. Pleasure doing business.", price));
             }
             else
             {
                 sounds?.Denied();
-                StrikeScreens?.Quartermaster(item == StrikeItem.PhaseShield ? "I only buy undamaged shields." : "I can't buy that from you.", false);
+                StrikeScreens?.Quartermaster(item == StrikeItem.PhaseShield ? T("I only buy undamaged shields.") : T("I can't buy that from you."), false);
             }
             RefreshSupply(item);
         }
@@ -412,13 +413,23 @@ namespace Portfolio.Asteroids
         }
 
 
+        /// <summary>The quartermaster greets again in the language just picked (the Supply Room is open).</summary>
+        private void GreetAgain()
+        {
+            if (StrikeScreens != null && StrikeScreens.IsSupplyOpen)
+            {
+                StrikeScreens.Quartermaster(Greeting());
+            }
+        }
+
+
         private string Greeting()
         {
             if (Pilot.Money < 20000)
             {
-                return "Short on cash? Fly a mission and come back.";
+                return T("Short on cash? Fly a mission and come back.");
             }
-            return Pilot.Energy < StrikeRules.MaxEnergy ? "Welcome back. Want that hull patched up?" : "Welcome back, pilot. What'll it be?";
+            return Pilot.Energy < StrikeRules.MaxEnergy ? T("Welcome back. Want that hull patched up?") : T("Welcome back, pilot. What'll it be?");
         }
 
 
@@ -441,16 +452,16 @@ namespace Portfolio.Asteroids
                 {
                     Index = i,
                     Number = number,
-                    Title = mission.Title,
-                    Description = mission.Description,
+                    Title = T(mission.Title),
+                    Description = T(mission.Description),
                     Sector = mission.Sector,
-                    SectorTitle = sector != null && !string.IsNullOrEmpty(sector.title) ? sector.title : mission.Terrain != null ? mission.Terrain.Title : string.Empty,
+                    SectorTitle = T(sector != null && !string.IsNullOrEmpty(sector.title) ? sector.title : mission.Terrain != null ? mission.Terrain.Title : string.Empty),
                     Accent = accent,
                     Unlocked = IsUnlocked(i),
                     LockReason = LockReason(i),
                     Stars = progress != null ? progress.Stars(i) : 0,
                     BestMoney = progress != null ? progress.BestScore(i) : 0,
-                    BossName = mission.BossPrefab != null ? mission.BossPrefab.DisplayName : string.Empty,
+                    BossName = mission.BossPrefab != null ? T(mission.BossPrefab.DisplayName) : string.Empty,
                     SectorStars = sector != null ? sector.starsRequired : 0
                 });
             }
@@ -675,7 +686,7 @@ namespace Portfolio.Asteroids
             if (low && !shieldLowWarned && IsMissionActive)
             {
                 shieldLowWarned = true;
-                StrikeScreens?.Warn("SHIELD LOW");
+                StrikeScreens?.Warn(T("SHIELD LOW"));
                 sounds?.ShieldLow();
             }
             else if (!low && working.Energy > ShieldLowEnergy + 5f)
@@ -823,7 +834,7 @@ namespace Portfolio.Asteroids
             flyOffTime = 0f;
             landed = false;
             sounds?.SetBossAlarm(false);
-            ui?.Announce("SECTOR SECURED", "Head for home", new Color(0.45f, 1f, 0.6f));
+            ui?.Announce(T("SECTOR SECURED"), T("Head for home"), new Color(0.45f, 1f, 0.6f));
             sounds?.Victory();
             cameraRig?.Pulse(0.6f);
         }
@@ -990,9 +1001,9 @@ namespace Portfolio.Asteroids
 
         private void OnWeaponLost(StrikeItem item)
         {
-            StrikeScreens?.Warn("WEAPON DESTROYED");
+            StrikeScreens?.Warn(T("WEAPON DESTROYED"));
             sounds?.WeaponLost();
-            ui?.Toast($"{StrikeUI.ShortName(item)} LOST", new Color(1f, 0.4f, 0.35f));
+            ui?.Toast(F("{0} LOST", T(StrikeUI.ShortName(item))), new Color(1f, 0.4f, 0.35f));
         }
 
 

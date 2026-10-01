@@ -31,6 +31,7 @@ namespace Portfolio.Heroes
 
         private RoomOptionSpec[] optionSpecs;
         private RoomLevelChoice[] levelChoices;
+        private string levelChoicesLanguage;
 
         public HeroesGameManager Heroes => BaseManager as HeroesGameManager;
 
@@ -44,11 +45,11 @@ namespace Portfolio.Heroes
         {
             get
             {
-                if (levelChoices != null)
+                if (levelChoices != null && levelChoicesLanguage == Gamebox.GameLanguages.Code)
                 {
                     return levelChoices;
                 }
-                var choices = new List<RoomLevelChoice> { new RoomLevelChoice(-1, "Random Map") };
+                var choices = new List<RoomLevelChoice> { new RoomLevelChoice(-1, Words.T("Random Map")) };
                 HeroesCampaign campaign = Heroes != null ? Heroes.Campaign as HeroesCampaign : null;
                 if (campaign == null)
                 {
@@ -60,10 +61,11 @@ namespace Portfolio.Heroes
                     HeroesLevel level = campaign.Scenario(index);
                     if (level != null)
                     {
-                        choices.Add(new RoomLevelChoice(index, level.Title));
+                        choices.Add(new RoomLevelChoice(index, Words.T(level.Title)));
                     }
                 }
                 levelChoices = choices.ToArray();
+                levelChoicesLanguage = Gamebox.GameLanguages.Code;
                 return levelChoices;
             }
         }
@@ -83,8 +85,8 @@ namespace Portfolio.Heroes
         public override string DescribeRoom(RoomInfo room)
         {
             int size = room.Option(SizeOption, 1);
-            string map = room.Level >= 0 ? base.DescribeRoom(room) : SizeLabels[Mathf.Clamp(size, 0, SizeLabels.Length - 1)] + " map";
-            string battles = BattleStyleOf(room) == BattleStyle.Battlefield ? "battlefield" : "battles on the map";
+            string map = room.Level >= 0 ? Words.T(base.DescribeRoom(room)) : Words.F("{0} map", Words.T(SizeLabels[Mathf.Clamp(size, 0, SizeLabels.Length - 1)]));
+            string battles = Words.T(BattleStyleOf(room) == BattleStyle.Battlefield ? "battlefield" : "battles on the map");
             return $"{map}, {battles}";
         }
 

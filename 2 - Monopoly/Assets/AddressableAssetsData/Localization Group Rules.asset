@@ -1,0 +1,61 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 13bc36fb93b17464abde6a5449885f10, type: 3}
+  m_Name: Localization Group Rules
+  m_EditorClassIdentifier: Unity.Localization.Editor::UnityEditor.Localization.Addressables.AddressableGroupRules
+  m_LocaleResolver:
+    rid: 2816985773885882368
+  m_StringTablesResolver:
+    rid: 2816985773885882369
+  m_AssetTablesResolver:
+    rid: 2816985773885882370
+  m_AssetResolver:
+    rid: 2816985773885882371
+  references:
+    version: 2
+    RefIds:
+    - rid: 2816985773885882368
+      type: {class: GroupResolver, ns: UnityEditor.Localization.Addressables, asm: Unity.Localization.Editor}
+      data:
+        m_SharedGroupName: Localization-Monopoly-Locales
+        m_SharedGroup: {fileID: 0}
+        m_LocaleGroupNamePattern: Localization-Monopoly-Locales
+        m_LocaleGroups: []
+        m_MarkEntriesReadOnly: 1
+        m_AlwaysMoveToLocalizationGroup: 0
+    - rid: 2816985773885882369
+      type: {class: GroupResolver, ns: UnityEditor.Localization.Addressables, asm: Unity.Localization.Editor}
+      data:
+        m_SharedGroupName: Localization-Monopoly-Assets-Shared
+        m_SharedGroup: {fileID: 0}
+        m_LocaleGroupNamePattern: Localization-Monopoly-String-Tables-{LocaleName}
+        m_LocaleGroups: []
+        m_MarkEntriesReadOnly: 1
+        m_AlwaysMoveToLocalizationGroup: 0
+    - rid: 2816985773885882370
+      type: {class: GroupResolver, ns: UnityEditor.Localization.Addressables, asm: Unity.Localization.Editor}
+      data:
+        m_SharedGroupName: Localization-Monopoly-Assets-Shared
+        m_SharedGroup: {fileID: 0}
+        m_LocaleGroupNamePattern: Localization-Monopoly-Asset-Tables-{LocaleName}
+        m_LocaleGroups: []
+        m_MarkEntriesReadOnly: 1
+        m_AlwaysMoveToLocalizationGroup: 0
+    - rid: 2816985773885882371
+      type: {class: GroupResolver, ns: UnityEditor.Localization.Addressables, asm: Unity.Localization.Editor}
+      data:
+        m_SharedGroupName: Localization-Monopoly-Assets-Shared
+        m_SharedGroup: {fileID: 0}
+        m_LocaleGroupNamePattern: Localization-Monopoly-Assets-{LocaleName}
+        m_LocaleGroups: []
+        m_MarkEntriesReadOnly: 1
+        m_AlwaysMoveToLocalizationGroup: 0

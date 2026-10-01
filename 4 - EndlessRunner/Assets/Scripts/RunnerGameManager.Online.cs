@@ -74,6 +74,8 @@ namespace Portfolio.EndlessRunner
         private readonly List<LeavingPiece> leaving = new List<LeavingPiece>();
         private RaceSetup race;
         private bool raceFinished;
+        // The results of a race are on the screen: their standings are written again in another language.
+        private bool raceResultsShown;
         private bool runEnded;
         private int startedRunners;
         private float nextScoreReport;
@@ -200,6 +202,7 @@ namespace Portfolio.EndlessRunner
         private void BeginRace()
         {
             raceFinished = false;
+            raceResultsShown = false;
             runEnded = false;
             startedRunners = racers.Count;
             reportedScore = -1;
@@ -282,6 +285,7 @@ namespace Portfolio.EndlessRunner
             bool wasRacing = race != null;
             race = null;
             raceFinished = false;
+            raceResultsShown = false;
             runEnded = false;
             watchNotice = null;
             if (!wasRacing)
@@ -515,7 +519,7 @@ namespace Portfolio.EndlessRunner
                         RemoveGhost(racer.Seat);
                         if (IsGameRunning)
                         {
-                            ui?.Toast($"{racer.Name} left the race", RacerColor(racer.Slot));
+                            ui?.Toast(RunnerText.F("{0} left the race", racer.Name), RacerColor(racer.Slot));
                         }
                     }
                     continue;
@@ -623,7 +627,7 @@ namespace Portfolio.EndlessRunner
         {
             RunnerGhost ghost = GhostToWatch();
             runnerCamera.Watch(ghost);
-            string notice = "Waiting for the results...";
+            string notice = RunnerText.T("Waiting for the results...");
             if (ghost != null)
             {
                 float z = ghost.transform.position.z;
@@ -633,7 +637,7 @@ namespace Portfolio.EndlessRunner
                 }
                 track.UpdateTrack(z, track.keepBehind, track.keepBehind);
                 UpdateWorld(z);
-                notice = $"Watching {ghost.DisplayName} - the results follow when everybody is done";
+                notice = RunnerText.F("Watching {0} - the results follow when everybody is done", ghost.DisplayName);
             }
             // A last runner's results are there within a moment; no need to announce the wait for them.
             if (phaseTime > 0.75f && notice != watchNotice)
@@ -700,6 +704,20 @@ namespace Portfolio.EndlessRunner
         }
 
 
+        /// <summary>The standings of the race, a line a runner, in the language shown.</summary>
+        private string RaceStandingsText()
+        {
+            var standings = new StringBuilder();
+            foreach (Racer racer in ranking)
+            {
+                standings.Append(standings.Length > 0 ? "\n" : string.Empty).Append(Standings.Line(Mathf.Max(1, racer.Place), racer.Name, racer.Local,
+                    racer.Score.ToString(), Color.Lerp(RacerColor(racer.Slot), Color.white, 0.3f),
+                    RunnerText.SayF("{0:0} m, {1} coins", racer.Distance, racer.Coins)));
+            }
+            return standings.ToString();
+        }
+
+
         private void ShowRaceResults()
         {
             phase = RunPhase.Menu;
@@ -707,12 +725,7 @@ namespace Portfolio.EndlessRunner
             RunnerLevel level = RunnerLevel;
             Racer local = racers.Find(racer => racer.Local);
             int place = local != null && local.Place > 0 ? local.Place : Mathf.Max(1, racers.Count);
-            var standings = new StringBuilder();
-            foreach (Racer racer in ranking)
-            {
-                standings.Append(standings.Length > 0 ? "\n" : string.Empty).Append(Standings.Line(Mathf.Max(1, racer.Place), racer.Name, racer.Local,
-                    racer.Score.ToString(), Color.Lerp(RacerColor(racer.Slot), Color.white, 0.3f), $"{racer.Distance:0} m, {racer.Coins} coins"));
-            }
+            raceResultsShown = true;
             ui?.ShowResults(new RunResult
             {
                 LevelTitle = level != null ? RunnerGameTheme.TitleFor(level) : string.Empty,
@@ -725,7 +738,7 @@ namespace Portfolio.EndlessRunner
                 Place = place,
                 // Whoever left on the way was beaten all the same.
                 Runners = Mathf.Max(startedRunners, racers.Count),
-                Standings = standings.ToString()
+                Standings = RaceStandingsText()
             });
             TransitionState(place == 1 ? BaseGameState.Victory : BaseGameState.GameOver);
         }

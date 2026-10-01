@@ -126,7 +126,7 @@ namespace Portfolio.MemoryCards
                 }
                 if (chip.setsText != null)
                 {
-                    chip.setsText.text = !seat.Playing ? "left the game" : seat.Sets == 1 ? "1 set" : $"{seat.Sets} sets";
+                    chip.setsText.text = !seat.Playing ? MemoryCardsText.T("left the game") : seat.Sets == 1 ? MemoryCardsText.T("1 set") : MemoryCardsText.F("{0} sets", seat.Sets);
                 }
                 bool turn = i == currentSeat;
                 bool clock = turn && secondsLeft >= 0f;

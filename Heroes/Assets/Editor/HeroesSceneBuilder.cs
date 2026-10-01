@@ -73,6 +73,7 @@ namespace Portfolio.Heroes.EditorTools
             GameMenuInstaller.MakeThemed(menu, GameType.Heroes);
             HeroesAssets.SetObject(ui, "titleButton", titleButton);
             SettingsPanel(menu, style);
+            LanguageSupport(menu);
 
             // Online play needs the bindings of the server generated into Scripts/Server; without them the scene is
             // built for a game at one device and the lobby is left out.
@@ -104,6 +105,67 @@ namespace Portfolio.Heroes.EditorTools
             Debug.Log($"Heroes: scene built at {path}.");
         }
 
+
+        /// <summary>
+        /// The languages in the pause menu and the settings panel: the flag button that switches the language beside the
+        /// top right corner of the pause menu's window (the panel itself spans the screen, whose top right corner is the
+        /// date on the bar of the map; inside the window the ribbon of its title takes the top), and
+        /// <see cref="LocalizedTexts"/> on the menu, so its fixed words (the rows of
+        /// the settings, the buttons) follow the language from the game's table. The title screen is built at runtime
+        /// and makes its own flag (UIKit.LanguageFlag); everything else the interface writes is translated by its code.
+        /// </summary>
+        private static void LanguageSupport(GameObject menu)
+        {
+            Transform panel = GameMenuInstaller.FindChild(menu.transform, "MenuPanel");
+            Transform stray = panel != null ? panel.Find(GameMenuInstaller.LanguageButtonName) : null;
+            if (stray != null)
+            {
+                UnityEngine.Object.DestroyImmediate(stray.gameObject);
+            }
+            Transform window = GameMenuInstaller.FindChild(menu.transform, "MenuButtons");
+            if (window != null)
+            {
+                LanguageButton flag = GameMenuInstaller.AddLanguageButton(window, new Vector2(1f, 1f), new Vector2(14f, -6f), 44f);
+                var rect = (RectTransform)flag.transform;
+                rect.pivot = new Vector2(0f, 1f);
+                // The window lays its buttons out in a column; the flag stands outside it.
+                LayoutElement free = flag.GetComponent<LayoutElement>() ?? flag.gameObject.AddComponent<LayoutElement>();
+                free.ignoreLayout = true;
+            }
+            GameMenuInstaller.LocalizeTexts(menu);
+        }
+
+        /// <summary>Gives the scene as it was built the language support of <see cref="LanguageSupport"/>, and saves it.</summary>
+        [MenuItem("Heroes/Add Language Support To Scene", false, 24)]
+        public static void AddLanguageSupport()
+        {
+            Scene scene = EditorSceneManager.OpenScene(HeroesAssets.Path(ScenePath), OpenSceneMode.Single);
+            GameObject menu = GameMenuInstaller.FindRoot(scene, GameMenuInstaller.MenuObjectName);
+            if (menu == null)
+            {
+                Debug.LogError("Heroes: the scene has no menu to give the languages to.");
+                return;
+            }
+            LanguageSupport(menu);
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            Debug.Log("Heroes: language button and localized texts in the scene's menu.");
+        }
+
+        /// <summary>Batch mode: <see cref="AddLanguageSupport"/>.</summary>
+        public static void AddLanguageSupportFromCommandLine()
+        {
+            try
+            {
+                AddLanguageSupport();
+                EditorApplication.Exit(0);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+                EditorApplication.Exit(1);
+            }
+        }
 
         /// <summary>
         /// The card of the game in the launcher: what it is called, what it is, and the scene that starts it. It also

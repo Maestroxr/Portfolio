@@ -298,14 +298,15 @@ namespace Portfolio.Heroes.UI
                 if (amountTargets[i] != amount || amounts[i].text.Length == 0)
                 {
                     amountTargets[i] = amount;
-                    amountTips[i].Text = $"{amount:N0} in the treasury." + (i == 0 ? $"\nYour towns bring {Income(viewer)} a day." : "");
+                    amountTips[i].Text = Words.F("{0} in the treasury.", amount.ToString("N0")) +
+                        (i == 0 ? "\n" + Words.F("Your towns bring {0} a day.", Income(viewer)) : "");
                 }
             }
-            date.text = $"Month {state.Month}, Week {state.WeekOfMonth}, Day {state.DayOfWeek}";
+            date.text = Words.F("Month {0}, Week {1}, Day {2}", state.Month, state.WeekOfMonth, state.DayOfWeek);
             PlayerState current = state.Player(state.currentPlayer);
             bool mine = current != null && current.index == manager.Viewer;
             turnPennant.color = HeroesArt.PlayerColor(current != null ? (int)current.color : 4);
-            turn.text = current == null ? "" : mine ? "Your turn" : $"{current.name} {(busy ? "moves" : "thinks")}";
+            turn.text = current == null ? "" : mine ? Words.T("Your turn") : Words.F(busy ? "{0} moves" : "{0} thinks", Words.Name(current.name));
             turn.color = mine ? UIKit.Good : UIKit.Ink;
 
             Lists(viewer);
@@ -484,7 +485,9 @@ namespace Portfolio.Heroes.UI
 
         public void Log(string text, Color color)
         {
-            TextMeshProUGUI line = UIKit.Label(logContent, "Line", text, 20f, color);
+            TextMeshProUGUI line = UIKit.Label(logContent, "Line", "", 20f, color);
+            // The lines of the rules are English: written in the language shown, and again when it changes.
+            TranslatedLabel.Write(line, text, true);
             Fold(line, logOpen);
             var element = line.gameObject.AddComponent<LayoutElement>();
             element.minHeight = LogLine;

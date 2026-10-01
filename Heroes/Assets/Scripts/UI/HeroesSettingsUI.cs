@@ -26,6 +26,60 @@ namespace Portfolio.Heroes.UI
         [SerializeField] private Toggle edgeScroll;
         [SerializeField] private Toggle autoSave;
 
+        /// <summary>The English names of the values of the choice and the named sliders, as the scene builder gave them.</summary>
+        private string[] battleNames;
+        private readonly System.Collections.Generic.Dictionary<SliderValueLabel, string[]> sliderNames =
+            new System.Collections.Generic.Dictionary<SliderValueLabel, string[]>();
+
+        private static readonly System.Reflection.FieldInfo NamesField =
+            typeof(SliderValueLabel).GetField("names", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        private static readonly System.Reflection.FieldInfo ShownField =
+            typeof(SliderValueLabel).GetField("shown", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+
+        private void Start()
+        {
+            TranslateValueNames();
+        }
+
+        /// <summary>The language changed: the value names of the rows are written in it too.</summary>
+        public override void RefreshTexts()
+        {
+            base.RefreshTexts();
+            TranslateValueNames();
+        }
+
+        /// <summary>
+        /// The names the rows show for their values (Small, Normal, On a battlefield...) are written by the shared
+        /// components from what the scene holds, in English: they get the names in the language shown instead.
+        /// </summary>
+        private void TranslateValueNames()
+        {
+            if (battles != null)
+            {
+                battleNames ??= battles.Options;
+                battles.Options = System.Array.ConvertAll(battleNames, Words.T);
+            }
+            if (NamesField == null)
+            {
+                return;
+            }
+            foreach (SliderValueLabel label in GetComponentsInChildren<SliderValueLabel>(true))
+            {
+                if (!sliderNames.TryGetValue(label, out string[] english))
+                {
+                    english = NamesField.GetValue(label) as string[];
+                    sliderNames[label] = english;
+                }
+                if (english == null || english.Length == 0)
+                {
+                    continue;
+                }
+                NamesField.SetValue(label, System.Array.ConvertAll(english, Words.T));
+                // Written again on its next frame.
+                ShownField?.SetValue(label, float.NaN);
+            }
+        }
+
         public override void UpdateFromSettings(IGameSettings settings)
         {
             if (settings is not HeroesSettings heroes)
@@ -116,7 +170,7 @@ namespace Portfolio.Heroes.UI
             {
                 return;
             }
-            CustomSettingsButtonText.text = usingDefault ? "Use My Settings" : "Use the Defaults";
+            CustomSettingsButtonText.text = Words.T(usingDefault ? "Use My Settings" : "Use the Defaults");
             CustomSettingsButtonText.color = usingDefault ? UIKit.Gold : UIKit.Ink;
         }
 

@@ -70,7 +70,7 @@ namespace Portfolio.MemoryCards
             }
             if (subtitle != null)
             {
-                subtitle.text = world.Unlocked ? (world.MaxStars > 0 ? $"{world.Stars}/{world.MaxStars}" : "Bonus") : $"{world.StarsRequired} needed";
+                subtitle.text = world.Unlocked ? (world.MaxStars > 0 ? $"{world.Stars}/{world.MaxStars}" : MemoryCardsText.T("Bonus")) : MemoryCardsText.F("{0} needed", world.StarsRequired);
                 Color words = isSelected && world.Unlocked ? textSelected : textColor;
                 subtitle.color = new Color(words.r, words.g, words.b, 0.9f);
             }

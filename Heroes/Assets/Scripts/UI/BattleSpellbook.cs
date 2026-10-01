@@ -68,7 +68,7 @@ namespace Portfolio.Heroes.UI
                 Destroy(grid.GetChild(i).gameObject);
             }
             int most = game != null ? game.MaxMana(hero) : hero.mana;
-            heading.text = $"{hero.Name}   <sprite name=\"mana\"> {hero.mana} / {most} spell points";
+            heading.text = $"{Words.Name(hero.Name)}   <sprite name=\"mana\"> {Words.F("{0} / {1} spell points", hero.mana, most)}";
             string reason = null;
             foreach (int id in hero.spells)
             {
@@ -86,8 +86,8 @@ namespace Portfolio.Heroes.UI
                 reason = reason ?? cannot;
                 Card(spell, def, cannot);
             }
-            hint.text = hero.spells.Count == 0 ? "The hero knows no spells." :
-                reason == "One spell a round." ? "A hero casts one spell a round." : "Pick a spell, then its target on the field.";
+            hint.text = Words.T(hero.spells.Count == 0 ? "The hero knows no spells." :
+                reason == "One spell a round." ? "A hero casts one spell a round." : "Pick a spell, then its target on the field.");
             gameObject.SetActive(true);
             transform.SetAsLastSibling();
         }
@@ -111,7 +111,8 @@ namespace Portfolio.Heroes.UI
             UIKit.Pin((RectTransform)name.transform, new Vector2(0f, 1f), new Vector2(84f, -14f), new Vector2(120f, 34f));
             TextMeshProUGUI cost = UIKit.Label(card, "Cost", $"<sprite name=\"mana\"> {def.Cost}", 19f, can ? UIKit.Gold : UIKit.Dim, TextAlignmentOptions.BottomLeft);
             UIKit.Pin((RectTransform)cost.transform, new Vector2(0f, 0f), new Vector2(84f, 12f), new Vector2(120f, 26f));
-            Tooltip.Attach(button.gameObject, $"{def.Name}, level {def.Level}\n{def.Description}{(can ? "" : $"\n<color=#E08070>{cannot}</color>")}");
+            Tooltip.Attach(button.gameObject, Words.F("{0}, level {1}", Words.T(def.Name), def.Level) + "\n" + Words.T(def.Description) +
+                (can ? "" : $"\n<color=#E08070>{Words.Sentence(cannot)}</color>"));
         }
 
         public void Close()

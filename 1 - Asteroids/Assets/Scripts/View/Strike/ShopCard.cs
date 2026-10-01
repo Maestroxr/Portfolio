@@ -2,6 +2,7 @@ using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using static Portfolio.Asteroids.AsteroidsText;
 
 namespace Portfolio.Asteroids
 {
@@ -47,12 +48,12 @@ namespace Portfolio.Asteroids
             }
             if (title != null)
             {
-                title.text = info.Title;
+                title.text = T(info.Title);
             }
             if (price != null)
             {
                 // No price now: the energy is full, or the ship carries as many as it can.
-                price.text = currentPrice > 0 ? $"${currentPrice:N0}" : "FULL";
+                price.text = currentPrice > 0 ? $"${currentPrice:N0}" : T("FULL");
             }
             if (owned != null)
             {
@@ -81,7 +82,7 @@ namespace Portfolio.Asteroids
             {
                 return info.Max > 1 ? $"0 / {info.Max}" : string.Empty;
             }
-            return info.Max > 1 ? $"{count} / {info.Max}" : "OWNED";
+            return info.Max > 1 ? $"{count} / {info.Max}" : T("OWNED");
         }
     }
 }

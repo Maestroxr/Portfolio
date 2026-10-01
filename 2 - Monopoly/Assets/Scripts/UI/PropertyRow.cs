@@ -43,9 +43,10 @@ namespace Portfolio.Monopoly
             SpaceData data = match.Space(space);
             DeedState deed = match.Deed(space);
             colorBar.color = MonopolyStyle.GroupColor(data.group);
-            nameText.text = data.name;
-            string buildings = deed.houses == MonopolyMatch.Hotel ? $"{Icons.Hotel} Hotel" : deed.houses > 0 ? Repeat(Icons.House, deed.houses) : "";
-            string rent = deed.mortgaged ? $"<color={MonopolyStyle.RedTag}>Mortgaged</color>" : $"Rent {MonopolyStyle.Money(match.Rent(space, 7))}" + (data.kind == SpaceKind.Utility ? " (at a 7)" : "");
+            nameText.text = MonopolyStyle.SpaceName(data);
+            string buildings = deed.houses == MonopolyMatch.Hotel ? $"{Icons.Hotel} {L.T("Hotel")}" : deed.houses > 0 ? Repeat(Icons.House, deed.houses) : "";
+            string rent = deed.mortgaged ? $"<color={MonopolyStyle.RedTag}>{L.T("Mortgaged")}</color>"
+                : data.kind == SpaceKind.Utility ? L.F("Rent {0} (at a 7)", MonopolyStyle.Money(match.Rent(space, 7))) : L.F("Rent {0}", MonopolyStyle.Money(match.Rent(space, 7)));
             stateText.text = string.IsNullOrEmpty(buildings) ? rent : $"{buildings}   {rent}";
             if (background != null)
             {
@@ -67,19 +68,19 @@ namespace Portfolio.Monopoly
                 {
                     buildIcon.text = hotelNext ? Icons.Hotel : Icons.House;
                 }
-                sellLabel.text = $"Sell +{MonopolyStyle.Money(data.houseCost / 2)}";
+                sellLabel.text = L.F("Sell +{0}", MonopolyStyle.Money(data.houseCost / 2));
             }
             if (deed.mortgaged)
             {
                 bool can = match.CanUnmortgage(seat, space, out _);
                 mortgageButton.interactable = can;
-                mortgageLabel.text = $"Lift {MonopolyStyle.Money(data.UnmortgageCost)}";
+                mortgageLabel.text = L.F("Lift {0}", MonopolyStyle.Money(data.UnmortgageCost));
             }
             else
             {
                 bool can = match.CanMortgage(seat, space, out _);
                 mortgageButton.interactable = can;
-                mortgageLabel.text = $"Mortgage +{MonopolyStyle.Money(data.MortgageValue)}";
+                mortgageLabel.text = L.F("Mortgage +{0}", MonopolyStyle.Money(data.MortgageValue));
             }
         }
 

@@ -1,5 +1,6 @@
 using Gamebox.Online;
 using UnityEngine;
+using static Portfolio.Asteroids.AsteroidsText;
 
 namespace Portfolio.Asteroids
 {
@@ -78,13 +79,13 @@ namespace Portfolio.Asteroids
         {
             if (mission == null)
             {
-                return $"Mission {number}";
+                return F("Mission {0}", number);
             }
             if (mission.Mode == MissionMode.Strike)
             {
-                return $"Strike {number}. {mission.Title}";
+                return F("Strike {0}. {1}", number, T(mission.Title));
             }
-            return mission.IsEndless ? $"{mission.Title} (endless)" : $"{number}. {mission.Title}";
+            return mission.IsEndless ? F("{0} (endless)", T(mission.Title)) : $"{number}. {T(mission.Title)}";
         }
 
         /// <summary>The colour of a seat: the halo of the ship, its name and its line on the HUD.</summary>

@@ -102,6 +102,7 @@ namespace Portfolio.MemoryCards.EditorTools
             BuildMenu(root, ui, manager, controller, canvas.GetComponent<CanvasScaler>());
             ui.curtain = Image(root, "Curtain", null, new Color(1f, 1f, 1f, 0f), Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero);
             StretchRect(ui.curtain.rectTransform);
+            LocalizeCanvas(canvas);
 
             ui.starFull = look.Hud.starFull;
             ui.starEmpty = look.Hud.starEmpty;
@@ -422,6 +423,38 @@ namespace Portfolio.MemoryCards.EditorTools
                 new Vector2(0.5f, 0f), new Vector2(-908f, 14f), new Vector2(190f, 94f), 28f, ButtonTextKey, out _);
             ui.titleSettingsButton = RoundButton(root, "Settings", "kit.roundSecondary", "icons.settings", ButtonTextKey, new Vector2(1f, 0f), new Vector2(-190f, 70f), 104f);
             ui.titleExitButton = RoundButton(root, "Exit", "kit.roundDanger", "icons.power", ButtonTextKey, new Vector2(1f, 0f), new Vector2(-68f, 70f), 104f);
+
+            // The language flag in the top right corner, clear of the title's figures on every screen shape.
+            GameMenuInstaller.AddLanguageButton(root, new Vector2(1f, 1f), new Vector2(-24f, -24f), 48f);
+        }
+
+        /// <summary>
+        /// The fixed words of the canvas (button labels, captions, the titles of the panels) follow the language through a
+        /// <see cref="LocalizedTexts"/> on it; the texts a component of the canvas refers to are written by code, which
+        /// translates them itself, so they are left out.
+        /// </summary>
+        private static void LocalizeCanvas(Canvas canvas)
+        {
+            LocalizedTexts texts = GameMenuInstaller.LocalizeTexts(canvas.gameObject);
+            texts.Ignored.Clear();
+            foreach (MonoBehaviour behaviour in canvas.GetComponentsInChildren<MonoBehaviour>(true))
+            {
+                if (behaviour == null || behaviour is LocalizedTexts || behaviour is TMP_Text)
+                {
+                    continue;
+                }
+                var serialized = new SerializedObject(behaviour);
+                SerializedProperty property = serialized.GetIterator();
+                while (property.Next(true))
+                {
+                    if (property.propertyType == SerializedPropertyType.ObjectReference && property.objectReferenceValue is TMP_Text written
+                        && written.transform.IsChildOf(canvas.transform) && !texts.Ignored.Contains(written))
+                    {
+                        texts.Ignored.Add(written);
+                    }
+                }
+            }
+            EditorUtility.SetDirty(texts);
         }
 
         /// <summary>A figure of the theme beside the title; the interface swaps it when the theme changes.</summary>
@@ -847,6 +880,8 @@ namespace Portfolio.MemoryCards.EditorTools
             }
             created["LoadGame"].interactable = false;
             ui.levelSelectButton = created["LevelSelect"];
+            // The language flag at the foot of the pause panel, under its buttons.
+            GameMenuInstaller.AddLanguageButton(pause, new Vector2(0.5f, 0f), new Vector2(0f, 22f), 48f);
             TextMeshProUGUI error = Text(root, "ErrorText", string.Empty, 30f, LightKey, TextAlignmentOptions.Center, new Vector2(0.5f, 0f), Center, new Vector2(0f, 128f), new Vector2(1400f, 60f), OutlineKey);
             error.raycastTarget = false;
 

@@ -201,6 +201,20 @@ namespace Portfolio.EndlessRunner
         }
 
 
+        /// <summary>
+        /// The language changed: the interface wrote its screens again (RunnerUI.RefreshTexts); the standings of a
+        /// race's results are written here, where the racers are.
+        /// </summary>
+        protected override void OnLanguageChanged()
+        {
+            base.OnLanguageChanged();
+            if (raceResultsShown)
+            {
+                ui?.UpdateStandings(RaceStandingsText());
+            }
+        }
+
+
         private void ApplyLook(RunnerGameTheme look)
         {
             if (look == null)
@@ -368,7 +382,7 @@ namespace Portfolio.EndlessRunner
             RunnerLevel level = RunnerLevel;
             if (level == null || (!level.IsEndless && !progress.IsUnlocked(LevelIndex)))
             {
-                UI?.UpdateError("Finish the previous level to unlock this one.");
+                UI?.UpdateError(RunnerText.T("Finish the previous level to unlock this one."));
                 return;
             }
             sounds?.Play(sounds.click);
@@ -490,7 +504,7 @@ namespace Portfolio.EndlessRunner
             RunnerLevel level = RunnerLevel;
             if (level == null || runner == null || track == null)
             {
-                UI?.UpdateError("The Endless Runner scene is missing its level, runner or track.");
+                UI?.UpdateError(RunnerText.T("The Endless Runner scene is missing its level, runner or track."));
                 return;
             }
             ApplySettings();
@@ -585,7 +599,7 @@ namespace Portfolio.EndlessRunner
             {
                 return;
             }
-            ui?.ShowCountdown(label);
+            ui?.ShowCountdown(label == Countdown.GoLabel ? RunnerText.T(Countdown.GoLabel) : label);
             if (!countdown.IsDone)
             {
                 sounds?.Play(sounds.countdown, 0.8f);
@@ -616,7 +630,7 @@ namespace Portfolio.EndlessRunner
             {
                 recordAnnounced = true;
                 RunnerGameTheme look = ThemeAs<RunnerGameTheme>();
-                ui?.Toast("NEW RECORD!", look != null ? look.Colors.accent : new Color(1f, 0.85f, 0.2f));
+                ui?.Toast(RunnerText.T("NEW RECORD!"), look != null ? look.Colors.accent : new Color(1f, 0.85f, 0.2f));
                 sounds?.Play(sounds.star);
             }
             if (z >= track.FinishZ)
@@ -758,7 +772,7 @@ namespace Portfolio.EndlessRunner
             if (themes != null && theme != null && theme != themes.Theme)
             {
                 themes.Apply(theme, false);
-                ui?.Toast($"Welcome to {theme.displayName}!", theme.accent);
+                ui?.Toast(RunnerText.SayF("Welcome to {0}!", RunnerText.T(theme.displayName)), theme.accent);
             }
         }
 
@@ -772,7 +786,7 @@ namespace Portfolio.EndlessRunner
             effects?.Confetti(runner.transform.position + new Vector3(0f, 5f, 6f));
             sounds?.StopMusic();
             sounds?.Play(sounds.victory);
-            ui?.ShowCountdown("FINISH!");
+            ui?.ShowCountdown(RunnerText.T("FINISH!"));
             ClearPowerUps();
         }
 
@@ -881,7 +895,7 @@ namespace Portfolio.EndlessRunner
             Color color = PowerUpColor(pickup.Type);
             effects?.PowerUp(pickup.transform.position, color);
             sounds?.Play(sounds.powerUp);
-            ui?.Toast($"{PowerUps.Title(pickup.Type)}!\n<size=60%>{PowerUps.Description(pickup.Type)}</size>", color);
+            ui?.Toast($"{RunnerText.Say(PowerUps.Title(pickup.Type))}!\n<size=60%>{RunnerText.Say(PowerUps.Description(pickup.Type))}</size>", color);
             track.Recycle(pickup);
             UpdatePowerUps(0f);
         }
@@ -918,7 +932,7 @@ namespace Portfolio.EndlessRunner
                 effects?.ShieldBreak(runner.transform.position + Vector3.up);
                 sounds?.Play(sounds.shieldBreak);
                 runner.MakeInvulnerable(0.8f);
-                ui?.Toast("Shield saved you!", PowerUpColor(PowerUpType.Shield));
+                ui?.Toast(RunnerText.Say("Shield saved you!"), PowerUpColor(PowerUpType.Shield));
                 UpdatePowerUps(0f);
                 return;
             }
@@ -1046,13 +1060,13 @@ namespace Portfolio.EndlessRunner
 
         public override void SaveGame()
         {
-            UI?.UpdateError("Endless Runner saves your stars and records automatically.");
+            UI?.UpdateError(RunnerText.T("Endless Runner saves your stars and records automatically."));
         }
 
 
         public override void LoadGame()
         {
-            UI?.UpdateError("Endless Runner does not support loading a run.");
+            UI?.UpdateError(RunnerText.T("Endless Runner does not support loading a run."));
         }
     }
 }

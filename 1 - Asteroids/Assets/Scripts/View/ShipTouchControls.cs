@@ -3,6 +3,7 @@ using Gamebox.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using static Portfolio.Asteroids.AsteroidsText;
 
 namespace Portfolio.Asteroids
 {
@@ -90,12 +91,29 @@ namespace Portfolio.Asteroids
             {
                 MakeLabels();
             }
-            SetLabel(dashLabel, strike ? "WEAPON" : "DASH", strike);
-            SetLabel(bombLabel, strike ? "MEGA" : "NOVA", strike);
+            WriteLabels();
             if (dashReady != null)
             {
                 dashReady.enabled = !strike;
             }
+        }
+
+
+        /// <summary>The language changed: the button labels are written again.</summary>
+        public void RefreshTexts()
+        {
+            if (dashLabel != null || bombLabel != null)
+            {
+                WriteLabels();
+            }
+        }
+
+
+        private void WriteLabels()
+        {
+            bool strike = Mode == MissionMode.Strike;
+            SetLabel(dashLabel, strike ? T("WEAPON") : T("DASH"), strike);
+            SetLabel(bombLabel, strike ? T("MEGA") : T("NOVA"), strike);
         }
 
 

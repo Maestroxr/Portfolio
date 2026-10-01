@@ -5,6 +5,8 @@ using Gamebox.Online;
 using Portfolio.Asteroids.Server;
 using SpacetimeDB;
 using UnityEngine;
+using Gamebox;
+using static Portfolio.Asteroids.AsteroidsText;
 
 namespace Portfolio.Asteroids
 {
@@ -30,6 +32,7 @@ namespace Portfolio.Asteroids
 
         private readonly Dictionary<Identity, RemoteShip> ships = new Dictionary<Identity, RemoteShip>();
         private readonly List<RoomLevelChoice> levelChoices = new List<RoomLevelChoice>();
+        private string choicesLanguage;
         private FieldReplication replication;
         private RoomOptionSpec[] optionSpecs;
         private bool missionChanged;
@@ -62,10 +65,13 @@ namespace Portfolio.Asteroids
             get
             {
                 AsteroidsGameManager manager = Asteroids;
-                if (levelChoices.Count > 0 || manager == null)
+                if (levelChoices.Count > 0 && choicesLanguage == GameLanguages.Code || manager == null)
                 {
                     return levelChoices;
                 }
+                // The titles are in the language shown: a new language lists them again.
+                levelChoices.Clear();
+                choicesLanguage = GameLanguages.Code;
                 int number = 0;
                 int strikeNumber = 0;
                 for (int i = 0; i < manager.LevelCount; i++)
@@ -124,13 +130,13 @@ namespace Portfolio.Asteroids
         {
             AsteroidsGameManager manager = Asteroids;
             AsteroidsLevel mission = manager != null && manager.AsteroidsCampaign != null ? manager.AsteroidsCampaign.Mission(room.Level) : null;
-            string title = mission != null ? mission.Title : $"Mission {room.Level + 1}";
+            string title = mission != null ? T(mission.Title) : F("Mission {0}", room.Level + 1);
             if (mission != null && mission.Mode == MissionMode.Strike)
             {
-                return $"Strike: {title}, {CoopRules.DifficultyTitle(CoopRules.Difficulty(room.Options))}";
+                return F("Strike: {0}, {1}", title, T(CoopRules.DifficultyTitle(CoopRules.Difficulty(room.Options))));
             }
             int lives = CoopRules.Lives(room.Options);
-            return $"{title}, {lives} {(lives == 1 ? "ship" : "ships")} each";
+            return lives == 1 ? F("{0}, 1 ship each", title) : F("{0}, {1} ships each", title, lives);
         }
 
 
@@ -213,7 +219,7 @@ namespace Portfolio.Asteroids
             Mission mission = connection != null ? connection.Db.Mission.RoomId.Find(room.Id) : null;
             if (manager == null || replication == null || mission == null || !Server.Identity.HasValue)
             {
-                Report("The mission of the room did not arrive.");
+                Report(T("The mission of the room did not arrive."));
                 return;
             }
             bool simulates = mission.Simulator == Server.Identity.Value;

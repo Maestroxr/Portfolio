@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Gamebox;
 using Gamebox.Editor;
 using Gamebox.UI;
 using TMPro;
@@ -158,6 +159,12 @@ namespace Portfolio.Monopoly.EditorTools
             actions.gameObject.SetActive(false);
             int tagged = MonopolyThemeTagger.TagInterface(canvasObject, classic);
             Debug.Log($"Monopoly interface: {tagged} themed parts.");
+
+            // Languages: the fixed words of every screen follow the language, and the flag that switches it sits in the
+            // top right corner of the title and pause menus (added after the theme tagging, so the flag keeps its colours).
+            GameMenuInstaller.LocalizeTexts(canvasObject, Loc.Table(GameType.Monopoly));
+            RectTransform menuSafe = UIBuildUtils.CreateSafeArea(menu, "LanguageCorner");
+            GameMenuInstaller.AddLanguageButton(menuSafe, new Vector2(1f, 1f), new Vector2(-28f, -24f), 52f);
             return ui;
         }
 

@@ -75,29 +75,30 @@ namespace Portfolio.Monopoly
             }
             if (lotName != null)
             {
-                lotName.text = lot.name.ToUpperInvariant();
+                lotName.text = MonopolyStyle.SpaceName(lot).ToUpperInvariant();
                 lotName.color = lot.kind == SpaceKind.Street ? MonopolyStyle.GroupTextColor(lot.group) : Color.white;
             }
             if (lotPrice != null)
             {
-                lotPrice.text = $"List price {MonopolyStyle.Money(lot.price)}";
+                lotPrice.text = L.F("List price {0}", MonopolyStyle.Money(lot.price));
             }
             if (bidText != null)
             {
-                bidText.text = anyBid ? MonopolyStyle.Money(auction.highBid) : "No bids yet";
+                bidText.text = anyBid ? MonopolyStyle.Money(auction.highBid) : L.T("No bids yet");
             }
             if (leaderText != null)
             {
                 PlayerState leader = anyBid ? match.players[auction.highBidder] : null;
-                leaderText.text = anyBid ? $"{MonopolyStyle.Named(leader)} {MonopolyStyle.Verb(leader, "leads")}" :$"Opening bid {MonopolyStyle.Money(MonopolyMatch.MinimumBid)}";
+                leaderText.text = anyBid ? MonopolyStyle.Say(leader, "{0} leads", $"{MonopolyStyle.Named(leader)} {MonopolyStyle.Verb(leader, "leads")}", MonopolyStyle.Named(leader))
+                    : L.F("Opening bid {0}", MonopolyStyle.Money(MonopolyMatch.MinimumBid));
             }
             int bidder = auction.Bidder;
             if (turnText != null)
             {
                 PlayerState player = bidder >= 0 ? match.players[bidder] : null;
                 turnText.text = player == null ? ""
-                    : human >= 0 ? MonopolyStyle.IsYou(player) ? "Your bid" : $"Your bid, {MonopolyStyle.Named(player)}"
-                    : $"{MonopolyStyle.Named(player)} {MonopolyStyle.Verb(player, "is")} thinking...";
+                    : human >= 0 ? MonopolyStyle.IsYou(player) ? L.T("Your bid") : L.F("Your bid, {0}", MonopolyStyle.Named(player))
+                    : MonopolyStyle.Say(player, "{0} is thinking...", $"{MonopolyStyle.Named(player)} {MonopolyStyle.Verb(player, "is")} thinking...", MonopolyStyle.Named(player));
             }
             for (int i = 0; i < slots.Length; i++)
             {
@@ -113,8 +114,8 @@ namespace Portfolio.Monopoly
                 slot.badge.color = MonopolyStyle.PlayerColor(match.players[i].color);
                 slot.token.sprite = tokens?.Invoke(player.token);
                 slot.token.color = MonopolyStyle.TextOn(slot.badge.color);
-                slot.name.text = player.name;
-                slot.status.text = player.bankrupt ? "Out of the game" : i == auction.highBidder ? "Leading" : inAuction ? (i == bidder ? "Bidding" : "In") : "Passed";
+                slot.name.text = MonopolyStyle.NameOf(player);
+                slot.status.text = player.bankrupt ? L.T("Out of the game") : i == auction.highBidder ? L.T("Leading") : inAuction ? (i == bidder ? L.T("Bidding") : L.T("bidder|In")) : L.T("Passed");
                 slot.status.color = i == auction.highBidder ? MonopolyStyle.Green : inAuction ? MonopolyStyle.Ink : MonopolyStyle.Muted;
                 if (slot.frame != null)
                 {

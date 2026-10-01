@@ -23,7 +23,33 @@ namespace Portfolio.Monopoly
 
         private string Named(int seat)
         {
-            return seat >= 0 && seat < Match.players.Count ? MonopolyStyle.Named(Match.players[seat]) : seat == Party.Pot ? "the Free Parking pot" : "the bank";
+            return seat >= 0 && seat < Match.players.Count ? MonopolyStyle.Named(Match.players[seat]) : seat == Party.Pot ? L.T("the Free Parking pot") : L.T("the bank");
+        }
+
+        /// <summary>The player of a seat, or null for the bank and the pot.</summary>
+        private PlayerState PlayerAt(int seat)
+        {
+            return Match != null && seat >= 0 && seat < Match.players.Count ? Match.players[seat] : null;
+        }
+
+        /// <summary>A space's name in the language shown.</summary>
+        private string SpaceName(int space)
+        {
+            return MonopolyStyle.SpaceName(Match.Space(space));
+        }
+
+        /// <summary>
+        /// A message of the rules engine (always English, the same on every device of an online match) in the language
+        /// shown.
+        /// </summary>
+        private string MessageText(MatchEvent e)
+        {
+            const string richest = "The richest player pays up: ";
+            if (e.text.StartsWith(richest, StringComparison.Ordinal))
+            {
+                return L.F("The richest player pays up: {0}.", Named(e.player));
+            }
+            return L.Data(e.text);
         }
 
         /// <summary>A seat (or the bank or the pot) as the object of a sentence.</summary>
@@ -70,8 +96,8 @@ namespace Portfolio.Monopoly
                         SaveMatch(true);
                         if (HumanCount > 1)
                         {
-                            string whose = IsOnlineMatch && here ? "YOUR" : MonopolyStyle.Possessive(player).ToUpperInvariant();
-                            ui.Banner($"{whose} TURN", PlayerColor(e.player), 0.7f);
+                            bool yours = (IsOnlineMatch && here) || MonopolyStyle.IsYou(player);
+                            ui.Banner(yours ? L.T("YOUR TURN") : L.F("{0}'S TURN", MonopolyStyle.NameOf(player).ToUpperInvariant()), PlayerColor(e.player), 0.7f);
                         }
                     }
                     yield return new WaitForSeconds(Beat(0.2f));
@@ -81,7 +107,7 @@ namespace Portfolio.Monopoly
                     ui.SetMatchInfo(ModeName, e.value, Match.rules.roundLimit);
                     if (Match.rules.roundLimit > 0 && e.value == Match.rules.roundLimit)
                     {
-                        ui.Banner("FINAL ROUND!", MonopolyStyle.Gold, 1f);
+                        ui.Banner(L.T("FINAL ROUND!"), MonopolyStyle.Gold, 1f);
                         yield return new WaitForSeconds(Beat(0.8f));
                     }
                     break;
@@ -89,17 +115,17 @@ namespace Portfolio.Monopoly
                     yield return RollDice(e);
                     break;
                 case MatchEventKind.Doubles:
-                    ui.Banner(e.value >= 2 ? "DOUBLES AGAIN!" : "DOUBLES!", MonopolyStyle.Gold, 0.6f);
+                    ui.Banner(e.value >= 2 ? L.T("DOUBLES AGAIN!") : L.T("DOUBLES!"), MonopolyStyle.Gold, 0.6f);
                     sound?.Play(Sfx.Doubles);
                     yield return new WaitForSeconds(Beat(0.45f));
                     break;
                 case MatchEventKind.Triples:
-                    ui.Banner("TRIPLES! GO ANYWHERE", MonopolyStyle.Gold, 1f);
+                    ui.Banner(L.T("TRIPLES! GO ANYWHERE"), MonopolyStyle.Gold, 1f);
                     sound?.Play(Sfx.Jackpot);
                     yield return new WaitForSeconds(Beat(0.7f));
                     break;
                 case MatchEventKind.SpeedDie:
-                    ui.Banner(e.value == (int)SpeedFace.Bus ? "BUS!" : "MR. MONOPOLY!", e.value == (int)SpeedFace.Bus ? MonopolyStyle.Blue : MonopolyStyle.Red, 0.8f);
+                    ui.Banner(e.value == (int)SpeedFace.Bus ? L.T("BUS!") : L.T("MR. MONOPOLY!"), e.value == (int)SpeedFace.Bus ? MonopolyStyle.Blue : MonopolyStyle.Red, 0.8f);
                     sound?.Play(Sfx.Whoosh);
                     yield return new WaitForSeconds(Beat(0.55f));
                     break;
@@ -107,18 +133,18 @@ namespace Portfolio.Monopoly
                     yield return MoveToken(e.player, e.from, e.space, e.value);
                     break;
                 case MatchEventKind.WentToJail:
-                    ui.Banner("GO TO JAIL!", MonopolyStyle.Plate, 0.9f);
+                    ui.Banner(L.T("GO TO JAIL!"), MonopolyStyle.Plate, 0.9f);
                     sound?.Play(Sfx.Jail);
                     yield return JailToken(e.player);
-                    ui.Toast($"{Named(e.player)} {Verb(e.player, "goes")} to jail.", MonopolyStyle.Ink, Icons.Lock);
+                    ui.Toast(MonopolyStyle.Say(PlayerAt(e.player), "{0} goes to jail.", $"{Named(e.player)} {Verb(e.player, "goes")} to jail.", Named(e.player)), MonopolyStyle.Ink, Icons.Lock);
                     break;
                 case MatchEventKind.PassedGo:
                     ui.Floating.AtWorld($"+{MonopolyStyle.Money(e.value)}", MonopolyStyle.Green, board.Center(0) + Vector3.up * 0.4f);
                     if (!string.IsNullOrEmpty(e.text))
                     {
-                        ui.Banner("DOUBLE SALARY!", MonopolyStyle.Green, 0.8f);
+                        ui.Banner(L.T("DOUBLE SALARY!"), MonopolyStyle.Green, 0.8f);
                     }
-                    ui.Toast($"{Named(e.player)} {Verb(e.player, "collects")} {MonopolyStyle.Money(e.value)} salary.", MonopolyStyle.Green, Icons.Coins);
+                    ui.Toast(MonopolyStyle.Say(PlayerAt(e.player), "{0} collects {1} salary.", $"{Named(e.player)} {Verb(e.player, "collects")} {MonopolyStyle.Money(e.value)} salary.", Named(e.player), MonopolyStyle.Money(e.value)), MonopolyStyle.Green, Icons.Coins);
                     break;
                 case MatchEventKind.Landed:
                     FlashSpace(e.space);
@@ -142,11 +168,13 @@ namespace Portfolio.Monopoly
                     if (auction)
                     {
                         ui.Auction.Close();
-                        ui.Banner("SOLD!", PlayerColor(e.player), 0.7f);
+                        ui.Banner(L.T("SOLD!"), PlayerColor(e.player), 0.7f);
                         sound?.Play(Sfx.Gavel);
                     }
                     sound?.Play(Sfx.Buy);
-                    ui.Toast($"{Named(e.player)} {Verb(e.player, auction ? "wins" : "buys")} {Match.Space(e.space).name} for {MonopolyStyle.Money(e.value)}.", PlayerColor(e.player), Icons.House);
+                    ui.Toast(MonopolyStyle.Say(PlayerAt(e.player), auction ? "{0} wins {1} for {2}." : "{0} buys {1} for {2}.",
+                        $"{Named(e.player)} {Verb(e.player, auction ? "wins" : "buys")} {Match.Space(e.space).name} for {MonopolyStyle.Money(e.value)}.",
+                        Named(e.player), SpaceName(e.space), MonopolyStyle.Money(e.value)), PlayerColor(e.player), Icons.House);
                     yield return new WaitForSeconds(Beat(0.35f));
                     break;
                 }
@@ -156,16 +184,20 @@ namespace Portfolio.Monopoly
                     yield return new WaitForSeconds(Beat(0.12f));
                     break;
                 case MatchEventKind.Rent:
-                    ui.Floating.AtWorld($"RENT {MonopolyStyle.Money(e.value)}", MonopolyStyle.Red, board.Center(e.space) + Vector3.up * 0.5f);
-                    ui.Toast($"{Named(e.player)} {Verb(e.player, "pays")} {NamedObject(e.other)} {MonopolyStyle.Money(e.value)} rent for {Match.Space(e.space).name}.", PlayerColor(e.other), Icons.Coins);
+                    ui.Floating.AtWorld(L.F("RENT {0}", MonopolyStyle.Money(e.value)), MonopolyStyle.Red, board.Center(e.space) + Vector3.up * 0.5f);
+                    ui.Toast(MonopolyStyle.SayTo(PlayerAt(e.player), PlayerAt(e.other), "{0} pays {1} {2} rent for {3}.",
+                        $"{Named(e.player)} {Verb(e.player, "pays")} {NamedObject(e.other)} {MonopolyStyle.Money(e.value)} rent for {Match.Space(e.space).name}.",
+                        Named(e.player), Named(e.other), MonopolyStyle.Money(e.value), SpaceName(e.space)), PlayerColor(e.other), Icons.Coins);
                     yield return new WaitForSeconds(Beat(0.25f));
                     break;
                 case MatchEventKind.NoRent:
-                    ui.Toast(e.value == 1 ? $"{Named(e.other)} {Verb(e.other, "is")} in jail: no rent!" : $"{Match.Space(e.space).name} is mortgaged: no rent.", MonopolyStyle.Muted, Icons.Info);
+                    ui.Toast(e.value == 1 ? MonopolyStyle.Say(PlayerAt(e.other), "{0} is in jail: no rent!", $"{Named(e.other)} {Verb(e.other, "is")} in jail: no rent!", Named(e.other))
+                        : L.F("{0} is mortgaged: no rent.", SpaceName(e.space)), MonopolyStyle.Muted, Icons.Info);
                     break;
                 case MatchEventKind.Tax:
                     ui.Floating.AtWorld($"-{MonopolyStyle.Money(e.value)}", MonopolyStyle.Red, board.Center(e.space) + Vector3.up * 0.5f);
-                    ui.Toast($"{Named(e.player)} {Verb(e.player, "pays")} {Match.Space(e.space).name}:{MonopolyStyle.Money(e.value)}.", MonopolyStyle.Ink, Icons.MoneyBag);
+                    ui.Toast(MonopolyStyle.Say(PlayerAt(e.player), "{0} pays {1}: {2}.", $"{Named(e.player)} {Verb(e.player, "pays")} {Match.Space(e.space).name}:{MonopolyStyle.Money(e.value)}.",
+                        Named(e.player), SpaceName(e.space), MonopolyStyle.Money(e.value)), MonopolyStyle.Ink, Icons.MoneyBag);
                     break;
                 case MatchEventKind.CardDrawn:
                 {
@@ -185,25 +217,31 @@ namespace Portfolio.Monopoly
                         : e.value == 1 ? $"{Verb(who, "pays")} the fine and {Verb(who, "leaves")} jail"
                         : e.value == 2 ? $"{Verb(who, "uses")} a Get Out of Jail Free card"
                         : $"{Verb(who, "pays")} the fine after three tries";
-                    ui.Toast($"{Named(e.player)} {how}.", MonopolyStyle.Green, Icons.Lock);
+                    string howKey = e.value == 0 ? "{0} rolls doubles and walks out of jail."
+                        : e.value == 1 ? "{0} pays the fine and leaves jail."
+                        : e.value == 2 ? "{0} uses a Get Out of Jail Free card."
+                        : "{0} pays the fine after three tries.";
+                    ui.Toast(MonopolyStyle.Say(PlayerAt(who), howKey, $"{Named(e.player)} {how}.", Named(e.player)), MonopolyStyle.Green, Icons.Lock);
                     shownJailed[e.player] = false;
                     ArrangeSpace(Match.Board.JailIndex, true);
                     yield return new WaitForSeconds(Beat(0.3f));
                     break;
                 }
                 case MatchEventKind.StayedInJail:
-                    ui.Toast($"No doubles: {Named(e.player)} {Verb(e.player, "stays")} in jail.",MonopolyStyle.Ink, Icons.Lock);
+                    ui.Toast(MonopolyStyle.Say(PlayerAt(e.player), "No doubles: {0} stays in jail.", $"No doubles: {Named(e.player)} {Verb(e.player, "stays")} in jail.", Named(e.player)),MonopolyStyle.Ink, Icons.Lock);
                     sound?.Play(Sfx.Error, 0.5f);
                     break;
                 case MatchEventKind.JailCardGained:
-                    ui.Toast($"{Named(e.player)} {Verb(e.player, e.other >= 0 ? "receives" : "keeps")} a Get Out of Jail Free card.", MonopolyStyle.Gold, Icons.Ticket);
+                    ui.Toast(MonopolyStyle.Say(PlayerAt(e.player), e.other >= 0 ? "{0} receives a Get Out of Jail Free card." : "{0} keeps a Get Out of Jail Free card.",
+                        $"{Named(e.player)} {Verb(e.player, e.other >= 0 ? "receives" : "keeps")} a Get Out of Jail Free card.", Named(e.player)), MonopolyStyle.Gold, Icons.Ticket);
                     break;
                 case MatchEventKind.Built:
                     board.SetBuildings(e.space, e.value, true);
                     sound?.Play(Sfx.Build);
                     ui.Toast(e.text == "free"
-                        ? $"Free upgrade for {NamedObject(e.player)} on {Match.Space(e.space).name}!"
-                        : $"{Named(e.player)} {Verb(e.player, "builds")} {(e.value == MonopolyMatch.Hotel ? "a hotel" : "a house")} on {Match.Space(e.space).name}.", PlayerColor(e.player), e.value == MonopolyMatch.Hotel ? Icons.Hotel : Icons.House);
+                        ? MonopolyStyle.Say(PlayerAt(e.player), "Free upgrade for {0} on {1}!", $"Free upgrade for {NamedObject(e.player)} on {Match.Space(e.space).name}!", Named(e.player), SpaceName(e.space))
+                        : MonopolyStyle.Say(PlayerAt(e.player), e.value == MonopolyMatch.Hotel ? "{0} builds a hotel on {1}." : "{0} builds a house on {1}.",
+                            $"{Named(e.player)} {Verb(e.player, "builds")} {(e.value == MonopolyMatch.Hotel ? "a hotel" : "a house")} on {Match.Space(e.space).name}.", Named(e.player), SpaceName(e.space)), PlayerColor(e.player), e.value == MonopolyMatch.Hotel ? Icons.Hotel : Icons.House);
                     ui.Manage.Refresh();
                     yield return new WaitForSeconds(Beat(0.3f));
                     break;
@@ -216,19 +254,19 @@ namespace Portfolio.Monopoly
                 case MatchEventKind.Mortgaged:
                     board.SetMortgaged(e.space, true);
                     sound?.Play(Sfx.Mortgage);
-                    ui.Toast($"{Named(e.player)} {Verb(e.player, "mortgages")} {Match.Space(e.space).name}.", MonopolyStyle.Muted, Icons.Mortgage);
+                    ui.Toast(MonopolyStyle.Say(PlayerAt(e.player), "{0} mortgages {1}.", $"{Named(e.player)} {Verb(e.player, "mortgages")} {Match.Space(e.space).name}.", Named(e.player), SpaceName(e.space)), MonopolyStyle.Muted, Icons.Mortgage);
                     ui.Manage.Refresh();
                     break;
                 case MatchEventKind.Unmortgaged:
                     board.SetMortgaged(e.space, false);
                     sound?.Play(Sfx.Mortgage);
-                    ui.Toast($"{Named(e.player)} {Verb(e.player, "lifts")} the mortgage on {Match.Space(e.space).name}.", MonopolyStyle.Green, Icons.Mortgage);
+                    ui.Toast(MonopolyStyle.Say(PlayerAt(e.player), "{0} lifts the mortgage on {1}.", $"{Named(e.player)} {Verb(e.player, "lifts")} the mortgage on {Match.Space(e.space).name}.", Named(e.player), SpaceName(e.space)), MonopolyStyle.Green, Icons.Mortgage);
                     ui.Manage.Refresh();
                     break;
                 case MatchEventKind.AuctionStarted:
                     ui.Deed.Close();
                     sound?.Play(Sfx.Gavel);
-                    ui.Toast($"{Match.Space(e.space).name} goes to auction.", MonopolyStyle.ChanceOrange, Icons.Gavel);
+                    ui.Toast(L.F("{0} goes to auction.", SpaceName(e.space)), MonopolyStyle.ChanceOrange, Icons.Gavel);
                     if (Match.auction.Running)
                     {
                         ui.Auction.Refresh(Match, ui.TokenSprite, -1, null, null);
@@ -253,11 +291,11 @@ namespace Portfolio.Monopoly
                     break;
                 case MatchEventKind.AuctionUnsold:
                     ui.Auction.Close();
-                    ui.Toast($"Nobody bids: {Match.Space(e.space).name} stays with the bank.", MonopolyStyle.Muted, Icons.Gavel);
+                    ui.Toast(L.F("Nobody bids: {0} stays with the bank.", SpaceName(e.space)), MonopolyStyle.Muted, Icons.Gavel);
                     break;
                 case MatchEventKind.Traded:
                     sound?.Play(Sfx.Trade);
-                    ui.Toast($"{Named(e.player)} and {NamedObject(e.other)} make a deal.", MonopolyStyle.Green, Icons.Handshake);
+                    ui.Toast(MonopolyStyle.SayTo(PlayerAt(e.player), PlayerAt(e.other), "{0} and {1} make a deal.", $"{Named(e.player)} and {NamedObject(e.other)} make a deal.", Named(e.player), Named(e.other)), MonopolyStyle.Green, Icons.Handshake);
                     yield return new WaitForSeconds(Beat(0.4f));
                     break;
                 case MatchEventKind.OwnerChanged:
@@ -269,17 +307,20 @@ namespace Portfolio.Monopoly
                     break;
                 case MatchEventKind.DebtStarted:
                     sound?.Play(Sfx.Error);
-                    ui.Toast($"{Named(e.player)} {Verb(e.player, "owes")} {NamedObject(e.other)} {MonopolyStyle.Money(e.value)} and must raise money.", MonopolyStyle.Red, Icons.Coins);
+                    ui.Toast(MonopolyStyle.SayTo(PlayerAt(e.player), PlayerAt(e.other), "{0} owes {1} {2} and must raise money.",
+                        $"{Named(e.player)} {Verb(e.player, "owes")} {NamedObject(e.other)} {MonopolyStyle.Money(e.value)} and must raise money.",
+                        Named(e.player), Named(e.other), MonopolyStyle.Money(e.value)), MonopolyStyle.Red, Icons.Coins);
                     break;
                 case MatchEventKind.DebtPaid:
-                    ui.Toast($"{Named(e.player)} {Verb(e.player, "settles")} the debt of {MonopolyStyle.Money(e.value)}.", MonopolyStyle.Green, Icons.Check);
+                    ui.Toast(MonopolyStyle.Say(PlayerAt(e.player), "{0} settles the debt of {1}.", $"{Named(e.player)} {Verb(e.player, "settles")} the debt of {MonopolyStyle.Money(e.value)}.", Named(e.player), MonopolyStyle.Money(e.value)), MonopolyStyle.Green, Icons.Check);
                     break;
                 case MatchEventKind.Bankrupt:
                 {
                     PlayerState player = Match.players[e.player];
                     sound?.Play(Sfx.Bankrupt);
-                    ui.Banner($"{player.name.ToUpperInvariant()} {Verb(e.player, "is").ToUpperInvariant()} BANKRUPT", MonopolyStyle.Plate, 1.2f);
-                    ui.Toast($"{Named(e.player)} {Verb(e.player, "is")} bankrupt; everything goes to {NamedObject(e.other)}.", MonopolyStyle.Ink, Icons.Flag);
+                    ui.Banner(MonopolyStyle.Say(player, "{0} IS BANKRUPT", $"{player.name.ToUpperInvariant()} {Verb(e.player, "is").ToUpperInvariant()} BANKRUPT", MonopolyStyle.NameOf(player).ToUpperInvariant()), MonopolyStyle.Plate, 1.2f);
+                    ui.Toast(MonopolyStyle.SayTo(player, PlayerAt(e.other), "{0} is bankrupt; everything goes to {1}.", $"{Named(e.player)} {Verb(e.player, "is")} bankrupt; everything goes to {NamedObject(e.other)}.",
+                        Named(e.player), Named(e.other)), MonopolyStyle.Ink, Icons.Flag);
                     yield return tokens[e.player].Topple();
                     shownPosition[e.player] = -1;
                     ui.RefreshPlayers(Match);
@@ -289,14 +330,14 @@ namespace Portfolio.Monopoly
                     ui.SetPot(Match.rules.freeParkingJackpot, e.value);
                     break;
                 case MatchEventKind.Jackpot:
-                    ui.Banner($"JACKPOT {MonopolyStyle.Money(e.value)}!", MonopolyStyle.Gold, 1.2f);
+                    ui.Banner(L.F("JACKPOT {0}!", MonopolyStyle.Money(e.value)), MonopolyStyle.Gold, 1.2f);
                     sound?.Play(Sfx.Jackpot);
                     yield return new WaitForSeconds(Beat(0.6f));
                     break;
                 case MatchEventKind.Message:
                     if (!string.IsNullOrEmpty(e.text))
                     {
-                        ui.Toast(e.text, MonopolyStyle.Ink, Icons.Info);
+                        ui.Toast(MessageText(e), MonopolyStyle.Ink, Icons.Info);
                     }
                     break;
             }
@@ -595,7 +636,7 @@ namespace Portfolio.Monopoly
         {
             if (IsOnlineMatch)
             {
-                UI?.UpdateError("An online match cannot be saved.");
+                UI?.UpdateError(L.T("An online match cannot be saved."));
                 return;
             }
             SaveMatch(false);
@@ -619,7 +660,7 @@ namespace Portfolio.Monopoly
             UI?.EnableLoad();
             if (!silent)
             {
-                ui.Toast("Game saved.", MonopolyStyle.Green, Icons.Save);
+                ui.Toast(L.T("Game saved."), MonopolyStyle.Green, Icons.Save);
             }
         }
 
@@ -644,7 +685,7 @@ namespace Portfolio.Monopoly
             IStorageStrategy disk = Disk;
             if (disk == null || !DoesSaveGameExist())
             {
-                UI?.UpdateError("There is no saved game to continue.");
+                UI?.UpdateError(L.T("There is no saved game to continue."));
                 return;
             }
             SaveData data;
@@ -654,12 +695,12 @@ namespace Portfolio.Monopoly
             }
             catch (ArgumentException exception)
             {
-                UI?.UpdateError($"The saved game cannot be read: {exception.Message}");
+                UI?.UpdateError(L.F("The saved game cannot be read: {0}", exception.Message));
                 return;
             }
             if (data == null || data.match == null || data.match.players == null || data.match.players.Count < 2)
             {
-                UI?.UpdateError("The saved game is incomplete.");
+                UI?.UpdateError(L.T("The saved game is incomplete."));
                 return;
             }
             LoadLevel(data.mode);
@@ -668,7 +709,7 @@ namespace Portfolio.Monopoly
             Setup = data.setup ?? MatchSetup.Default();
             data.match.Attach(matchSettings.Board.CreateLayout(), random);
             BeginDirecting(data.match, false);
-            ui.Toast("Welcome back! The game goes on.", MonopolyStyle.Green, Icons.Play);
+            ui.Toast(L.T("Welcome back! The game goes on."), MonopolyStyle.Green, Icons.Play);
         }
     }
 }

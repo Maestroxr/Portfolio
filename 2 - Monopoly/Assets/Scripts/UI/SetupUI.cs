@@ -67,7 +67,7 @@ namespace Portfolio.Monopoly
             }
             if (starRules != null)
             {
-                starRules.text = MonopolyCampaign.StarRules;
+                starRules.text = L.T(MonopolyCampaign.StarRules);
             }
             Open();
             SelectMode(mode);
@@ -83,13 +83,36 @@ namespace Portfolio.Monopoly
             }
             if (modeTitle != null)
             {
-                modeTitle.text = level != null ? level.Title : "";
+                modeTitle.text = level != null ? L.Data(level.Title) : "";
             }
             if (modeDescription != null)
             {
-                modeDescription.text = level != null ? level.Description : "";
+                modeDescription.text = level != null ? L.Data(level.Description) : "";
             }
             Validate();
+        }
+
+        /// <summary>Writes the words of the screen again (the language changed while it is open).</summary>
+        public void RefreshTexts()
+        {
+            if (setup == null || !IsOpen)
+            {
+                return;
+            }
+            for (int i = 0; i < seats.Length; i++)
+            {
+                seats[i].Bind(i, setup.seats[i], tokens, ChangeToken, Validate);
+            }
+            for (int i = 0; i < modes.Length; i++)
+            {
+                MonopolyLevel level = campaign != null ? campaign.Mode(i) : null;
+                modes[i].Bind(i, level, progress != null ? progress.Stars(i) : 0, SelectMode);
+            }
+            if (starRules != null)
+            {
+                starRules.text = L.T(MonopolyCampaign.StarRules);
+            }
+            SelectMode(mode);
         }
 
         /// <summary>Draws the seats and modes again (the theme changed while the screen is open).</summary>
@@ -159,9 +182,17 @@ namespace Portfolio.Monopoly
             {
                 int humans = setup.seats.Count(s => s.kind == SeatKind.Human);
                 int bots = setup.seats.Count(s => s.kind == SeatKind.Computer);
-                status.text = ok ? $"{humans} {(humans == 1 ? "player" : "players")} and {bots} computer {(bots == 1 ? "player" : "players")}" + (humans > 1 ? ", taking turns on this device" : "") : message;
+                status.text = ok ? SeatsLine(humans, bots) : L.Data(message);
                 status.color = ok ? MonopolyStyle.Muted : MonopolyStyle.Red;
             }
+        }
+
+        /// <summary>"1 player and 3 computer players", in the language shown.</summary>
+        private static string SeatsLine(int humans, int bots)
+        {
+            string people = humans == 1 ? L.T("1 player") : L.F("{0} players", humans);
+            string computers = bots == 1 ? L.T("1 computer player") : L.F("{0} computer players", bots);
+            return humans > 1 ? L.F("{0} and {1}, taking turns on this device", people, computers) : L.F("{0} and {1}", people, computers);
         }
 
         private void Begin()

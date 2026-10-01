@@ -300,14 +300,14 @@ namespace Portfolio.EndlessRunner
         {
             switch (feature)
             {
-                case TrackFeatures.Hurdles: return touch ? "Swipe up to jump over hurdles" : "Jump over hurdles: UP, SPACE or swipe up";
-                case TrackFeatures.Blocks: return touch ? "Swipe sideways to dodge the crates" : "Dodge the crates: LEFT / RIGHT or swipe sideways";
-                case TrackFeatures.Barriers: return touch ? "Swipe down to slide under barriers" : "Slide under barriers: DOWN or swipe down";
-                case TrackFeatures.Ramps: return "Run up the ramp - coins are waiting on the wagon!";
-                case TrackFeatures.Chasms: return "Mind the gap! Jump across";
-                case TrackFeatures.JumpPads: return "Bounce pads launch you into the sky!";
-                case TrackFeatures.MovingCarts: return "Runaway cart! Switch lanes or jump over it";
-                case TrackFeatures.PlatformChains: return "Leap from wagon to wagon!";
+                case TrackFeatures.Hurdles: return touch ? RunnerText.Key("Swipe up to jump over hurdles") : RunnerText.Key("Jump over hurdles: UP, SPACE or swipe up");
+                case TrackFeatures.Blocks: return touch ? RunnerText.Key("Swipe sideways to dodge the crates") : RunnerText.Key("Dodge the crates: LEFT / RIGHT or swipe sideways");
+                case TrackFeatures.Barriers: return touch ? RunnerText.Key("Swipe down to slide under barriers") : RunnerText.Key("Slide under barriers: DOWN or swipe down");
+                case TrackFeatures.Ramps: return RunnerText.Key("Run up the ramp - coins are waiting on the wagon!");
+                case TrackFeatures.Chasms: return RunnerText.Key("Mind the gap! Jump across");
+                case TrackFeatures.JumpPads: return RunnerText.Key("Bounce pads launch you into the sky!");
+                case TrackFeatures.MovingCarts: return RunnerText.Key("Runaway cart! Switch lanes or jump over it");
+                case TrackFeatures.PlatformChains: return RunnerText.Key("Leap from wagon to wagon!");
                 default: return string.Empty;
             }
         }

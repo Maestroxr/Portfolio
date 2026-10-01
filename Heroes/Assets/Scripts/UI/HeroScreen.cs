@@ -89,7 +89,7 @@ namespace Portfolio.Heroes.UI
             Beside((RectTransform)calling.transform, 44f, 28f);
             UIKit.FitLine(calling, 20f, 13f);
 
-            TextMeshProUGUI expCaption = UIKit.Label(area, "ExperienceCaption", $"{UIKit.Glyph("experience")} Experience", 17f, UIKit.Dim,
+            TextMeshProUGUI expCaption = UIKit.Label(area, "ExperienceCaption", $"{UIKit.Glyph("experience")} {Words.T("Experience")}", 17f, UIKit.Dim,
                 TextAlignmentOptions.BottomLeft);
             Beside((RectTransform)expCaption.transform, 82f, 24f);
             experience = UIKit.Meter(area, "Experience", HeroesTheme.Palette.Active.Accent(new Color(0.9f, 0.74f, 0.32f)));
@@ -346,17 +346,17 @@ namespace Portfolio.Heroes.UI
             HeroClass classId = hero.Def != null ? hero.Def.Class : HeroClass.Knight;
             HeroClassDef heroClass = HeroData.Class(classId);
             PlayerState owner = game.State.Player(hero.owner);
-            Heading.text = hero.Name;
+            Heading.text = Words.Name(hero.Name);
             portrait.sprite = Manager.Art.HeroPortrait(classId);
             pennant.color = HeroesArt.PlayerColor(owner != null ? (int)owner.color : 4);
-            heroName.text = hero.Name;
-            calling.text = $"Level {hero.level} {heroClass.Name}";
+            heroName.text = Words.Name(hero.Name);
+            calling.text = Words.F("Level {0} {1}", hero.level, Words.T(heroClass.Name));
 
             int now = HeroData.ExperienceFor(hero.level);
             int next = HeroData.ExperienceFor(hero.level + 1);
             experience.fillAmount = next > now ? Mathf.Clamp01((hero.experience - now) / (float)(next - now)) : 1f;
-            experienceLabel.text = hero.level >= HeroData.MaxLevel ? $"{hero.experience:N0}, the highest level"
-                : $"{hero.experience:N0} of {next:N0} for level {hero.level + 1}";
+            experienceLabel.text = hero.level >= HeroData.MaxLevel ? Words.F("{0}, the highest level", hero.experience.ToString("N0"))
+                : Words.F("{0} of {1} for level {2}", hero.experience.ToString("N0"), next.ToString("N0"), hero.level + 1);
 
             for (int i = 0; i < 4; i++)
             {
@@ -364,32 +364,32 @@ namespace Portfolio.Heroes.UI
             }
             int moraleValue = game.Morale(hero);
             int luckValue = game.Luck(hero);
-            morale.text = $"Morale {UIKit.Signed(moraleValue)}  <color=#B8AB8F>{Mood(moraleValue)}</color>";
-            luck.text = $"Luck {UIKit.Signed(luckValue)}  <color=#B8AB8F>{Fortune(luckValue)}</color>";
+            morale.text = $"{Words.F("Morale {0}", UIKit.Signed(moraleValue))}  <color=#B8AB8F>{Words.T(Mood(moraleValue))}</color>";
+            luck.text = $"{Words.F("Luck {0}", UIKit.Signed(luckValue))}  <color=#B8AB8F>{Words.T(Fortune(luckValue))}</color>";
             int maxMana = game.MaxMana(hero);
-            manaLabel.text = $"Mana {hero.mana} / {maxMana}";
+            manaLabel.text = Words.F("Mana {0} / {1}", hero.mana, maxMana);
             manaBar.fillAmount = maxMana > 0 ? Mathf.Clamp01(hero.mana / (float)maxMana) : 0f;
-            movementLabel.text = $"Moves {hero.movement} / {hero.maxMovement}";
+            movementLabel.text = Words.F("Moves {0} / {1}", hero.movement, hero.maxMovement);
             movementBar.fillAmount = hero.maxMovement > 0 ? Mathf.Clamp01(hero.movement / (float)hero.maxMovement) : 0f;
-            biography.text = hero.Def != null ? hero.Def.Biography : "";
+            biography.text = hero.Def != null ? Words.T(hero.Def.Biography) : "";
 
             Skills();
             ShowArtifacts();
             Spellbook();
             army.Bind(Holder.Hero(hero.id));
             int power = game.Strength(hero);
-            strength.text = $"{UIKit.Glyph("attack")} Strength {power:N0}\n{hero.army.TotalCreatures:N0} creatures";
+            strength.text = $"{UIKit.Glyph("attack")} {Words.F("Strength {0}", power.ToString("N0"))}\n{Words.F("{0} creatures", hero.army.TotalCreatures.ToString("N0"))}";
             UIKit.Enable(dismiss, hero.owner == Manager.Viewer && !Manager.HeroesUI.Busy);
         }
 
         private static string Mood(int value)
         {
-            return value >= 2 ? "Great" : value == 1 ? "Good" : value == 0 ? "Normal" : value == -1 ? "Poor" : "Terrible";
+            return value >= 2 ? "morale|Great" : value == 1 ? "morale|Good" : value == 0 ? "morale|Normal" : value == -1 ? "morale|Poor" : "morale|Terrible";
         }
 
         private static string Fortune(int value)
         {
-            return value >= 2 ? "Blessed" : value == 1 ? "Good" : value == 0 ? "Normal" : value == -1 ? "Bad" : "Cursed";
+            return value >= 2 ? "luck|Blessed" : value == 1 ? "luck|Good" : value == 0 ? "luck|Normal" : value == -1 ? "luck|Bad" : "luck|Cursed";
         }
 
         private void Skills()
@@ -416,7 +416,7 @@ namespace Portfolio.Heroes.UI
                 Image icon = UIKit.PortraitFrame(content, "Icon", sprite, true);
                 UIKit.Stretch((RectTransform)icon.transform, 6f, 6f, 6f, 6f);
                 UIKit.Pin((RectTransform)icon.transform.parent.parent, new Vector2(0f, 0.5f), Vector2.zero, new Vector2(46f, 46f));
-                TextMeshProUGUI name = UIKit.Label(content, "Name", $"{HeroData.SkillLevelName(entry.level)} {def.Name}", 20f, UIKit.Ink,
+                TextMeshProUGUI name = UIKit.Label(content, "Name", Words.SkillName(entry.level, def.Name), 20f, UIKit.Ink,
                     TextAlignmentOptions.BottomLeft, true);
                 RectTransform nameRect = (RectTransform)name.transform;
                 nameRect.anchorMin = new Vector2(0f, 0.5f);
@@ -432,7 +432,7 @@ namespace Portfolio.Heroes.UI
                 textRect.offsetMin = new Vector2(58f, 0f);
                 textRect.offsetMax = new Vector2(-4f, -1f);
                 UIKit.FitLine(text, 16f, 11f);
-                Tooltip.Attach(row.gameObject, $"{HeroData.SkillLevelName(entry.level)} {def.Name}", $"{def.Description}\n{level}", sprite);
+                Tooltip.Attach(row.gameObject, Words.SkillName(entry.level, def.Name), $"{Words.T(def.Description)}\n{Words.T(level)}", sprite);
             }
         }
 
@@ -472,7 +472,7 @@ namespace Portfolio.Heroes.UI
                     Item(frame, (ArtifactId)id, def, "In the pack");
                 }
             }
-            packCaption.text = hero.backpack.Count > 0 ? $"In the pack ({hero.backpack.Count})" : "Nothing in the pack";
+            packCaption.text = hero.backpack.Count > 0 ? Words.F("In the pack ({0})", hero.backpack.Count) : Words.T("Nothing in the pack");
         }
 
         /// <summary>The icon of a place an artifact is worn in, drawn faint while nothing is worn there.</summary>
@@ -497,7 +497,7 @@ namespace Portfolio.Heroes.UI
             Image icon = UIKit.Sprite(frame.transform, "Icon", sprite, Color.white);
             UIKit.Stretch((RectTransform)icon.transform, 6f, 6f, 6f, 6f);
             icon.preserveAspect = true;
-            Tooltip.Attach(frame.gameObject, def.Name, $"<i>{where}</i>\n{def.Description}", sprite);
+            Tooltip.Attach(frame.gameObject, def.Name, $"<i>{Words.T(where)}</i>\n{Words.T(def.Description)}", sprite);
         }
 
         private void Spellbook()
@@ -526,9 +526,9 @@ namespace Portfolio.Heroes.UI
                     TextAlignmentOptions.Center);
                 UIKit.Stretch((RectTransform)cost.transform, 2f, 0f, 2f, 0f);
                 UIKit.FitLine(cost, 16f, 10f);
-                Tooltip.Attach(frame.gameObject, def.Name, $"Level {def.Level}, {def.Cost} mana\n{def.Description}", sprite);
+                Tooltip.Attach(frame.gameObject, def.Name, Words.F("Level {0}, {1} mana", def.Level, def.Cost) + "\n" + Words.T(def.Description), sprite);
             }
-            spellCaption.text = known.Count > 0 ? $"Spellbook ({known.Count})" : "Spellbook";
+            spellCaption.text = known.Count > 0 ? Words.F("Spellbook ({0})", known.Count) : Words.T("Spellbook");
             if (known.Count == 0)
             {
                 TextMeshProUGUI empty = UIKit.Label(spells, "Empty", "No spells yet. A Mage Guild teaches them.", 18f, UIKit.Dim,

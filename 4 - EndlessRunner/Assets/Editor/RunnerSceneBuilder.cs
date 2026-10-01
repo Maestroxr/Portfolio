@@ -125,6 +125,7 @@ namespace Portfolio.EndlessRunner.EditorTools
 
             var campaign = RunnerAssets.Load<Campaign>("Config/Campaign/RunnerCampaign.asset");
             BuildRunnerCanvas(ui, campaign != null ? campaign.Count : 9);
+            LocalizeRunnerCanvas(ui);
 
             RunnerAssets.SetObject(controller, "UI", ui);
             RunnerAssets.SetObject(controller, "BaseManager", manager);
@@ -504,6 +505,11 @@ namespace Portfolio.EndlessRunner.EditorTools
             {
                 resume.SetSiblingIndex(0);
             }
+            // The shared menu's flag button sits in the top right corner, over the HUD's pause button: below it here.
+            if (panel != null && panel.Find(GameMenuInstaller.LanguageButtonName) is RectTransform flag)
+            {
+                flag.anchoredPosition = new Vector2(-30f, -128f);
+            }
         }
 
         private static void SetLabel(TMP_Text text, string label, Color color)
@@ -585,6 +591,45 @@ namespace Portfolio.EndlessRunner.EditorTools
             ui.heartFull = classic.Sprites.heart;
             ui.heartEmpty = classic.Sprites.heartEmpty;
             Themify(root);
+        }
+
+        // ------------------------------------------------------------------ languages
+
+        /// <summary>
+        /// The languages on the runner's canvas: its fixed words (logo, headers, buttons, controls) follow the language
+        /// through a <see cref="LocalizedTexts"/> on the canvas, which leaves the texts the interface writes with code
+        /// alone, and the level select, the game's main menu, gets the flag button in its top right corner (the pause
+        /// menu has the shared menu's own). The button comes after <see cref="Themify"/>, so no theme recolours the flag.
+        /// </summary>
+        private static void LocalizeRunnerCanvas(RunnerUI ui)
+        {
+            var written = new List<TMP_Text>
+            {
+                ui.detailTitle, ui.detailWorld, ui.detailDescription, ui.detailGoals, ui.starsTotal, ui.playLabel,
+                ui.resetProgressLabel, ui.coinsText, ui.scoreText, ui.distanceText, ui.levelText, ui.countdownText,
+                ui.toastText, ui.hintText, ui.resultTitle, ui.resultSubtitle, ui.resultStats, ui.resultGoals, ui.levelsLabel
+            };
+            foreach (LevelCard card in ui.levelCards)
+            {
+                written.Add(card.number);
+                written.Add(card.title);
+            }
+            if (ui.raceHud != null)
+            {
+                written.Add(ui.raceHud.placeText);
+                foreach (RaceHud.Row row in ui.raceHud.rows)
+                {
+                    written.AddRange(new[] { row.place, row.runnerName, row.score, row.detail });
+                }
+            }
+            Transform canvas = ui.titleScreen.transform.parent;
+            LocalizedTexts texts = GameMenuInstaller.LocalizeTexts(canvas.gameObject);
+            texts.Ignored.Clear();
+            texts.Ignored.AddRange(written.Where(text => text != null).Distinct());
+
+            Transform logo = GameMenuInstaller.FindChild(ui.titleScreen.transform, "Logo");
+            Transform safeArea = logo != null ? logo.parent : ui.titleScreen.transform;
+            GameMenuInstaller.AddLanguageButton(safeArea, new Vector2(1f, 1f), new Vector2(-28f, -28f), 60f);
         }
 
         // ------------------------------------------------------------------ themed parts

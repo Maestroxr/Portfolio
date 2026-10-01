@@ -56,8 +56,13 @@ namespace Portfolio.Monopoly
             {
                 if (seat != null)
                 {
-                    seat.name = string.IsNullOrWhiteSpace(text) ? DefaultName() : text.Trim();
-                    nameField.SetTextWithoutNotify(seat.name);
+                    // A default name shown in another language keeps its English (the grammar of "You" hangs on it).
+                    string typed = text != null ? text.Trim() : "";
+                    if (typed != MonopolyStyle.DisplayName(seat.name))
+                    {
+                        seat.name = string.IsNullOrWhiteSpace(typed) ? DefaultName() : typed;
+                    }
+                    ShowName(MonopolyStyle.DisplayName(seat.name));
                     changed?.Invoke();
                 }
             });
@@ -73,11 +78,25 @@ namespace Portfolio.Monopoly
             Color color = MonopolyStyle.PlayerColor(seatIndex);
             band.color = color;
             badge.color = color;
-            nameField.SetTextWithoutNotify(seat.name);
+            ShowName(MonopolyStyle.DisplayName(seat.name));
             Paint();
         }
 
         public SeatSetup Seat => seat;
+
+        /// <summary>
+        /// Shows a name in the field. An input field is not laid out right to left by the shared text support, so a
+        /// Hebrew name (a default name in Hebrew, or one typed in Hebrew) turns TMP's right-to-left mode on itself.
+        /// </summary>
+        private void ShowName(string name)
+        {
+            nameField.SetTextWithoutNotify(name);
+            bool rightToLeft = Gamebox.Bidi.HasRightToLeft(name);
+            if (nameField.textComponent != null)
+            {
+                nameField.textComponent.isRightToLeftText = rightToLeft;
+            }
+        }
 
         private void SetKind(SeatKind kind)
         {
@@ -96,7 +115,7 @@ namespace Portfolio.Monopoly
             {
                 seat.name = $"Player {index + 1}";
             }
-            nameField.SetTextWithoutNotify(seat.name);
+            ShowName(MonopolyStyle.DisplayName(seat.name));
             Paint();
             changed?.Invoke();
         }
@@ -117,7 +136,7 @@ namespace Portfolio.Monopoly
             badge.color = color;
             token.sprite = tokens?.Invoke(seat.token);
             token.color = MonopolyStyle.TextOn(color);
-            tokenName.text = MonopolyStyle.TokenNames[Mathf.Clamp(seat.token, 0, MonopolyStyle.TokenCount - 1)];
+            tokenName.text = MonopolyStyle.TokenName(seat.token);
             for (int i = 0; i < kindBackgrounds.Length; i++)
             {
                 bool on = (int)seat.kind == i;

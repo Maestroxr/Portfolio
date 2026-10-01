@@ -50,10 +50,21 @@ namespace Portfolio.MemoryCards
         {
             if (CustomSettingsButtonText != null)
             {
-                CustomSettingsButtonText.text = usingDefault ? "Use Custom Rules" : "Use Default Rules";
+                CustomSettingsButtonText.text = usingDefault ? MemoryCardsText.T("Use Custom Rules") : MemoryCardsText.T("Use Default Rules");
                 MemoryCardsTheme look = (Manager as MemoryCardsGameManager)?.Look;
                 CustomSettingsButtonText.color = look != null ? look.Colors.ink : new Color(0.17f, 0.18f, 0.26f);
             }
+        }
+
+        /// <summary>Saves like the base; a rule the settings break is told in the language shown.</summary>
+        public override void SaveSettings(IStorageStrategy storage, IGameSettings settings, string settingsPrefix)
+        {
+            CopyToSettings(settings);
+            if (!settings.AreSettingsValid(out string error))
+            {
+                throw new GameSettingsException(MemoryCardsText.RuleMessage(error));
+            }
+            settings.SaveSettings(storage, settingsPrefix);
         }
 
         protected override void SetInputsInteractable(bool interactable)

@@ -117,11 +117,11 @@ namespace Portfolio.Monopoly
                 partners[i].badge.color = MonopolyStyle.PlayerColor(other.color);
                 partners[i].token.sprite = tokens?.Invoke(other.token);
                 partners[i].token.color = MonopolyStyle.TextOn(partners[i].badge.color);
-                partners[i].name.text = other.name;
+                partners[i].name.text = MonopolyStyle.NameOf(other);
             }
             if (title != null)
             {
-                title.text = $"Trade: {MonopolyStyle.Named(match.players[seat])}";
+                title.text = L.F("Trade: {0}", MonopolyStyle.Named(match.players[seat]));
             }
             Open();
             SelectPartner(0);
@@ -149,11 +149,12 @@ namespace Portfolio.Monopoly
             PlayerState them = match.players[partner];
             if (giveHeader != null)
             {
-                giveHeader.text = $"You give ({MonopolyStyle.Money(me.cash)})";
+                giveHeader.text = L.F("You give ({0})", MonopolyStyle.Money(me.cash));
             }
             if (getHeader != null)
             {
-                getHeader.text = $"{MonopolyStyle.Named(them)} {MonopolyStyle.Verb(them, "gives")} ({MonopolyStyle.Money(them.cash)})";
+                getHeader.text = MonopolyStyle.Say(them, "{0} gives ({1})", $"{MonopolyStyle.Named(them)} {MonopolyStyle.Verb(them, "gives")} ({MonopolyStyle.Money(them.cash)})",
+                    MonopolyStyle.Named(them), MonopolyStyle.Money(them.cash));
             }
             if (giveCard != null)
             {
@@ -226,10 +227,47 @@ namespace Portfolio.Monopoly
             }
             if (status != null)
             {
-                status.text = ok ? (match.players[partner].bot ? $"{match.players[partner].name} weighs every deal by the sets it makes."
-                    : online ? $"{match.players[partner].name} answers on their own device." : "Hand the device over for an answer.") : reason;
+                string name = MonopolyStyle.NameOf(match.players[partner]);
+                status.text = ok ? (match.players[partner].bot ? L.F("{0} weighs every deal by the sets it makes.", name)
+                    : online ? L.F("{0} answers on their own device.", name) : L.T("Hand the device over for an answer.")) : Reason(reason);
                 status.color = ok ? MonopolyStyle.Muted : MonopolyStyle.Red;
             }
+        }
+
+        /// <summary>Why the rules engine turns a trade down (it says it in English), in the language shown.</summary>
+        public static string Reason(string reason)
+        {
+            if (string.IsNullOrEmpty(reason) || L.English)
+            {
+                return reason;
+            }
+            System.Text.RegularExpressions.Match m;
+            if ((m = System.Text.RegularExpressions.Regex.Match(reason, @"^Sell the buildings on the (\w+) set before trading it\.$")).Success
+                && Enum.TryParse(m.Groups[1].Value, out ColorGroup group))
+            {
+                return L.F("Sell the buildings on the {0} set before trading it.", MonopolyStyle.GroupName(group));
+            }
+            if ((m = System.Text.RegularExpressions.Regex.Match(reason, @"^You only have \$(\d+)\.$")).Success)
+            {
+                return L.F("You only have {0}.", MonopolyStyle.Money(int.Parse(m.Groups[1].Value)));
+            }
+            if ((m = System.Text.RegularExpressions.Regex.Match(reason, @"^You need \$(\d+) for the interest on the mortgaged properties\.$")).Success)
+            {
+                return L.F("You need {0} for the interest on the mortgaged properties.", MonopolyStyle.Money(int.Parse(m.Groups[1].Value)));
+            }
+            if ((m = System.Text.RegularExpressions.Regex.Match(reason, @"^(.+) only has \$(\d+)\.$")).Success)
+            {
+                return L.F("{0} only has {1}.", MonopolyStyle.DisplayName(m.Groups[1].Value), MonopolyStyle.Money(int.Parse(m.Groups[2].Value)));
+            }
+            foreach (string pattern in new[] { "{0} is out of the game.", "{0} does not own that property.", "{0} cannot pay the interest on the mortgaged properties." })
+            {
+                string tail = pattern.Substring(3);
+                if (reason.EndsWith(tail, StringComparison.Ordinal) && reason.Length > tail.Length)
+                {
+                    return L.F(pattern, MonopolyStyle.DisplayName(reason.Substring(0, reason.Length - tail.Length)));
+                }
+            }
+            return L.Data(reason);
         }
 
         private void Propose()

@@ -88,8 +88,8 @@ namespace Portfolio.Heroes.UI
 
         public void Show(string heading, string line)
         {
-            title.text = heading;
-            matchup.text = line;
+            title.text = Words.T(heading);
+            matchup.text = Words.T(line);
             gameObject.SetActive(true);
             if (showing != null)
             {
@@ -193,9 +193,9 @@ namespace Portfolio.Heroes.UI
         /// </summary>
         public void Ask(string title, string text, string answer, KeyCode shortcut, Action onYes)
         {
-            heading.text = title;
-            question.text = text;
-            yesLabel.text = answer;
+            heading.text = Words.T(title);
+            question.text = Words.T(text);
+            yesLabel.text = Words.T(answer);
             yes = onYes;
             key = shortcut;
             // The key that asked the question is still down this frame: it does not answer it too.

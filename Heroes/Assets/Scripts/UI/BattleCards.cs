@@ -52,7 +52,7 @@ namespace Portfolio.Heroes.UI
         public static string Troop(BattleStack stack)
         {
             CreatureDef def = stack.Def;
-            return stack.IsTower ? def.Name : $"{stack.count} {def.NameFor(stack.count)}";
+            return stack.IsTower ? Words.Name(def.Name) : $"{stack.count} {Words.Name(def.NameFor(stack.count))}";
         }
 
         /// <summary>What a creature can do beyond walking and striking, in a few words.</summary>
@@ -77,10 +77,11 @@ namespace Portfolio.Heroes.UI
             {
                 return "";
             }
-            var text = new StringBuilder(parts[0].Substring(0, 1).ToUpperInvariant()).Append(parts[0].Substring(1));
+            string first = Words.T(parts[0]);
+            var text = new StringBuilder(first.Substring(0, 1).ToUpperInvariant()).Append(first.Substring(1));
             for (int i = 1; i < parts.Count; i++)
             {
-                text.Append(", ").Append(parts[i]);
+                text.Append(", ").Append(Words.T(parts[i]));
             }
             return text.Append('.').ToString();
         }
@@ -152,8 +153,8 @@ namespace Portfolio.Heroes.UI
             {
                 HeroClass heroClass = hero.Def != null ? hero.Def.Class : HeroClass.Knight;
                 Picture(portrait, art != null ? art.HeroPortrait(heroClass) : null);
-                title.text = hero.Name;
-                detail.text = $"{HeroData.Class(heroClass).Name}, level {hero.level}";
+                title.text = Words.Name(hero.Name);
+                detail.text = Words.F("{0}, level {1}", Words.T(HeroData.Class(heroClass).Name), hero.level);
                 int most = Mathf.Max(1, game.MaxMana(hero));
                 mana.fillAmount = Mathf.Clamp01(hero.mana / (float)most);
                 manaText.text = $"<sprite name=\"mana\"> {hero.mana} / {most}";
@@ -165,8 +166,8 @@ namespace Portfolio.Heroes.UI
             if (town != null)
             {
                 Picture(portrait, art != null ? art.TownPortrait(town.faction, color) : null);
-                title.text = town.name;
-                detail.text = "The garrison";
+                title.text = Words.Name(town.name);
+                detail.text = Words.T("The garrison");
                 return;
             }
             BattleStack leader = null;
@@ -178,8 +179,8 @@ namespace Portfolio.Heroes.UI
                 }
             }
             Picture(portrait, leader != null && art != null ? art.Portrait((CreatureId)leader.creature) : null);
-            title.text = leader != null ? leader.Def.Plural : "The wilds";
-            detail.text = "A wandering army";
+            title.text = Words.T(leader != null ? leader.Def.Plural : "The wilds");
+            detail.text = Words.T("A wandering army");
         }
 
         /// <summary>Puts a picture into a portrait frame; with none the frame stays empty rather than showing white.</summary>
@@ -280,10 +281,10 @@ namespace Portfolio.Heroes.UI
             string damage = $"<sprite name=\"damage\"> {def.MinDamage}-{def.MaxDamage}";
             string life = $"<sprite name=\"health\"> {(stack.alive ? stack.health : 0)}/{health}";
             string speed = $"<sprite name=\"speed\"> {BattleNumbers.Speed(game, battle, stack)}";
-            string shots = def.Shots > 0 ? $"<color=#E8D8A8>Shots {stack.shots}</color>" : "";
+            string shots = def.Shots > 0 ? $"<color=#E8D8A8>{Words.F("Shots {0}", stack.shots)}</color>" : "";
             if (large)
             {
-                numbers.text = $"Attack  {attack}    Defense  {defense}\nDamage  {damage}    Health  {life}\nSpeed  {speed}" +
+                numbers.text = $"{Words.T("Attack")}  {attack}    {Words.T("Defense")}  {defense}\n{Words.T("Damage")}  {damage}    {Words.T("Health")}  {life}\n{Words.T("Speed")}  {speed}" +
                                (def.Shots > 0 ? $"    {shots}" : "");
                 note.text = BattleNumbers.Abilities(def);
                 // The card is as tall as what it has to say: the spells on the stack and what its creature can do.
@@ -322,7 +323,7 @@ namespace Portfolio.Heroes.UI
                 effectIcons[i].sprite = art != null ? art.Spell(spell) : null;
                 effectIcons[i].color = def != null && !def.IsPositive ? new Color(1f, 0.75f, 0.85f) : Color.white;
                 Tooltip.Attach(effectIcons[i].gameObject,
-                    $"{(def != null ? def.Name : "A spell")}: {effect.rounds} round{(effect.rounds == 1 ? "" : "s")} left");
+                    Words.F(effect.rounds == 1 ? "{0}: {1} round left" : "{0}: {1} rounds left", Words.T(def != null ? def.Name : "A spell"), effect.rounds));
             }
         }
     }
@@ -378,7 +379,7 @@ namespace Portfolio.Heroes.UI
             plate.color = new Color(side.r * 0.75f, side.g * 0.75f, side.b * 0.75f, 1f);
             count.text = stack.IsTower ? "" : stack.count.ToString();
             portrait.color = nextRound ? new Color(0.65f, 0.65f, 0.65f) : Color.white;
-            Tooltip.Attach(portrait.transform.parent.gameObject, $"{BattleNumbers.Troop(stack)}{(nextRound ? " (next round)" : "")}");
+            Tooltip.Attach(portrait.transform.parent.gameObject, nextRound ? Words.F("{0} (next round)", BattleNumbers.Troop(stack)) : BattleNumbers.Troop(stack));
         }
     }
 

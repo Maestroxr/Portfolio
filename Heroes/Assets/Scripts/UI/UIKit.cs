@@ -4,6 +4,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using Gamebox;
 
 namespace Portfolio.Heroes.UI
 {
@@ -366,7 +367,9 @@ namespace Portfolio.Heroes.UI
             TextAlignmentOptions align = TextAlignmentOptions.Left, bool title = false)
         {
             var label = Rect(parent, name).gameObject.AddComponent<TextMeshProUGUI>();
-            label.text = text;
+            // The text given is the English key of the words (see Words): shown in the language of the moment, and again
+            // in the next one when it changes, until code writes something else there.
+            Written(label, text);
             label.fontSize = size;
             label.color = color;
             label.alignment = align;
@@ -380,6 +383,23 @@ namespace Portfolio.Heroes.UI
             label.overflowMode = TextOverflowModes.Overflow;
             label.textWrappingMode = TextWrappingModes.Normal;
             return label;
+        }
+
+        /// <summary>
+        /// Writes <paramref name="english"/> on <paramref name="label"/> in the language shown and keeps it translated
+        /// when the language changes (<see cref="TranslatedLabel"/>); words without letters (numbers) are written as
+        /// they are.
+        /// </summary>
+        public static void Written(TMP_Text label, string english)
+        {
+            if (Words.HasLetters(english) && !Words.IsTranslated(english))
+            {
+                TranslatedLabel.Write(label, english);
+            }
+            else
+            {
+                label.text = english ?? "";
+            }
         }
 
         public static TextMeshProUGUI Title(Transform parent, string name, string text, float size, Color color,
@@ -423,6 +443,34 @@ namespace Portfolio.Heroes.UI
             background.gameObject.AddComponent<Clicker>();
             Gamebox.UI.PressFeedback.Attach(background.gameObject);
             return button;
+        }
+
+        /// <summary>
+        /// The flag button that switches the language of every game (Gamebox's <see cref="LanguageButton"/>, the flag of
+        /// the language shown), <paramref name="height"/> tall at <paramref name="position"/> from
+        /// <paramref name="anchor"/> of <paramref name="parent"/> (the pivot follows the anchor). The title is built at
+        /// runtime, so its button is too, as GameMenuInstaller.AddLanguageButton makes the ones of scenes.
+        /// </summary>
+        public static LanguageButton LanguageFlag(Transform parent, Vector2 anchor, Vector2 position, float height = 48f)
+        {
+            RectTransform rect = Rect(parent, "LanguageButton");
+            rect.anchorMin = rect.anchorMax = rect.pivot = anchor;
+            rect.anchoredPosition = position;
+            rect.sizeDelta = new Vector2(height * 1.5f, height);
+            var flag = rect.gameObject.AddComponent<Image>();
+            flag.preserveAspect = true;
+            flag.raycastTarget = true;
+            var button = rect.gameObject.AddComponent<Button>();
+            button.targetGraphic = flag;
+            button.colors = Tint();
+            button.navigation = new Navigation { mode = Navigation.Mode.None };
+            var language = rect.gameObject.AddComponent<LanguageButton>();
+            language.Flag = flag;
+            language.Show();
+            rect.gameObject.AddComponent<Clicker>();
+            Gamebox.UI.PressFeedback.Attach(rect.gameObject, 1.08f, 0.94f);
+            Tooltip.Attach(rect.gameObject, "Language");
+            return language;
         }
 
         /// <summary>A round button holding an icon: the small commands of the map bar.</summary>
@@ -610,7 +658,7 @@ namespace Portfolio.Heroes.UI
                 text.Append(Glyph((ResourceKind)i)).Append(missing ? "<color=#EE7A66>" : "").Append(amount)
                     .Append(missing ? "</color>" : "");
             }
-            return text.Length > 0 ? text.ToString() : "Free";
+            return text.Length > 0 ? text.ToString() : Words.T("Free");
         }
 
         /// <summary><paramref name="count"/> stars of <paramref name="of"/>, as inline icons.</summary>
@@ -866,19 +914,20 @@ namespace Portfolio.Heroes.UI
             {
                 return;
             }
+            // The words given are English keys (or words code already made): shown in the language of the moment.
             if (Title != null)
             {
-                TooltipBox.Show(this, Title, Text, Picture);
+                TooltipBox.Show(this, Words.T(Title), Words.T(Text), Picture);
                 return;
             }
             int line = Text.IndexOf('\n');
             if (line > 0)
             {
-                TooltipBox.Show(this, Text.Substring(0, line), Text.Substring(line + 1), Picture);
+                TooltipBox.Show(this, Words.T(Text.Substring(0, line)), Words.T(Text.Substring(line + 1)), Picture);
             }
             else
             {
-                TooltipBox.Show(this, null, Text, Picture);
+                TooltipBox.Show(this, null, Words.T(Text), Picture);
             }
         }
 

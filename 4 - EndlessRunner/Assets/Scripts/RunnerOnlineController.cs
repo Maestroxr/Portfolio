@@ -23,6 +23,7 @@ namespace Portfolio.EndlessRunner
         private readonly Dictionary<int, int> trackCoins = new Dictionary<int, int>();
         private List<RoomLevelChoice> levelChoices;
         private RunnerGameTheme choicesTheme;
+        private string choicesLanguage;
 
         public RunnerGameManager Runner => BaseManager as RunnerGameManager;
 
@@ -33,20 +34,21 @@ namespace Portfolio.EndlessRunner
         {
             get
             {
-                // The names are the active theme's; they are made again when the theme changed.
-                if (levelChoices != null && choicesTheme == RunnerGameTheme.Active)
+                // The names are the active theme's, in the language shown; they are made again when either changed.
+                if (levelChoices != null && choicesTheme == RunnerGameTheme.Active && choicesLanguage == GameLanguages.Code)
                 {
                     return levelChoices;
                 }
                 choicesTheme = RunnerGameTheme.Active;
+                choicesLanguage = GameLanguages.Code;
                 levelChoices = new List<RoomLevelChoice>();
                 ICampaign campaign = BaseManager != null ? BaseManager.Campaign : null;
                 for (int i = 0; campaign != null && i < campaign.Count; i++)
                 {
                     if (campaign[i] is RunnerLevel level)
                     {
-                        string title = RunnerGameTheme.TitleFor(level);
-                        levelChoices.Add(new RoomLevelChoice(i, level.IsEndless ? title : $"{i + 1}. {title} ({level.Length:0} m)"));
+                        string title = RunnerText.TitleOf(level);
+                        levelChoices.Add(new RoomLevelChoice(i, level.IsEndless ? title : RunnerText.F("{0}. {1} ({2:0} m)", i + 1, title, level.Length)));
                     }
                 }
                 return levelChoices;
@@ -76,7 +78,7 @@ namespace Portfolio.EndlessRunner
         public override string DescribeRoom(RoomInfo room)
         {
             int coins = room.Option("coins", 0);
-            return coins > 0 ? $"{base.DescribeRoom(room)}, {coins} coins" : base.DescribeRoom(room);
+            return coins > 0 ? RunnerText.SayF("{0}, {1} coins", base.DescribeRoom(room), coins) : base.DescribeRoom(room);
         }
 
         /// <summary>The local runner touched a coin: the server says who gets it, with a claim row for everybody.</summary>
@@ -151,7 +153,7 @@ namespace Portfolio.EndlessRunner
             RunnerGameManager manager = Runner;
             if (manager == null)
             {
-                Report("This scene has no runner to race with.");
+                Report(RunnerText.T("This scene has no runner to race with."));
                 return;
             }
             seats.Clear();

@@ -62,7 +62,7 @@ namespace Portfolio.Monopoly
             }
             if (deckTitle != null)
             {
-                deckTitle.text = chance ? "CHANCE" : "COMMUNITY CHEST";
+                deckTitle.text = chance ? L.T("CHANCE") : L.T("COMMUNITY CHEST");
                 deckTitle.color = MonopolyStyle.TextOn(color);
             }
             if (icon != null)
@@ -72,11 +72,11 @@ namespace Portfolio.Monopoly
             }
             if (body != null)
             {
-                body.text = text;
+                body.text = L.Data(text);
             }
             if (drawnBy != null)
             {
-                drawnBy.text = player != null ? $"Drawn by {MonopolyStyle.NamedObject(player)}" : "";
+                drawnBy.text = player == null ? "" : MonopolyStyle.Say(player, "Drawn by {0}", $"Drawn by {MonopolyStyle.NamedObject(player)}", MonopolyStyle.Named(player));
             }
             if (okButton != null)
             {

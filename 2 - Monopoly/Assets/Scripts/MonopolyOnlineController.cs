@@ -45,7 +45,7 @@ namespace Portfolio.Monopoly
                     MonopolyLevel mode = modes.Mode(i);
                     if (mode != null && !mode.UsesCustomRules)
                     {
-                        choices.Add(new RoomLevelChoice(i, mode.Title));
+                        choices.Add(new RoomLevelChoice(i, L.Data(mode.Title)));
                     }
                 }
                 return choices;
@@ -62,7 +62,7 @@ namespace Portfolio.Monopoly
         public override string DescribeRoom(RoomInfo room)
         {
             int computers = room.Option(RoomOptions.ComputersOption, 0);
-            return computers > 0 ? $"{base.DescribeRoom(room)}, computer players" : base.DescribeRoom(room);
+            return computers > 0 ? L.F("{0}, computer players", base.DescribeRoom(room)) : base.DescribeRoom(room);
         }
 
         protected override void Start()

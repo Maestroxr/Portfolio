@@ -444,28 +444,28 @@ namespace Portfolio.Heroes
                     yield return Died(what.a);
                     break;
                 case EventKind.StackDefended:
-                    Say(what.a, "Defend", new Color(0.7f, 0.85f, 1f));
+                    Say(what.a, Words.T("Defend"), new Color(0.7f, 0.85f, 1f));
                     Aura(what.a, new Color(0.55f, 0.75f, 1f));
                     yield return Wait(0.25f);
                     break;
                 case EventKind.StackWaited:
-                    Say(what.a, "Wait", new Color(0.85f, 0.85f, 0.85f));
+                    Say(what.a, Words.T("Wait"), new Color(0.85f, 0.85f, 0.85f));
                     yield return Wait(0.2f);
                     break;
                 case EventKind.MoraleBoost:
                     sound?.Play(Sfx.Buff, 0.7f);
-                    Say(what.a, "Morale!", new Color(0.5f, 1f, 0.6f));
+                    Say(what.a, Words.T("Morale!"), new Color(0.5f, 1f, 0.6f));
                     Aura(what.a, new Color(0.5f, 1f, 0.6f));
                     yield return Wait(0.45f);
                     break;
                 case EventKind.MoraleFail:
                     sound?.Play(Sfx.Curse, 0.6f);
-                    Say(what.a, "Wavers", new Color(0.8f, 0.5f, 0.4f));
+                    Say(what.a, Words.T("Wavers"), new Color(0.8f, 0.5f, 0.4f));
                     yield return Wait(0.45f);
                     break;
                 case EventKind.LuckyStrike:
                     sound?.Play(Sfx.Buff, 0.6f);
-                    Say(what.a, "Lucky!", new Color(1f, 0.92f, 0.4f));
+                    Say(what.a, Words.T("Lucky!"), new Color(1f, 0.92f, 0.4f));
                     break;
                 case EventKind.SpellCast:
                     yield return Spell(what);
@@ -773,7 +773,7 @@ namespace Portfolio.Heroes
             {
                 yield break;
             }
-            string text = what.c > 0 ? $"+{what.c}" : $"+{what.b} hp";
+            string text = what.c > 0 ? $"+{what.c}" : Words.F("+{0} hp", what.b);
             effects?.Float(view.Middle + Vector3.up * 0.3f, text, new Color(0.5f, 1f, 0.6f), what.c > 0 ? 3.4f : 2.6f);
             effects?.Rise(view.Middle, new Color(0.5f, 1f, 0.65f));
             if (badges.TryGetValue(what.a, out Badge badge))
@@ -890,7 +890,7 @@ namespace Portfolio.Heroes
                 effects?.Rise(caster.Middle, new Color(0.75f, 0.8f, 1f), 24);
                 yield return caster.Cast();
             }
-            effects?.Float(middle + Vector3.up * 1.4f, def != null ? def.Name : "Spell", new Color(1f, 0.94f, 0.78f), 3.2f);
+            effects?.Float(middle + Vector3.up * 1.4f, Words.T(def != null ? def.Name : "Spell"), new Color(1f, 0.94f, 0.78f), 3.2f);
             Vector3 source = caster != null ? caster.Middle + Vector3.up * 1f : middle + Vector3.up * 8f;
             switch (spell)
             {
@@ -997,23 +997,22 @@ namespace Portfolio.Heroes
                     {
                         return null;
                     }
-                    string verb = what.kind == EventKind.StackShot ? "shoot" : what.e == 1 ? "strike back at" : "attack";
-                    if (stack.count == 1 && !stack.IsTower)
-                    {
-                        verb = what.kind == EventKind.StackShot ? "shoots" : what.e == 1 ? "strikes back at" : "attacks";
-                    }
-                    else if (stack.IsTower)
-                    {
-                        verb = "shoots";
-                    }
-                    return $"{Troop(stack)} {verb} {The(target)}: {what.c} damage{Perish(target, what.d)}.";
+                    // One shape per verb and number, so each language can say it its own way.
+                    bool one = stack.count == 1 || stack.IsTower;
+                    string shape = what.kind == EventKind.StackShot || stack.IsTower
+                        ? one ? "{0} shoots {1}: {2} damage{3}." : "{0} shoot {1}: {2} damage{3}."
+                        : what.e == 1
+                            ? one ? "{0} strikes back at {1}: {2} damage{3}." : "{0} strike back at {1}: {2} damage{3}."
+                            : one ? "{0} attacks {1}: {2} damage{3}." : "{0} attack {1}: {2} damage{3}.";
+                    return Words.F(shape, Troop(stack), The(target), what.c, Perish(target, what.d));
                 }
                 case EventKind.StackDamaged:
                     if (stack == null)
                     {
                         return null;
                     }
-                    return $"{Capital(The(stack))} {(stack.count == 1 ? "takes" : "take")} {what.b} damage{Perish(stack, what.c)}.";
+                    return Words.F(stack.count == 1 ? "{0} takes {1} damage{2}." : "{0} take {1} damage{2}.",
+                        Capital(The(stack)), what.b, Perish(stack, what.c));
                 case EventKind.StackHealed:
                     if (stack == null || (what.b <= 0 && what.c <= 0))
                     {
@@ -1022,36 +1021,37 @@ namespace Portfolio.Heroes
                     CreatureDef healed = stack.Def;
                     if (what.c > 0)
                     {
-                        return $"{what.c} {(what.c == 1 ? healed.Name : healed.Plural)} {(what.e == 1 ? "rise again" : "are restored")}.";
+                        return Words.F(what.e == 1 ? "{0} {1} rise again." : "{0} {1} are restored.", what.c,
+                            Words.Name(what.c == 1 ? healed.Name : healed.Plural));
                     }
-                    return $"{Capital(The(stack))} {(stack.count == 1 ? "heals" : "heal")} {what.b} health.";
+                    return Words.F(stack.count == 1 ? "{0} heals {1} health." : "{0} heal {1} health.", Capital(The(stack)), what.b);
                 case EventKind.StackDied:
-                    return stack != null ? $"{Capital(The(stack))} {(stack.IsTower ? "falls" : "are wiped out")}." : null;
+                    return stack != null ? Words.F(stack.IsTower ? "{0} falls." : "{0} are wiped out.", Capital(The(stack))) : null;
                 case EventKind.StackDefended:
-                    return stack != null ? $"{Capital(The(stack))} {(stack.count == 1 ? "stands" : "stand")} on guard." : null;
+                    return stack != null ? Words.F(stack.count == 1 ? "{0} stands on guard." : "{0} stand on guard.", Capital(The(stack))) : null;
                 case EventKind.StackWaited:
-                    return stack != null ? $"{Capital(The(stack))} {(stack.count == 1 ? "waits" : "wait")}." : null;
+                    return stack != null ? Words.F(stack.count == 1 ? "{0} waits." : "{0} wait.", Capital(The(stack))) : null;
                 case EventKind.MoraleBoost:
-                    return stack != null ? $"High morale: {The(stack)} {(stack.count == 1 ? "acts" : "act")} again." : null;
+                    return stack != null ? Words.F(stack.count == 1 ? "High morale: {0} acts again." : "High morale: {0} act again.", The(stack)) : null;
                 case EventKind.MoraleFail:
-                    return stack != null ? $"Low morale: {The(stack)} {(stack.count == 1 ? "freezes" : "freeze")}." : null;
+                    return stack != null ? Words.F(stack.count == 1 ? "Low morale: {0} freezes." : "Low morale: {0} freeze.", The(stack)) : null;
                 case EventKind.LuckyStrike:
-                    return stack != null ? $"Good luck: {The(stack)} {(stack.count == 1 ? "strikes" : "strike")} twice as hard." : null;
+                    return stack != null ? Words.F(stack.count == 1 ? "Good luck: {0} strikes twice as hard." : "Good luck: {0} strike twice as hard.", The(stack)) : null;
                 case EventKind.SpellCast:
                 {
                     side = what.a;
                     HeroState hero = World != null ? World.Hero(what.d) : null;
                     SpellDef def = Spells.Get((SpellId)what.b);
-                    return $"{(hero != null ? hero.Name : "The hero")} casts {(def != null ? def.Name : "a spell")}.";
+                    return Words.F("{0} casts {1}.", hero != null ? Words.Name(hero.Name) : Words.T("The hero"), Words.T(def != null ? def.Name : "a spell"));
                 }
                 case EventKind.EffectRemoved:
                 {
                     SpellDef def = Spells.Get((SpellId)what.b);
-                    return stack != null && def != null ? $"{def.Name} is lifted from {The(stack)}." : null;
+                    return stack != null && def != null ? Words.F("{0} is lifted from {1}.", Words.T(def.Name), The(stack)) : null;
                 }
                 case EventKind.RoundBegan:
                     side = -1;
-                    return $"Round {what.a} begins.";
+                    return Words.F("Round {0} begins.", what.a);
             }
             return null;
         }
@@ -1061,15 +1061,15 @@ namespace Portfolio.Heroes
             CreatureDef def = stack.Def;
             if (stack.IsTower)
             {
-                return "The arrow tower";
+                return Words.T("The arrow tower");
             }
-            return $"{stack.count} {(stack.count == 1 ? def.Name : def.Plural)}";
+            return $"{stack.count} {Words.Name(stack.count == 1 ? def.Name : def.Plural)}";
         }
 
         private static string The(BattleStack stack)
         {
             CreatureDef def = stack.Def;
-            return stack.IsTower ? "the arrow tower" : $"the {(stack.count == 1 ? def.Name : def.Plural)}";
+            return stack.IsTower ? Words.T("the arrow tower") : Words.F("the {0}", Words.Name(stack.count == 1 ? def.Name : def.Plural));
         }
 
         private static string Perish(BattleStack target, int killed)
@@ -1078,7 +1078,7 @@ namespace Portfolio.Heroes
             {
                 return "";
             }
-            return killed == 1 ? $", 1 {target.Def.Name} perishes" : $", {killed} {target.Def.Plural} perish";
+            return killed == 1 ? Words.F(", 1 {0} perishes", Words.Name(target.Def.Name)) : Words.F(", {0} {1} perish", killed, Words.Name(target.Def.Plural));
         }
 
         private static string Capital(string text)

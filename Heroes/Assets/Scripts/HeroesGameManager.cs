@@ -221,7 +221,7 @@ namespace Portfolio.Heroes
             string error = "no settings";
             if (scenarioSettings == null || !scenarioSettings.AreSettingsValid(out error))
             {
-                UI?.UpdateError($"Cannot start: {error}");
+                UI?.UpdateError(Words.F("Cannot start: {0}", error));
                 return;
             }
             if (InSession)

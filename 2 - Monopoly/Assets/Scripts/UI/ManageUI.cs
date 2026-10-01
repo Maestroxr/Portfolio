@@ -57,7 +57,7 @@ namespace Portfolio.Monopoly
             PlayerState player = match.players[Seat];
             if (title != null)
             {
-                title.text = $"{MonopolyStyle.NamedPossessive(player)} properties";
+                title.text = MonopolyStyle.Say(player, "{0}'s properties", $"{MonopolyStyle.NamedPossessive(player)} properties", MonopolyStyle.Named(player));
             }
             if (cashText != null)
             {
@@ -66,9 +66,9 @@ namespace Portfolio.Monopoly
             if (hint != null)
             {
                 Debt debt = match.CurrentDebt;
-                string bank = match.rules.limitedBuildings ? $"The bank has {match.housesLeft} houses and {match.hotelsLeft} hotels left." : "";
+                string bank = match.rules.limitedBuildings ? L.F("The bank has {0} houses and {1} hotels left.", match.housesLeft, match.hotelsLeft) : "";
                 hint.text = debt != null && debt.debtor == Seat
-                    ? $"<color={MonopolyStyle.RedTag}>Raise {MonopolyStyle.Money(debt.amount - player.cash)} more to pay {MonopolyStyle.Money(debt.amount)}.</color> Sell buildings or mortgage."
+                    ? $"<color={MonopolyStyle.RedTag}>{L.F("Raise {0} more to pay {1}.", MonopolyStyle.Money(debt.amount - player.cash), MonopolyStyle.Money(debt.amount))}</color> {L.T("Sell buildings or mortgage.")}"
                     : bank;
             }
             List<int> owned = match.PropertiesOf(Seat)

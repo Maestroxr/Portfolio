@@ -110,18 +110,19 @@ namespace Portfolio.Heroes.UI
             mana.fillAmount = maxMana > 0 ? Mathf.Clamp01(hero.mana / (float)maxMana) : 0f;
             int strength = game.Strength(hero);
             string line = hero.sleeping
-                ? $"<i>Asleep</i>  {UIKit.Glyph("attack")} {Short(strength)}"
-                : $"Level {hero.level}   {UIKit.Glyph("attack")} {Short(strength)}";
-            if (line != shown || title.text != hero.Name)
+                ? $"<i>{Words.T("Asleep")}</i>  {UIKit.Glyph("attack")} {Short(strength)}"
+                : $"{Words.F("Level {0}", hero.level)}   {UIKit.Glyph("attack")} {Short(strength)}";
+            string name = Words.Name(hero.Name);
+            if (line != shown || title.text != name)
             {
                 shown = line;
-                title.text = hero.Name;
+                title.text = name;
                 detail.text = line;
-                tip.Title = hero.Name;
+                tip.Title = name;
                 tip.Picture = null;
-                tip.Text = $"Level {hero.level} {HeroData.Class(heroClass).Name}\n" +
+                tip.Text = Words.F("Level {0} {1}", hero.level, Words.T(HeroData.Class(heroClass).Name)) + "\n" +
                            $"{UIKit.Glyph("movement")} {hero.movement} / {hero.maxMovement}   {UIKit.Glyph("mana")} {hero.mana} / {maxMana}\n" +
-                           $"Army strength {strength:N0}{(hero.sleeping ? "\nAsleep: skipped by Next Hero." : "")}";
+                           Words.F("Army strength {0}", strength.ToString("N0")) + (hero.sleeping ? "\n" + Words.T("Asleep: skipped by Next Hero.") : "");
             }
         }
 
@@ -221,13 +222,15 @@ namespace Portfolio.Heroes.UI
             }
             PlayerState owner = game.State.Player(town.owner);
             picture.sprite = manager.Art.TownPortrait(town.faction, owner != null ? (int)owner.color : 4);
-            title.text = town.name;
+            string name = Words.Name(town.name);
+            title.text = name;
             detail.text = town.builtToday
-                ? "Built today"
-                : $"{UIKit.Glyph("gold")} {Buildings.Income(town)} a day";
-            tip.Title = town.name;
-            tip.Text = $"A {Land.FactionName(town.faction)} town\n{UIKit.Glyph("gold")} {Buildings.Income(town)} a day" +
-                       (town.builtToday ? "\nSomething was built here today." : "\nCan build today.");
+                ? Words.T("Built today")
+                : Words.F("{0} a day", $"{UIKit.Glyph("gold")} {Buildings.Income(town)}");
+            tip.Title = name;
+            tip.Text = Words.F("A {0} town", Words.T(Land.FactionName(town.faction))) + "\n" +
+                       Words.F("{0} a day", $"{UIKit.Glyph("gold")} {Buildings.Income(town)}") +
+                       "\n" + Words.T(town.builtToday ? "Something was built here today." : "Can build today.");
         }
 
         private void Clicked()

@@ -51,7 +51,7 @@ namespace Portfolio.Monopoly
             Repaint(player, token);
             if (nameText != null)
             {
-                nameText.text = player.name;
+                nameText.text = MonopolyStyle.NameOf(player);
             }
             PaintComputerTag(player);
             shownCash = targetCash = player.cash;
@@ -110,7 +110,7 @@ namespace Portfolio.Monopoly
             }
             if (cpuText != null)
             {
-                cpuText.text = player.bot ? player.level.ToString().ToUpperInvariant() : "";
+                cpuText.text = player.bot ? MonopolyStyle.LevelName(player.level) : "";
             }
         }
 
@@ -122,12 +122,17 @@ namespace Portfolio.Monopoly
                 return;
             }
             PlayerState player = match.players[seat];
+            if (nameText != null)
+            {
+                // The default names follow the language.
+                nameText.text = MonopolyStyle.NameOf(player);
+            }
             // The computer takes over the seat of a player who leaves an online match.
             PaintComputerTag(player);
             if (worthText != null)
             {
-                string worth = player.bankrupt ? "Out of the game" : $"Net worth {MonopolyStyle.Money(match.NetWorth(seat))}";
-                worthText.text = isLocal ? $"<b>You</b>  •  {worth}" : worth;
+                string worth = player.bankrupt ? L.T("Out of the game") : L.F("Net worth {0}", MonopolyStyle.Money(match.NetWorth(seat)));
+                worthText.text = isLocal ? $"<b>{L.T("name|You")}</b>  •  {worth}" : worth;
             }
             if (jailTag != null)
             {

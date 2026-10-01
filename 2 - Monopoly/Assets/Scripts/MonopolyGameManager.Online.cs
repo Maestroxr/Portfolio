@@ -85,7 +85,7 @@ namespace Portfolio.Monopoly
             onlineTable = null;
             if (table == null || table.Setup == null || table.Setup.seats.Count < 2)
             {
-                UI?.UpdateError("The table of the online match did not arrive.");
+                UI?.UpdateError(L.T("The table of the online match did not arrive."));
                 return;
             }
             var started = new LockstepMatch(matchSettings.Board.CreateLayout(), matchSettings.Rules, table.Seed);
@@ -188,7 +188,7 @@ namespace Portfolio.Monopoly
             {
                 tokens[seat].Assign(seat, PlayerControl.Computer, player.name);
             }
-            ui.Toast($"{Named(seat)} left the table. The computer plays on.", MonopolyStyle.Ink, Icons.Robot);
+            ui.Toast(L.F("{0} left the table. The computer plays on.", Named(seat)), MonopolyStyle.Ink, Icons.Robot);
             ui.RefreshPlayers(Match);
         }
 
@@ -198,7 +198,8 @@ namespace Portfolio.Monopoly
             if (command.kind == CommandKind.ProposeTrade)
             {
                 sound?.Play(Sfx.Trade);
-                ui.Toast($"{Named(command.offer.from)} {Verb(command.offer.from, "offers")} {NamedObject(command.offer.to)} a trade.", MonopolyStyle.Blue, Icons.Handshake);
+                ui.Toast(MonopolyStyle.SayTo(PlayerAt(command.offer.from), PlayerAt(command.offer.to), "{0} offers {1} a trade.",
+                    $"{Named(command.offer.from)} {Verb(command.offer.from, "offers")} {NamedObject(command.offer.to)} a trade.", Named(command.offer.from), Named(command.offer.to)), MonopolyStyle.Blue, Icons.Handshake);
             }
         }
 
@@ -207,7 +208,7 @@ namespace Portfolio.Monopoly
             ui.Offer.Close();
             if (accepted)
             {
-                ui.Banner("DEAL!", MonopolyStyle.Green, 0.9f);
+                ui.Banner(L.T("DEAL!"), MonopolyStyle.Green, 0.9f);
                 return;
             }
             PlayerState from = Match.players[offer.from];
@@ -216,7 +217,7 @@ namespace Portfolio.Monopoly
             {
                 bots.Refused(Match, offer);
             }
-            ui.Toast($"{MonopolyStyle.Named(to)} turned down {MonopolyStyle.NamedPossessive(from, false)} offer.", MonopolyStyle.Muted, Icons.Handshake);
+            ui.Toast(MonopolyStyle.SayTo(to, from, "{0} turned down {1}'s offer.", $"{MonopolyStyle.Named(to)} turned down {MonopolyStyle.NamedPossessive(from, false)} offer.", MonopolyStyle.Named(to), MonopolyStyle.Named(from)), MonopolyStyle.Muted, Icons.Handshake);
             sound?.Play(Sfx.Error, 0.6f);
         }
 
@@ -227,13 +228,13 @@ namespace Portfolio.Monopoly
             {
                 return;
             }
-            ui.Toast($"Time is up for {NamedObject(seat)}.", MonopolyStyle.Red, Icons.Clock);
+            ui.Toast(MonopolyStyle.Say(PlayerAt(seat), "Time is up for {0}.", $"Time is up for {NamedObject(seat)}.", Named(seat)), MonopolyStyle.Red, Icons.Clock);
             if (seat != localSeat)
             {
                 return;
             }
             // The choices on screen are no longer the player's to make.
-            ui.Banner("TIME'S UP!", MonopolyStyle.Red, 0.8f);
+            ui.Banner(L.T("TIME'S UP!"), MonopolyStyle.Red, 0.8f);
             sound?.Play(Sfx.Error, 0.7f);
             ui.Manage.Close();
             ui.Trade.Close();
@@ -271,7 +272,7 @@ namespace Portfolio.Monopoly
             {
                 return;
             }
-            ui.Toast("The match was called off: the richest player wins.", MonopolyStyle.Ink, Icons.Flag);
+            ui.Toast(L.T("The match was called off: the richest player wins."), MonopolyStyle.Ink, Icons.Flag);
             Match.Resign();
             onlineVersion++;
         }
@@ -293,11 +294,12 @@ namespace Portfolio.Monopoly
             int seat = lockstep.Waiting;
             if (seat < 0)
             {
-                return "Game over";
+                return L.T("Game over");
             }
             bool answer = lockstep.PendingOffer != null;
-            string caption = seat == localSeat ? answer ? "Your answer" : "Your move"
-                : answer ? $"{Match.players[seat].name} answers" : $"{Match.players[seat].name}'s move";
+            string name = MonopolyStyle.NameOf(Match.players[seat]);
+            string caption = seat == localSeat ? answer ? L.T("Your answer") : L.T("Your move")
+                : answer ? L.F("{0} answers", name) : L.F("{0}'s move", name);
             // The banner has room for a short line; long names get smaller letters.
             return caption.Length <= 17 ? caption : caption.Length <= 22 ? $"<size=80%>{caption}</size>" : $"<size=62%>{caption}</size>";
         }
@@ -387,7 +389,7 @@ namespace Portfolio.Monopoly
                     }
                     else
                     {
-                        ui.Actions.Show(player.name, "is considering the offer...", MonopolyStyle.PlayerColor(player.color), ui.TokenSprite(player.token), null, true);
+                        ui.Actions.Show(MonopolyStyle.NameOf(player), L.T("is considering the offer..."), MonopolyStyle.PlayerColor(player.color), ui.TokenSprite(player.token), null, true);
                         if (player.bot && host && online.AwaitingComputer)
                         {
                             // The answer sent for the computer is still on its way: it is waited for, not given twice.

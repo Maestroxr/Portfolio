@@ -159,6 +159,15 @@ namespace Portfolio.Asteroids.EditorTools
 
             Transform canvas = ui.titleScreen != null ? ui.titleScreen.transform.parent : null;
             BuildStrikeScene(scene, manager, ui, camera, canvas);
+            if (canvas != null)
+            {
+                // The languages: the canvas's fixed words follow the language picked (the Asteroids table, then the shared
+                // one), and the flag that switches it sits on the mission select left of "Reset progress" (the pause menu
+                // has the shared menu's own flag).
+                GameMenuInstaller.LocalizeTexts(canvas.gameObject);
+                Transform titleSafe = ui.titleScreen.transform.Find("SafeArea");
+                GameMenuInstaller.AddLanguageButton(titleSafe != null ? titleSafe : ui.titleScreen.transform, new Vector2(1f, 1f), new Vector2(-410f, -174f), 48f);
+            }
 
             GameMenuInstaller.EnsureUrpCameras();
             string path = AsteroidsAssets.Path(ScenePath);

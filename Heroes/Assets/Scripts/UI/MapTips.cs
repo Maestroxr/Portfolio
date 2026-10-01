@@ -31,13 +31,16 @@ namespace Portfolio.Heroes.UI
             {
                 HeroClass heroClass = hero.Def != null ? hero.Def.Class : HeroClass.Knight;
                 PlayerState owner = state.Player(hero.owner);
-                title = hero.Name;
+                title = Words.Name(hero.Name);
                 picture = art.HeroPortrait(heroClass);
                 bool mine = hero.owner == manager.Viewer;
-                body = $"Level {hero.level} {HeroData.Class(heroClass).Name}" + (owner != null ? $" of {Owner(owner, manager)}" : "") + "\n" +
+                string className = Words.T(HeroData.Class(heroClass).Name);
+                body = (owner == null ? Words.F("Level {0} {1}", hero.level, className)
+                           : owner.index == manager.Viewer ? Words.F("Level {0} {1} of you", hero.level, className)
+                           : Words.F("Level {0} {1} of {2}", hero.level, className, Words.Name(owner.name))) + "\n" +
                        (mine
                            ? $"{UIKit.Glyph("movement")} {hero.movement} / {hero.maxMovement}   {UIKit.Glyph("mana")} {hero.mana}"
-                           : $"An army of {Headcount(hero.army.TotalCreatures)}" + Threat(manager, game.Strength(hero)));
+                           : Words.F("An army of {0}", Headcount(hero.army.TotalCreatures)) + Threat(manager, game.Strength(hero)));
                 return true;
             }
             MapObject what = state.ObjectAt(cell);
@@ -55,11 +58,14 @@ namespace Portfolio.Heroes.UI
                         return false;
                     }
                     PlayerState owner = state.Player(town.owner);
-                    title = town.name;
+                    title = Words.Name(town.name);
                     picture = art.TownPortrait(town.faction, owner != null ? (int)owner.color : 4);
-                    body = $"A {Land.FactionName(town.faction)} town, " + (owner != null ? $"held by {Owner(owner, manager)}" : "held by no one") +
+                    string faction = Words.T(Land.FactionName(town.faction));
+                    body = (owner == null ? Words.F("A {0} town, held by no one", faction)
+                               : owner.index == manager.Viewer ? Words.F("A {0} town, held by you", faction)
+                               : Words.F("A {0} town, held by {1}", faction, Words.Name(owner.name))) +
                            (town.owner != manager.Viewer && !town.garrison.IsEmpty
-                               ? $"\nA garrison of {Headcount(town.garrison.TotalCreatures)}" + Threat(manager, game.Strength(town.garrison))
+                               ? "\n" + Words.F("A garrison of {0}", Headcount(town.garrison.TotalCreatures)) + Threat(manager, game.Strength(town.garrison))
                                : "");
                     return true;
                 }
@@ -71,8 +77,8 @@ namespace Portfolio.Heroes.UI
                         return false;
                     }
                     title = what.amount < 10
-                        ? $"{what.amount} {(what.amount == 1 ? def.Name : def.Plural)}"
-                        : $"About {Rough(what.amount)} {def.Plural}";
+                        ? $"{what.amount} {Words.Name(what.amount == 1 ? def.Name : def.Plural)}"
+                        : Words.F("About {0} {1}", Rough(what.amount), Words.Name(def.Plural));
                     picture = art.Portrait(def.Id);
                     body = $"{UIKit.Glyph("attack")} {def.Attack}  {UIKit.Glyph("defense")} {def.Defense}  " +
                            $"{UIKit.Glyph("damage")} {def.MinDamage}-{def.MaxDamage}  {UIKit.Glyph("health")} {def.Health}" +
@@ -83,58 +89,54 @@ namespace Portfolio.Heroes.UI
                 {
                     var kind = (ResourceKind)Mathf.Clamp(what.subtype, 0, ResourceSet.Kinds - 1);
                     PlayerState owner = state.Player(what.owner);
-                    title = MapObjects.MineName(kind);
-                    body = $"{UIKit.Glyph(kind)} {MapObjects.MineYield(kind)} a day to its owner\n" +
-                           (owner != null ? $"Held by {Owner(owner, manager)}" : "Held by no one");
+                    title = Words.T(MapObjects.MineName(kind));
+                    body = Words.F("{0} a day to its owner", $"{UIKit.Glyph(kind)} {MapObjects.MineYield(kind)}") + "\n" +
+                           (owner == null ? Words.T("Held by no one")
+                               : owner.index == manager.Viewer ? Words.T("Held by you")
+                               : Words.F("Held by {0}", Words.Name(owner.name)));
                     return true;
                 }
                 case ObjectKind.Resource:
                 {
                     var kind = (ResourceKind)Mathf.Clamp(what.subtype, 0, ResourceSet.Kinds - 1);
-                    title = Land.ResourceName(kind);
-                    body = $"{UIKit.Glyph(kind)} {what.amount} to pick up";
+                    title = Words.T(Land.ResourceName(kind));
+                    body = Words.F("{0} to pick up", $"{UIKit.Glyph(kind)} {what.amount}");
                     return true;
                 }
                 case ObjectKind.Artifact:
                 {
                     ArtifactDef def = Artifacts.Get((ArtifactId)what.subtype);
-                    title = def != null ? def.Name : "Artifact";
+                    title = Words.T(def != null ? def.Name : "Artifact");
                     picture = art.Artifact((ArtifactId)what.subtype);
-                    body = def != null ? def.Description : "";
+                    body = def != null ? Words.T(def.Description) : "";
                     return true;
                 }
                 case ObjectKind.Dwelling:
                 {
                     CreatureDef def = Creatures.Get(what.subtype);
-                    title = def != null ? $"Dwelling of the {def.Plural}" : MapObjects.Name(what.kind);
+                    title = def != null ? Words.F("Dwelling of the {0}", Words.Name(def.Plural)) : Words.T(MapObjects.Name(what.kind));
                     picture = def != null ? art.Portrait(def.Id) : null;
-                    body = MapObjects.Hint(what.kind) + (def != null ? $"\n{what.amount} waiting, {UIKit.Cost(def.Cost)} each" : "");
+                    body = Words.T(MapObjects.Hint(what.kind)) + (def != null ? "\n" + Words.F("{0} waiting, {1} each", what.amount, UIKit.Cost(def.Cost)) : "");
                     return true;
                 }
                 default:
                 {
-                    title = MapObjects.Name(what.kind);
-                    body = MapObjects.Hint(what.kind);
+                    title = Words.T(MapObjects.Name(what.kind));
+                    body = Words.T(MapObjects.Hint(what.kind));
                     HeroState selected = manager.Selected;
                     if (selected != null && MapObjects.OncePerHero(what.kind) && what.visitedBy.Contains(selected.id))
                     {
-                        body += $"\n<i>{selected.Name} has been here.</i>";
+                        body += "\n<i>" + Words.F("{0} has been here.", Words.Name(selected.Name)) + "</i>";
                     }
                     return true;
                 }
             }
         }
 
-        /// <summary>The name of a realm, or "you" for the player at this device.</summary>
-        private static string Owner(PlayerState owner, HeroesGameManager manager)
-        {
-            return owner.index == manager.Viewer ? "you" : owner.name;
-        }
-
         /// <summary>How many creatures, the way a scout would put it: "1 creature", "7 creatures", "about 40 creatures".</summary>
         private static string Headcount(int count)
         {
-            return count < 10 ? $"{count} {(count == 1 ? "creature" : "creatures")}" : $"about {Rough(count)} creatures";
+            return count == 1 ? Words.T("1 creature") : count < 10 ? Words.F("{0} creatures", count) : Words.F("about {0} creatures", Rough(count));
         }
 
         /// <summary>How many, the way a scout would put it: exact while few, rounded as they grow.</summary>
@@ -161,11 +163,11 @@ namespace Portfolio.Heroes.UI
             }
             int mine = Mathf.Max(1, manager.Game.Strength(hero));
             float ratio = strength / (float)mine;
-            string look = ratio < 0.5f ? "<color=#8CE07E>An easy fight</color>"
-                : ratio < 0.9f ? "<color=#D8D07A>A fair fight</color>"
-                : ratio < 1.5f ? "<color=#E8A064>A hard fight</color>"
-                : "<color=#EE7A66>A deadly fight</color>";
-            return $"\n{look} for {hero.Name}";
+            string look = ratio < 0.5f ? "<color=#8CE07E>" + Words.T("An easy fight") + "</color>"
+                : ratio < 0.9f ? "<color=#D8D07A>" + Words.T("A fair fight") + "</color>"
+                : ratio < 1.5f ? "<color=#E8A064>" + Words.T("A hard fight") + "</color>"
+                : "<color=#EE7A66>" + Words.T("A deadly fight") + "</color>";
+            return "\n" + Words.F("{0} for {1}", look, Words.Name(hero.Name));
         }
     }
 }

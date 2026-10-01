@@ -195,7 +195,7 @@ namespace Portfolio.Heroes.UI
         {
             Button button = UIKit.Push(Buttons, text, text, onClick, 24f);
             TextMeshProUGUI label = button.GetComponentInChildren<TextMeshProUGUI>();
-            float width = Mathf.Clamp(label.GetPreferredValues(text, 2000f, 40f).x + 70f, 190f, 420f);
+            float width = Mathf.Clamp(label.GetPreferredValues(label.text, 2000f, 40f).x + 70f, 190f, 420f);
             UIKit.Fit((RectTransform)button.transform, width, ButtonRow - 4f);
             return button;
         }
@@ -229,8 +229,20 @@ namespace Portfolio.Heroes.UI
             return box;
         }
 
+        /// <summary>The question shown, asked again in the new language when it changes.</summary>
+        private PendingChoice shown;
+
+        public void RefreshTexts()
+        {
+            if (IsOpen && shown != null)
+            {
+                Show(shown);
+            }
+        }
+
         public void Show(PendingChoice pending)
         {
+            shown = pending;
             if (pending == null)
             {
                 Close();
@@ -266,11 +278,11 @@ namespace Portfolio.Heroes.UI
 
         private void LevelUp(PendingChoice pending, HeroState hero)
         {
-            Heading.text = hero != null ? $"{hero.Name} reaches level {hero.level}" : "A New Level";
+            Heading.text = hero != null ? Words.F("{0} reaches level {1}", Words.Name(hero.Name), hero.level) : Words.T("A New Level");
             string raised = pending.stat >= 0
-                ? $"{UIKit.Glyph(StatSprite((PrimaryStat)pending.stat))} <color=#8CE07E>+1 {HeroData.StatName((PrimaryStat)pending.stat)}</color>.  "
+                ? $"{UIKit.Glyph(StatSprite((PrimaryStat)pending.stat))} <color=#8CE07E>+1 {Words.T(HeroData.StatName((PrimaryStat)pending.stat))}</color>.  "
                 : "";
-            note.text = $"{raised}Choose what else the hero has learned.";
+            note.text = raised + Words.T("Choose what else the hero has learned.");
             for (int i = 0; i < pending.options.Length; i++)
             {
                 int skill = pending.options[i];
@@ -280,25 +292,25 @@ namespace Portfolio.Heroes.UI
                 }
                 SkillDef def = HeroData.Skill((SkillId)skill);
                 int level = hero != null ? hero.SkillLevel((SkillId)skill) : 0;
-                string now = level > 0 ? $"From {HeroData.SkillLevelName(level)}" : "A new skill";
-                Card(i, Manager.Art.Skill((SkillId)skill), true, $"{HeroData.SkillLevelName(level + 1)} {def.Name}", now,
-                    Mathf.Clamp(level, 0, 2) < def.Levels.Length ? def.Levels[Mathf.Clamp(level, 0, 2)] : def.Description);
+                string now = level > 0 ? Words.F("From {0}", Words.T(HeroData.SkillLevelName(level))) : Words.T("A new skill");
+                Card(i, Manager.Art.Skill((SkillId)skill), true, Words.SkillName(level + 1, def.Name), now,
+                    Words.T(Mathf.Clamp(level, 0, 2) < def.Levels.Length ? def.Levels[Mathf.Clamp(level, 0, 2)] : def.Description));
             }
         }
 
         private void Treasure(PendingChoice pending)
         {
-            Heading.text = "A Chest of Treasure";
-            note.text = "Gold for the coffers, or the lessons of the road?";
+            Heading.text = Words.T("A Chest of Treasure");
+            note.text = Words.T("Gold for the coffers, or the lessons of the road?");
             // The rules pay the first option out as gold and the second as experience.
-            Card(0, Manager.Art.Resource(ResourceKind.Gold), false, $"{pending.options[0]:N0} Gold", "For the treasury", "Spent on buildings, creatures and heroes.");
-            Card(1, Manager.Art.Icon("experience"), true, $"{pending.options[1]:N0} Experience", "For the hero", "Brings the next level closer.");
+            Card(0, Manager.Art.Resource(ResourceKind.Gold), false, Words.F("{0} Gold", pending.options[0].ToString("N0")), "For the treasury", "Spent on buildings, creatures and heroes.");
+            Card(1, Manager.Art.Icon("experience"), true, Words.F("{0} Experience", pending.options[1].ToString("N0")), "For the hero", "Brings the next level closer.");
         }
 
         private void Arena()
         {
-            Heading.text = "The Arena";
-            note.text = "The masters of the arena offer their training.";
+            Heading.text = Words.T("The Arena");
+            note.text = Words.T("The masters of the arena offer their training.");
             Card(0, Manager.Art.statIcons.Length > 0 ? Manager.Art.statIcons[0] : null, false, "+2 Attack", "Strike harder", "Every creature of the hero's army hits harder.");
             Card(1, Manager.Art.statIcons.Length > 1 ? Manager.Art.statIcons[1] : null, false, "+2 Defense", "Stand firmer", "Every creature of the hero's army takes less.");
         }
@@ -367,11 +379,23 @@ namespace Portfolio.Heroes.UI
             return Build<ResultsBox>(parent, manager, "Results", new Vector2(860f, 600f), "");
         }
 
+        private (bool won, int stars, int days)? shown;
+
+        /// <summary>The results shown, written again in the new language when it changes.</summary>
+        public void RefreshTexts()
+        {
+            if (IsOpen && shown.HasValue)
+            {
+                Show(shown.Value.won, shown.Value.stars, shown.Value.days);
+            }
+        }
+
         public void Show(bool won, int stars, int days)
         {
+            shown = (won, stars, days);
             ClearBody();
             ClearButtons();
-            Heading.text = won ? "Victory" : "Defeat";
+            Heading.text = Words.T(won ? "Victory" : "Defeat");
             bool online = Manager.IsOnlineGame;
             HeroesLevel scenario = online ? null : Manager.Scenario;
             bool chapter = scenario != null && !scenario.IsSkirmish;
@@ -408,7 +432,8 @@ namespace Portfolio.Heroes.UI
             if (chapter)
             {
                 TextMeshProUGUI record = UIKit.Label(Body, "Thresholds",
-                    $"{UIKit.StarText(3)} in {scenario.ThreeStarDays} days   {UIKit.StarText(2)} in {scenario.TwoStarDays} days",
+                    Words.F("{0} in {1} days", UIKit.StarText(3), scenario.ThreeStarDays) + "   " +
+                    Words.F("{0} in {1} days", UIKit.StarText(2), scenario.TwoStarDays),
                     21f, UIKit.Dim, TextAlignmentOptions.Center);
                 UIKit.Pin((RectTransform)record.transform, new Vector2(0.5f, 1f), new Vector2(0f, y), new Vector2(760f, 30f));
                 y -= 34f;
@@ -503,8 +528,8 @@ namespace Portfolio.Heroes.UI
         {
             UIKit.Clear(lines);
             ClearButtons();
-            Heading.text = title;
-            Paragraph(text);
+            Heading.text = Words.T(title);
+            Paragraph(Words.T(text));
             closed = onClose;
             Answer(button, Close);
             Open();
@@ -516,7 +541,7 @@ namespace Portfolio.Heroes.UI
         {
             UIKit.Clear(lines);
             ClearButtons();
-            Heading.text = "Credits";
+            Heading.text = Words.T("Credits");
             var paragraph = new StringBuilder();
             foreach (string raw in (credits ?? "").Replace("\r", "").Split('\n'))
             {
@@ -528,7 +553,9 @@ namespace Portfolio.Heroes.UI
                 }
                 if (heading)
                 {
-                    TextMeshProUGUI title = UIKit.Title(lines, "Heading", line, 25f, new Color(0.45f, 0.1f, 0.06f), TextAlignmentOptions.Bottom);
+                    // The credits are names, titles of works and licences: they stay as the file writes them.
+                    TextMeshProUGUI title = UIKit.Title(lines, "Heading", "", 25f, new Color(0.45f, 0.1f, 0.06f), TextAlignmentOptions.Bottom);
+                    title.text = line;
                     UIKit.Fit((RectTransform)title.transform, 0f, lines.childCount > 0 ? 56f : 40f, true);
                     RectTransform rule = UIKit.Divider(lines, "Rule", 14f);
                     UIKit.Fit(rule, 0f, 14f, true);
@@ -569,7 +596,8 @@ namespace Portfolio.Heroes.UI
 
         private void Paragraph(string text)
         {
-            TextMeshProUGUI words = UIKit.Label(lines, "Text", text, 22f, UIKit.InkOnParchment, TextAlignmentOptions.TopLeft);
+            TextMeshProUGUI words = UIKit.Label(lines, "Text", "", 22f, UIKit.InkOnParchment, TextAlignmentOptions.TopLeft);
+            words.text = text;
             words.textWrappingMode = TextWrappingModes.Normal;
         }
 
@@ -680,7 +708,7 @@ namespace Portfolio.Heroes.UI
                     CreatureDef def = slot.Def;
                     Sprite face = manager.Art.Portrait(def.Id);
                     pictures[i].sprite = face != null ? face : manager.Art.Icon("monster");
-                    Tooltip.Attach(slots[i].gameObject, $"{slot.count} {(slot.count == 1 ? def.Name : def.Plural)}", Describe(def), face);
+                    Tooltip.Attach(slots[i].gameObject, $"{slot.count} {Words.Name(slot.count == 1 ? def.Name : def.Plural)}", Describe(def), face);
                 }
                 else
                 {
@@ -701,8 +729,8 @@ namespace Portfolio.Heroes.UI
         {
             return $"{UIKit.Glyph("attack")} {def.Attack}   {UIKit.Glyph("defense")} {def.Defense}   " +
                    $"{UIKit.Glyph("damage")} {def.MinDamage}-{def.MaxDamage}\n" +
-                   $"{UIKit.Glyph("health")} {def.Health}   {UIKit.Glyph("speed")} {def.Speed}{(def.Shots > 0 ? $"   {def.Shots} shots" : "")}" +
-                   (string.IsNullOrEmpty(def.Description) ? "" : $"\n<i>{def.Description}</i>");
+                   $"{UIKit.Glyph("health")} {def.Health}   {UIKit.Glyph("speed")} {def.Speed}{(def.Shots > 0 ? "   " + Words.F("{0} shots", def.Shots) : "")}" +
+                   (string.IsNullOrEmpty(def.Description) ? "" : $"\n<i>{Words.T(def.Description)}</i>");
         }
 
         private Army ArmyOf(int which)

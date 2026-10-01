@@ -26,7 +26,7 @@ namespace Portfolio.Heroes
                     break;
                 case EventKind.WeekBegan:
                     sound?.Play(Sfx.NewWeek);
-                    ui.Announce($"Week {what.a}", "A new week begins.");
+                    ui.Announce(Words.F("Week {0}", what.a), "A new week begins.");
                     yield return Beat(0.7f);
                     break;
                 case EventKind.TurnBegan:
@@ -199,7 +199,7 @@ namespace Portfolio.Heroes
             bool seen = hero != null && (own || InSight(hero.cell));
             if (seen && hero.cell >= 0 && !string.IsNullOrEmpty(what.text))
             {
-                Effects.Float(Map.Over(hero.cell), Short(what.text), color, 2.8f);
+                Effects.Float(Map.Over(hero.cell), Short(Words.Sentence(what.text)), color, 2.8f);
             }
             return own || seen;
         }
@@ -272,7 +272,7 @@ namespace Portfolio.Heroes
                 {
                     Select(hero);
                 }
-                ui.Announce($"Day {Game.State.DayOfWeek}, Week {Game.State.Week}", player.name);
+                ui.Announce(Words.F("Day {0}, Week {1}", Game.State.DayOfWeek, Game.State.Week), player.name);
                 yield return Beat(0.5f);
             }
         }
@@ -360,7 +360,7 @@ namespace Portfolio.Heroes
             var kind = (ResourceKind)what.b;
             if (seen)
             {
-                Effects.Float(Map.Over(what.a), $"+{what.c} {Land.ResourceName(kind)}", new Color(1f, 0.9f, 0.5f), 3f);
+                Effects.Float(Map.Over(what.a), $"+{what.c} {Words.T(Land.ResourceName(kind))}", new Color(1f, 0.9f, 0.5f), 3f);
                 Effects.Rise(Map.Point(what.a, 0.6f), new Color(1f, 0.85f, 0.45f));
             }
             if (own)
@@ -385,7 +385,7 @@ namespace Portfolio.Heroes
             if (seen)
             {
                 Effects.Rise(Map.Point(hero.cell, 0.5f), new Color(1f, 0.92f, 0.5f), 45);
-                Effects.Float(Map.Over(hero.cell), $"Level {what.b}", new Color(1f, 0.92f, 0.5f), 3.4f);
+                Effects.Float(Map.Over(hero.cell), Words.F("Level {0}", what.b), new Color(1f, 0.92f, 0.5f), 3.4f);
             }
             if (own || seen)
             {

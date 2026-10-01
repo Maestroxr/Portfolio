@@ -10,7 +10,7 @@ namespace Portfolio.EndlessRunner
     }
 
 
-    /// <summary>Names and descriptions of the power-ups, shown when one is picked up.</summary>
+    /// <summary>Names and descriptions of the power-ups, shown when one is picked up (English keys, see <see cref="RunnerText"/>).</summary>
     public static class PowerUps
     {
         public const int Count = 4;
@@ -19,10 +19,10 @@ namespace Portfolio.EndlessRunner
         {
             switch (type)
             {
-                case PowerUpType.Magnet: return "Coin Magnet";
-                case PowerUpType.Shield: return "Shield";
-                case PowerUpType.Multiplier: return "Double Coins";
-                case PowerUpType.SuperJump: return "Super Jump";
+                case PowerUpType.Magnet: return RunnerText.Key("Coin Magnet");
+                case PowerUpType.Shield: return RunnerText.Key("Shield");
+                case PowerUpType.Multiplier: return RunnerText.Key("Double Coins");
+                case PowerUpType.SuperJump: return RunnerText.Key("Super Jump");
                 default: return type.ToString();
             }
         }
@@ -31,10 +31,10 @@ namespace Portfolio.EndlessRunner
         {
             switch (type)
             {
-                case PowerUpType.Magnet: return "Coins fly to you!";
-                case PowerUpType.Shield: return "Shrug off the next hit!";
-                case PowerUpType.Multiplier: return "Every coin counts twice!";
-                case PowerUpType.SuperJump: return "Jump high enough to land on wagons!";
+                case PowerUpType.Magnet: return RunnerText.Key("Coins fly to you!");
+                case PowerUpType.Shield: return RunnerText.Key("Shrug off the next hit!");
+                case PowerUpType.Multiplier: return RunnerText.Key("Every coin counts twice!");
+                case PowerUpType.SuperJump: return RunnerText.Key("Jump high enough to land on wagons!");
                 default: return string.Empty;
             }
         }

@@ -1,7 +1,9 @@
 using System;
+using Gamebox;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using static Portfolio.Asteroids.AsteroidsText;
 
 namespace Portfolio.Asteroids
 {
@@ -45,7 +47,7 @@ namespace Portfolio.Asteroids
             }
             if (status != null)
             {
-                status.text = ship.Selected ? "SELECTED" : ship.Unlocked ? "CLICK TO FLY" : $"{ship.StarsToUnlock} STARS TO UNLOCK";
+                status.text = ship.Selected ? T("SELECTED") : ship.Unlocked ? MobilePlatform.Pick(T("CLICK TO FLY"), T("TAP TO FLY")) : F("{0} STARS TO UNLOCK", ship.StarsToUnlock);
                 status.color = ship.Selected ? accent : ship.Unlocked ? Color.white : new Color(1f, 0.8f, 0.4f);
             }
             float[] ratings = { ship.Speed, ship.Handling, ship.Hull, ship.FireRate };

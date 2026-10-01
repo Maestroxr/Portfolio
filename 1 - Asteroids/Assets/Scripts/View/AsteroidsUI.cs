@@ -7,6 +7,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
+using static Portfolio.Asteroids.AsteroidsText;
 
 namespace Portfolio.Asteroids
 {
@@ -226,6 +227,10 @@ namespace Portfolio.Asteroids
         private int resultStarCount;
         private int starsPopped;
         private float resetConfirmUntil = -1f;
+        private AsteroidsLevel shownMission;
+        private string shownSectorTitle;
+        private string shownBriefing;
+        private string shownBossName;
 
         private AsteroidsGameManager Asteroids => Manager as AsteroidsGameManager;
 
@@ -427,12 +432,12 @@ namespace Portfolio.Asteroids
             if (Time.unscaledTime < resetConfirmUntil)
             {
                 resetConfirmUntil = -1f;
-                SetLabel(resetProgressLabel, "Reset progress");
+                SetLabel(resetProgressLabel, T("Reset progress"));
                 Asteroids?.ResetProgress();
                 return;
             }
             resetConfirmUntil = Time.unscaledTime + 3f;
-            SetLabel(resetProgressLabel, MobilePlatform.Pick("Click again to reset", "Tap again to reset"));
+            SetLabel(resetProgressLabel, MobilePlatform.Pick(T("Click again to reset"), T("Tap again to reset")));
         }
 
 
@@ -588,7 +593,7 @@ namespace Portfolio.Asteroids
                 AsteroidsCampaign.Sector sector = campaign != null ? campaign.GetSector(i) : null;
                 if (sectorTitles[i] != null)
                 {
-                    sectorTitles[i].text = sector != null ? sector.title.ToUpperInvariant() : string.Empty;
+                    sectorTitles[i].text = sector != null ? T(sector.title).ToUpperInvariant() : string.Empty;
                     if (sector != null && sector.theme != null)
                     {
                         sectorTitles[i].color = sector.theme.Accent;
@@ -597,7 +602,7 @@ namespace Portfolio.Asteroids
                 if (i < sectorGates.Length && sectorGates[i] != null)
                 {
                     int required = sector != null ? sector.starsRequired : 0;
-                    sectorGates[i].text = required <= 0 ? "OPEN" : totalStars >= required ? $"{required} STARS - OPEN" : $"NEEDS {required} STARS";
+                    sectorGates[i].text = required <= 0 ? T("OPEN") : totalStars >= required ? F("{0} STARS - OPEN", required) : F("NEEDS {0} STARS", required);
                     sectorGates[i].color = required <= 0 || totalStars >= required ? new Color(0.6f, 1f, 0.7f, 0.8f) : new Color(1f, 0.75f, 0.35f);
                 }
             }
@@ -611,23 +616,23 @@ namespace Portfolio.Asteroids
             {
                 detailAccent.color = accent;
             }
-            SetLabel(detailSector, summary.Endless ? "DEEP FIELD - ENDLESS" : $"{summary.SectorTitle.ToUpperInvariant()}  -  MISSION {summary.Number}");
+            SetLabel(detailSector, summary.Endless ? T("DEEP FIELD - ENDLESS") : F("{0}  -  MISSION {1}", summary.SectorTitle.ToUpperInvariant(), summary.Number));
             if (detailSector != null)
             {
                 detailSector.color = accent;
             }
             SetLabel(detailTitle, summary.Title);
             SetLabel(detailDescription, summary.Description);
-            SetLabel(detailObjective, $"<color=#9FE8FF>OBJECTIVE</color>  {summary.Objective}");
-            SetLabel(detailNew, string.IsNullOrEmpty(summary.Introduces) ? string.Empty : $"<color=#FFD45E>NEW</color>  {summary.Introduces}");
+            SetLabel(detailObjective, $"<color=#9FE8FF>{T("OBJECTIVE")}</color>  {summary.Objective}");
+            SetLabel(detailNew, string.IsNullOrEmpty(summary.Introduces) ? string.Empty : $"<color=#FFD45E>{T("NEW")}</color>  {summary.Introduces}");
             if (summary.Endless)
             {
-                SetLabel(detailBest, summary.BestScore > 0 ? $"RECORD  {summary.BestScore:N0}  -  WAVE {summary.BestWave}" : "No record yet - how far can you get?");
+                SetLabel(detailBest, summary.BestScore > 0 ? F("RECORD  {0:N0}  -  WAVE {1}", summary.BestScore, summary.BestWave) : T("No record yet - how far can you get?"));
             }
             else
             {
-                string best = summary.BestScore > 0 ? $"BEST  {summary.BestScore:N0}" : "Not flown yet";
-                SetLabel(detailBest, $"{best}     <color=#FFFFFF88>3rd star at {summary.ScoreGoal:N0}</color>");
+                string best = summary.BestScore > 0 ? F("BEST  {0:N0}", summary.BestScore) : T("Not flown yet");
+                SetLabel(detailBest, $"{best}     <color=#FFFFFF88>{F("3rd star at {0:N0}", summary.ScoreGoal)}</color>");
             }
             for (int i = 0; i < detailStars.Length; i++)
             {
@@ -642,7 +647,7 @@ namespace Portfolio.Asteroids
             {
                 launchButton.interactable = summary.Unlocked;
             }
-            SetLabel(launchLabel, summary.Unlocked ? "LAUNCH" : "LOCKED");
+            SetLabel(launchLabel, summary.Unlocked ? T("LAUNCH") : T("LOCKED"));
             if (!summary.Unlocked)
             {
                 SetLabel(detailNew, $"<color=#FFB24D>{summary.LockReason}</color>");
@@ -681,14 +686,14 @@ namespace Portfolio.Asteroids
         public void BeginMission(AsteroidsLevel mission, string briefing, int lives, string sectorTitle)
         {
             accent = mission.Theme != null ? mission.Theme.Accent : accent;
-            SetLabel(missionText, mission.IsEndless ? "ENDLESS SURVIVAL" : mission.Title.ToUpperInvariant());
-            SetLabel(briefingSector, sectorTitle.ToUpperInvariant());
+            shownMission = mission;
+            shownSectorTitle = sectorTitle;
+            shownBriefing = briefing;
+            WriteMissionTitles();
             if (briefingSector != null)
             {
                 briefingSector.color = accent;
             }
-            SetLabel(briefingTitle, mission.Title.ToUpperInvariant());
-            SetLabel(briefingObjective, briefing);
             briefingTime = 0f;
             shownScore = -1;
             shownMultiplier = -1;
@@ -788,7 +793,7 @@ namespace Portfolio.Asteroids
                 shownWeapon = hud.Weapon;
                 shownLevel = hud.WeaponLevel;
                 Color tint = WeaponRules.Tint(hud.Weapon);
-                SetLabel(weaponText, WeaponRules.ShortTitle(hud.Weapon));
+                SetLabel(weaponText, T(WeaponRules.ShortTitle(hud.Weapon)));
                 if (weaponText != null)
                 {
                     weaponText.color = tint;
@@ -858,7 +863,8 @@ namespace Portfolio.Asteroids
 
         public void ShowBoss(string name)
         {
-            SetLabel(bossName, name.ToUpperInvariant());
+            shownBossName = name;
+            SetLabel(bossName, T(name).ToUpperInvariant());
             if (bossFill != null)
             {
                 bossFill.fillAmount = 0f;
@@ -867,7 +873,7 @@ namespace Portfolio.Asteroids
             {
                 bossBar.SetActive(true);
             }
-            Announce("WARNING", name.ToUpperInvariant(), new Color(1f, 0.3f, 0.25f));
+            Announce(T("WARNING"), T(name).ToUpperInvariant(), new Color(1f, 0.3f, 0.25f));
         }
 
 
@@ -886,7 +892,7 @@ namespace Portfolio.Asteroids
             {
                 return;
             }
-            countdownText.text = text;
+            countdownText.text = text == "GO!" ? T("GO!") : text;
             countdownText.gameObject.SetActive(true);
             countdownText.color = text == "GO!" ? new Color(0.5f, 1f, 0.6f) : accent;
             countdownTime = 0f;
@@ -978,7 +984,7 @@ namespace Portfolio.Asteroids
                 }
                 if (slot.scoreText != null)
                 {
-                    slot.scoreText.text = pilot.Flying ? pilot.Score.ToString("N0") : $"{pilot.Score:N0}  LOST";
+                    slot.scoreText.text = pilot.Flying ? pilot.Score.ToString("N0") : F("{0:N0}  LOST", pilot.Score);
                     slot.scoreText.color = pilot.Flying ? color : new Color(1f, 0.45f, 0.4f, 0.9f);
                 }
             }
@@ -1037,28 +1043,28 @@ namespace Portfolio.Asteroids
                 strike.HideResults();
             }
             // A shared mission goes back to its room, where the host starts the next one.
-            SetLabel(missionsLabel, result.Coop ? "Room" : "Missions");
+            SetLabel(missionsLabel, result.Coop ? T("Room") : T("Missions"));
             if (retryButton != null)
             {
                 retryButton.gameObject.SetActive(!result.Coop);
             }
-            SetLabel(resultTitle, result.Endless ? "RUN OVER" : result.Victory ? "MISSION COMPLETE" : "MISSION FAILED");
+            SetLabel(resultTitle, result.Endless ? T("RUN OVER") : result.Victory ? T("MISSION COMPLETE") : T("MISSION FAILED"));
             if (resultTitle != null)
             {
                 resultTitle.color = result.Victory || result.Endless ? new Color(0.45f, 1f, 0.65f) : new Color(1f, 0.4f, 0.35f);
             }
-            SetLabel(resultSubtitle, result.Title.ToUpperInvariant());
-            SetLabel(resultScore, (result.NewBest ? "<color=#FFD24A>NEW BEST!</color>  " : string.Empty) + result.Score.ToString("N0"));
+            SetLabel(resultSubtitle, T(result.Title).ToUpperInvariant());
+            SetLabel(resultScore, (result.NewBest ? $"<color=#FFD24A>{T("NEW BEST!")}</color>  " : string.Empty) + result.Score.ToString("N0"));
             string accuracy = $"{Mathf.RoundToInt(result.Accuracy * 100f)}%";
             string time = MissionObjective.FormatTime(result.Time);
-            string stats = $"Destroyed  <b>{result.Kills}</b>     Accuracy  <b>{accuracy}</b>\nBest combo  <b>{result.MaxCombo}</b>     Crystals  <b>{result.Crystals}</b>     Time  <b>{time}</b>";
+            string stats = $"{T("Destroyed")}  <b>{result.Kills}</b>     {T("Accuracy")}  <b>{accuracy}</b>\n{T("Best combo")}  <b>{result.MaxCombo}</b>     {T("Crystals")}  <b>{result.Crystals}</b>     {T("Time")}  <b>{time}</b>";
             if (result.LifeBonus > 0)
             {
-                stats += $"\nShips left bonus  <b>+{result.LifeBonus:N0}</b>";
+                stats += $"\n{T("Ships left bonus")}  <b>+{result.LifeBonus:N0}</b>";
             }
             if (result.Endless)
             {
-                stats += $"\nWave reached  <b>{result.Wave}</b>     Record  <b>wave {result.BestWave}</b>";
+                stats += $"\n{T("Wave reached")}  <b>{result.Wave}</b>     {T("Record")}  <b>{F("wave {0}", result.BestWave)}</b>";
             }
             SetLabel(resultStats, stats);
             if (result.Coop)
@@ -1067,14 +1073,14 @@ namespace Portfolio.Asteroids
             }
             else if (result.Endless)
             {
-                SetLabel(resultGoals, "Endless runs keep your best score and wave.");
+                SetLabel(resultGoals, T("Endless runs keep your best score and wave."));
             }
             else
             {
                 SetLabel(resultGoals,
-                    Goal(result.Victory, "Complete the mission") + "\n" +
-                    Goal(result.Victory && result.Flawless, "Lose no ships") + "\n" +
-                    Goal(result.Victory && result.ScoreGoalReached, $"Score {result.ScoreGoal:N0}"));
+                    Goal(result.Victory, T("Complete the mission")) + "\n" +
+                    Goal(result.Victory && result.Flawless, T("Lose no ships")) + "\n" +
+                    Goal(result.Victory && result.ScoreGoalReached, F("Score {0:N0}", result.ScoreGoal)));
             }
             resultStarCount = result.Stars;
             starsPopped = 0;
@@ -1093,7 +1099,7 @@ namespace Portfolio.Asteroids
                 nextButton.gameObject.SetActive(result.HasNext);
                 nextButton.interactable = !result.NextLocked;
             }
-            SetLabel(nextLabel, result.NextLocked ? "LOCKED" : "NEXT");
+            SetLabel(nextLabel, result.NextLocked ? T("LOCKED") : T("NEXT"));
             if (result.NextLocked && result.HasNext)
             {
                 SetLabel(resultGoals, (resultGoals != null ? resultGoals.text : string.Empty) + $"\n<color=#FFB24D>{result.NextLockReason}</color>");
@@ -1225,7 +1231,7 @@ namespace Portfolio.Asteroids
             if (resetConfirmUntil > 0f && Time.unscaledTime > resetConfirmUntil)
             {
                 resetConfirmUntil = -1f;
-                SetLabel(resetProgressLabel, "Reset progress");
+                SetLabel(resetProgressLabel, T("Reset progress"));
             }
 
             AnimateResults(deltaTime);
@@ -1266,6 +1272,51 @@ namespace Portfolio.Asteroids
         }
 
         #endregion
+
+
+        /// <summary>
+        /// The language changed: the words written by code are written again (the mission select is redrawn by the manager,
+        /// the fixed texts of the canvas by its LocalizedTexts).
+        /// </summary>
+        public override void RefreshTexts()
+        {
+            base.RefreshTexts();
+            SetLabel(resetProgressLabel, resetConfirmUntil > 0f ? MobilePlatform.Pick(T("Click again to reset"), T("Tap again to reset")) : T("Reset progress"));
+            if (shownMission != null)
+            {
+                WriteMissionTitles();
+            }
+            if (!string.IsNullOrEmpty(shownBossName))
+            {
+                SetLabel(bossName, T(shownBossName).ToUpperInvariant());
+            }
+            // The HUD writes these again on its next update.
+            shownObjective = null;
+            shownWeapon = (WeaponType)(-1);
+            if (hangarScreen != null && hangarScreen.gameObject.activeSelf)
+            {
+                ShowShips();
+            }
+            if (shipControls != null)
+            {
+                shipControls.RefreshTexts();
+            }
+            if (strike != null)
+            {
+                strike.RefreshTexts();
+            }
+        }
+
+
+        /// <summary>The mission's name on the HUD and its briefing, in the language shown.</summary>
+        private void WriteMissionTitles()
+        {
+            string title = T(shownMission.Title).ToUpperInvariant();
+            SetLabel(missionText, shownMission.IsEndless ? T("ENDLESS SURVIVAL") : title);
+            SetLabel(briefingSector, T(shownSectorTitle ?? string.Empty).ToUpperInvariant());
+            SetLabel(briefingTitle, title);
+            SetLabel(briefingObjective, shownBriefing);
+        }
 
 
         public override void UpdateLevel(int level)

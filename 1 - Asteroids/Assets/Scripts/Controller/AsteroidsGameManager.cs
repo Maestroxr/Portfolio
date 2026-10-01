@@ -4,6 +4,7 @@ using Gamebox;
 using Gamebox.UI;
 using UnityEngine;
 using Random = UnityEngine.Random;
+using static Portfolio.Asteroids.AsteroidsText;
 
 namespace Portfolio.Asteroids
 {
@@ -232,6 +233,51 @@ namespace Portfolio.Asteroids
         }
 
 
+        /// <summary>
+        /// The language changed: the mission select (or the Supply Room) is drawn again in it, and a strike HUD writes its
+        /// words again; the fixed texts follow the canvases' LocalizedTexts and the HUD words the next update.
+        /// </summary>
+        protected override void OnLanguageChanged()
+        {
+            base.OnLanguageChanged();
+            if (isActiveAndEnabled)
+            {
+                StartCoroutine(RedrawForLanguage());
+            }
+        }
+
+
+        /// <summary>
+        /// The new language's tables load after the pick: once they are in, the interface writes its words again (the HUD
+        /// and Supply Room, the canvases' fixed texts, the mission select).
+        /// </summary>
+        private System.Collections.IEnumerator RedrawForLanguage()
+        {
+            yield return TranslateFixedTexts();
+            UI?.RefreshTexts();
+            GreetAgain();
+            yield return RedrawForTheme();
+        }
+
+
+        /// <summary>
+        /// Writes the fixed texts of the canvases again once the tables are surely loaded: a LocalizedTexts that applied
+        /// while the languages were still loading (its WhenReady ran inside the loading callback) kept its English.
+        /// </summary>
+        private System.Collections.IEnumerator TranslateFixedTexts()
+        {
+            while (!GameLanguages.IsReady)
+            {
+                yield return null;
+            }
+            yield return null;
+            foreach (LocalizedTexts texts in FindObjectsByType<LocalizedTexts>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                texts.Apply();
+            }
+        }
+
+
         private System.Collections.IEnumerator RedrawForTheme()
         {
             yield return null;
@@ -256,13 +302,17 @@ namespace Portfolio.Asteroids
             progress = new AsteroidsProgress(Disk, Type);
             ApplySelectedHull();
             base.Start();
+            if (isActiveAndEnabled)
+            {
+                StartCoroutine(TranslateFixedTexts());
+            }
             if (asteroidSettings == null)
             {
-                UI?.UpdateError("Asteroid settings are missing.");
+                UI?.UpdateError(T("Asteroid settings are missing."));
             }
             else if (!asteroidSettings.AreSettingsValid(out string error))
             {
-                UI?.UpdateError($"Asteroid settings error: {error}.");
+                UI?.UpdateError(F("Asteroid settings error: {0}.", error));
             }
         }
 
@@ -568,7 +618,7 @@ namespace Portfolio.Asteroids
             }
             if (TotalStars < hangar[index].StarsToUnlock)
             {
-                ui?.UpdateError($"{hangar[index].DisplayName} needs {hangar[index].StarsToUnlock} stars.");
+                ui?.UpdateError(F("{0} needs {1} stars.", T(hangar[index].DisplayName), hangar[index].StarsToUnlock));
                 sounds?.Denied();
                 return;
             }
@@ -627,7 +677,7 @@ namespace Portfolio.Asteroids
             AsteroidsLevel mission = MissionAt(index);
             if (mission == null)
             {
-                return "No such mission.";
+                return T("No such mission.");
             }
             if (IsUnlocked(index))
             {
@@ -636,15 +686,15 @@ namespace Portfolio.Asteroids
             AsteroidsCampaign sectors = AsteroidsCampaign;
             if (mission.IsEndless)
             {
-                return "Beat the first sector's boss to unlock the endless mission.";
+                return T("Beat the first sector's boss to unlock the endless mission.");
             }
             int required = sectors != null ? sectors.StarsRequired(index) : 0;
             int stars = sectors != null && progress != null ? sectors.TotalStars(progress, mission.Mode) : TotalStars;
             if (required > stars)
             {
-                return $"Collect {required} stars to enter this sector ({stars} so far).";
+                return F("Collect {0} stars to enter this sector ({1} so far).", required, stars);
             }
-            return "Complete the previous mission to unlock this one.";
+            return T("Complete the previous mission to unlock this one.");
         }
 
 
@@ -683,12 +733,12 @@ namespace Portfolio.Asteroids
                 {
                     Index = i,
                     Number = mission.IsEndless ? 0 : number,
-                    Title = mission.Title,
-                    Description = mission.Description,
-                    Introduces = mission.Introduces,
+                    Title = T(mission.Title),
+                    Description = T(mission.Description),
+                    Introduces = T(mission.Introduces),
                     Objective = objectiveInfo.Briefing,
                     Sector = mission.Sector,
-                    SectorTitle = sector != null && !string.IsNullOrEmpty(sector.title) ? sector.title : theme != null ? theme.Title : string.Empty,
+                    SectorTitle = T(sector != null && !string.IsNullOrEmpty(sector.title) ? sector.title : theme != null ? theme.Title : string.Empty),
                     Accent = AsteroidsThemes.Accent(theme, Color.cyan),
                     Unlocked = IsUnlocked(i),
                     LockReason = LockReason(i),
@@ -730,8 +780,8 @@ namespace Portfolio.Asteroids
                 ships.Add(new HangarShip
                 {
                     Index = i,
-                    Name = hull.DisplayName,
-                    Description = hull.Description,
+                    Name = T(hull.DisplayName),
+                    Description = T(hull.Description),
                     Unlocked = TotalStars >= hull.StarsToUnlock,
                     StarsToUnlock = hull.StarsToUnlock,
                     Selected = i == selected,
@@ -844,7 +894,7 @@ namespace Portfolio.Asteroids
             AsteroidsLevel mission = Mission;
             if (mission == null || ship == null || field == null || spawner == null)
             {
-                UI?.UpdateError("The Asteroids scene is missing its mission, ship or playfield.");
+                UI?.UpdateError(T("The Asteroids scene is missing its mission, ship or playfield."));
                 return false;
             }
             AsteroidSettings settings = AsteroidSettings;
@@ -992,7 +1042,7 @@ namespace Portfolio.Asteroids
             if (Mission != null && Mission.IsEndless && !recordAnnounced && progress.EndlessBestScore > 1000 && score.Score > progress.EndlessBestScore)
             {
                 recordAnnounced = true;
-                ui?.Toast("NEW RECORD!", new Color(1f, 0.85f, 0.25f));
+                ui?.Toast(T("NEW RECORD!"), new Color(1f, 0.85f, 0.25f));
                 sounds?.Star(2);
             }
         }
@@ -1010,7 +1060,7 @@ namespace Portfolio.Asteroids
             {
                 return;
             }
-            ui?.ShowHint(mission.Hint(hintIndex, MobilePlatform.UsesTouch));
+            ui?.ShowHint(T(mission.Hint(hintIndex, MobilePlatform.UsesTouch)));
             hintIndex++;
             hintTimer = 6.5f;
         }
@@ -1032,7 +1082,7 @@ namespace Portfolio.Asteroids
                 Score = score.Score,
                 Multiplier = score.Multiplier,
                 ComboTime = score.Combo > 0 ? score.ComboTime / ScoreKeeper.ComboWindow : 0f,
-                Objective = FollowsSimulator ? coopStatus : objective.Status(director != null ? director.WaveNumber : 1),
+                Objective = FollowsSimulator ? objective.Status(Mathf.Max(1, coopWave), coopProgress) : objective.Status(director != null ? director.WaveNumber : 1),
                 ObjectiveProgress = FollowsSimulator ? coopProgress : objective.Progress,
                 Hull = ship.MaxHealth > 0f ? Mathf.Clamp01(ship.Health / ship.MaxHealth) : 0f,
                 Shield = ship.MaxShield > 0f ? Mathf.Clamp01(ship.Shield / ship.MaxShield) : 0f,
@@ -1072,7 +1122,7 @@ namespace Portfolio.Asteroids
                     score.Add(bonus);
                     SyncScore();
                 }
-                ui?.Announce(Mission != null && Mission.Objective == LevelObjective.Boss ? "SECTOR SECURED" : "MISSION COMPLETE", string.Empty, new Color(0.45f, 1f, 0.6f));
+                ui?.Announce(Mission != null && Mission.Objective == LevelObjective.Boss ? T("SECTOR SECURED") : T("MISSION COMPLETE"), string.Empty, new Color(0.45f, 1f, 0.6f));
                 sounds?.Victory();
                 cameraRig?.Pulse(0.6f);
                 ClearFieldWithFlair();
@@ -1100,7 +1150,7 @@ namespace Portfolio.Asteroids
                 LoseStrike();
             }
             bool endless = Mission != null && Mission.IsEndless;
-            ui?.Announce(endless ? "SHIP LOST" : "MISSION FAILED", endless ? $"Reached wave {director?.WaveNumber ?? 0}" : string.Empty, new Color(1f, 0.35f, 0.3f));
+            ui?.Announce(endless ? T("SHIP LOST") : T("MISSION FAILED"), endless ? F("Reached wave {0}", director?.WaveNumber ?? 0) : string.Empty, new Color(1f, 0.35f, 0.3f));
             sounds?.GameOver();
         }
 
@@ -1200,8 +1250,8 @@ namespace Portfolio.Asteroids
             {
                 return;
             }
-            string title = !string.IsNullOrEmpty(spec.title) ? spec.title.ToUpperInvariant() : $"WAVE {wave}";
-            string subtitle = director.WaveCount > 0 && Mission.Objective == LevelObjective.ClearWaves ? $"{wave} of {director.WaveCount}" : string.Empty;
+            string title = !string.IsNullOrEmpty(spec.title) ? T(spec.title).ToUpperInvariant() : F("WAVE {0}", wave);
+            string subtitle = director.WaveCount > 0 && Mission.Objective == LevelObjective.ClearWaves ? F("{0} of {1}", wave, director.WaveCount) : string.Empty;
             if (wave > 1 || !string.IsNullOrEmpty(spec.title))
             {
                 ui?.Announce(title, subtitle, AsteroidsThemes.Accent(Mission.Theme, Color.cyan));
@@ -1213,7 +1263,7 @@ namespace Portfolio.Asteroids
                 if (backdrop != null && theme != backdrop.Theme)
                 {
                     backdrop.Apply(theme, false);
-                    ui?.Toast($"ENTERING {theme.Title.ToUpperInvariant()}", AsteroidsThemes.Accent(theme, theme.Accent));
+                    ui?.Toast(F("ENTERING {0}", T(theme.Title).ToUpperInvariant()), AsteroidsThemes.Accent(theme, theme.Accent));
                 }
             }
         }
@@ -1229,7 +1279,7 @@ namespace Portfolio.Asteroids
             {
                 return;
             }
-            ui?.Announce("WAVE CLEARED", $"+{bonus}", new Color(0.5f, 1f, 0.65f));
+            ui?.Announce(T("WAVE CLEARED"), $"+{bonus}", new Color(0.5f, 1f, 0.65f));
             sounds?.WaveClear();
         }
 
@@ -1238,7 +1288,7 @@ namespace Portfolio.Asteroids
         {
             if (Mission != null && Mission.Objective == LevelObjective.Boss)
             {
-                ui?.Announce("WARNING", "Massive signature approaching", new Color(1f, 0.3f, 0.25f));
+                ui?.Announce(T("WARNING"), T("Massive signature approaching"), new Color(1f, 0.3f, 0.25f));
                 sounds?.Warning();
             }
         }
@@ -1252,7 +1302,7 @@ namespace Portfolio.Asteroids
             if (IsStrike)
             {
                 // The strike HUD has its own boss bar (RefreshStrikeHud).
-                ui?.Announce("WARNING", boss.DisplayName.ToUpperInvariant(), new Color(1f, 0.3f, 0.25f));
+                ui?.Announce(T("WARNING"), T(boss.DisplayName).ToUpperInvariant(), new Color(1f, 0.3f, 0.25f));
                 sounds?.SetBossAlarm(boss is StrikeBoss strikeBoss && strikeBoss.alarm);
             }
             else
@@ -1267,7 +1317,7 @@ namespace Portfolio.Asteroids
 
         private void OnBossPhase(Boss source, int newPhase)
         {
-            ui?.Toast(newPhase >= 2 ? "BOSS ENRAGED!" : "BOSS SHIELDS DOWN - IT'S ANGRY!", new Color(1f, 0.45f, 0.3f));
+            ui?.Toast(newPhase >= 2 ? T("BOSS ENRAGED!") : T("BOSS SHIELDS DOWN - IT'S ANGRY!"), new Color(1f, 0.45f, 0.3f));
         }
 
 
@@ -1292,7 +1342,7 @@ namespace Portfolio.Asteroids
             }
             if (Mission != null && Mission.IsEndless)
             {
-                ui?.Announce("BOSS DESTROYED", string.Empty, new Color(1f, 0.85f, 0.3f));
+                ui?.Announce(T("BOSS DESTROYED"), string.Empty, new Color(1f, 0.85f, 0.3f));
             }
         }
 
@@ -1329,7 +1379,7 @@ namespace Portfolio.Asteroids
             if (score.Multiplier > lastMultiplier)
             {
                 lastMultiplier = score.Multiplier;
-                ui?.Toast($"COMBO x{score.Multiplier}", color);
+                ui?.Toast(F("COMBO x{0}", score.Multiplier), color);
                 sounds?.Combo(score.Multiplier);
             }
         }
@@ -1367,7 +1417,7 @@ namespace Portfolio.Asteroids
             {
                 return;
             }
-            ui?.Toast(reward.Title.ToUpperInvariant(), reward.Color);
+            ui?.Toast(T(reward.Title).ToUpperInvariant(), reward.Color);
         }
 
 
@@ -1402,7 +1452,7 @@ namespace Portfolio.Asteroids
             {
                 return;
             }
-            ui?.Toast($"{WeaponRules.ShortTitle(ship.Weapons.Type)} LV {ship.Weapons.Level}", WeaponRules.Tint(ship.Weapons.Type));
+            ui?.Toast(F("{0} LV {1}", T(WeaponRules.ShortTitle(ship.Weapons.Type)), ship.Weapons.Level), WeaponRules.Tint(ship.Weapons.Type));
         }
 
 
@@ -1437,7 +1487,7 @@ namespace Portfolio.Asteroids
             }
             phase = MissionPhase.Respawning;
             phaseTime = 0f;
-            ui?.Toast($"SHIP LOST - {lives} LEFT", new Color(1f, 0.4f, 0.35f));
+            ui?.Toast(F("SHIP LOST - {0} LEFT", lives), new Color(1f, 0.4f, 0.35f));
         }
 
 
@@ -1502,22 +1552,22 @@ namespace Portfolio.Asteroids
             switch (kind)
             {
                 case HazardKind.Mine:
-                    ui?.Toast("PROXIMITY MINE - shoot it from afar", new Color(0.4f, 0.85f, 1f));
+                    ui?.Toast(T("PROXIMITY MINE - shoot it from afar"), new Color(0.4f, 0.85f, 1f));
                     break;
                 case HazardKind.ClusterBomb:
-                    ui?.Toast("CLUSTER BOMB - get clear of the ring!", new Color(1f, 0.55f, 0.2f));
+                    ui?.Toast(T("CLUSTER BOMB - get clear of the ring!"), new Color(1f, 0.55f, 0.2f));
                     break;
                 case HazardKind.GravityWell:
-                    ui?.Toast("BLACK HOLE - don't get pulled in", new Color(0.75f, 0.55f, 1f));
+                    ui?.Toast(T("BLACK HOLE - don't get pulled in"), new Color(0.75f, 0.55f, 1f));
                     break;
                 case HazardKind.Saucer:
-                    ui?.Toast("HOSTILE SAUCER", new Color(1f, 0.4f, 0.4f));
+                    ui?.Toast(T("HOSTILE SAUCER"), new Color(1f, 0.4f, 0.4f));
                     break;
                 case HazardKind.Wasp:
-                    ui?.Toast("ALIEN WASPS INBOUND", new Color(0.8f, 0.5f, 1f));
+                    ui?.Toast(T("ALIEN WASPS INBOUND"), new Color(0.8f, 0.5f, 1f));
                     break;
                 case HazardKind.SupplyPod:
-                    ui?.Toast("SUPPLY POD - shoot it open", new Color(0.45f, 1f, 0.6f));
+                    ui?.Toast(T("SUPPLY POD - shoot it open"), new Color(0.45f, 1f, 0.6f));
                     break;
             }
         }
@@ -1552,18 +1602,18 @@ namespace Portfolio.Asteroids
             IStorageStrategy disk = Disk;
             if (InSession)
             {
-                UI?.UpdateError("A mission flown with other pilots cannot be saved.");
+                UI?.UpdateError(T("A mission flown with other pilots cannot be saved."));
                 return;
             }
             if (IsStrike)
             {
-                UI?.UpdateError("A strike mission cannot be saved.");
+                UI?.UpdateError(T("A strike mission cannot be saved."));
                 return;
             }
             if (disk == null || !(State.Is(BaseGameState.Running) || State.Is(BaseGameState.Paused)) ||
                 !(phase == MissionPhase.Playing || phase == MissionPhase.Respawning) || director == null)
             {
-                UI?.UpdateError("There is no mission in flight to save.");
+                UI?.UpdateError(T("There is no mission in flight to save."));
                 return;
             }
             disk.SetInt(SaveKey("Version"), SaveVersion);
@@ -1612,7 +1662,7 @@ namespace Portfolio.Asteroids
                 return;
             }
             UI?.EnableLoad();
-            ui?.Toast("MISSION SAVED", new Color(0.5f, 0.9f, 1f));
+            ui?.Toast(T("MISSION SAVED"), new Color(0.5f, 0.9f, 1f));
         }
 
 
@@ -1622,13 +1672,13 @@ namespace Portfolio.Asteroids
             IStorageStrategy disk = Disk;
             if (disk == null || !DoesSaveGameExist())
             {
-                UI?.UpdateError("There is no saved game to load.");
+                UI?.UpdateError(T("There is no saved game to load."));
                 return;
             }
             int level = disk.GetInt(SaveKey("Level"));
             if (level < 0 || level >= LevelCount || MissionAt(level) is StrikeLevel)
             {
-                UI?.UpdateError("The saved mission no longer exists.");
+                UI?.UpdateError(T("The saved mission no longer exists."));
                 return;
             }
             LoadLevel(level);
@@ -1670,7 +1720,7 @@ namespace Portfolio.Asteroids
             phaseTime = 0f;
             TransitionState(BaseGameState.Running);
             ui?.ShowCountdown("GO!");
-            ui?.Toast("MISSION RESUMED", new Color(0.5f, 0.9f, 1f));
+            ui?.Toast(T("MISSION RESUMED"), new Color(0.5f, 0.9f, 1f));
         }
 
         #endregion

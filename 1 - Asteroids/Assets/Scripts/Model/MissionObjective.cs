@@ -1,4 +1,5 @@
 using UnityEngine;
+using static Portfolio.Asteroids.AsteroidsText;
 
 namespace Portfolio.Asteroids
 {
@@ -95,11 +96,11 @@ namespace Portfolio.Asteroids
             {
                 switch (Type)
                 {
-                    case LevelObjective.ClearWaves: return $"Clear {WaveCount} {(WaveCount == 1 ? "wave" : "waves")} of asteroids";
-                    case LevelObjective.Survive: return $"Survive for {FormatTime(Target)}";
-                    case LevelObjective.Collect: return $"Collect {Target} crystals";
-                    case LevelObjective.Boss: return $"Destroy {BossName}";
-                    default: return "Survive as long as you can";
+                    case LevelObjective.ClearWaves: return WaveCount == 1 ? T("Clear 1 wave of asteroids") : F("Clear {0} waves of asteroids", WaveCount);
+                    case LevelObjective.Survive: return F("Survive for {0}", FormatTime(Target));
+                    case LevelObjective.Collect: return F("Collect {0} crystals", Target);
+                    case LevelObjective.Boss: return F("Destroy {0}", T(BossName));
+                    default: return T("Survive as long as you can");
                 }
             }
         }
@@ -107,13 +108,30 @@ namespace Portfolio.Asteroids
         /// <summary>The objective with its progress, for the HUD.</summary>
         public string Status(int wave)
         {
+            return Describe(wave, Survived, Crystals, BossDefeated);
+        }
+
+
+        /// <summary>
+        /// The objective as another pilot's mission reports it (its wave and <see cref="Progress"/>), in the language shown
+        /// here: a pilot who follows the simulator words its HUD line itself.
+        /// </summary>
+        public string Status(int wave, float progress)
+        {
+            progress = Mathf.Clamp01(progress);
+            return Describe(wave, progress * Target, Mathf.RoundToInt(progress * Target), progress >= 1f);
+        }
+
+
+        private string Describe(int wave, float survived, int crystals, bool bossDefeated)
+        {
             switch (Type)
             {
-                case LevelObjective.ClearWaves: return $"WAVE {Mathf.Min(Mathf.Max(1, wave), Mathf.Max(1, WaveCount))} / {WaveCount}";
-                case LevelObjective.Survive: return $"SURVIVE  {FormatTime(Mathf.Max(0f, Target - Survived))}";
-                case LevelObjective.Collect: return $"CRYSTALS  {Mathf.Min(Crystals, Target)} / {Target}";
-                case LevelObjective.Boss: return BossDefeated ? "BOSS DEFEATED" : $"DESTROY {BossName.ToUpperInvariant()}";
-                default: return $"WAVE {Mathf.Max(1, wave)}";
+                case LevelObjective.ClearWaves: return F("WAVE {0} / {1}", Mathf.Min(Mathf.Max(1, wave), Mathf.Max(1, WaveCount)), WaveCount);
+                case LevelObjective.Survive: return F("SURVIVE  {0}", FormatTime(Mathf.Max(0f, Target - survived)));
+                case LevelObjective.Collect: return F("CRYSTALS  {0} / {1}", Mathf.Min(crystals, Target), Target);
+                case LevelObjective.Boss: return bossDefeated ? T("BOSS DEFEATED") : F("DESTROY {0}", T(BossName).ToUpperInvariant());
+                default: return F("WAVE {0}", Mathf.Max(1, wave));
             }
         }
 

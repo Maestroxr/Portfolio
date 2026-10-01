@@ -159,7 +159,7 @@ namespace Portfolio.Monopoly
             string error = "no settings";
             if (matchSettings == null || !matchSettings.AreSettingsValid(out error))
             {
-                UI?.UpdateError($"Cannot start: {error}");
+                UI?.UpdateError(L.F("Cannot start: {0}", error));
                 return;
             }
             if (InSession)
@@ -242,7 +242,30 @@ namespace Portfolio.Monopoly
             WaitingForHuman = false;
         }
 
-        public string ModeName => CurrentMode != null ? CurrentMode.Title : "Monopoly";
+        /// <summary>The name of the mode played, in the language shown.</summary>
+        public string ModeName => CurrentMode != null ? L.Data(CurrentMode.Title) : L.T("Monopoly");
+
+        /// <summary>The language changed: the words the board, the panels and the open decision show are written again.</summary>
+        protected override void OnLanguageChanged()
+        {
+            base.OnLanguageChanged();
+            if (ui == null)
+            {
+                return;
+            }
+            if (Match == null)
+            {
+                return;
+            }
+            ui.SetMatchInfo(ModeName, Match.round, Match.rules.roundLimit);
+            ui.RefreshPlayers(Match);
+            ui.Manage.Refresh();
+            int decider = Match.Decider;
+            if (!Match.IsOver && WaitingForHuman && decider >= 0 && !Match.players[decider].bot && !Match.HasEvents)
+            {
+                ShowDecision(Match.players[decider]);
+            }
+        }
 
         /// <summary>Leaves the match for the title screen (it stays saved and continues from there).</summary>
         public void ReturnToTitle()
@@ -391,7 +414,7 @@ namespace Portfolio.Monopoly
             }
             if (winner != null)
             {
-                ui.Banner($"{winner.name} {MonopolyStyle.Verb(winner, "wins")}!".ToUpperInvariant(), MonopolyStyle.PlayerColor(winner.color), 1.6f);
+                ui.Banner(MonopolyStyle.Say(winner, "{0} WINS!", $"{winner.name} {MonopolyStyle.Verb(winner, "wins")}!".ToUpperInvariant(), MonopolyStyle.NameOf(winner).ToUpperInvariant()), MonopolyStyle.PlayerColor(winner.color), 1.6f);
                 tokens[winner.index].SetTurn(true);
                 cameraRig?.Focus(tokens[winner.index].transform.position, 0.6f);
             }
@@ -440,13 +463,13 @@ namespace Portfolio.Monopoly
             string doing;
             switch (Match.phase)
             {
-                case MatchPhase.RaiseFunds: doing = "is raising money..."; break;
-                case MatchPhase.JailChoice: doing = "is plotting a jailbreak..."; break;
-                case MatchPhase.BusChoice: doing = "is picking a bus ride..."; break;
-                case MatchPhase.MoveAnywhere: doing = "is choosing where to go..."; break;
-                default: doing = "is thinking..."; break;
+                case MatchPhase.RaiseFunds: doing = L.T("is raising money..."); break;
+                case MatchPhase.JailChoice: doing = L.T("is plotting a jailbreak..."); break;
+                case MatchPhase.BusChoice: doing = L.T("is picking a bus ride..."); break;
+                case MatchPhase.MoveAnywhere: doing = L.T("is choosing where to go..."); break;
+                default: doing = L.T("is thinking..."); break;
             }
-            ui.Actions.Show(player.name, doing, MonopolyStyle.PlayerColor(player.color), ui.TokenSprite(player.token), null, true);
+            ui.Actions.Show(MonopolyStyle.NameOf(player), doing, MonopolyStyle.PlayerColor(player.color), ui.TokenSprite(player.token), null, true);
         }
 
         /// <summary>Shows the choices of the human player the match waits for.</summary>
@@ -458,45 +481,45 @@ namespace Portfolio.Monopoly
             Sprite token = ui.TokenSprite(player.token);
             IMonopolyCommands commands = Commands;
             var options = new List<ActionOption>();
-            ActionOption manage = ActionOption.Of("Manage", Icons.Building, MonopolyStyle.Paper, () => commands.OpenManager(seat), Match.PropertiesOf(seat).Any(), KeyCode.M);
-            ActionOption trade = ActionOption.Of("Trade", Icons.Handshake, MonopolyStyle.Paper, () => commands.OpenTrade(seat), Match.ActiveCount > 1, KeyCode.T);
-            string title = $"{MonopolyStyle.Possessive(player)} turn";
+            ActionOption manage = ActionOption.Of(L.T("Manage"), Icons.Building, MonopolyStyle.Paper, () => commands.OpenManager(seat), Match.PropertiesOf(seat).Any(), KeyCode.M);
+            ActionOption trade = ActionOption.Of(L.T("Trade"), Icons.Handshake, MonopolyStyle.Paper, () => commands.OpenTrade(seat), Match.ActiveCount > 1, KeyCode.T);
+            string title = MonopolyStyle.IsYou(player) ? L.T("Your turn") : L.F("{0}'s turn", MonopolyStyle.NameOf(player));
             string detail = "";
             switch (Match.phase)
             {
                 case MatchPhase.Roll:
-                    detail = player.doubles > 0 ? "Doubles! Roll again." : "Roll the dice!";
-                    options.Add(ActionOption.Of("Roll", Icons.Dice, MonopolyStyle.Red, () => commands.Roll(seat), true, KeyCode.Space));
+                    detail = player.doubles > 0 ? L.T("Doubles! Roll again.") : L.T("Roll the dice!");
+                    options.Add(ActionOption.Of(L.T("Roll"), Icons.Dice, MonopolyStyle.Red, () => commands.Roll(seat), true, KeyCode.Space));
                     options.Add(manage);
                     options.Add(trade);
                     break;
                 case MatchPhase.JailChoice:
-                    title = $"{player.name} {MonopolyStyle.Verb(player, "is")} in jail";
-                    detail = $"Attempt {player.jailTurns + 1} of {Match.rules.maxJailTurns}: roll doubles to get out.";
-                    options.Add(ActionOption.Of("Roll", Icons.Dice, MonopolyStyle.Red, () => commands.Roll(seat), true, KeyCode.Space));
-                    options.Add(ActionOption.Of($"Pay {MonopolyStyle.Money(Match.rules.jailFine)}", Icons.Coins, MonopolyStyle.Green, () => commands.PayJailFine(seat), player.cash >= Match.rules.jailFine, KeyCode.P));
+                    title = MonopolyStyle.Say(player, "{0} is in jail", $"{player.name} {MonopolyStyle.Verb(player, "is")} in jail", MonopolyStyle.NameOf(player));
+                    detail = L.F("Attempt {0} of {1}: roll doubles to get out.", player.jailTurns + 1, Match.rules.maxJailTurns);
+                    options.Add(ActionOption.Of(L.T("Roll"), Icons.Dice, MonopolyStyle.Red, () => commands.Roll(seat), true, KeyCode.Space));
+                    options.Add(ActionOption.Of(L.F("Pay {0}", MonopolyStyle.Money(Match.rules.jailFine)), Icons.Coins, MonopolyStyle.Green, () => commands.PayJailFine(seat), player.cash >= Match.rules.jailFine, KeyCode.P));
                     if (player.jailCards.Count > 0)
                     {
-                        options.Add(ActionOption.Of("Use card", Icons.Ticket, MonopolyStyle.Gold, () => commands.UseJailCard(seat), true, KeyCode.U));
+                        options.Add(ActionOption.Of(L.T("Use card"), Icons.Ticket, MonopolyStyle.Gold, () => commands.UseJailCard(seat), true, KeyCode.U));
                     }
                     options.Add(manage);
                     break;
                 case MatchPhase.BusChoice:
-                    title = "All aboard the bus!";
-                    detail = "Move by either die, or both.";
+                    title = L.T("All aboard the bus!");
+                    detail = L.T("Move by either die, or both.");
                     int[] bus = Match.BusOptions;
                     for (int i = 0; i < bus.Length; i++)
                     {
                         int option = i;
                         int target = (player.position + bus[i]) % Match.SpaceCount;
-                        options.Add(ActionOption.Of($"{bus[i]}: {Match.Space(target).name}", Icons.Bus, i == 2 ? MonopolyStyle.Red : MonopolyStyle.Blue,
+                        options.Add(ActionOption.Of($"{bus[i]}: {MonopolyStyle.SpaceName(Match.Space(target))}", Icons.Bus, i == 2 ? MonopolyStyle.Red : MonopolyStyle.Blue,
                             () => commands.ChooseBus(seat, option), true, KeyCode.Alpha1 + i));
                     }
                     break;
                 case MatchPhase.MoveAnywhere:
-                    title = "Triples!";
-                    detail = MobilePlatform.Pick("Click any space to move there.", "Tap any space to move there.");
-                    options.Add(ActionOption.Of("Best pick", Icons.Star, MonopolyStyle.Gold, () => commands.ChooseDestination(seat, SuggestDestination(seat)), true, KeyCode.Space));
+                    title = L.T("Triples!");
+                    detail = MobilePlatform.Pick(L.T("Click any space to move there."), L.T("Tap any space to move there."));
+                    options.Add(ActionOption.Of(L.T("Best pick"), Icons.Star, MonopolyStyle.Gold, () => commands.ChooseDestination(seat, SuggestDestination(seat)), true, KeyCode.Space));
                     for (int space = 0; space < Match.SpaceCount; space++)
                     {
                         board.Highlight(space, new Color(1f, 0.85f, 0.2f, 0.6f));
@@ -517,12 +540,12 @@ namespace Portfolio.Monopoly
                 case MatchPhase.RaiseFunds:
                 {
                     Debt debt = Match.CurrentDebt;
-                    string creditor = debt.creditor >= 0 ? Match.players[debt.creditor].name : debt.creditor == Party.Pot ? "the Free Parking pot" : "the bank";
-                    title = $"{player.name} {MonopolyStyle.Verb(player, "owes")} {MonopolyStyle.Money(debt.amount)}";
-                    detail = $"To {creditor}. Raise {MonopolyStyle.Money(debt.amount - player.cash)} by selling buildings or mortgaging, or give up.";
-                    options.Add(ActionOption.Of("Manage", Icons.Building, MonopolyStyle.Blue, () => commands.OpenManager(seat), true, KeyCode.M));
+                    string creditor = debt.creditor >= 0 ? MonopolyStyle.NameOf(Match.players[debt.creditor]) : debt.creditor == Party.Pot ? L.T("the Free Parking pot") : L.T("the bank");
+                    title = MonopolyStyle.Say(player, "{0} owes {1}", $"{player.name} {MonopolyStyle.Verb(player, "owes")} {MonopolyStyle.Money(debt.amount)}", MonopolyStyle.NameOf(player), MonopolyStyle.Money(debt.amount));
+                    detail = L.F("To {0}. Raise {1} by selling buildings or mortgaging, or give up.", creditor, MonopolyStyle.Money(debt.amount - player.cash));
+                    options.Add(ActionOption.Of(L.T("Manage"), Icons.Building, MonopolyStyle.Blue, () => commands.OpenManager(seat), true, KeyCode.M));
                     options.Add(trade);
-                    options.Add(ActionOption.Of("Go bankrupt", Icons.Flag, MonopolyStyle.Paper, () => commands.DeclareBankruptcy(seat), true));
+                    options.Add(ActionOption.Of(L.T("Go bankrupt"), Icons.Flag, MonopolyStyle.Paper, () => commands.DeclareBankruptcy(seat), true));
                     if (!ui.Manage.IsOpen && Match.LiquidValue(seat) >= debt.amount)
                     {
                         commands.OpenManager(seat);
@@ -533,14 +556,14 @@ namespace Portfolio.Monopoly
                     if (player.inJail)
                     {
                         // Sent there this turn, or a failed roll for doubles.
-                        title = $"{player.name} {MonopolyStyle.Verb(player, "is")} in jail";
-                        detail = player.jailTurns == 0 ? "Locked up! Build or trade, then end your turn." : "No doubles. You stay in jail for now.";
+                        title = MonopolyStyle.Say(player, "{0} is in jail", $"{player.name} {MonopolyStyle.Verb(player, "is")} in jail", MonopolyStyle.NameOf(player));
+                        detail = player.jailTurns == 0 ? L.T("Locked up! Build or trade, then end your turn.") : L.T("No doubles. You stay in jail for now.");
                     }
                     else
                     {
-                        detail = "Build, trade, or end your turn.";
+                        detail = L.T("Build, trade, or end your turn.");
                     }
-                    options.Add(ActionOption.Of("End turn", Icons.Check, MonopolyStyle.Red, () => commands.EndTurn(seat), true, KeyCode.Space));
+                    options.Add(ActionOption.Of(L.T("End turn"), Icons.Check, MonopolyStyle.Red, () => commands.EndTurn(seat), true, KeyCode.Space));
                     options.Add(manage);
                     options.Add(trade);
                     break;
@@ -586,7 +609,7 @@ namespace Portfolio.Monopoly
             bool accepted;
             if (to.bot)
             {
-                ui.Actions.Show(to.name, "is considering the offer...", MonopolyStyle.PlayerColor(to.color), ui.TokenSprite(to.token), null, true);
+                ui.Actions.Show(MonopolyStyle.NameOf(to), L.T("is considering the offer..."), MonopolyStyle.PlayerColor(to.color), ui.TokenSprite(to.token), null, true);
                 yield return new WaitForSeconds(Beat(0.9f));
                 accepted = bots.WouldAccept(Match, offer);
             }
@@ -612,7 +635,7 @@ namespace Portfolio.Monopoly
             }
             if (accepted && Match.ExecuteTrade(offer))
             {
-                ui.Banner("DEAL!", MonopolyStyle.Green, 0.9f);
+                ui.Banner(L.T("DEAL!"), MonopolyStyle.Green, 0.9f);
             }
             else
             {
@@ -620,7 +643,7 @@ namespace Portfolio.Monopoly
                 {
                     bots.Refused(Match, offer);
                 }
-                ui.Toast($"{MonopolyStyle.Named(to)} turned down {MonopolyStyle.NamedPossessive(from, false)} offer.", MonopolyStyle.Muted, Icons.Handshake);
+                ui.Toast(MonopolyStyle.SayTo(to, from, "{0} turned down {1}'s offer.", $"{MonopolyStyle.Named(to)} turned down {MonopolyStyle.NamedPossessive(from, false)} offer.", MonopolyStyle.Named(to), MonopolyStyle.Named(from)), MonopolyStyle.Muted, Icons.Handshake);
                 sound?.Play(Sfx.Error, 0.6f);
             }
         }

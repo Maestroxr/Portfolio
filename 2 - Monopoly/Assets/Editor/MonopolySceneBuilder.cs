@@ -297,6 +297,9 @@ namespace Portfolio.Monopoly.EditorTools
                 MonopolyArtBuilder.Material("Seat_2"), MonopolyArtBuilder.Material("Seat_3"));
             MonopolyAssets.SetObject(board, "housePool", houses);
             MonopolyAssets.SetObject(board, "hotelPool", hotels);
+            // The words printed on the board (names, cities, corners, the logo, the decks) follow the language, from a table of
+            // their own (MonopolyBoard.csv: the printed words are capitals, and JAIL of "Go to Jail" is not the JAIL tag).
+            GameMenuInstaller.LocalizeTexts(root, "MonopolyBoard");
             return board;
         }
 
