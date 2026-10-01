@@ -85,10 +85,23 @@ namespace Portfolio.Heroes
                             sound?.Play(Sfx.Treasure, 0.7f);
                         }
                         // A hero sent into a town of his own by a click on it: the town opens with him in it.
-                        MapObject visited = Game.State.Object(what.b);
+                        MapObject visited = what.b >= 0 ? Game.State.Object(what.b) : null;
                         if (visited != null && visited.kind == ObjectKind.Town && what.player == Viewer)
                         {
                             ui.EnteredTown(Game.State.Town(visited.subtype));
+                        }
+                        if (what.player == Viewer && Game.State.Player(what.player) is PlayerState realm && realm.human)
+                        {
+                            HeroState hero = Game.State.Hero(what.a);
+                            if (visited != null && visited.kind == ObjectKind.Dwelling)
+                            {
+                                ui.VisitedDwelling(visited, hero);
+                            }
+                            else if (visited == null && what.b < 0 && what.c >= 0)
+                            {
+                                // Two heroes of the realm met (b is no object, c is the hero met).
+                                ui.Met(hero, Game.State.Hero(what.c));
+                            }
                         }
                     }
                     break;

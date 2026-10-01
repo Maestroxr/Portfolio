@@ -857,7 +857,8 @@ namespace Portfolio.Heroes.UI
         private void Info(int cell)
         {
             bool held = TourHold || Input.GetMouseButton(1);
-            if (Input.GetMouseButtonDown(1) || TourHold && infoStack < 0)
+            // Shift and the right button turn the camera instead.
+            if (Input.GetMouseButtonDown(1) && !OrbitDrag.ShiftHeld || TourHold && infoStack < 0)
             {
                 if (Casting != SpellId.None)
                 {

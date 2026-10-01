@@ -7,8 +7,9 @@ namespace Portfolio.Heroes
 {
     /// <summary>
     /// The camera over the map, at the fixed angle of the old adventure maps: it pans with the keys, the edges of the
-    /// screen, a drag of the right (or middle) mouse button or of one finger, zooms with the wheel or a pinch, glides to
-    /// whatever the game wants shown (<see cref="Focus"/>) and frames a battlefield (<see cref="Frame"/>).
+    /// screen, a drag of the right (or middle) mouse button or of one finger, turns around what it looks at with Shift and
+    /// a drag of the right button (also during a battle on the map), zooms with the wheel or a pinch, glides to whatever
+    /// the game wants shown (<see cref="Focus"/>) and frames a battlefield (<see cref="Frame"/>).
     /// </summary>
     public sealed class CameraRig : MonoBehaviour
     {
@@ -34,11 +35,22 @@ namespace Portfolio.Heroes
         private float glideSpeed = 4f;
         private float tilt;
         private float goalTilt;
+        private readonly OrbitDrag orbit = new OrbitDrag();
 
         public Camera View => view;
 
         /// <summary>Whether the pointer drags the map right now (a click that ends a drag is not a click on the map).</summary>
-        public bool IsDragging => dragging && (Input.mousePosition - dragStart).sqrMagnitude > 64f;
+        public bool IsDragging => dragging && (Input.mousePosition - dragStart).sqrMagnitude > 64f || orbit.Turned;
+
+        /// <summary>The way the camera faces, in degrees clockwise from north, as Shift and the right button turn it.</summary>
+        public float Yaw => yaw;
+
+        /// <summary>Turns the camera around the point it looks at, as a drag with Shift and the right button does (for the tours).</summary>
+        public void TurnBy(float degrees)
+        {
+            yaw = Mathf.Repeat(yaw + degrees, 360f);
+            Place();
+        }
 
         /// <summary>Scrolling with the edges of the screen (the settings can turn it off).</summary>
         public bool EdgeScroll { get; set; } = true;
@@ -146,6 +158,12 @@ namespace Portfolio.Heroes
         private void LateUpdate()
         {
             float dt = Time.unscaledDeltaTime;
+            // Turning around the point looked at works during a battle on the map too, while panning is locked.
+            if (view != null && view.isActiveAndEnabled)
+            {
+                bool overUi = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+                yaw = Mathf.Repeat(yaw - orbit.Update(!overUi), 360f);
+            }
             if (!Locked)
             {
                 HandleInput(dt);
@@ -217,7 +235,7 @@ namespace Portfolio.Heroes
             bool down = touch ? Input.GetTouch(0).phase == TouchPhase.Began : Input.GetMouseButtonDown(1) || Input.GetMouseButtonDown(2);
             bool held = touch ? Input.GetTouch(0).phase != TouchPhase.Ended && Input.GetTouch(0).phase != TouchPhase.Canceled : Input.GetMouseButton(1) || Input.GetMouseButton(2);
             Vector3 pointer = touch ? (Vector3)Input.GetTouch(0).position : Input.mousePosition;
-            if (down && !overUi)
+            if (down && !overUi && !orbit.Active)
             {
                 dragging = true;
                 dragStart = pointer;
@@ -285,6 +303,55 @@ namespace Portfolio.Heroes
                 return true;
             }
             return false;
+        }
+    }
+
+    /// <summary>
+    /// Turning a camera around what it looks at with Shift and a drag of the right mouse button, for the camera over the
+    /// map and the one over a battlefield alike: a drag across the whole screen turns it most of the way round.
+    /// </summary>
+    public sealed class OrbitDrag
+    {
+        private const float DegreesPerScreen = 270f;
+
+        private bool active;
+        private float lastX;
+        private float moved;
+
+        /// <summary>Whether Shift and the right button are turning the view (from the press until the button is let go).</summary>
+        public bool Active => active;
+
+        /// <summary>Whether the turn has gone far enough that it is no click.</summary>
+        public bool Turned => active && moved > 8f;
+
+        public static bool ShiftHeld => Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+
+        /// <summary>
+        /// The degrees to turn by this frame, positive for a drag to the right. A turn begins only where
+        /// <paramref name="mayStart"/> (not over the interface).
+        /// </summary>
+        public float Update(bool mayStart)
+        {
+            if (!active)
+            {
+                if (mayStart && Input.touchCount == 0 && Input.GetMouseButtonDown(1) && ShiftHeld)
+                {
+                    active = true;
+                    lastX = Input.mousePosition.x;
+                    moved = 0f;
+                }
+                return 0f;
+            }
+            if (!Input.GetMouseButton(1))
+            {
+                active = false;
+                return 0f;
+            }
+            float x = Input.mousePosition.x;
+            float delta = x - lastX;
+            lastX = x;
+            moved += Mathf.Abs(delta);
+            return delta / Mathf.Max(1f, Screen.width) * DegreesPerScreen;
         }
     }
 }

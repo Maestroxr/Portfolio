@@ -30,6 +30,9 @@ namespace Portfolio.Heroes
         /// <summary>Moves creatures between two armies, addressed by <see cref="Holder"/>.</summary>
         void MoveArmy(int from, int fromSlot, int to, int toSlot, int count);
 
+        /// <summary>Hands an artifact (worn, or from the pack) from a hero to another of the player's beside him.</summary>
+        void GiveArtifact(int fromHero, int artifact, int toHero, bool worn);
+
         void Trade(ResourceKind give, ResourceKind take, int amount);
 
         /// <summary>Answers whatever the rules are waiting to be told (a skill on levelling, a prize to take).</summary>

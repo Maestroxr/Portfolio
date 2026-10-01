@@ -86,6 +86,17 @@ namespace Portfolio.Heroes
 
         public static int Garrison(int town) => -(town + 1);
 
+        /// <summary>
+        /// The place a <see cref="CommandKind.MoveArmy"/> puts an artifact rather than creatures in: such a command hands
+        /// artifact b from hero a to hero c, standing beside him (e is 1 for the one he wears, 0 for one in his pack).
+        /// It rides on the command of the armies so the online server, which checks the kinds, needs nothing new.
+        /// </summary>
+        public const int ArtifactPlace = -2;
+
+        /// <summary>Hands <paramref name="artifact"/> from one hero to another of the same player standing beside him.</summary>
+        public static GameCommand GiveArtifact(int player, int fromHero, int artifact, int toHero, bool worn) =>
+            Of(CommandKind.MoveArmy, player, fromHero, artifact, toHero, ArtifactPlace, worn ? 1 : 0);
+
         public static GameCommand Trade(int player, ResourceKind give, ResourceKind get, int amount) => Of(CommandKind.Trade, player, (int)give, (int)get, amount);
 
         /// <summary>Answers the first pending choice of the player with option <paramref name="option"/>.</summary>

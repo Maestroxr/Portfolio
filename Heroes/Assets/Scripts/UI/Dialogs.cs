@@ -619,7 +619,8 @@ namespace Portfolio.Heroes.UI
     /// <summary>
     /// A row of the seven places of an army, shared by the town and hero screens: each creature's portrait with how many
     /// on a small plate, a glow under the pointer and around the stack picked up. Clicking one stack and then another
-    /// place moves, swaps or joins them.
+    /// place moves, swaps or joins them; with Ctrl held, a click on an empty place (or one of the same creatures) asks
+    /// how many of the stack go there (<see cref="SplitBox"/>).
     /// </summary>
     public sealed class ArmyRow : MonoBehaviour
     {
@@ -735,6 +736,12 @@ namespace Portfolio.Heroes.UI
 
         private Army ArmyOf(int which)
         {
+            return ArmyOf(manager, which);
+        }
+
+        /// <summary>The army of a holder: a hero's, or a town's garrison (<see cref="Portfolio.Heroes.Holder"/>).</summary>
+        public static Army ArmyOf(HeroesGameManager manager, int which)
+        {
             GameState state = manager.Game.State;
             if (Portfolio.Heroes.Holder.IsGarrison(which))
             {
@@ -772,7 +779,14 @@ namespace Portfolio.Heroes.UI
             Picked = (null, -1);
             if (manager.HeroesUI == null || manager.HeroesUI.CanCommand)
             {
-                manager.Commands.MoveArmy(from.holder, fromSlot, holder, slot, 0);
+                Army source = from.ArmyOf(from.holder);
+                ArmySlot there = army.slots[slot];
+                bool split = (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)) && source != null &&
+                             (there.IsEmpty || there.creature == source.slots[fromSlot].creature);
+                if (!split || manager.HeroesUI == null || !manager.HeroesUI.Split.Show(from.holder, fromSlot, holder, slot))
+                {
+                    manager.Commands.MoveArmy(from.holder, fromSlot, holder, slot, 0);
+                }
             }
             from.Refresh();
             Refresh();

@@ -77,6 +77,7 @@ namespace Portfolio.Heroes
             yield return Adventure();
             yield return Homecoming();
             yield return Screens();
+            yield return Meetings();
             yield return Questions();
             yield return Menus();
             yield return Lobby();
@@ -336,6 +337,157 @@ namespace Portfolio.Heroes
             yield return Shot("tavern");
             UI.Town.HandleBack();
             UI.Town.Close();
+        }
+
+        // ------------------------------------------------------------------ meetings, splits, dwellings, a turned camera
+
+        /// <summary>
+        /// A second hero of the realm is set beside the first behind the rules' back, and the first walks up to him: the
+        /// screen of their meeting opens, a stack is split and an artifact handed over through it. Then the first hero is
+        /// set beside a dwelling with an empty treasury, and visits it: its window opens all the same. Last, the camera
+        /// turns around the hero.
+        /// </summary>
+        private IEnumerator Meetings()
+        {
+            HeroState hero = FirstHero();
+            PlayerState me = manager.ViewerState;
+            if (hero == null || me == null || Game.State.freeHeroes.Count == 0)
+            {
+                Write("No meeting to show.");
+                yield break;
+            }
+            HexGrid grid = Game.State.map.grid;
+            int beside = FreeBeside(hero.cell);
+            if (beside < 0)
+            {
+                Write("No room beside the hero for another.");
+                yield break;
+            }
+            HeroState other = Game.SpawnHero(me.index, Game.State.freeHeroes[0], beside, true);
+            manager.Map.Sync();
+            hero.movement = Mathf.Max(hero.movement, hero.maxMovement);
+            manager.Select(hero);
+            yield return new WaitForSeconds(1f);
+            manager.Commands.MoveHero(hero.id, other.cell);
+            yield return WaitForTurn(10f);
+            yield return new WaitForSeconds(0.6f);
+            Write($"{hero.Name} walked up to {other.Name}: meeting open {UI.Meeting.IsOpen}.");
+            yield return Shot("meeting");
+
+            if (UI.Split.Show(Holder.Hero(hero.id), 0, Holder.Hero(other.id), 6))
+            {
+                yield return new WaitForSeconds(0.5f);
+                yield return Shot("split");
+                int before = other.army.TotalCreatures;
+                UI.Split.GetComponentInChildren<UnityEngine.UI.Slider>().value = 2;
+                foreach (UnityEngine.UI.Button button in UI.Split.GetComponentsInChildren<UnityEngine.UI.Button>())
+                {
+                    if (button.name == "Split")
+                    {
+                        button.onClick.Invoke();
+                    }
+                }
+                yield return WaitForTurn(5f);
+                Write($"Split two over: {other.Name} had {before}, has {other.army.TotalCreatures}.");
+            }
+            else
+            {
+                Write("The split box would not open.");
+            }
+            int artifact = Array.Find(hero.equipped, id => id >= 0);
+            if (artifact >= 0 || hero.backpack.Count > 0)
+            {
+                bool worn = artifact >= 0;
+                int given = worn ? artifact : hero.backpack[0];
+                manager.Commands.GiveArtifact(hero.id, given, other.id, worn);
+                yield return WaitForTurn(5f);
+                Write($"Handed {(ArtifactId)given} over: {other.Name} has it {Array.IndexOf(other.equipped, given) >= 0 || other.backpack.Contains(given)}.");
+            }
+            UI.Refresh();
+            yield return new WaitForSeconds(0.5f);
+            yield return Shot("meeting_traded");
+            UI.Meeting.Close();
+
+            MapObject dwelling = null;
+            int closest = int.MaxValue;
+            int dwellings = 0;
+            foreach (MapObject what in Game.State.objects)
+            {
+                if (what.removed || what.kind != ObjectKind.Dwelling)
+                {
+                    continue;
+                }
+                dwellings++;
+                if (grid.Distance(hero.cell, what.cell) < closest && FreeBeside(what.cell) >= 0)
+                {
+                    dwelling = what;
+                    closest = grid.Distance(hero.cell, what.cell);
+                }
+            }
+            if (dwelling == null && FreeBeside(hero.cell) >= 0)
+            {
+                // None on this map: one is put up beside the hero, as the generator puts them up on others.
+                int spot = FreeBeside(hero.cell);
+                CreatureId creature = Creatures.OfTier(Faction.Castle, 2);
+                dwelling = new MapObject
+                {
+                    id = Game.State.objects.Count, kind = ObjectKind.Dwelling, cell = spot, subtype = (int)creature, amount = Creatures.Get(creature).Growth
+                };
+                dwelling.footprint.Add(spot);
+                Game.State.objects.Add(dwelling);
+                grid = Game.State.map.grid;
+                Game.State.map.occupant[spot] = dwelling.id;
+                manager.Map.Sync();
+                Write($"No dwelling on the map ({dwellings}): one put up beside {hero.Name}.");
+            }
+            if (dwelling == null)
+            {
+                Write($"No dwelling to visit ({dwellings} on the map).");
+            }
+            else
+            {
+                int stand = grid.Distance(hero.cell, dwelling.cell) == 1 ? hero.cell : FreeBeside(dwelling.cell);
+                // Its guards (if any) are left out of it: the dwelling is the realm's already.
+                dwelling.owner = me.index;
+                hero.cell = stand;
+                manager.Map.Warp(hero.id, stand);
+                manager.Rig?.Snap(manager.Map.Point(stand));
+                int gold = me.resources[ResourceKind.Gold];
+                me.resources[ResourceKind.Gold] = 0;
+                hero.movement = Mathf.Max(hero.movement, hero.maxMovement);
+                manager.Commands.MoveHero(hero.id, dwelling.cell);
+                yield return WaitForTurn(10f);
+                yield return new WaitForSeconds(0.6f);
+                Write($"{hero.Name} visited the dwelling of {(CreatureId)dwelling.subtype} with no gold: window open {UI.Dwelling.IsOpen}.");
+                yield return Shot("dwelling_no_gold");
+                me.resources[ResourceKind.Gold] = gold + 5000;
+                UI.Refresh();
+                yield return new WaitForSeconds(0.4f);
+                yield return Shot("dwelling");
+                UI.Dwelling.Close();
+            }
+
+            manager.Rig?.Snap(manager.Map.Point(hero.cell));
+            yield return new WaitForSeconds(0.5f);
+            yield return Shot("camera_north");
+            manager.Rig?.TurnBy(120f);
+            yield return new WaitForSeconds(0.5f);
+            yield return Shot("camera_turned");
+            manager.Rig?.TurnBy(-120f);
+        }
+
+        /// <summary>A free cell of open land beside <paramref name="cell"/>, or -1.</summary>
+        private int FreeBeside(int cell)
+        {
+            MapData map = Game.State.map;
+            foreach (int next in map.grid.Neighbors(cell))
+            {
+                if (map.Open(next) && map.occupant[next] < 0 && Game.State.HeroAt(next) == null && Game.State.ObjectAt(next) == null)
+                {
+                    return next;
+                }
+            }
+            return -1;
         }
 
         /// <summary>Skills, spells and artifacts for the hero, so his book has something in every part.</summary>

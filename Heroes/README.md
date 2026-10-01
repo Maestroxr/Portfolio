@@ -38,11 +38,21 @@ are built by code (see "Building").
   **End Turn**, which glows once no hero can do anything more. The chronicle at the bottom left shows its last two lines
   and opens on a click; it tells what happened to your realm, what you could see happen, and every battle fought. The
   pointer turns into what a click would do (travel, visit, fight, take), and its tooltip tells what a cell holds and how
-  hard a wandering army looks for the hero in hand.
+  hard a wandering army looks for the hero in hand. The camera pans with the keys, the screen's edges or a drag of the
+  right (or middle) button, zooms with the wheel, and turns around what it looks at with **Shift and a drag of the
+  right button**, over the map and on a battlefield alike (the little map's box turns with it).
+- **Meeting and dwellings.** With a hero in hand, a click on another of your heroes sends him over when he gets there
+  today (beside him, at once; farther away the click picks the other hero up). Their meeting shows both heroes with
+  their armies and artifacts: creatures move between the armies as in a town, and a click on an artifact hands it to the
+  other hero. A dwelling out on the map opens its window when a hero visits it (again on a click while he stands beside
+  one of yours): who lives there, how many wait, and a slider for how many to hire, even when the treasury cannot pay.
 - **A town** builds one thing a day, recruits from the dwellings it has built, trades in its marketplace, hires heroes
   in its tavern and teaches spells in its mage guild. Its screen shows the income, the growth and whether it can build
   today, every building with its cost (or what it still needs), the creatures to recruit, the garrison and the visiting
-  hero. Creatures move between the garrison and the hero by clicking one slot and then another.
+  hero. A chain of upgrades (Town Hall and City Hall; Fort, Citadel and Castle; the three floors of the mage guild) is
+  one card showing its next step, so every card fits on the page. Creatures move between the garrison and the hero by
+  clicking one slot and then another; **Ctrl and a click** on an empty place (or one of the same creatures) splits the
+  stack picked up, with a slider for how many go.
 - **A hero** carries his primary skills, eight secondary skills, artifacts in eight slots and a pack, a spellbook, and
   an army of up to seven stacks. Movement, mana and morale all come from what he has learned and what he carries.
 - **A battle** starts when a hero walks into an enemy army, a wandering army or a town that is defended (see

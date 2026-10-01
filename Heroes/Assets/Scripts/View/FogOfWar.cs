@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.RenderGraphModule;
+using UnityEngine.Rendering.Universal;
 
 namespace Portfolio.Heroes
 {
@@ -29,6 +31,26 @@ namespace Portfolio.Heroes
         private bool dirty;
         private PlayerState player;
         private readonly HashSet<int> lifted = new HashSet<int>();
+        private Camera fogCamera;
+        private readonly DepthBeforeTransparents depthPass = new DepthBeforeTransparents();
+
+        /// <summary>
+        /// A pass that draws nothing and only says it reads the depth texture before the transparent objects: the
+        /// pipeline then copies the depth before them, so the quad of the fog (drawn with them) reads this frame's depth.
+        /// The renderer of the project copies it after them otherwise, too late for the fog.
+        /// </summary>
+        private sealed class DepthBeforeTransparents : ScriptableRenderPass
+        {
+            public DepthBeforeTransparents()
+            {
+                renderPassEvent = RenderPassEvent.BeforeRenderingTransparents;
+                ConfigureInput(ScriptableRenderPassInput.Depth);
+            }
+
+            public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
+            {
+            }
+        }
 
         public bool Visible
         {
@@ -85,6 +107,15 @@ namespace Portfolio.Heroes
                 Debug.LogWarning("Heroes: the fog of war has no material; the map is shown without it.");
                 return;
             }
+            // The shader finds the ground under every pixel in the depth texture, which the pipeline makes only for a camera
+            // that asks for it; without one it reads whatever another camera (or nothing) left there, and the map darkens
+            // in patches that come and go as the camera moves.
+            UniversalAdditionalCameraData data = view.GetUniversalAdditionalCameraData();
+            if (data != null)
+            {
+                data.requiresDepthTexture = true;
+            }
+            fogCamera = view;
             if (quad == null)
             {
                 var go = new GameObject("Fog of War", typeof(MeshFilter), typeof(MeshRenderer)) { layer = Layer };
@@ -177,6 +208,26 @@ namespace Portfolio.Heroes
             int x = Mathf.FloorToInt(world.x / texel);
             int y = Mathf.FloorToInt(world.z / texel);
             return x >= 0 && y >= 0 && x < width && y < height && hidden[y * width + x] > 127;
+        }
+
+        private void OnEnable()
+        {
+            RenderPipelineManager.beginCameraRendering += BeforeCamera;
+        }
+
+        private void OnDisable()
+        {
+            RenderPipelineManager.beginCameraRendering -= BeforeCamera;
+        }
+
+        private void BeforeCamera(ScriptableRenderContext context, Camera rendering)
+        {
+            if (rendering != fogCamera || quad == null || !quad.gameObject.activeInHierarchy)
+            {
+                return;
+            }
+            UniversalAdditionalCameraData data = rendering.GetUniversalAdditionalCameraData();
+            data?.scriptableRenderer?.EnqueuePass(depthPass);
         }
 
         private void LateUpdate()

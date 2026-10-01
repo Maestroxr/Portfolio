@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Gamebox.Launcher;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
@@ -72,6 +73,11 @@ namespace Portfolio.Heroes
         private Rect viewport = new Rect(0.015f, 0.27f, 0.97f, 0.715f);
         private Vector3 restPosition;
         private Quaternion restRotation;
+        /// <summary>The ground point the camera at rest looks at, which Shift and the right button turn it around.</summary>
+        private Vector3 restTarget;
+        /// <summary>How far round the player has turned the camera from the south side of the field, in degrees.</summary>
+        private float yaw;
+        private readonly OrbitDrag orbit = new OrbitDrag();
         private Vector3 introPosition;
         private Quaternion introRotation;
         private float introStart = -1f;
@@ -96,7 +102,7 @@ namespace Portfolio.Heroes
 
         public float UnitScale => 1.8f;
 
-        public bool IsDragging => false;
+        public bool IsDragging => orbit.Turned;
 
         /// <summary>Whether a battlefield is on its way in (<see cref="Load"/> waits for the scene).</summary>
         public static bool Loading => loading != null && !loading.isDone;
@@ -329,6 +335,8 @@ namespace Portfolio.Heroes
         public void Build(BattleState shown, GameObject town, int color = 4)
         {
             battle = shown;
+            // Every battle starts from the south side of its field, however the last one was turned.
+            yaw = 0f;
             townColor = color;
             SceneManager.SetActiveScene(gameObject.scene);
             field.Size(out double width, out double depth);
@@ -961,9 +969,11 @@ namespace Portfolio.Heroes
             restRotation = Quaternion.Euler(Pitch, 0f, 0f);
             Framing.Fit(view, restRotation, points, viewport, 0f, out Vector3 target, out float distance);
             restPosition = target - restRotation * Vector3.forward * distance;
+            restTarget = target;
             if (!InIntro)
             {
-                view.transform.SetPositionAndRotation(restPosition, restRotation);
+                Rest(out Vector3 position, out Quaternion rotation);
+                view.transform.SetPositionAndRotation(position, rotation);
             }
         }
 
@@ -981,13 +991,30 @@ namespace Portfolio.Heroes
             {
                 float t = Mathf.Clamp01((Time.unscaledTime - introStart) / IntroLength);
                 float k = Gamebox.Tween.OutCubic(t);
-                view.transform.SetPositionAndRotation(Vector3.Lerp(introPosition, restPosition, k),
-                    Quaternion.Slerp(introRotation, restRotation, k));
+                Rest(out Vector3 position, out Quaternion rotation);
+                view.transform.SetPositionAndRotation(Vector3.Lerp(introPosition, position, k), Quaternion.Slerp(introRotation, rotation, k));
                 if (t >= 1f)
                 {
                     introStart = -1f;
                 }
+                return;
             }
+            bool overUi = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+            float turn = orbit.Update(!overUi);
+            if (turn != 0f)
+            {
+                yaw = Mathf.Repeat(yaw - turn, 360f);
+                Rest(out Vector3 position, out Quaternion rotation);
+                view.transform.SetPositionAndRotation(position, rotation);
+            }
+        }
+
+        /// <summary>Where the camera rests, turned <see cref="yaw"/> degrees around the middle of the field it frames.</summary>
+        private void Rest(out Vector3 position, out Quaternion rotation)
+        {
+            Quaternion turn = Quaternion.Euler(0f, yaw, 0f);
+            position = restTarget + turn * (restPosition - restTarget);
+            rotation = turn * restRotation;
         }
 
         // ------------------------------------------------------------------ IBattlefield

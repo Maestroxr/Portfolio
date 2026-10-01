@@ -539,5 +539,82 @@ namespace Portfolio.Heroes.Tests
             }
             Assert.That(game.State.day, Is.GreaterThan(3), "the game barely started");
         }
+
+        // ------------------------------------------------------------------ heroes who meet
+
+        /// <summary>A second hero of the current player beside the first, with nothing in his army.</summary>
+        private static HeroState Beside(HeroesGame game, HeroState first)
+        {
+            foreach (int cell in game.Grid.Neighbors(first.cell))
+            {
+                if (game.State.HeroAt(cell) == null && game.State.ObjectAt(cell) == null)
+                {
+                    return game.SpawnHero(first.owner, game.State.freeHeroes[0], cell, false);
+                }
+            }
+            Assert.Fail("no free cell beside the hero");
+            return null;
+        }
+
+        [Test]
+        public void HeroesWhoMeetHandArtifactsOver()
+        {
+            HeroesGame game = Start(31);
+            int me = game.State.currentPlayer;
+            HeroState first = game.State.Hero(game.State.Player(me).heroes[0]);
+            HeroState second = Beside(game, first);
+            game.GiveArtifact(first, ArtifactId.IronBlade);
+            game.GiveArtifact(first, ArtifactId.RunedAxe);
+            int blade = (int)ArtifactId.IronBlade;
+            int axe = (int)ArtifactId.RunedAxe;
+            int place = (int)Artifacts.Get(ArtifactId.IronBlade).Slot;
+            Assert.That(System.Array.IndexOf(first.equipped, axe) >= 0 || first.backpack.Contains(axe), Is.True);
+
+            Assert.That(game.Apply(GameCommand.GiveArtifact(me, first.id, blade, second.id, first.equipped[place] == blade)), Is.True);
+            Assert.That(second.equipped[place], Is.EqualTo(blade), "worn by the other, whose place was free");
+            Assert.That(System.Array.IndexOf(first.equipped, blade) < 0 && !first.backpack.Contains(blade), Is.True, "gone from the giver");
+            bool axeWorn = System.Array.IndexOf(first.equipped, axe) >= 0;
+            Assert.That(game.Apply(GameCommand.GiveArtifact(me, first.id, axe, second.id, !axeWorn)), Is.False, "not where he has it");
+            Assert.That(game.Apply(GameCommand.GiveArtifact(me, first.id, axe, second.id, axeWorn)), Is.True);
+            Assert.That(second.backpack, Contains.Item(axe), "packed: the place is taken");
+            Assert.That(game.Apply(GameCommand.GiveArtifact(me, first.id, axe, second.id, false)), Is.False, "he no longer has it");
+            Assert.That(game.Apply(GameCommand.GiveArtifact(me == 0 ? 1 : 0, second.id, axe, first.id, false)), Is.False, "not that player's heroes");
+
+            int far = -1;
+            for (int cell = 0; cell < game.Grid.Count && far < 0; cell++)
+            {
+                if (game.Grid.Distance(cell, first.cell) > 3 && game.State.HeroAt(cell) == null)
+                {
+                    far = cell;
+                }
+            }
+            second.cell = far;
+            Assert.That(game.Apply(GameCommand.GiveArtifact(me, second.id, axe, first.id, false)), Is.False, "only to a hero beside him");
+
+            GameCommand sent = GameCommand.GiveArtifact(me, 3, 7, 4, true);
+            GameCommand back = GameCommand.Parse(sent.Seat, (uint)sent.kind, sent.Payload());
+            Assert.That(back.ToString(), Is.EqualTo(sent.ToString()), "it survives the log of an online game");
+        }
+
+        [Test]
+        public void AStackSplitsBetweenHeroesWhoMeet()
+        {
+            HeroesGame game = Start(32);
+            int me = game.State.currentPlayer;
+            HeroState first = game.State.Hero(game.State.Player(me).heroes[0]);
+            HeroState second = Beside(game, first);
+            ArmySlot stack = first.army.slots[0];
+            int creature = stack.creature;
+            int total = stack.count;
+            Assert.That(total, Is.GreaterThan(2));
+
+            Assert.That(game.Apply(GameCommand.MoveArmy(me, first.id, 0, first.id, 6, 2)), Is.True, "a split within one army");
+            Assert.That(first.army.slots[6].count, Is.EqualTo(2));
+            Assert.That(first.army.slots[0].count, Is.EqualTo(total - 2));
+            Assert.That(game.Apply(GameCommand.MoveArmy(me, first.id, 0, second.id, 3, 1)), Is.True, "a split into the other hero's army");
+            Assert.That(second.army.slots[3].creature, Is.EqualTo(creature));
+            Assert.That(second.army.slots[3].count, Is.EqualTo(1));
+            Assert.That(first.army.TotalCreatures + second.army.TotalCreatures, Is.GreaterThanOrEqualTo(total), "nobody lost on the way");
+        }
     }
 }

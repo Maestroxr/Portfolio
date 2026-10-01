@@ -594,6 +594,36 @@ namespace Portfolio.Heroes.UI
             return text;
         }
 
+        /// <summary>
+        /// A slider for picking how many: a dark groove, gold up to a handle that is dragged (a click on the groove jumps
+        /// there), whole numbers only.
+        /// </summary>
+        public static UnityEngine.UI.Slider NumberSlider(Transform parent, string name)
+        {
+            RectTransform rect = Rect(parent, name);
+            Image groove = Sprite(rect, "Groove", Art != null ? Art.bar : null, new Color(0.12f, 0.1f, 0.08f, 0.9f));
+            groove.raycastTarget = true;
+            Stretch((RectTransform)groove.transform, 0f, 10f, 0f, 10f);
+            RectTransform fillArea = Rect(rect, "Fill Area");
+            Stretch(fillArea, 3f, 13f, 3f, 13f);
+            Image fill = Sprite(fillArea, "Fill", Art != null ? Art.bar : null, Gold);
+            ((RectTransform)fill.transform).sizeDelta = Vector2.zero;
+            RectTransform handleArea = Rect(rect, "Handle Area");
+            Stretch(handleArea, 16f, 0f, 16f, 0f);
+            Image handle = Sprite(handleArea, "Handle", Art != null ? Art.slot : null, Color.white);
+            handle.raycastTarget = true;
+            ((RectTransform)handle.transform).sizeDelta = new Vector2(32f, 0f);
+            var slider = rect.gameObject.AddComponent<UnityEngine.UI.Slider>();
+            slider.fillRect = (RectTransform)fill.transform;
+            slider.handleRect = (RectTransform)handle.transform;
+            slider.targetGraphic = handle;
+            slider.direction = UnityEngine.UI.Slider.Direction.LeftToRight;
+            slider.wholeNumbers = true;
+            slider.navigation = new Navigation { mode = Navigation.Mode.None };
+            slider.colors = Tint();
+            return slider;
+        }
+
         /// <summary>The square an army slot is shown in: the creature, how many, and whether it is picked.</summary>
         public static Image Slot(Transform parent, string name)
         {

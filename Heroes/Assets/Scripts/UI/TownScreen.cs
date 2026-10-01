@@ -20,13 +20,26 @@ namespace Portfolio.Heroes.UI
         /// <summary>The space between the header, the buildings and dwellings, and the armies.</summary>
         private const float Gap = 10f;
 
-        /// <summary>The buildings in the order the town shows them: the halls, the walls, the trades, the guild, the dwellings.</summary>
-        private static readonly BuildingId[] Order =
+        /// <summary>
+        /// The cards in the order the town shows them: the halls, the walls, the trades, the guild, the dwellings. A chain
+        /// of upgrades (Town Hall to City Hall, Fort to Citadel to Castle, the three floors of the guild) is one card that
+        /// shows its next step, so every card fits on the page without scrolling and none hides below the others.
+        /// </summary>
+        private static readonly BuildingId[][] Order =
         {
-            BuildingId.TownHall, BuildingId.CityHall, BuildingId.Fort, BuildingId.Citadel, BuildingId.Castle, BuildingId.Tavern,
-            BuildingId.Marketplace, BuildingId.Silo, BuildingId.MageGuild1, BuildingId.MageGuild2, BuildingId.MageGuild3,
-            BuildingId.Dwelling1, BuildingId.Dwelling2, BuildingId.Dwelling3, BuildingId.Dwelling4, BuildingId.Dwelling5,
-            BuildingId.Dwelling6, BuildingId.Dwelling7
+            new[] { BuildingId.TownHall, BuildingId.CityHall },
+            new[] { BuildingId.Fort, BuildingId.Citadel, BuildingId.Castle },
+            new[] { BuildingId.Tavern },
+            new[] { BuildingId.Marketplace },
+            new[] { BuildingId.Silo },
+            new[] { BuildingId.MageGuild1, BuildingId.MageGuild2, BuildingId.MageGuild3 },
+            new[] { BuildingId.Dwelling1 },
+            new[] { BuildingId.Dwelling2 },
+            new[] { BuildingId.Dwelling3 },
+            new[] { BuildingId.Dwelling4 },
+            new[] { BuildingId.Dwelling5 },
+            new[] { BuildingId.Dwelling6 },
+            new[] { BuildingId.Dwelling7 }
         };
 
         private TownState town;
@@ -267,6 +280,9 @@ namespace Portfolio.Heroes.UI
             town = which;
             shownBuildings = null;
             shownDwellings = null;
+            // Every town opens at the top of its lists.
+            buildings.anchoredPosition = Vector2.zero;
+            dwellings.anchoredPosition = Vector2.zero;
             ArmyRow.Drop();
             Open();
             Refresh();
@@ -402,14 +418,27 @@ namespace Portfolio.Heroes.UI
             }
             shownBuildings = signature;
             UIKit.Clear(buildings);
-            foreach (BuildingId id in Order)
+            foreach (BuildingId[] chain in Order)
             {
-                BuildingDef def = Buildings.Get(town.faction, id);
+                BuildingDef def = Buildings.Get(town.faction, NextOf(chain));
                 if (def != null)
                 {
-                    BuildingCard(def, owner, free);
+                    BuildingCard(def, owner, free, chain);
                 }
             }
+        }
+
+        /// <summary>The step of a chain of upgrades the town has still to build, or its last when all are built.</summary>
+        private BuildingId NextOf(BuildingId[] chain)
+        {
+            foreach (BuildingId id in chain)
+            {
+                if (!town.Has(id))
+                {
+                    return id;
+                }
+            }
+            return chain[chain.Length - 1];
         }
 
         private static string Held(PlayerState owner)
@@ -417,7 +446,7 @@ namespace Portfolio.Heroes.UI
             return owner != null ? string.Join(",", owner.resources.values) : "";
         }
 
-        private void BuildingCard(BuildingDef def, PlayerState owner, bool free)
+        private void BuildingCard(BuildingDef def, PlayerState owner, bool free, BuildingId[] chain)
         {
             bool built = town.Has(def.Id);
             bool ready = Ready(def);
@@ -493,7 +522,7 @@ namespace Portfolio.Heroes.UI
                 // Out of reach today: the card fades a little, and its tooltip says why.
                 card.gameObject.AddComponent<CanvasGroup>().alpha = ready ? 0.85f : 0.62f;
             }
-            Tooltip.Attach(card.gameObject, def.Name, Explain(def, built, ready, affordable), icon);
+            Tooltip.Attach(card.gameObject, def.Name, Explain(def, built, ready, affordable) + Before(def, chain), icon);
         }
 
         /// <summary>The picture of a building: the creature a dwelling houses, else the icon of what the building does.</summary>
@@ -566,6 +595,20 @@ namespace Portfolio.Heroes.UI
                 text.Append("\n").Append(Words.T("Click to build it."));
             }
             return text.ToString();
+        }
+
+        /// <summary>The steps of its chain the town has already built before the one a card shows ("Built: Fort."), or "".</summary>
+        private string Before(BuildingDef def, BuildingId[] chain)
+        {
+            var names = new List<string>();
+            foreach (BuildingId id in chain)
+            {
+                if (id != def.Id && town.Has(id))
+                {
+                    names.Add(Words.T(Buildings.Get(town.faction, id).Name));
+                }
+            }
+            return names.Count == 0 ? "" : "\n<color=#B8AB8F>" + Words.F("Built before: {0}.", string.Join(", ", names)) + "</color>";
         }
 
         /// <summary>The buildings a building still needs, by name: "Fort", "Fort and Tavern", "Fort, Tavern and Chapel".</summary>

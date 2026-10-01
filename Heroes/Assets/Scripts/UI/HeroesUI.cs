@@ -34,6 +34,9 @@ namespace Portfolio.Heroes.UI
         private ChoiceBox choice;
         private ResultsBox results;
         private MessageBox message;
+        private SplitBox split;
+        private DwellingBox dwelling;
+        private MeetingScreen meeting;
 
         private bool busy;
         private int hoverCell = -1;
@@ -65,6 +68,12 @@ namespace Portfolio.Heroes.UI
         public ResultsBox Results => results;
 
         public MessageBox Message => message;
+
+        public SplitBox Split => split;
+
+        public DwellingBox Dwelling => dwelling;
+
+        public MeetingScreen Meeting => meeting;
 
         /// <summary>
         /// Whether the player at this device may give an order now: the rules wait for them and the map has played out
@@ -112,6 +121,9 @@ namespace Portfolio.Heroes.UI
             results = ResultsBox.Make(safe, manager);
             campaignScreen = CampaignScreen.Make(safe, manager);
             message = MessageBox.Make(safe, manager);
+            dwelling = DwellingBox.Make(safe, manager);
+            meeting = MeetingScreen.Make(safe, manager);
+            split = SplitBox.Make(safe, manager);
             title = TitleScreen.Make(screen, safe, manager, this);
             Tooltip.Prepare(screen);
             CloseAll();
@@ -323,6 +335,21 @@ namespace Portfolio.Heroes.UI
                 message.Close();
                 return true;
             }
+            if (split != null && split.IsOpen)
+            {
+                split.Close();
+                return true;
+            }
+            if (dwelling != null && dwelling.IsOpen)
+            {
+                dwelling.Close();
+                return true;
+            }
+            if (meeting != null && meeting.IsOpen)
+            {
+                meeting.Close();
+                return true;
+            }
             if (town != null && town.HandleBack())
             {
                 return true;
@@ -462,6 +489,9 @@ namespace Portfolio.Heroes.UI
             choice?.Close();
             results?.Close();
             message?.Close();
+            split?.Close();
+            dwelling?.Close();
+            meeting?.Close();
             battleBar?.Hide();
             hud?.HideAnnouncement();
         }
@@ -511,6 +541,9 @@ namespace Portfolio.Heroes.UI
             hud.Refresh(busy);
             town?.Refresh();
             heroSheet?.Refresh();
+            meeting?.Refresh();
+            dwelling?.Refresh();
+            split?.Refresh();
         }
 
         public void Log(string text, int player)
@@ -649,7 +682,7 @@ namespace Portfolio.Heroes.UI
 
         /// <summary>Whether a screen of the game lies over the map (the map then takes no clicks).</summary>
         private bool ScreenOpen => town.IsOpen || heroSheet.IsOpen || choice.IsOpen || results.IsOpen || message.IsOpen ||
-                                   campaignScreen.IsOpen;
+                                   campaignScreen.IsOpen || meeting.IsOpen || dwelling.IsOpen || split.IsOpen;
 
         // ------------------------------------------------------------------ the pointer on the map
 
@@ -752,11 +785,22 @@ namespace Portfolio.Heroes.UI
             GameState state = Game.State;
             enteringTown = -1;
             HeroState standing = state.HeroAt(cell);
+            HeroState selected = manager.Selected;
             if (standing != null && standing.owner == manager.Viewer)
             {
-                if (manager.Selected != null && manager.Selected.id == standing.id)
+                if (selected != null && selected.id == standing.id)
                 {
                     heroSheet.Open(standing);
+                }
+                else if (selected != null && Game.Grid.Distance(selected.cell, standing.cell) <= 1)
+                {
+                    // Two heroes side by side trade at once, with no step to take.
+                    meeting.Show(selected, standing);
+                }
+                else if (selected != null && Meets(selected, cell))
+                {
+                    // The hero in hand walks over to the other; their meeting opens as he gets there.
+                    Commands?.MoveHero(selected.id, cell);
                 }
                 else
                 {
@@ -765,6 +809,14 @@ namespace Portfolio.Heroes.UI
                 return;
             }
             MapObject what = state.ObjectAt(cell);
+            if (what != null && what.kind == ObjectKind.Dwelling && what.owner == manager.Viewer && selected != null &&
+                selected.owner == manager.Viewer && Game.Grid.Distance(selected.cell, what.cell) <= 1)
+            {
+                // A dwelling of the realm the hero already stands beside opens without another visit (a new one is visited
+                // first, which raises the realm's flag over it).
+                dwelling.Show(what, selected);
+                return;
+            }
             if (what != null && what.kind == ObjectKind.Town)
             {
                 TownState here = state.Town(what.subtype);
@@ -804,6 +856,29 @@ namespace Portfolio.Heroes.UI
         /// A hero of the player at this device walked into <paramref name="entered"/>: when a click on the town sent
         /// him, its screen opens with him in it, his army next to the garrison.
         /// </summary>
+        /// <summary>Whether the hero in hand can walk to <paramref name="cell"/> today to meet the hero of his own standing there.</summary>
+        private bool Meets(HeroState hero, int cell)
+        {
+            MovePlan path = manager.PlanFor(hero, cell);
+            // Only a meeting reached today: a click on a hero farther away picks that hero up instead.
+            return path != null && path.Today > 0 && path.ReachesToday && path.End == PathEnd.Meet;
+        }
+
+        /// <summary>A hero of this device met another of the same realm: the screen where they trade opens.</summary>
+        public void Met(HeroState visitor, HeroState host)
+        {
+            if (visitor != null && host != null)
+            {
+                meeting.Show(visitor, host);
+            }
+        }
+
+        /// <summary>A hero of this device visited a dwelling on the map: its recruiting opens, whatever the treasury holds.</summary>
+        public void VisitedDwelling(MapObject visited, HeroState hero)
+        {
+            dwelling.Show(visited, hero);
+        }
+
         public void EnteredTown(TownState entered)
         {
             if (entered == null || entered.id != enteringTown)
@@ -822,7 +897,8 @@ namespace Portfolio.Heroes.UI
             MapObject what = state.ObjectAt(cell);
             if (standing != null && standing.owner == manager.Viewer)
             {
-                return CursorKind.Hand;
+                bool meets = hero != null && hero.id != standing.id && (Game.Grid.Distance(hero.cell, cell) <= 1 || Meets(hero, cell));
+                return meets ? CursorKind.Visit : CursorKind.Hand;
             }
             if (what != null && what.kind == ObjectKind.Town && state.Town(what.subtype) is TownState here &&
                 here.owner == manager.Viewer)

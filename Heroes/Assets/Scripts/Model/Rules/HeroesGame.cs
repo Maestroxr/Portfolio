@@ -139,7 +139,10 @@ namespace Portfolio.Heroes
                         ? RecruitAtDwelling(command.player, command.a, command.e, command.c)
                         : Recruit(command.player, command.a, command.b, command.c, command.d == 1);
                 case CommandKind.HireHero: return Hire(command.player, command.a, command.b);
-                case CommandKind.MoveArmy: return MoveArmy(command.player, command.a, command.b, command.c, command.d, command.e);
+                case CommandKind.MoveArmy:
+                    return command.d == GameCommand.ArtifactPlace
+                        ? GiveArtifact(command.player, command.a, command.b, command.c, command.e == 1)
+                        : MoveArmy(command.player, command.a, command.b, command.c, command.d, command.e);
                 case CommandKind.Trade: return Trade(command.player, (ResourceKind)command.a, (ResourceKind)command.b, command.c);
                 case CommandKind.DismissStack: return Dismiss(command.player, command.a, command.b);
                 case CommandKind.SleepHero: return Sleep(command.player, command.a, command.b != 0);

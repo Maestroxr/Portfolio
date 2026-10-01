@@ -286,6 +286,8 @@ namespace Portfolio.Heroes.UI
             map.image = map.area.gameObject.AddComponent<RawImage>();
             map.image.raycastTarget = true;
             map.image.color = Color.white;
+            // The view box turns with the camera, and its corners would stick out past the little map.
+            map.area.gameObject.AddComponent<RectMask2D>();
             map.markers = UIKit.Stretch(UIKit.Rect(map.area, "Markers"));
             map.box = UIKit.Rect(map.area, "View");
             map.box.anchorMin = map.box.anchorMax = Vector2.zero;
@@ -493,6 +495,8 @@ namespace Portfolio.Heroes.UI
             Vector2 half = box.sizeDelta * 0.5f;
             box.anchoredPosition = new Vector2(Mathf.Clamp(x * size.x, half.x, size.x - half.x),
                 Mathf.Clamp(y * size.y, half.y, size.y - half.y));
+            // Turned with the camera, north up on the little map.
+            box.localRotation = Quaternion.Euler(0f, 0f, -manager.Rig.Yaw);
         }
 
         private void Clicked()

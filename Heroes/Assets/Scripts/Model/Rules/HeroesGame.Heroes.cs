@@ -229,6 +229,47 @@ namespace Portfolio.Heroes
             CheckGoalsNow();
         }
 
+        /// <summary>
+        /// Hands an artifact from a hero to another of the same player beside him (two heroes who met): taken from where
+        /// he wears it (<paramref name="worn"/>) or from his pack, worn by the other when its place is free, else packed.
+        /// </summary>
+        private bool GiveArtifact(int player, int fromId, int artifact, int toId, bool worn)
+        {
+            HeroState from = State.Hero(fromId);
+            HeroState to = State.Hero(toId);
+            ArtifactDef def = Artifacts.Get((ArtifactId)artifact);
+            if (from == null || to == null || from == to || def == null || !from.alive || !to.alive || from.owner != player || to.owner != player ||
+                Grid.Distance(from.cell, to.cell) > 1)
+            {
+                return false;
+            }
+            if (worn)
+            {
+                int place = Array.IndexOf(from.equipped, artifact);
+                if (place < 0)
+                {
+                    return false;
+                }
+                from.equipped[place] = -1;
+            }
+            else if (!from.backpack.Remove(artifact))
+            {
+                return false;
+            }
+            int slot = (int)def.Slot;
+            if (to.equipped[slot] < 0)
+            {
+                to.equipped[slot] = artifact;
+            }
+            else
+            {
+                to.backpack.Add(artifact);
+            }
+            from.mana = Math.Min(from.mana, MaxMana(from));
+            Emit(EventKind.ArmyChanged, player, fromId, toId);
+            return true;
+        }
+
         /// <summary>Wears an artifact from the backpack, putting what was worn in its place into the backpack.</summary>
         public bool Equip(HeroState hero, ArtifactId id)
         {

@@ -202,6 +202,11 @@ namespace Portfolio.Heroes
             Do(CommandKind.MoveArmy, from, fromSlot, to, toSlot, count);
         }
 
+        public void GiveArtifact(int fromHero, int artifact, int toHero, bool worn)
+        {
+            Do(CommandKind.MoveArmy, fromHero, artifact, toHero, GameCommand.ArtifactPlace, worn ? 1 : 0);
+        }
+
         public void Trade(ResourceKind give, ResourceKind take, int amount)
         {
             Do(CommandKind.Trade, (int)give, (int)take, amount);
