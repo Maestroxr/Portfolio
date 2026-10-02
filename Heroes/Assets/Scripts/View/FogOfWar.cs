@@ -8,7 +8,7 @@ namespace Portfolio.Heroes
 {
     /// <summary>
     /// The shroud over the land a player has not explored yet. A texture holds what is hidden (a few texels a cell,
-    /// blurred at the edges) and a quad in front of the camera draws it over the scene by the world position of every
+    /// blurred at the edges) and a render pass of the map's camera draws it over the scene by the world position of every
     /// pixel (shader Heroes/FogOfWar), so tall things in the dark are hidden where they stand.
     /// </summary>
     public sealed class FogOfWar : MonoBehaviour
@@ -26,42 +26,73 @@ namespace Portfolio.Heroes
         private int width;
         private int height;
         private HexLayout layout;
-        private MeshRenderer quad;
+        private Mesh quad;
         private Material instance;
+        private bool visible = true;
         private bool dirty;
         private PlayerState player;
         private readonly HashSet<int> lifted = new HashSet<int>();
         private Camera fogCamera;
-        private readonly DepthBeforeTransparents depthPass = new DepthBeforeTransparents();
+        private FogPass fogPass;
 
         /// <summary>
-        /// A pass that draws nothing and only says it reads the depth texture before the transparent objects: the
-        /// pipeline then copies the depth before them, so the quad of the fog (drawn with them) reads this frame's depth.
-        /// The renderer of the project copies it after them otherwise, too late for the fog.
+        /// Draws the shroud after the transparent objects, handing the material this camera's depth texture itself. The
+        /// shader once read the global <c>_CameraDepthTexture</c> from a quad drawn with the transparent objects: the
+        /// renderer of the project copies the depth after them (too late), and on WebGL the global was still the
+        /// pipeline's black placeholder when the quad drew, so every pixel landed beyond the map and the whole screen
+        /// darkened instead of the unexplored land.
         /// </summary>
-        private sealed class DepthBeforeTransparents : ScriptableRenderPass
+        private sealed class FogPass : ScriptableRenderPass
         {
-            public DepthBeforeTransparents()
+            private static readonly int FogDepthId = Shader.PropertyToID("_FogDepthTexture");
+
+            public Material Material;
+            public Mesh Mesh;
+            private readonly MaterialPropertyBlock block = new MaterialPropertyBlock();
+
+            private sealed class PassData
             {
-                renderPassEvent = RenderPassEvent.BeforeRenderingTransparents;
+                public TextureHandle Depth;
+                public Material Material;
+                public Mesh Mesh;
+                public MaterialPropertyBlock Block;
+            }
+
+            public FogPass()
+            {
+                renderPassEvent = RenderPassEvent.AfterRenderingTransparents;
                 ConfigureInput(ScriptableRenderPassInput.Depth);
             }
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
             {
+                UniversalResourceData resources = frameData.Get<UniversalResourceData>();
+                TextureHandle depth = resources.cameraDepthTexture;
+                if (!depth.IsValid() || Material == null || Mesh == null)
+                {
+                    return;
+                }
+                using (IRasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass("Fog of War", out PassData data))
+                {
+                    data.Depth = depth;
+                    data.Material = Material;
+                    data.Mesh = Mesh;
+                    data.Block = block;
+                    builder.UseTexture(depth, AccessFlags.Read);
+                    builder.SetRenderAttachment(resources.activeColorTexture, 0, AccessFlags.Write);
+                    builder.SetRenderFunc(static (PassData pass, RasterGraphContext context) =>
+                    {
+                        pass.Block.SetTexture(FogDepthId, pass.Depth);
+                        context.cmd.DrawMesh(pass.Mesh, Matrix4x4.identity, pass.Material, 0, 0, pass.Block);
+                    });
+                }
             }
         }
 
         public bool Visible
         {
-            get => quad != null && quad.gameObject.activeSelf;
-            set
-            {
-                if (quad != null)
-                {
-                    quad.gameObject.SetActive(value);
-                }
-            }
+            get => visible && quad != null;
+            set => visible = value;
         }
 
         /// <summary>Lays the fog over the map. The material comes from the art, since nothing puts it in the scene.</summary>
@@ -103,13 +134,12 @@ namespace Portfolio.Heroes
             }
             if (instance == null)
             {
-                // Without a material the screen would be covered by an untextured quad.
+                // Without a material there is nothing to draw the shroud with.
                 Debug.LogWarning("Heroes: the fog of war has no material; the map is shown without it.");
                 return;
             }
             // The shader finds the ground under every pixel in the depth texture, which the pipeline makes only for a camera
-            // that asks for it; without one it reads whatever another camera (or nothing) left there, and the map darkens
-            // in patches that come and go as the camera moves.
+            // that asks for it.
             UniversalAdditionalCameraData data = view.GetUniversalAdditionalCameraData();
             if (data != null)
             {
@@ -118,17 +148,15 @@ namespace Portfolio.Heroes
             fogCamera = view;
             if (quad == null)
             {
-                var go = new GameObject("Fog of War", typeof(MeshFilter), typeof(MeshRenderer)) { layer = Layer };
-                go.transform.SetParent(view.transform, false);
-                go.transform.localPosition = new Vector3(0f, 0f, view.nearClipPlane + 0.05f);
-                go.GetComponent<MeshFilter>().sharedMesh = ScreenQuad();
-                quad = go.GetComponent<MeshRenderer>();
-                quad.shadowCastingMode = ShadowCastingMode.Off;
-                quad.receiveShadows = false;
-                quad.lightProbeUsage = LightProbeUsage.Off;
-                quad.reflectionProbeUsage = ReflectionProbeUsage.Off;
+                quad = ScreenQuad();
             }
-            quad.sharedMaterial = instance;
+            if (fogPass == null)
+            {
+                // Made here: its property block may not be made while the component is constructed.
+                fogPass = new FogPass();
+            }
+            fogPass.Material = instance;
+            fogPass.Mesh = quad;
             dirty = true;
         }
 
@@ -138,8 +166,6 @@ namespace Portfolio.Heroes
             mesh.vertices = new[] { new Vector3(-1f, -1f, 0f), new Vector3(1f, -1f, 0f), new Vector3(1f, 1f, 0f), new Vector3(-1f, 1f, 0f) };
             mesh.uv = new[] { new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(0f, 1f) };
             mesh.triangles = new[] { 0, 2, 1, 0, 3, 2 };
-            // Never culled: the shader places it over the screen, not where the mesh is.
-            mesh.bounds = new Bounds(Vector3.zero, Vector3.one * 100000f);
             return mesh;
         }
 
@@ -222,12 +248,12 @@ namespace Portfolio.Heroes
 
         private void BeforeCamera(ScriptableRenderContext context, Camera rendering)
         {
-            if (rendering != fogCamera || quad == null || !quad.gameObject.activeInHierarchy)
+            if (rendering != fogCamera || !Visible || fogPass == null)
             {
                 return;
             }
             UniversalAdditionalCameraData data = rendering.GetUniversalAdditionalCameraData();
-            data?.scriptableRenderer?.EnqueuePass(depthPass);
+            data?.scriptableRenderer?.EnqueuePass(fogPass);
         }
 
         private void LateUpdate()
@@ -316,15 +342,9 @@ namespace Portfolio.Heroes
             {
                 Destroy(instance);
             }
-            // The quad hangs under the camera, not under the map, so it would outlive the map it covered.
             if (quad != null)
             {
-                MeshFilter filter = quad.GetComponent<MeshFilter>();
-                if (filter != null && filter.sharedMesh != null)
-                {
-                    Destroy(filter.sharedMesh);
-                }
-                Destroy(quad.gameObject);
+                Destroy(quad);
             }
         }
     }

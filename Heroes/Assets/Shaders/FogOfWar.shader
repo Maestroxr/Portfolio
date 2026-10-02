@@ -27,8 +27,9 @@ Shader "Heroes/FogOfWar"
             #pragma vertex Vert
             #pragma fragment Frag
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
-
+            // This camera's depth, handed to the material by FogOfWar's render pass (the global _CameraDepthTexture is
+            // not to be trusted on WebGL), read by the normalized screen position.
+            TEXTURE2D_X_FLOAT(_FogDepthTexture);
             TEXTURE2D(_FogTex);
             SAMPLER(sampler_FogTex);
             TEXTURE2D(_NoiseTex);
@@ -63,10 +64,11 @@ Shader "Heroes/FogOfWar"
             half4 Frag(Varyings input) : SV_Target
             {
                 float2 screenUV = input.positionCS.xy / _ScaledScreenParams.xy;
+                float sceneDepth = SAMPLE_TEXTURE2D_X(_FogDepthTexture, sampler_PointClamp, screenUV).r;
                 #if UNITY_REVERSED_Z
-                    float depth = SampleSceneDepth(screenUV);
+                    float depth = sceneDepth;
                 #else
-                    float depth = lerp(UNITY_NEAR_CLIP_VALUE, 1, SampleSceneDepth(screenUV));
+                    float depth = lerp(UNITY_NEAR_CLIP_VALUE, 1, sceneDepth);
                 #endif
                 float3 world = ComputeWorldSpacePosition(screenUV, depth, UNITY_MATRIX_I_VP);
                 float2 fogUV = (world.xz - _FogRect.xy) * _FogRect.zw;
