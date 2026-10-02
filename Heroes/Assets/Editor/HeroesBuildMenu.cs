@@ -71,13 +71,12 @@ namespace Portfolio.Heroes.EditorTools
         [MenuItem("Heroes/Debug/Clear Saved Games", false, 101)]
         public static void ClearSaves()
         {
-            for (int i = 0; i < 24; i++)
+            string folder = Gamebox.SaveLibrary.DefaultFolder(Gamebox.GameType.Heroes);
+            if (System.IO.Directory.Exists(folder))
             {
-                PlayerPrefs.DeleteKey($"Heroes.Save.{i}");
+                System.IO.Directory.Delete(folder, true);
             }
-            PlayerPrefs.DeleteKey("Heroes.Save.Level");
-            PlayerPrefs.Save();
-            Debug.Log("Heroes: saved games cleared.");
+            Debug.Log($"Heroes: saved games cleared ({folder}).");
         }
     }
 }

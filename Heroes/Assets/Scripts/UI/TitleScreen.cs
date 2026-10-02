@@ -8,8 +8,8 @@ namespace Portfolio.Heroes.UI
 {
     /// <summary>
     /// The first screen of the game: a small living valley behind it (<see cref="TitleDiorama"/>), the name of the game
-    /// in its decorative capitals, and the ways in: Continue, the campaign, the skirmish maps, the hot seat for several
-    /// people at this device, the online lobby, the settings, the credits and the way out. It takes the place of the shared menu while the game is not running.
+    /// in its decorative capitals, and the ways in: Continue, the saved games, the campaign, the skirmish maps, the hot
+    /// seat for several people at this device, the online lobby, the settings, the credits and the way out. It takes the place of the shared menu while the game is not running.
     /// </summary>
     public sealed class TitleScreen : MonoBehaviour
     {
@@ -26,6 +26,7 @@ namespace Portfolio.Heroes.UI
         private RectTransform menu;
         private Button resume;
         private Tooltip resumeTip;
+        private Button load;
         private Button online;
         private Button hotSeat;
         private TitleDiorama diorama;
@@ -96,13 +97,14 @@ namespace Portfolio.Heroes.UI
             UIKit.Look(tagline, TextLook.Shadow);
 
             menu = UIKit.Rect(area, "Menu");
-            UIKit.Pin(menu, new Vector2(0f, 1f), new Vector2(Left + (Column - ButtonWidth) * 0.5f, -384f), new Vector2(ButtonWidth, 8f * 76f));
-            VerticalLayoutGroup layout = UIKit.Layout<VerticalLayoutGroup>(menu, 12f);
+            UIKit.Pin(menu, new Vector2(0f, 1f), new Vector2(Left + (Column - ButtonWidth) * 0.5f, -384f), new Vector2(ButtonWidth, 9f * 72f));
+            VerticalLayoutGroup layout = UIKit.Layout<VerticalLayoutGroup>(menu, 8f);
             layout.childAlignment = TextAnchor.UpperCenter;
             layout.childForceExpandWidth = true;
 
             resume = Entry("Continue", Continue, "The scenario you left, where you left it.");
             resumeTip = resume.GetComponent<Tooltip>();
+            load = Entry("Load Game", () => manager.ShowSavedGames(false), "Load Game\nA game you saved, by its name; or a save file to bring in.");
             Entry("Campaign", () => ui.OpenCampaign(false), "The Shattered Crown\nEight chapters, one after the other.");
             Entry("Skirmish", () => ui.OpenCampaign(true), "Skirmish\nA single map against the computer.");
             hotSeat = Entry("Hot Seat", () => manager.OpenLocalPlay(), "Hot Seat\nTwo to four people take turns at this device.");
@@ -172,37 +174,27 @@ namespace Portfolio.Heroes.UI
             }
         }
 
-        /// <summary>Continue shows only with a saved scenario to go on with; its tooltip names it.</summary>
+        /// <summary>
+        /// Continue shows only with a save to go on with (the one made last, by the player or the game); its tooltip
+        /// says what it is. The saved games are not offered while a session of the lobby is in charge.
+        /// </summary>
         public void Refresh()
         {
-            int level = SavedLevel();
-            bool saved = level >= 0;
-            resume.gameObject.SetActive(saved);
-            if (saved)
+            SavedGame latest = manager.InSession ? null : manager.LatestSave;
+            resume.gameObject.SetActive(latest != null);
+            if (latest != null)
             {
-                HeroesLevel scenario = manager.Campaign is HeroesCampaign campaign ? campaign.Scenario(level) : null;
-                string name = scenario == null ? null
-                    : manager.ContinuesHotSeat ? Words.F("{0}, hot seat", Words.T(scenario.Title))
-                    : Words.T(scenario.Title);
-                resumeTip.Title = name != null ? Words.F("Continue: {0}", name) : "Continue";
+                resumeTip.Title = Words.F("Continue: {0}", string.IsNullOrEmpty(latest.Summary) ? latest.Name : latest.Summary);
                 resumeTip.Text = "The scenario you left, where you left it.";
             }
+            load.gameObject.SetActive(!manager.InSession);
             online.gameObject.SetActive(manager.Online != null);
             hotSeat.gameObject.SetActive(manager.LocalPlay != null);
         }
 
-        /// <summary>
-        /// The level whose save Continue takes up: the one saved last (a game alone or a hot seat), or -1. The manager is
-        /// pointed at it, which only decides which save the load reads.
-        /// </summary>
-        private int SavedLevel()
-        {
-            return manager.ContinueLevel();
-        }
-
         private void Continue()
         {
-            if (SavedLevel() >= 0)
+            if (!manager.InSession && manager.HasSavedGames)
             {
                 manager.LoadGame();
             }
@@ -233,7 +225,7 @@ namespace Portfolio.Heroes.UI
             get
             {
                 if (ui.Campaign != null && ui.Campaign.IsOpen || ui.Message != null && ui.Message.IsOpen || ui.IsSettingsShown ||
-                    manager.IsLocalSetupOpen)
+                    manager.IsLocalSetupOpen || manager.IsSavedGamesOpen)
                 {
                     return true;
                 }

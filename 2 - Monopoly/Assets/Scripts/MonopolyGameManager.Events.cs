@@ -618,98 +618,92 @@ namespace Portfolio.Monopoly
 
         // ------------------------------------------------------------------ saving
 
+        /// <summary>What a saved game holds: the match and the setup it began with (the mode is the save's level).</summary>
         [Serializable]
         private class SaveData
         {
             public MonopolyMatch match;
             public MatchSetup setup;
-            public int mode;
         }
+
+        protected override bool OffersNamedSaves => true;
+
+        public override string SaveRefusal =>
+            IsOnlineMatch ? L.T("An online match cannot be saved.")
+            : Match == null || Match.IsOver ? L.T("There is no game to save.")
+            : null;
 
         public override bool DoesSaveGameExist()
         {
-            IStorageStrategy disk = Disk;
-            return disk != null && disk.DoesKeyExist(SaveKey("Exists")) && disk.GetBool(SaveKey("Exists")) && disk.DoesKeyExist(SaveKey("Data"));
+            return HasSavedGames;
         }
 
+        /// <summary>The game saves itself, and says so (or why it cannot).</summary>
         public override void SaveGame()
         {
-            if (IsOnlineMatch)
-            {
-                UI?.UpdateError(L.T("An online match cannot be saved."));
-                return;
-            }
             SaveMatch(false);
         }
 
+        /// <summary>
+        /// The game saves itself: at the start of every turn of a person here and on the way to the title, quietly
+        /// (<paramref name="silent"/>). An online match lives on the server and in the devices of the others: there is
+        /// nothing to continue alone.
+        /// </summary>
         private void SaveMatch(bool silent)
         {
-            IStorageStrategy disk = Disk;
-            // An online match lives on the server and in the devices of the others: there is nothing to continue alone.
-            if (disk == null || Match == null || Match.IsOver || IsOnlineMatch)
+            string refusal = SaveRefusal;
+            if (refusal != null)
             {
+                if (!silent)
+                {
+                    UI?.UpdateError(refusal);
+                }
                 return;
             }
-            var data = new SaveData { match = Match, setup = Setup, mode = LevelIndex };
-            disk.SetString(SaveKey("Data"), JsonUtility.ToJson(data));
-            disk.SetBool(SaveKey("Exists"), true);
-            if (!PersistSavedGame(silent))
-            {
-                return;
-            }
-            UI?.EnableLoad();
-            if (!silent)
+            if (Autosave() && !silent)
             {
                 ui.Toast(L.T("Game saved."), MonopolyStyle.Green, Icons.Save);
             }
         }
 
-        private void ClearSave()
+        protected override SaveContent CaptureSave()
         {
-            IStorageStrategy disk = Disk;
-            if (disk == null)
-            {
-                return;
-            }
-            if (disk.DoesKeyExist(SaveKey("Data")))
-            {
-                disk.DeleteByKey(SaveKey("Data"));
-            }
-            disk.SetBool(SaveKey("Exists"), false);
-            // Nothing to clear on a transient store.
-            disk.TryPersist();
+            var data = new SaveData { match = Match, setup = Setup };
+            string players = string.Join(", ", Match.players.Where(player => player.Active).Select(player => player.name));
+            return new SaveContent { Data = data, Level = LevelIndex, Summary = L.F("{0}, round {1}: {2}", ModeName, Match.round, players) };
         }
 
-        public override void LoadGame()
+        protected override string RestoreSave(SavedGame save)
         {
-            IStorageStrategy disk = Disk;
-            if (disk == null || !DoesSaveGameExist())
+            if (IsOnlineMatch)
             {
-                UI?.UpdateError(L.T("There is no saved game to continue."));
-                return;
+                return L.T("A saved game cannot be loaded during an online match.");
             }
-            SaveData data;
-            try
-            {
-                data = JsonUtility.FromJson<SaveData>(disk.GetString(SaveKey("Data")));
-            }
-            catch (ArgumentException exception)
-            {
-                UI?.UpdateError(L.F("The saved game cannot be read: {0}", exception.Message));
-                return;
-            }
+            SaveData data = save.Read<SaveData>();
             if (data == null || data.match == null || data.match.players == null || data.match.players.Count < 2)
             {
-                UI?.UpdateError(L.T("The saved game is incomplete."));
-                return;
+                return L.T("The saved game is incomplete.");
             }
-            LoadLevel(data.mode);
+            LoadLevel(save.Level);
             MonopolyLevel mode = CurrentMode;
             matchSettings = mode != null && mode.Settings != null ? mode.Settings : MonopolySettings;
             Setup = data.setup ?? MatchSetup.Default();
             data.match.Attach(matchSettings.Board.CreateLayout(), random);
             BeginDirecting(data.match, false);
             ui.Toast(L.T("Welcome back! The game goes on."), MonopolyStyle.Green, Icons.Play);
+            return null;
+        }
+
+        /// <summary>Continue: the game saved last, by the players or by itself.</summary>
+        public override void LoadGame()
+        {
+            ContinueLatest();
+        }
+
+        /// <summary>A match that is over leaves nothing to continue.</summary>
+        private void ClearSave()
+        {
+            ForgetAutosave();
         }
     }
 }

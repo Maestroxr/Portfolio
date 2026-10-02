@@ -42,8 +42,6 @@ namespace Portfolio.Heroes
         private int passedFrame = -1;
         /// <summary>A saved hot seat game being taken up (through <see cref="BaseGameManager.BeginLocalMatch"/>).</summary>
         private GameState resuming;
-        /// <summary>Continue takes up the hot seat game saved last rather than the solo one.</summary>
-        private bool continuesHotSeat;
         /// <summary>Where the battles of the game about to start are fought, when a hot seat chose it.</summary>
         private int? pendingBattleStyle;
         private readonly Dictionary<int, SeatView> seatViews = new Dictionary<int, SeatView>();
@@ -72,9 +70,6 @@ namespace Portfolio.Heroes
 
         /// <summary>Whether the hand-over screen waits for the next person, or has only just let them in (this frame).</summary>
         public bool IsPassing => passing || passedFrame == Time.frameCount;
-
-        /// <summary>Whether Continue takes up a hot seat game (the title screen names it so).</summary>
-        public bool ContinuesHotSeat => continuesHotSeat;
 
         // ------------------------------------------------------------------ starting
 
@@ -292,59 +287,12 @@ namespace Portfolio.Heroes
 
         // ------------------------------------------------------------------ saving
 
-        /// <summary>Where the hot seat game on the map of <paramref name="level"/> is saved, apart from its solo game.</summary>
-        private string HotSeatSlot(int level)
-        {
-            return SaveKey("HotSeat." + level.ToString(CultureInfo.InvariantCulture));
-        }
-
-        /// <summary>The setup of the hot seat game saved on the map of <paramref name="level"/> (the hand-over screen, the choices).</summary>
-        private string HotSeatSetupKey(int level)
-        {
-            return SaveKey("HotSeat.Setup." + level.ToString(CultureInfo.InvariantCulture));
-        }
-
-        /// <summary>Whether the last game saved was a hot seat (1) or a game alone (0).</summary>
-        internal string LastSavedHotSeatKey => SaveKey("LastHotSeat");
-
-        /// <summary>
-        /// The level whose saved game Continue takes up, or -1: the one saved last, a hot seat game or a game alone. The
-        /// manager is pointed at it, which only decides which save the load reads. A hot seat game that is over leaves
-        /// Continue to the solo game of its map, when there is one.
-        /// </summary>
-        internal int ContinueLevel()
-        {
-            IStorageStrategy disk = Disk;
-            continuesHotSeat = false;
-            if (disk == null || InSession)
-            {
-                return -1;
-            }
-            int level = disk.GetInt(LastSavedLevelKey, LevelIndex);
-            if (level < 0)
-            {
-                return -1;
-            }
-            if (LevelIndex != level)
-            {
-                LoadLevel(level);
-            }
-            continuesHotSeat = disk.GetInt(LastSavedHotSeatKey, 0) == 1;
-            if (DoesSaveGameExist())
-            {
-                return level;
-            }
-            continuesHotSeat = false;
-            return DoesSaveGameExist() ? level : -1;
-        }
-
         /// <summary>
         /// Takes up a saved hot seat game: its people, names and seats are in the game itself; the setup it began with
-        /// (the hand-over screen, the map's choices for Play Again) was saved next to it.
+        /// (the hand-over screen, the map's choices for Play Again) was saved with it.
         /// </summary>
-        private void ResumeHotSeat(GameState state)
+        private void ResumeHotSeat(GameState state, string setup)
         {
-            continuesHotSeat = false;
             if (LocalPlay is not HeroesHotSeatRules rules)
             {
                 EndLocalMatch();
@@ -352,7 +300,7 @@ namespace Portfolio.Heroes
                 return;
             }
             var match = new LocalMatch(GameType.Heroes, rules);
-            match.Load(Disk != null ? Disk.GetString(HotSeatSetupKey(LevelIndex)) : "");
+            match.Load(setup);
             match.SetOption(HeroesHotSeatRules.MapOption, Mathf.Max(0, rules.OptionOf(LevelIndex)));
             rules.OptionsChanged(match);
             foreach (PlayerState player in state.players)

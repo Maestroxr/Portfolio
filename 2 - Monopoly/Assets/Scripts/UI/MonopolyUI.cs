@@ -9,7 +9,7 @@ namespace Portfolio.Monopoly
 {
     /// <summary>
     /// The interface of the game on top of the shared <see cref="GameUI"/> menu fields. One menu panel serves as the
-    /// title screen (Play, Play Online, Continue, House Rules, Exit) and as the pause menu (Resume, Save, Load, New Game, Main Menu);
+    /// title screen (Play, Play Online, Continue, Load Game, House Rules, Exit) and as the pause menu (Resume, Save, Load, New Game, Main Menu);
     /// in play the HUD shows the four player panels, the action panel in the middle of the board, the news feed and
     /// the match info, and the popups (title deeds, cards, auctions, the property manager, trades, results).
     /// </summary>
@@ -61,6 +61,9 @@ namespace Portfolio.Monopoly
         [SerializeField] private MonopolyAudio sound;
         [SerializeField] private CameraRig cameraRig;
 
+        /// <summary>The title's way to the saved games (its Continue takes up the one made last).</summary>
+        private Button savedGamesButton;
+        private TMP_Text savedGamesLabel;
         private Coroutine bannerRoutine;
         private float dimTarget;
         private Vector2 lastCanvasSize;
@@ -137,6 +140,7 @@ namespace Portfolio.Monopoly
         {
             base.Awake();
             DrawThemedParts();
+            MakeSavedGamesButton();
             if (mainMenuButton != null)
             {
                 mainMenuButton.onClick.AddListener(() => Monopoly?.ReturnToTitle());
@@ -189,6 +193,62 @@ namespace Portfolio.Monopoly
 
         private bool onTitle = true;
 
+        /// <summary>
+        /// A Load Game button on the title, under Continue: a copy of it (the menu's look and layout), opening the saved
+        /// games window. In the pause menu the Load button itself opens the window.
+        /// </summary>
+        private void MakeSavedGamesButton()
+        {
+            if (LoadGame == null)
+            {
+                return;
+            }
+            savedGamesButton = Instantiate(LoadGame, LoadGame.transform.parent);
+            savedGamesButton.name = "SavedGames";
+            savedGamesButton.transform.SetSiblingIndex(LoadGame.transform.GetSiblingIndex() + 1);
+            savedGamesButton.onClick = new Button.ButtonClickedEvent();
+            savedGamesButton.onClick.AddListener(() => Monopoly?.ShowSavedGames(false));
+            savedGamesButton.interactable = true;
+            if (loadLabel != null && loadLabel.transform.IsChildOf(LoadGame.transform))
+            {
+                Transform label = savedGamesButton.transform.Find(PathFrom(LoadGame.transform, loadLabel.transform));
+                savedGamesLabel = label != null ? label.GetComponent<TMP_Text>() : null;
+            }
+            if (savedGamesLabel != null)
+            {
+                savedGamesLabel.text = L.T("LOAD GAME");
+            }
+        }
+
+        private static string PathFrom(Transform root, Transform child)
+        {
+            string path = child.name;
+            for (Transform parent = child.parent; parent != null && parent != root; parent = parent.parent)
+            {
+                path = parent.name + "/" + path;
+            }
+            return path;
+        }
+
+        /// <summary>On the title Load is Continue: the save made last. In the pause menu it opens the saved games.</summary>
+        protected override void OnLoadGameClicked()
+        {
+            if (onTitle)
+            {
+                GameManager?.LoadGame();
+            }
+            else
+            {
+                base.OnLoadGameClicked();
+            }
+        }
+
+        /// <summary>Continue only with a save to continue; Load Game in the pause menu always (a save can be imported there).</summary>
+        public override void EnableLoad()
+        {
+            SetInteractable(LoadGame, !onTitle || Monopoly == null || Monopoly.HasSavedGames);
+        }
+
         /// <summary>The language changed: the words the interface wrote with code are written again.</summary>
         public override void RefreshTexts()
         {
@@ -204,6 +264,10 @@ namespace Portfolio.Monopoly
             if (loadLabel != null)
             {
                 loadLabel.text = onTitle ? L.T("CONTINUE") : L.T("LOAD GAME");
+            }
+            if (savedGamesLabel != null)
+            {
+                savedGamesLabel.text = L.T("LOAD GAME");
             }
             setup?.RefreshTexts();
         }
@@ -253,6 +317,8 @@ namespace Portfolio.Monopoly
             }
             SetButtonVisible(ReturnToGame, paused);
             SetButtonVisible(SaveGame, paused);
+            SetButtonVisible(savedGamesButton, title);
+            EnableLoad();
             if (mainMenuButton != null)
             {
                 mainMenuButton.gameObject.SetActive(paused);

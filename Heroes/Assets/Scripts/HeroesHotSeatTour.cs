@@ -343,9 +343,10 @@ namespace Portfolio.Heroes
             yield return WaitForTurn(30f);
             manager.ReturnToTitle();
             yield return new WaitForSecondsRealtime(2f);
-            Write($"On the title: hot seat {manager.IsHotSeat}, Continue level {manager.ContinueLevel()} (hot seat {manager.ContinuesHotSeat}).");
+            SavedGame latest = manager.LatestSave;
+            Write($"On the title: hot seat {manager.IsHotSeat}, Continue {(latest != null ? $"{latest.Name}: {latest.Summary}" : "nothing")}.");
             yield return Shot("title_continue");
-            if (manager.ContinueLevel() < 0)
+            if (latest == null)
             {
                 Write("Nothing to continue.");
                 yield break;

@@ -21,7 +21,10 @@ the Free Parking jackpot and more.
 - The corner panels show each player's cash (counting up and down as money moves), net worth, a chip per color set and
   tags for computer players, jail and jail cards. News of the turn scrolls on the left, the mode, the round, the Free
   Parking jackpot and the houses and hotels left in the bank on the right.
-- A match saves at the start of every human turn and continues from the title screen. Winning earns stars per mode:
+- A match saves itself under "Autosave" at the start of every human turn and continues from the title screen
+  (Continue takes up the save made last). Save in the pause menu keeps any number of saves by name, as YAML files, in
+  BaseGame's saved games window (Load, Overwrite, Export, Delete, Import, Open Folder); Load Game on the title and Load in
+  the pause menu open it to load. An online match is not saved. Winning earns stars per mode:
   one for beating the computer players, two for beating three of them, three for beating three Hard ones.
 - **Play online** opens the lobby of the game's server: two to four people on devices of their own at one table,
   against a clock (see Multiplayer).
@@ -67,7 +70,7 @@ The game is built on the base classes of the BaseGame package (`com.skinnerboxes
 | `Campaign` | `MonopolyCampaign` (every mode open, stars per mode) |
 | `CampaignProgress` | `MonopolyProgress` (games, wins and the best net worth per mode) |
 | `PrefabPool<T>` | `BuildingPool` (houses and hotels) |
-| `IStorageStrategy` | the saved match (`MonopolyGameManager.Events.cs`) |
+| named saves (`OffersNamedSaves`, `CaptureSave`, `RestoreSave`) | the saved match, its setup and mode (`MonopolyGameManager.Events.cs`) |
 
 The `GameDefinition` asset under `Assets/Resources/Games` registers the game with the BaseGame launcher, and the
 editor tooling of the package (Gamebox > Sync Game Scenes To Build Settings) keeps the game scene in the build

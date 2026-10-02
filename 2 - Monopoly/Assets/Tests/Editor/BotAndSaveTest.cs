@@ -3,6 +3,7 @@ using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 using static Portfolio.Monopoly.Tests.Fixture;
+using Gamebox;
 using Gamebox.Lockstep;
 
 namespace Portfolio.Monopoly.Tests
@@ -84,18 +85,41 @@ namespace Portfolio.Monopoly.Tests
             Assert.GreaterOrEqual(finished, games * 2 / 3, "Most matches should come to an end");
         }
 
-        [Test]
-        public void SavedMatchRestoresAndPlaysOn()
+        /// <summary>A match a few moves in: a deed bought, a turn ended, a jail card held, the Chance deck short of it.</summary>
+        private static MonopolyMatch MatchToSave()
         {
             MonopolyMatch match = New(3, new RuleSet { freeParkingJackpot = true });
             Give(match, 1, Damrak);
             match.Roll(new DiceRoll(2, 4));
             match.EndTurn();
             match.players[2].jailCards.Add(CardDeckKind.Chance);
+            match.players[1].name = "Ann: \"the\" #1";
             match.chanceDeck.order.Remove(match.Board.chance.FindIndex(c => c.action == CardAction.GetOutOfJail));
-            string json = JsonUtility.ToJson(match);
+            return match;
+        }
 
-            var restored = JsonUtility.FromJson<MonopolyMatch>(json);
+        [Test]
+        public void SavedMatchRestoresAndPlaysOn()
+        {
+            MonopolyMatch match = MatchToSave();
+            var restored = JsonUtility.FromJson<MonopolyMatch>(JsonUtility.ToJson(match));
+            PlaysOnAsSaved(match, restored);
+        }
+
+        [Test]
+        public void AMatchComesBackFromItsYamlSaveFile()
+        {
+            MonopolyMatch match = MatchToSave();
+            string json = JsonUtility.ToJson(match);
+            SavedGame back = SavedGame.Parse(SavedGame.Of(GameType.Monopoly, "Round two", match, 1, "Classic, round 1").ToYaml());
+            var restored = back.Read<MonopolyMatch>();
+            Assert.AreEqual(json, JsonUtility.ToJson(restored), "the YAML holds the whole match");
+            Assert.AreEqual("Ann: \"the\" #1", restored.players[1].name);
+            PlaysOnAsSaved(match, restored);
+        }
+
+        private static void PlaysOnAsSaved(MonopolyMatch match, MonopolyMatch restored)
+        {
             restored.Attach(WorldTourBoard.Create(), new SystemRandom(3));
             Assert.AreEqual(match.current, restored.current);
             Assert.AreEqual(match.phase, restored.phase);

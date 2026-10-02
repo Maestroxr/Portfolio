@@ -14,8 +14,9 @@ namespace Portfolio.Heroes
     /// every event the rules record is played out on the map (heroes walking, banners changing hands, armies fighting
     /// on the hexagons where they met) before the next decision is asked for, from a player through the interface or
     /// from a computer player through <see cref="AdventureAI"/> and <see cref="BattleAI"/>. Menus, pausing, settings
-    /// and the state machine come from <see cref="BaseGameManager"/>; a scenario in progress is saved at the start of
-    /// every turn and continues from the title screen. Games with players on other devices are in
+    /// and the state machine come from <see cref="BaseGameManager"/>; a scenario in progress saves itself at the start
+    /// of every day and continues from the title screen, and the player keeps as many saves by name as they like (the
+    /// shared saved games window, YAML files). Games with players on other devices are in
     /// HeroesGameManager.Online.cs.
     /// </summary>
     public partial class HeroesGameManager : BaseGameManager
@@ -279,8 +280,6 @@ namespace Portfolio.Heroes
             savedDay = -1;
             refused = 0;
             brain = new AdventureAI();
-            // The slot Continue pointed at has been read: the game saves where its own kind of game saves.
-            continuesHotSeat = false;
 
             Build();
             // Online the screen belongs to the seat of the player at this device, from the first frame; in a hot seat to
@@ -577,11 +576,26 @@ namespace Portfolio.Heroes
 
         // ------------------------------------------------------------------ saving
 
-        /// <summary>Where the game of the scenario being played is saved: a hot seat game apart from the game alone.</summary>
-        private string SaveSlot => IsHotSeat || continuesHotSeat ? HotSeatSlot(LevelIndex) : SaveKey(LevelIndex.ToString(CultureInfo.InvariantCulture));
+        /// <summary>What a saved game holds: the game, and for a hot seat the setup it began with (the hand-over screen, the choices).</summary>
+        [System.Serializable]
+        internal sealed class SaveData
+        {
+            public bool hotSeat;
+            /// <summary>The hot seat's setup as <see cref="LocalMatch.Save"/> writes it, a line each.</summary>
+            public List<string> setup = new List<string>();
+            public GameState game;
+        }
 
-        /// <summary>Where the scenario of the last save is noted, for the title screen to offer it.</summary>
-        internal string LastSavedLevelKey => SaveKey("Level");
+        protected override bool OffersNamedSaves => true;
+
+        /// <summary>A hot seat game saves itself apart from a game alone, so neither takes the other's place.</summary>
+        public override string AutosaveName => IsHotSeat ? "Autosave (hot seat)" : "Autosave";
+
+        public override string SaveRefusal =>
+            Game == null || Game.IsOver ? Words.T("There is no game to save.")
+            : InSession ? Words.T("An online game cannot be saved.")
+            : Game.InBattle ? Words.T("The game cannot be saved in the middle of a battle.")
+            : null;
 
         /// <summary>Saves once a day, at the start of a human turn, so a scenario can be taken up again.</summary>
         private void Save(int who)
@@ -594,61 +608,79 @@ namespace Portfolio.Heroes
             SaveGame();
         }
 
+        /// <summary>
+        /// The game saves itself (each day, on the way to the title). In the middle of a battle it does not: the battle is
+        /// fought to its end first, and the day's own save, from before it, stays.
+        /// </summary>
         public override void SaveGame()
         {
-            if (Game == null || Disk == null || InSession)
+            if (Game == null || InSession)
             {
                 return;
             }
             if (Game.InBattle)
             {
-                // A battle is fought to its end first: the day's own save, from before it, stays.
-                const string refusal = "The game cannot be saved in the middle of a battle.";
+                string refusal = SaveRefusal;
                 UI?.UpdateError(refusal);
                 ui.Log(refusal, -1);
                 sound?.Play(Sfx.Error, 0.6f);
                 return;
             }
-            Disk.SetString(SaveSlot, JsonUtility.ToJson(Game.State));
-            Disk.SetInt(LastSavedLevelKey, LevelIndex);
-            Disk.SetInt(LastSavedHotSeatKey, IsHotSeat ? 1 : 0);
+            Autosave();
+        }
+
+        protected override SaveContent CaptureSave()
+        {
+            var data = new SaveData { hotSeat = IsHotSeat, game = Game.State };
             if (IsHotSeat)
             {
-                Disk.SetString(HotSeatSetupKey(LevelIndex), LocalMatch.Save());
+                data.setup.AddRange(LocalMatch.Save().Split(new[] { '\n' }, System.StringSplitOptions.RemoveEmptyEntries));
             }
-            PersistSavedGame();
+            HeroesLevel scenario = Scenario;
+            string name = scenario != null ? Words.T(scenario.Title) : Words.T("Heroes");
+            if (IsHotSeat)
+            {
+                name = Words.F("{0}, hot seat", name);
+            }
+            return new SaveContent { Data = data, Level = LevelIndex, Summary = Words.F("{0}, day {1}", name, Game.State.day) };
+        }
+
+        protected override string RestoreSave(SavedGame save)
+        {
+            if (InSession)
+            {
+                return Words.T("A saved game cannot be loaded during an online game.");
+            }
+            SaveData data = save.Read<SaveData>();
+            GameState state = data?.game;
+            if (state == null || state.players == null || state.players.Count == 0)
+            {
+                return Words.T("The saved game is incomplete.");
+            }
+            if (state.version != GameState.Version)
+            {
+                return Words.T("This save is from another version of the game.");
+            }
+            LoadLevel(save.Level);
+            if (data.hotSeat)
+            {
+                ResumeHotSeat(state, string.Join("\n", data.setup));
+                return null;
+            }
+            EndLocalMatch();
+            Continue(state);
+            return null;
         }
 
         public override bool DoesSaveGameExist()
         {
-            return Disk != null && !string.IsNullOrEmpty(Disk.GetString(SaveSlot));
+            return HasSavedGames;
         }
 
+        /// <summary>Continue: the game saved last, by the player or by itself.</summary>
         public override void LoadGame()
         {
-            if (Disk == null)
-            {
-                return;
-            }
-            string json = Disk.GetString(SaveSlot);
-            if (string.IsNullOrEmpty(json))
-            {
-                return;
-            }
-            var state = JsonUtility.FromJson<GameState>(json);
-            if (state == null || state.version != GameState.Version)
-            {
-                ClearSave();
-                continuesHotSeat = false;
-                return;
-            }
-            if (continuesHotSeat)
-            {
-                ResumeHotSeat(state);
-                return;
-            }
-            EndLocalMatch();
-            Continue(state);
+            ContinueLatest();
         }
 
         /// <summary>
@@ -660,13 +692,10 @@ namespace Portfolio.Heroes
             Direct(new HeroesGame(state, new SeededRandom(state.seed ^ (uint)state.day)), false);
         }
 
+        /// <summary>A game that is over leaves nothing to continue.</summary>
         private void ClearSave()
         {
-            if (Disk != null)
-            {
-                Disk.SetString(SaveSlot, "");
-                Disk.TryPersist();
-            }
+            ForgetAutosave();
         }
 
         // ------------------------------------------------------------------ what the interface asks of the manager

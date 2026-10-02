@@ -63,8 +63,14 @@ are built by code (see "Building").
   one level down or up from the level the map gives it (and with it what it starts with and earns).
 - **The pause menu** has Return, Save, Load, Settings, Leave to the Title and Exit. Leaving for the title in the middle
   of a battle asks first, since the battle is lost with it.
-- A scenario saves at the start of every day and continues from the title screen; a game is not saved in the middle
-  of a battle. Winning earns stars: three for winning inside the chapter's quick day count, two inside the slower one,
+- **Saved games.** Save in the pause menu opens the saved games window (BaseGame's `SavedGamesUI`): any number of
+  saves, each under a name of the player's choice, as YAML files in the game's saves folder, with Load, Overwrite,
+  Export, Delete, Import and Open Folder. Load Game on the title screen and Load in the pause menu open it to load. The
+  game also saves itself at the start of every day (the setting "Save every day") under "Autosave", and a hot seat under
+  "Autosave (hot seat)", so neither takes the other's place; Continue on the title takes up the save made last, by the
+  player or the game. A save holds the whole `GameState` and, for a hot seat, its setup (`HeroesGameManager.SaveData`);
+  it is refused in the middle of a battle and online, and a save of another version of the rules is not loaded. A game
+  that is over deletes its autosave. Winning earns stars: three for winning inside the chapter's quick day count, two inside the slower one,
   one for winning at all.
 
 ## Battles
@@ -174,9 +180,9 @@ or the computer (Easy, Normal or Hard) plays it, at least two people; each realm
   other share the screen for the battle: no curtain, and the battle bar names whose stack moves.
 - **Names.** Every person is called by name, never "you": the turn banner and top bar ("Alice's turn"), the battle bar
   ("Bob's move"), map tips and towns ("held by Alice"). Solo and online games say what they always said.
-- **Saving.** A hot seat saves in a slot of its own per map (`HotSeat.<level>`, with its setup beside it), so the solo
-  save of the same map stays; Continue takes up whichever was saved last and rebuilds the match (names, people, the
-  hand-over screen), starting behind the curtain.
+- **Saving.** A hot seat saves itself under "Autosave (hot seat)", so the solo autosave stays, and can be saved by name
+  like any game; its setup (`LocalMatch.Save`, a line each) is saved with it. Continue or Load rebuilds the match (names,
+  people, the hand-over screen), starting behind the curtain.
 - **The end.** No stars, records or campaign progress. The results name the winner ("Bob wins!", or the computer) and
   rank the realms in their colours with their towns, battles won and creatures slain, with Play Again (same setup) and
   Back to the Title.
