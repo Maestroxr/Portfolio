@@ -15,7 +15,9 @@ namespace Portfolio.Monopoly
     /// Both play their seats with a simple autopilot, and a guest leaves its first decisions to the clock of the room.
     /// <c>joinquits</c> and <c>hostquits</c> leave the match after a while (the latter waits for two guests first): the
     /// computer plays their seats on and the match goes on; when the host left, the room passes to a guest, who calls the
-    /// match off a little later. Every action of the log is written down with the checksum of the match after it, so the
+    /// match off a little later. <c>hostsaves</c> and <c>joinsaves</c> play a round or two, then the host saves the match by
+    /// name and calls it off, opens a new room from the save and the guest joins it: both write down the match they go on
+    /// with, which has to be the one saved. Every action of the log is written down with the checksum of the match after it, so the
     /// logs of the players show whether they stayed in step. Run the players with <c>-gamebox-identity</c> to tell them
     /// apart, and <c>-gamebox-server</c> / <c>-gamebox-database</c> for a test server. Without the argument it does
     /// nothing.
@@ -30,12 +32,18 @@ namespace Portfolio.Monopoly
         /// <summary>Seconds a quitter plays before leaving, and a guest who inherited the room before calling the match off.</summary>
         private const float QuitAfter = 50f;
         private const float CallOffAfter = 70f;
+        /// <summary>The round after which the host of a tour with saves saves the match, and the seconds the saved match is played on.</summary>
+        private const int SaveInRound = 2;
+        private const float PlaySavedFor = 40f;
+        private const string OnlineSaveName = "Tour online save";
 
         private MonopolyGameManager manager;
         private bool piloting;
         private int sleepy;
         private bool proposed;
         private bool timeoutShot;
+        private bool savedOnline;
+        private bool playingSave;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Launch()
@@ -44,6 +52,9 @@ namespace Portfolio.Monopoly
         }
 
         private bool Quits => Role.EndsWith("quits", StringComparison.Ordinal);
+
+        /// <summary>A tour that saves the match online and plays it on in a room opened from the save.</summary>
+        private bool Resaves => Role.EndsWith("saves", StringComparison.Ordinal);
 
         private MonopolyMatch Match => manager.Match;
 
@@ -123,6 +134,11 @@ namespace Portfolio.Monopoly
                     yield return LeaveTheMatch();
                     yield break;
                 }
+                if (Resaves && Hosting && !savedOnline && Match.round > SaveInRound && manager.WaitingForHuman)
+                {
+                    SaveOnline();
+                    break;
+                }
                 if (!Hosting && Server.IsHost)
                 {
                     // The host left and the room passed on: this player moves the computer players now.
@@ -139,6 +155,79 @@ namespace Portfolio.Monopoly
                 }
                 yield return null;
             }
+            yield return EndTheMatch();
+            if (Resaves)
+            {
+                yield return PlayTheSave();
+            }
+            // The guests leave first, so the host still sees the room lose its members.
+            yield return new WaitForSeconds(Hosting ? 3f : 0.5f);
+            Server.LeaveRoom();
+            yield return new WaitForSeconds(1f);
+            Note("done");
+            Quit();
+        }
+
+        /// <summary>Saves the match as it is by name, as the Save the Game of the match menu does.</summary>
+        private void SaveOnline()
+        {
+            savedOnline = true;
+            bool saved = manager.SaveAs(OnlineSaveName, out string problem);
+            Note($"saved online: {(saved ? "ok" : problem)}; round {Match.round}, applied {manager.Lockstep.Applied} sum {manager.Lockstep.Checksum():X8} " +
+                 $"cash {string.Join("/", Match.players.Select(p => p.cash))}");
+        }
+
+        /// <summary>
+        /// The room of the save: the host leaves the old room and opens one from the save, the guest joins it; both write down
+        /// the match they go on with, play it a while, and the host calls it off.
+        /// </summary>
+        private IEnumerator PlayTheSave()
+        {
+            playingSave = true;
+            Note("--- the saved match");
+            yield return new WaitForSeconds(Hosting ? 3f : 0.5f);
+            Server.LeaveRoom();
+            yield return WaitFor(() => !Server.InRoom, 10f, "out of the room");
+            if (Hosting)
+            {
+                yield return new WaitForSeconds(2f);
+                yield return HostSavedGame(manager.Online, OnlineSaveName, "Tour saved table", RoomOptions.Write(RoomOptions.TurnOption, 20));
+                yield return new WaitForSeconds(0.5f);
+                yield return Shot("12_room_of_the_save");
+                yield return WaitForGuests(1, 120f);
+                StartRoom();
+            }
+            else
+            {
+                yield return JoinFirstRoom(120f, room => room.PlaysSave);
+                yield return new WaitForSeconds(0.7f);
+                yield return Shot("12_joined_the_saved_game");
+            }
+            yield return WaitFor(() => manager.IsOnlineMatch && manager.IsGameRunning, 60f, "the saved match");
+            if (!manager.IsOnlineMatch)
+            {
+                yield return Fail("the saved match did not start");
+                yield break;
+            }
+            Note($"resumed: seat {manager.LocalSeat}, round {Match.round}, applied {manager.Lockstep.Applied} sum {manager.Lockstep.Checksum():X8} " +
+                 $"cash {string.Join("/", Match.players.Select(p => p.cash))}; " +
+                 string.Join(", ", Match.players.Select(p => $"{p.name}{(p.bot ? " (computer)" : "")}")));
+            yield return new WaitForSeconds(3f);
+            yield return Shot("13_the_saved_match");
+            piloting = true;
+            float started = Time.realtimeSinceStartup;
+            while (!Over && Server.InRoom && Time.realtimeSinceStartup - started < PlaySavedFor)
+            {
+                yield return null;
+            }
+            yield return EndTheMatch();
+        }
+
+        /// <summary>
+        /// The host calls the match off when it is not over; everybody waits for the results and goes back to the room.
+        /// </summary>
+        private IEnumerator EndTheMatch()
+        {
             if (!Over && Server.IsHost && Server.InRoom)
             {
                 Note("calling the match off");
@@ -158,14 +247,8 @@ namespace Portfolio.Monopoly
 
             manager.ActiveController.TransitionState(BaseGameState.Initialization);
             yield return new WaitForSeconds(1.5f);
-            yield return Shot("09_back_in_the_room");
+            yield return Shot(playingSave ? "14_back_in_the_room" : "09_back_in_the_room");
             Note($"back in the room: session {manager.InSession}, match {manager.Match != null}, state {manager.State}, lobby {manager.Online.LobbyUI.IsOpen}");
-            // The guests leave first, so the host still sees the room lose its members.
-            yield return new WaitForSeconds(Hosting ? 3f : 0.5f);
-            Server.LeaveRoom();
-            yield return new WaitForSeconds(1f);
-            Note("done");
-            Quit();
         }
 
         private bool WaitingForSomebodyElse

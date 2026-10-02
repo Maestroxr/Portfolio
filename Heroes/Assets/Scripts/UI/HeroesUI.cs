@@ -169,7 +169,7 @@ namespace Portfolio.Heroes.UI
             ShowHud(true);
             if (manager.IsOnlineGame)
             {
-                Log("A game of the room. Take the land.", -1);
+                Log(manager.PlaysSavedGame ? "A saved game of the room goes on." : "A game of the room. Take the land.", -1);
             }
             else
             {

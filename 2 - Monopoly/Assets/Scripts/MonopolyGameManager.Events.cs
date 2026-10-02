@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Gamebox;
+using Gamebox.Online;
 using UnityEngine;
 
 namespace Portfolio.Monopoly
@@ -628,10 +629,8 @@ namespace Portfolio.Monopoly
 
         protected override bool OffersNamedSaves => true;
 
-        public override string SaveRefusal =>
-            IsOnlineMatch ? L.T("An online match cannot be saved.")
-            : Match == null || Match.IsOver ? L.T("There is no game to save.")
-            : null;
+        /// <summary>A match online can be saved by name too (every device holds the whole match): a room can play it on later.</summary>
+        public override string SaveRefusal => Match == null || Match.IsOver ? L.T("There is no game to save.") : null;
 
         public override bool DoesSaveGameExist()
         {
@@ -646,11 +645,15 @@ namespace Portfolio.Monopoly
 
         /// <summary>
         /// The game saves itself: at the start of every turn of a person here and on the way to the title, quietly
-        /// (<paramref name="silent"/>). An online match lives on the server and in the devices of the others: there is
-        /// nothing to continue alone.
+        /// (<paramref name="silent"/>). Not an online match: the players save it by name when they like, and the save of
+        /// the game alone stays as it was.
         /// </summary>
         private void SaveMatch(bool silent)
         {
+            if (IsOnlineMatch)
+            {
+                return;
+            }
             string refusal = SaveRefusal;
             if (refusal != null)
             {
@@ -668,7 +671,8 @@ namespace Portfolio.Monopoly
 
         protected override SaveContent CaptureSave()
         {
-            var data = new SaveData { match = Match, setup = Setup };
+            // Online the setup is the table's, which Play Again of a game at this device then seats.
+            var data = new SaveData { match = Match, setup = IsOnlineMatch ? MatchSetup.Of(Match) : Setup };
             string players = string.Join(", ", Match.players.Where(player => player.Active).Select(player => player.name));
             return new SaveContent { Data = data, Level = LevelIndex, Summary = L.F("{0}, round {1}: {2}", ModeName, Match.round, players) };
         }
@@ -692,6 +696,22 @@ namespace Portfolio.Monopoly
             BeginDirecting(data.match, false);
             ui.Toast(L.T("Welcome back! The game goes on."), MonopolyStyle.Green, Icons.Play);
             return null;
+        }
+
+        /// <summary>The players of a saved match in their order, for a room opened from it; null when it holds no match.</summary>
+        internal IReadOnlyList<SavedSeatInfo> SavedSeats(SavedGame save)
+        {
+            SaveData data = save != null ? save.Read<SaveData>() : null;
+            if (data == null || data.match == null || data.match.players == null)
+            {
+                return null;
+            }
+            var seats = new List<SavedSeatInfo>();
+            foreach (PlayerState player in data.match.players)
+            {
+                seats.Add(new SavedSeatInfo(player.name, !player.bot, (byte)Mathf.Clamp(player.token, 0, 255), (byte)player.level));
+            }
+            return seats;
         }
 
         /// <summary>Continue: the game saved last, by the players or by itself.</summary>

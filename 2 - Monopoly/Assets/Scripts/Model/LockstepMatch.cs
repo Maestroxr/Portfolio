@@ -21,6 +21,16 @@ namespace Portfolio.Monopoly
             Match = new MonopolyMatch(board, rules, Random);
         }
 
+        /// <summary>
+        /// A table that goes on with a saved match (as read from its save, not yet attached): every device reads the same save
+        /// and seeds the same dice, so they hold the same match from the first entry of the log on.
+        /// </summary>
+        public LockstepMatch(MonopolyMatch saved, BoardLayout board, uint seed) : base(seed)
+        {
+            saved.Attach(board, Random);
+            Match = saved;
+        }
+
         public MonopolyMatch Match { get; }
 
         public override bool IsOver => Match.IsOver;

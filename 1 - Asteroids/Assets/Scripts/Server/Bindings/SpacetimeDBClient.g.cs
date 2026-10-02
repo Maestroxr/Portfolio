@@ -38,6 +38,7 @@ namespace Portfolio.Asteroids.Server
             AddTable(RoomAction = new(conn));
             AddTable(RoomMember = new(conn));
             AddTable(RoomPose = new(conn));
+            AddTable(RoomSave = new(conn));
             AddTable(RoomSeat = new(conn));
             AddTable(RoomTurn = new(conn));
             AddTable(ShipSignal = new(conn));
@@ -549,6 +550,7 @@ namespace Portfolio.Asteroids.Server
             new QueryBuilder().From.RoomAction().ToSql(),
             new QueryBuilder().From.RoomMember().ToSql(),
             new QueryBuilder().From.RoomPose().ToSql(),
+            new QueryBuilder().From.RoomSave().ToSql(),
             new QueryBuilder().From.RoomSeat().ToSql(),
             new QueryBuilder().From.RoomTurn().ToSql(),
             new QueryBuilder().From.ShipSignal().ToSql(),
@@ -570,6 +572,7 @@ namespace Portfolio.Asteroids.Server
         public global::SpacetimeDB.Table<RoomAction, RoomActionCols, RoomActionIxCols> RoomAction() => new("room_action", new RoomActionCols("room_action"), new RoomActionIxCols("room_action"));
         public global::SpacetimeDB.Table<RoomMember, RoomMemberCols, RoomMemberIxCols> RoomMember() => new("room_member", new RoomMemberCols("room_member"), new RoomMemberIxCols("room_member"));
         public global::SpacetimeDB.Table<RoomPose, RoomPoseCols, RoomPoseIxCols> RoomPose() => new("room_pose", new RoomPoseCols("room_pose"), new RoomPoseIxCols("room_pose"));
+        public global::SpacetimeDB.Table<RoomSave, RoomSaveCols, RoomSaveIxCols> RoomSave() => new("room_save", new RoomSaveCols("room_save"), new RoomSaveIxCols("room_save"));
         public global::SpacetimeDB.Table<RoomSeat, RoomSeatCols, RoomSeatIxCols> RoomSeat() => new("room_seat", new RoomSeatCols("room_seat"), new RoomSeatIxCols("room_seat"));
         public global::SpacetimeDB.Table<RoomTurn, RoomTurnCols, RoomTurnIxCols> RoomTurn() => new("room_turn", new RoomTurnCols("room_turn"), new RoomTurnIxCols("room_turn"));
         public global::SpacetimeDB.Table<ShipSignal, ShipSignalCols, ShipSignalIxCols> ShipSignal() => new("ship_signal", new ShipSignalCols("ship_signal"), new ShipSignalIxCols("ship_signal"));
@@ -657,6 +660,7 @@ namespace Portfolio.Asteroids.Server
             return reducer switch
             {
                 Reducer.ClaimBody args => Reducers.InvokeClaimBody(eventContext, args),
+                Reducer.ClearRoomSave args => Reducers.InvokeClearRoomSave(eventContext, args),
                 Reducer.CompleteMission args => Reducers.InvokeCompleteMission(eventContext, args),
                 Reducer.ConfigureRoomGame args => Reducers.InvokeConfigureRoomGame(eventContext, args),
                 Reducer.CreateRoom args => Reducers.InvokeCreateRoom(eventContext, args),
@@ -672,6 +676,7 @@ namespace Portfolio.Asteroids.Server
                 Reducer.SetAvatar args => Reducers.InvokeSetAvatar(eventContext, args),
                 Reducer.SetName args => Reducers.InvokeSetName(eventContext, args),
                 Reducer.SetReady args => Reducers.InvokeSetReady(eventContext, args),
+                Reducer.SetRoomSave args => Reducers.InvokeSetRoomSave(eventContext, args),
                 Reducer.SignalShip args => Reducers.InvokeSignalShip(eventContext, args),
                 Reducer.StartRoom args => Reducers.InvokeStartRoom(eventContext, args),
                 Reducer.SubmitAction args => Reducers.InvokeSubmitAction(eventContext, args),

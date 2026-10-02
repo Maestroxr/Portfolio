@@ -33,6 +33,7 @@ namespace Portfolio.EndlessRunner.Server
             AddTable(RoomAction = new(conn));
             AddTable(RoomMember = new(conn));
             AddTable(RoomPose = new(conn));
+            AddTable(RoomSave = new(conn));
             AddTable(RoomSeat = new(conn));
             AddTable(RoomTurn = new(conn));
             AddTable(RunnerStats = new(conn));
@@ -538,6 +539,7 @@ namespace Portfolio.EndlessRunner.Server
             new QueryBuilder().From.RoomAction().ToSql(),
             new QueryBuilder().From.RoomMember().ToSql(),
             new QueryBuilder().From.RoomPose().ToSql(),
+            new QueryBuilder().From.RoomSave().ToSql(),
             new QueryBuilder().From.RoomSeat().ToSql(),
             new QueryBuilder().From.RoomTurn().ToSql(),
             new QueryBuilder().From.RunnerStats().ToSql(),
@@ -553,6 +555,7 @@ namespace Portfolio.EndlessRunner.Server
         public global::SpacetimeDB.Table<RoomAction, RoomActionCols, RoomActionIxCols> RoomAction() => new("room_action", new RoomActionCols("room_action"), new RoomActionIxCols("room_action"));
         public global::SpacetimeDB.Table<RoomMember, RoomMemberCols, RoomMemberIxCols> RoomMember() => new("room_member", new RoomMemberCols("room_member"), new RoomMemberIxCols("room_member"));
         public global::SpacetimeDB.Table<RoomPose, RoomPoseCols, RoomPoseIxCols> RoomPose() => new("room_pose", new RoomPoseCols("room_pose"), new RoomPoseIxCols("room_pose"));
+        public global::SpacetimeDB.Table<RoomSave, RoomSaveCols, RoomSaveIxCols> RoomSave() => new("room_save", new RoomSaveCols("room_save"), new RoomSaveIxCols("room_save"));
         public global::SpacetimeDB.Table<RoomSeat, RoomSeatCols, RoomSeatIxCols> RoomSeat() => new("room_seat", new RoomSeatCols("room_seat"), new RoomSeatIxCols("room_seat"));
         public global::SpacetimeDB.Table<RoomTurn, RoomTurnCols, RoomTurnIxCols> RoomTurn() => new("room_turn", new RoomTurnCols("room_turn"), new RoomTurnIxCols("room_turn"));
         public global::SpacetimeDB.Table<RunnerStats, RunnerStatsCols, RunnerStatsIxCols> RunnerStats() => new("runner_stats", new RunnerStatsCols("runner_stats"), new RunnerStatsIxCols("runner_stats"));
@@ -639,6 +642,7 @@ namespace Portfolio.EndlessRunner.Server
             return reducer switch
             {
                 Reducer.ClaimPiece args => Reducers.InvokeClaimPiece(eventContext, args),
+                Reducer.ClearRoomSave args => Reducers.InvokeClearRoomSave(eventContext, args),
                 Reducer.ConfigureRoomGame args => Reducers.InvokeConfigureRoomGame(eventContext, args),
                 Reducer.CreateRoom args => Reducers.InvokeCreateRoom(eventContext, args),
                 Reducer.DeleteAccount args => Reducers.InvokeDeleteAccount(eventContext, args),
@@ -651,6 +655,7 @@ namespace Portfolio.EndlessRunner.Server
                 Reducer.SetAvatar args => Reducers.InvokeSetAvatar(eventContext, args),
                 Reducer.SetName args => Reducers.InvokeSetName(eventContext, args),
                 Reducer.SetReady args => Reducers.InvokeSetReady(eventContext, args),
+                Reducer.SetRoomSave args => Reducers.InvokeSetRoomSave(eventContext, args),
                 Reducer.StartRoom args => Reducers.InvokeStartRoom(eventContext, args),
                 Reducer.SubmitAction args => Reducers.InvokeSubmitAction(eventContext, args),
                 Reducer.UpdatePose args => Reducers.InvokeUpdatePose(eventContext, args),

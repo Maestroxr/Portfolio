@@ -16,7 +16,9 @@ namespace Portfolio.Heroes
     /// log is written down with the checksum of the game after it, so the two logs show line for line whether the
     /// clients stayed in step. Run the two players with <c>-gamebox-identity</c> to tell them apart, and
     /// <c>-gamebox-server</c> / <c>-gamebox-database</c> for a test server; the host's <c>-heroes-online-turn &lt;seconds&gt;</c>
-    /// puts a clock on the turns (shown on the bar of the map and on the battle bar).
+    /// puts a clock on the turns (shown on the bar of the map and on the battle bar). <c>hostsaves</c> and <c>joinsaves</c>
+    /// play two days, then the host saves the game by name and calls it off, opens a new room from the save and the guest
+    /// joins it: both write down the game they go on with, which has to be the one saved, and play a day of it.
     /// </summary>
     public class HeroesOnlineTour : OnlineTour
     {
@@ -38,7 +40,12 @@ namespace Portfolio.Heroes
         /// <summary>Days of its own each player plays before it stops.</summary>
         private const int Days = 4;
 
+        private const string OnlineSaveName = "Tour online save";
+
         private HeroesGameManager manager;
+
+        /// <summary>A tour that saves the game online and plays it on in a room opened from the save.</summary>
+        private bool Resaves => Role.EndsWith("saves", System.StringComparison.Ordinal);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Launch()
@@ -99,7 +106,11 @@ namespace Portfolio.Heroes
                  $"{Game.State.map.grid.columns}x{Game.State.map.grid.rows}, seed {Game.State.seed}, battles {Game.State.rules.battleStyle}");
             yield return new WaitForSeconds(2f);
             yield return Shot("03_map");
-            yield return Play(Days);
+            yield return Play(Resaves ? 2 : Days);
+            if (Resaves)
+            {
+                yield return PlayTheSave();
+            }
             yield return Shot("04_end");
             Note($"done on day {(Game != null ? Game.State.day : -1)}");
             yield return new WaitForSeconds(0.6f);
@@ -117,7 +128,7 @@ namespace Portfolio.Heroes
             int results = 0;
             bool fighting = false;
             // The other client has to get its turns too, so a day here is a couple of moves and then an end.
-            while (passed < days && Game != null && !Game.IsOver && idle < 3600)
+            while (passed < days && Game != null && !Game.IsOver && idle < 3600 && (Server.CurrentRoom == null || Server.CurrentRoom.IsPlaying))
             {
                 if (Game.State.day != lastDay)
                 {
@@ -274,6 +285,52 @@ namespace Portfolio.Heroes
         /// The opening words of the first battle on this screen, a moment after it comes up (with a clock on the turns,
         /// nothing else stands over them: the clock is on the battle bar).
         /// </summary>
+        /// <summary>
+        /// The host saves the game by name once it can be saved (out of battle, the map at rest) and calls it off; both leave
+        /// the room, the host opens one from the save, the guest joins it, and both write down the game they go on with.
+        /// </summary>
+        private IEnumerator PlayTheSave()
+        {
+            if (Hosting)
+            {
+                yield return WaitFor(() => Game == null || manager.SaveRefusal == null && !Game.HasEvents, 120f, "a moment to save");
+                bool saved = manager.SaveAs(OnlineSaveName, out string problem);
+                Note($"saved online: {(saved ? "ok" : problem)}; day {Game.State.day}, applied {manager.Lockstep.Applied} sum {manager.Lockstep.Checksum():X8}");
+                Server.EndRoom(error => Note("end room: " + (error ?? "ok")));
+            }
+            yield return WaitFor(() => Server.CurrentRoom == null || Server.CurrentRoom.Phase == RoomPhase.Finished, 90f, "the room to finish");
+            Note("--- the saved game");
+            yield return new WaitForSeconds(Hosting ? 3f : 0.5f);
+            Server.LeaveRoom();
+            yield return WaitFor(() => !Server.InRoom, 10f, "out of the room");
+            if (Hosting)
+            {
+                yield return new WaitForSeconds(2f);
+                yield return HostSavedGame(manager.Online, OnlineSaveName, "Tour saved room", manager.Online.ComposeOptions(-1, Options));
+                yield return new WaitForSeconds(0.5f);
+                yield return Shot("07_room_of_the_save");
+                yield return WaitForGuests(1, 150f);
+                StartRoom();
+            }
+            else
+            {
+                yield return JoinFirstRoom(150f, room => room.PlaysSave);
+                yield return new WaitForSeconds(0.7f);
+                yield return Shot("07_joined_the_saved_game");
+            }
+            yield return WaitFor(() => manager.IsOnlineGame && Game != null && manager.Lockstep != null, 90f, "the saved game");
+            if (Game == null || manager.Lockstep == null)
+            {
+                yield return Fail("the saved game never started");
+                yield break;
+            }
+            Note($"resumed: seat {manager.LocalSeat}, day {Game.State.day}, applied {manager.Lockstep.Applied} sum {manager.Lockstep.Checksum():X8}; " +
+                 string.Join(", ", Game.State.players.ConvertAll(p => $"{p.name} ({(p.human ? "person" : "computer")})")));
+            yield return new WaitForSeconds(2f);
+            yield return Shot("08_the_saved_game");
+            yield return Play(1);
+        }
+
         private IEnumerator IntroShot()
         {
             float until = Time.unscaledTime + 20f;

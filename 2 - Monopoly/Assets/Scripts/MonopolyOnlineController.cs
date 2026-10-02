@@ -106,7 +106,13 @@ namespace Portfolio.Monopoly
             {
                 return false;
             }
-            var table = new MonopolyGameManager.OnlineTable { Setup = new MatchSetup(), LocalSeat = setup.TableSeat, Seed = setup.Seed };
+            var table = new MonopolyGameManager.OnlineTable
+            {
+                Setup = new MatchSetup(),
+                LocalSeat = setup.TableSeat,
+                Seed = setup.Seed,
+                Saved = setup.Save
+            };
             foreach (RoomSeatInfo seat in setup.Seats)
             {
                 table.Setup.seats.Add(new SeatSetup
@@ -121,6 +127,12 @@ namespace Portfolio.Monopoly
             table.FirstPlayer = (int)((setup.Round > 0 ? setup.Round - 1 : 0) % (uint)table.Setup.seats.Count);
             manager.PrepareOnlineMatch(table);
             return true;
+        }
+
+        /// <summary>The players of a saved match, for a room opened from it (null when it is no match of Monopoly).</summary>
+        protected override IReadOnlyList<SavedSeatInfo> SavedSeats(SavedGame save)
+        {
+            return Monopoly != null ? Monopoly.SavedSeats(save) : null;
         }
 
         // ------------------------------------------------------------------ the log

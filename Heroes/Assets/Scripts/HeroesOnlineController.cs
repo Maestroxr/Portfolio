@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Gamebox;
 using Gamebox.Online;
 using UnityEngine;
 
@@ -115,7 +116,8 @@ namespace Portfolio.Heroes
                 MapSize = room.Option(SizeOption, 1),
                 Treasure = Mathf.Clamp(room.Option(TreasureOption, 2), 1, 3),
                 Monsters = Mathf.Clamp(room.Option(MonstersOption, 2), 1, 3),
-                BattleStyle = BattleStyleOf(room)
+                BattleStyle = BattleStyleOf(room),
+                Saved = setup.Save
             };
             foreach (RoomSeatInfo seat in setup.Seats)
             {
@@ -130,6 +132,12 @@ namespace Portfolio.Heroes
             }
             manager.PrepareOnlineGame(table);
             return true;
+        }
+
+        /// <summary>The realms of a saved game, for a room opened from it (null when it is no game of Heroes).</summary>
+        protected override IReadOnlyList<SavedSeatInfo> SavedSeats(SavedGame save)
+        {
+            return Heroes != null ? Heroes.SavedSeats(save) : null;
         }
 
         // ------------------------------------------------------------------ the log

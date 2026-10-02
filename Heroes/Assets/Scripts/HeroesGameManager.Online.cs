@@ -37,6 +37,8 @@ namespace Portfolio.Heroes
             public int Monsters = 2;
             /// <summary>Where the battles of the room are fought.</summary>
             public BattleStyle BattleStyle = BattleStyle.Battlefield;
+            /// <summary>The saved game the room plays, or null for a new map; its realms are played as the seats above say.</summary>
+            public SavedGame Saved;
         }
 
         /// <summary>How much faster the map plays while the rules are ahead of it.</summary>
@@ -63,6 +65,9 @@ namespace Portfolio.Heroes
 
         /// <summary>Whether the scenario is played online, in step with the other players of a room.</summary>
         public bool IsOnlineGame => lockstep != null;
+
+        /// <summary>Whether the game online goes on from a saved game the room was opened with.</summary>
+        public bool PlaysSavedGame { get; private set; }
 
         public int LocalSeat => localSeat;
 
@@ -126,18 +131,63 @@ namespace Portfolio.Heroes
                 UI?.UpdateError("The table of the online game did not arrive.");
                 return;
             }
-            MapSpec spec = OnlineMap(table);
-            GameState state = MapGenerator.Generate(spec);
-            lockstep = new LockstepGame(state);
-            lockstep.Game.Begin();
+            bool fresh = table.Saved == null;
+            PlaysSavedGame = !fresh;
+            if (fresh)
+            {
+                GameState state = MapGenerator.Generate(OnlineMap(table));
+                lockstep = new LockstepGame(state);
+                lockstep.Game.Begin();
+            }
+            else
+            {
+                GameState saved = SavedOnlineState(table, out string problem);
+                if (saved == null)
+                {
+                    UI?.UpdateError(problem);
+                    return;
+                }
+                // The saved day goes on where it was.
+                lockstep = new LockstepGame(saved);
+            }
             localSeat = table.LocalSeat;
             onlineVersion = 0;
             reportedDay = -1;
             calledOff = false;
             IsLocalBattle = true;
             // The map is seen from the seat of the player at this device, and the camera starts on their first hero.
-            Direct(lockstep.Game, true);
+            Direct(lockstep.Game, fresh);
             HeroesUI.Refresh();
+        }
+
+        /// <summary>
+        /// The saved game of the room, as every device reads it from the same save: each realm is now played by who sits in
+        /// its seat (a member under their name, or the computer at the seat's level). Null, with why, when the save holds
+        /// no game for the seats.
+        /// </summary>
+        private GameState SavedOnlineState(OnlineTable table, out string problem)
+        {
+            SaveData data = table.Saved.Read<SaveData>();
+            GameState state = data != null ? data.game : null;
+            problem = null;
+            if (state == null || state.players == null || state.players.Count != table.Seats.Count)
+            {
+                problem = Words.T("The saved game is incomplete.");
+                return null;
+            }
+            if (state.version != GameState.Version)
+            {
+                problem = Words.T("This save is from another version of the game.");
+                return null;
+            }
+            for (int i = 0; i < state.players.Count; i++)
+            {
+                PlayerSpec seat = table.Seats[i];
+                state.players[i].human = seat.human;
+                state.players[i].name = seat.name;
+                state.players[i].aiLevel = seat.aiLevel;
+            }
+            return state;
         }
 
         /// <summary>The map of the room: the scenario it was opened on, or one made up from its options and seed.</summary>

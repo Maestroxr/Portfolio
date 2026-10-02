@@ -51,6 +51,23 @@ namespace Portfolio.Monopoly
             return setup;
         }
 
+        /// <summary>The seats of a match as it is played: who sits where, a person or the computer, with which token.</summary>
+        public static MatchSetup Of(MonopolyMatch match)
+        {
+            var setup = new MatchSetup();
+            foreach (PlayerState player in match.players)
+            {
+                setup.seats.Add(new SeatSetup
+                {
+                    kind = player.bot ? SeatKind.Computer : SeatKind.Human,
+                    name = player.name,
+                    token = player.token,
+                    level = player.level
+                });
+            }
+            return setup;
+        }
+
         public MatchSetup Clone()
         {
             return new MatchSetup

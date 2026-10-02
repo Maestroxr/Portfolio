@@ -29,6 +29,8 @@ namespace Portfolio.Monopoly
             /// <summary>The seed of the room: the decks are shuffled and the deeds dealt from it.</summary>
             public uint Seed;
             public int FirstPlayer;
+            /// <summary>The saved match the room plays, or null for a new one; its players sit in the seats above.</summary>
+            public SavedGame Saved;
         }
 
         /// <summary>How much faster the board plays while the match is ahead of it.</summary>
@@ -88,14 +90,12 @@ namespace Portfolio.Monopoly
                 UI?.UpdateError(L.T("The table of the online match did not arrive."));
                 return;
             }
-            var started = new LockstepMatch(matchSettings.Board.CreateLayout(), matchSettings.Rules, table.Seed);
-            for (int i = 0; i < table.Setup.seats.Count; i++)
+            LockstepMatch started = table.Saved != null ? SavedOnlineMatch(table) : NewOnlineMatch(table);
+            if (started == null)
             {
-                SeatSetup seat = table.Setup.seats[i];
-                PlayerState player = started.Match.AddPlayer(table.Setup.PlayingName(i), seat.token, seat.kind == SeatKind.Computer, seat.level);
-                player.color = i;
+                UI?.UpdateError(L.T("The saved game is incomplete."));
+                return;
             }
-            started.Match.Start(table.FirstPlayer);
             lockstep = started;
             localSeat = table.LocalSeat;
             onlineVersion = 0;
@@ -108,6 +108,44 @@ namespace Portfolio.Monopoly
                 PlayerState player = Match.players[i];
                 tokens[i].Assign(i, player.bot ? PlayerControl.Computer : i == localSeat ? PlayerControl.Local : PlayerControl.Remote, player.name);
             }
+        }
+
+        /// <summary>A new match of the room: the seats in order, the decks shuffled from the seed, the first player the room's.</summary>
+        private LockstepMatch NewOnlineMatch(OnlineTable table)
+        {
+            var started = new LockstepMatch(matchSettings.Board.CreateLayout(), matchSettings.Rules, table.Seed);
+            for (int i = 0; i < table.Setup.seats.Count; i++)
+            {
+                SeatSetup seat = table.Setup.seats[i];
+                PlayerState player = started.Match.AddPlayer(table.Setup.PlayingName(i), seat.token, seat.kind == SeatKind.Computer, seat.level);
+                player.color = i;
+            }
+            started.Match.Start(table.FirstPlayer);
+            return started;
+        }
+
+        /// <summary>
+        /// The saved match of the room, as every device reads it from the same save: each player is now who sits in their
+        /// seat (a member under their name, or the computer at the seat's level). Null when the save holds no match for the
+        /// seats.
+        /// </summary>
+        private LockstepMatch SavedOnlineMatch(OnlineTable table)
+        {
+            SaveData data = table.Saved.Read<SaveData>();
+            MonopolyMatch saved = data != null ? data.match : null;
+            if (saved == null || saved.players == null || saved.players.Count != table.Setup.seats.Count)
+            {
+                return null;
+            }
+            for (int i = 0; i < saved.players.Count; i++)
+            {
+                SeatSetup seat = table.Setup.seats[i];
+                PlayerState player = saved.players[i];
+                player.bot = seat.kind == SeatKind.Computer;
+                player.name = seat.name;
+                player.level = seat.level;
+            }
+            return new LockstepMatch(saved, matchSettings.Board.CreateLayout(), table.Seed);
         }
 
         /// <summary>The session is over (the results were left, the match or the room was, the connection dropped): the table is cleared.</summary>

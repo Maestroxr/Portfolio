@@ -24,7 +24,9 @@ the Free Parking jackpot and more.
 - A match saves itself under "Autosave" at the start of every human turn and continues from the title screen
   (Continue takes up the save made last). Save in the pause menu keeps any number of saves by name, as YAML files, in
   BaseGame's saved games window (Load, Overwrite, Export, Delete, Import, Open Folder); Load Game on the title and Load in
-  the pause menu open it to load. An online match is not saved. Winning earns stars per mode:
+  the pause menu open it to load. Online, Save the game in the match menu saves the match by name (it does not save
+  itself there), and the lobby's From a saved game opens a room that plays a saved match: each player's seat goes to
+  the member of that name, the others take the seats people played, the rest are the computer's. Winning earns stars per mode:
   one for beating the computer players, two for beating three of them, three for beating three Hard ones.
 - **Play online** opens the lobby of the game's server: two to four people on devices of their own at one table,
   against a clock (see Multiplayer).

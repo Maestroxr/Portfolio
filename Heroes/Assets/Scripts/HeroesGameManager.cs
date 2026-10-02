@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using Gamebox;
+using Gamebox.Online;
 using Gamebox.UI;
 using Portfolio.Heroes.UI;
 using UnityEngine;
@@ -591,9 +592,9 @@ namespace Portfolio.Heroes
         /// <summary>A hot seat game saves itself apart from a game alone, so neither takes the other's place.</summary>
         public override string AutosaveName => IsHotSeat ? "Autosave (hot seat)" : "Autosave";
 
+        /// <summary>A game online can be saved by name too (every device holds the whole game), only not in the middle of a battle.</summary>
         public override string SaveRefusal =>
             Game == null || Game.IsOver ? Words.T("There is no game to save.")
-            : InSession ? Words.T("An online game cannot be saved.")
             : Game.InBattle ? Words.T("The game cannot be saved in the middle of a battle.")
             : null;
 
@@ -631,7 +632,9 @@ namespace Portfolio.Heroes
 
         protected override SaveContent CaptureSave()
         {
-            var data = new SaveData { hotSeat = IsHotSeat, game = Game.State };
+            // A game online with several people goes on at one device as a hot seat, should it be loaded there.
+            bool hotSeat = IsHotSeat || IsOnlineGame && Game.State.players.FindAll(player => player.human).Count > 1;
+            var data = new SaveData { hotSeat = hotSeat, game = Game.State };
             if (IsHotSeat)
             {
                 data.setup.AddRange(LocalMatch.Save().Split(new[] { '\n' }, System.StringSplitOptions.RemoveEmptyEntries));
@@ -641,6 +644,10 @@ namespace Portfolio.Heroes
             if (IsHotSeat)
             {
                 name = Words.F("{0}, hot seat", name);
+            }
+            else if (IsOnlineGame)
+            {
+                name = Words.F("{0}, online", name);
             }
             return new SaveContent { Data = data, Level = LevelIndex, Summary = Words.F("{0}, day {1}", name, Game.State.day) };
         }
@@ -670,6 +677,25 @@ namespace Portfolio.Heroes
             EndLocalMatch();
             Continue(state);
             return null;
+        }
+
+        /// <summary>
+        /// The realms of a saved game in their order, for a room opened from it: a realm that is out of the game counts as
+        /// the computer's, so the people of the room take the realms still in it. Null when it holds no game.
+        /// </summary>
+        internal IReadOnlyList<SavedSeatInfo> SavedSeats(SavedGame save)
+        {
+            SaveData data = save != null ? save.Read<SaveData>() : null;
+            if (data == null || data.game == null || data.game.players == null)
+            {
+                return null;
+            }
+            var seats = new List<SavedSeatInfo>();
+            foreach (PlayerState player in data.game.players)
+            {
+                seats.Add(new SavedSeatInfo(player.name, player.human && player.alive, (byte)player.faction, (byte)Mathf.Clamp(player.aiLevel, 0, 2)));
+            }
+            return seats;
         }
 
         public override bool DoesSaveGameExist()

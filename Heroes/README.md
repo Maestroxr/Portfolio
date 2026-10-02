@@ -69,8 +69,11 @@ are built by code (see "Building").
   game also saves itself at the start of every day (the setting "Save every day") under "Autosave", and a hot seat under
   "Autosave (hot seat)", so neither takes the other's place; Continue on the title takes up the save made last, by the
   player or the game. A save holds the whole `GameState` and, for a hot seat, its setup (`HeroesGameManager.SaveData`);
-  it is refused in the middle of a battle and online, and a save of another version of the rules is not loaded. A game
-  that is over deletes its autosave. Winning earns stars: three for winning inside the chapter's quick day count, two inside the slower one,
+  it is refused in the middle of a battle, and a save of another version of the rules is not loaded. A game that is
+  over deletes its autosave. Online, Save the game in the match menu saves the game by name (the game does not save
+  itself there), and the lobby's From a saved game opens a room that plays a save: each realm goes to the member who
+  played it by the same name, the others take the realms people played, the rest are the computer's, and every device
+  goes on from the same save. A game saved online with several people loads at one device as a hot seat. Winning earns stars: three for winning inside the chapter's quick day count, two inside the slower one,
   one for winning at all.
 
 ## Battles
