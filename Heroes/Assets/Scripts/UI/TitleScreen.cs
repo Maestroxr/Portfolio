@@ -499,6 +499,20 @@ namespace Portfolio.Heroes.UI
                 }
                 Put(pines[random.Next(pines.Length)], new Vector3(x, 0f, z), random.Next(360), 0.9f + (float)random.NextDouble() * 0.7f);
             }
+
+            // The theme's grass and flowers over the meadow and the hills, off the track and the town (none for bare ground).
+            HeroesArt.CoverArt cover = art.Cover(TerrainType.Grass);
+            var strew = new System.Random(11);
+            for (int i = 0; i < 700 && cover != null; i++)
+            {
+                float x = (float)strew.NextDouble() * 110f - 50f;
+                float z = (float)strew.NextDouble() * 80f - 12f;
+                if (RoadDistance(x, z) < 2.2f || (new Vector2(x, z) - TownAt).sqrMagnitude < 49f)
+                {
+                    continue;
+                }
+                Put(cover.prefabs[strew.Next(cover.prefabs.Length)], new Vector3(x, 0f, z), strew.Next(360), 1.4f + (float)strew.NextDouble() * 0.8f);
+            }
         }
 
         /// <summary>Where no tree may stand: the meadow before the town, the track, the knoll and the camera's near view.</summary>

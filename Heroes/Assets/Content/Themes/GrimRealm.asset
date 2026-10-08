@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: GrimRealm
   m_EditorClassIdentifier: Skinnerboxes.Heroes::Portfolio.Heroes.HeroesTheme
   displayName: Grim Realm
-  description: 'A darker realm: overcast skies, weathered armies, mud and ash, black leather and cold iron.'
+  description: 'The realm in high detail: dressed and animated armies, timbered towns, lush woods under a golden sky.'
   preview: {fileID: 21300000, guid: 59457d54ec870f14ab4ade9d6064eb6c, type: 3}
   screenshot: {fileID: 21300000, guid: 8fae8ad89d3bbf141911e7d464d84210, type: 3}
   fonts:
@@ -43,15 +43,15 @@ MonoBehaviour:
     inputTextColor: {r: 0, g: 0, b: 0, a: 0}
     track: {fileID: 21300000, guid: c2f19578732142740af7938647a297ca, type: 3}
     fill: {fileID: 21300000, guid: 2ef4ca7698fe1464f8ffd38944a70382, type: 3}
-    fillColor: {r: 0.76, g: 0.8, b: 0.88, a: 1}
+    fillColor: {r: 1, g: 0.82, b: 0.42, a: 1}
     knob: {fileID: 21300000, guid: 2a7c92e166938a54b8c520e3d499fe97, type: 3}
     checkBox: {fileID: 21300000, guid: bd6037c598d561349a9640517e69eb1c, type: 3}
     checkMark: {fileID: 21300000, guid: 5c12a5d3eb71a8a4c9e8833c0e06116c, type: 3}
     headerColor: {r: 1, g: 1, b: 1, a: 1}
-    textColor: {r: 0.86, g: 0.84, b: 0.78, a: 1}
-    valueColor: {r: 0.76, g: 0.8, b: 0.88, a: 1}
-    buttonTextColor: {r: 0.86, g: 0.84, b: 0.78, a: 1}
-    errorColor: {r: 0.85, g: 0.3, b: 0.25, a: 1}
+    textColor: {r: 0.95, g: 0.94, b: 0.9, a: 1}
+    valueColor: {r: 1, g: 0.82, b: 0.42, a: 1}
+    buttonTextColor: {r: 0.95, g: 0.94, b: 0.9, a: 1}
+    errorColor: {r: 1, g: 0.42, b: 0.36, a: 1}
   lobby:
     font: {fileID: 0}
     bodyFont: {fileID: 0}
@@ -82,43 +82,43 @@ MonoBehaviour:
     colors: []
   art: {fileID: 11400000, guid: 349479c8c0e555549a9659781c7fd029, type: 2}
   palette:
-    ink: {r: 0.86, g: 0.84, b: 0.78, a: 1}
-    dim: {r: 0.6, g: 0.58, b: 0.54, a: 1}
-    gold: {r: 0.76, g: 0.8, b: 0.88, a: 1}
-    bad: {r: 0.85, g: 0.3, b: 0.25, a: 1}
-    good: {r: 0.6, g: 0.75, b: 0.55, a: 1}
-    inkOnParchment: {r: 0.12, g: 0.1, b: 0.1, a: 1}
-    dimOnParchment: {r: 0.36, g: 0.33, b: 0.31, a: 1}
-    headingTop: {r: 0.92, g: 0.9, b: 0.86, a: 1}
-    headingBottom: {r: 0.6, g: 0.62, b: 0.68, a: 1}
-    logoTop: {r: 0.96, g: 0.93, b: 0.86, a: 1}
-    logoBottom: {r: 0.64, g: 0.6, b: 0.56, a: 1}
-    accent: {r: 0.72, g: 0.8, b: 0.95, a: 1}
-    accentMix: 1
-    mapSaturation: 0.5
-    mapValue: 0.8
+    ink: {r: 0.95, g: 0.94, b: 0.9, a: 1}
+    dim: {r: 0.7, g: 0.72, b: 0.78, a: 1}
+    gold: {r: 1, g: 0.82, b: 0.42, a: 1}
+    bad: {r: 1, g: 0.42, b: 0.36, a: 1}
+    good: {r: 0.52, g: 0.92, b: 0.56, a: 1}
+    inkOnParchment: {r: 0.16, g: 0.13, b: 0.12, a: 1}
+    dimOnParchment: {r: 0.4, g: 0.35, b: 0.32, a: 1}
+    headingTop: {r: 1, g: 0.96, b: 0.84, a: 1}
+    headingBottom: {r: 0.98, g: 0.76, b: 0.38, a: 1}
+    logoTop: {r: 1, g: 0.97, b: 0.86, a: 1}
+    logoBottom: {r: 0.96, g: 0.7, b: 0.3, a: 1}
+    accent: {r: 1, g: 0.84, b: 0.48, a: 1}
+    accentMix: 0.35
+    mapSaturation: 1.05
+    mapValue: 1
     players:
-    - {r: 0.64, g: 0.1, b: 0.1, a: 1}
-    - {r: 0.2, g: 0.3, b: 0.58, a: 1}
-    - {r: 0.22, g: 0.42, b: 0.24, a: 1}
-    - {r: 0.6, g: 0.5, b: 0.28, a: 1}
-    - {r: 0.45, g: 0.45, b: 0.47, a: 1}
+    - {r: 0.88, g: 0.16, b: 0.16, a: 1}
+    - {r: 0.18, g: 0.44, b: 0.95, a: 1}
+    - {r: 0.2, g: 0.72, b: 0.3, a: 1}
+    - {r: 0.95, g: 0.72, b: 0.22, a: 1}
+    - {r: 0.72, g: 0.72, b: 0.74, a: 1}
   atmosphere:
-    sun: {r: 0.82, g: 0.84, b: 0.9, a: 1}
-    sunIntensity: 1.3
-    shadowStrength: 0.65
-    sunAngles: {x: 40, y: 150}
-    ambientSky: {r: 0.42, g: 0.45, b: 0.52, a: 1}
-    ambientEquator: {r: 0.36, g: 0.37, b: 0.4, a: 1}
-    ambientGround: {r: 0.17, g: 0.16, b: 0.16, a: 1}
-    fog: {r: 0.4, g: 0.42, b: 0.47, a: 1}
-    fogStart: 70
-    fogEnd: 250
-    sky: {fileID: 2100000, guid: c0493c37a991464468b0ee68f17ac23a, type: 2}
+    sun: {r: 1, g: 0.93, b: 0.8, a: 1}
+    sunIntensity: 1.5
+    shadowStrength: 0.78
+    sunAngles: {x: 42, y: 140}
+    ambientSky: {r: 0.5, g: 0.6, b: 0.8, a: 1}
+    ambientEquator: {r: 0.46, g: 0.47, b: 0.46, a: 1}
+    ambientGround: {r: 0.27, g: 0.23, b: 0.18, a: 1}
+    fog: {r: 0.64, g: 0.72, b: 0.84, a: 1}
+    fogStart: 100
+    fogEnd: 320
+    sky: {fileID: 2100000, guid: 9878701c7f300ed4fbbfcdda091fce3c, type: 2}
   glows:
-    warm: {r: 0.85, g: 0.1, b: 0.06, a: 1}
-    cold: {r: 0.42, g: 0.58, b: 0.95, a: 1}
-    mix: 0.6
+    warm: {r: 1, g: 0.68, b: 0.24, a: 1}
+    cold: {r: 0.42, g: 0.66, b: 1, a: 1}
+    mix: 0.3
   pointers:
     cursors:
     - {fileID: 2800000, guid: 317f2803490e4f24fb1bde23a390d999, type: 3}
@@ -162,3 +162,5 @@ MonoBehaviour:
     - {x: 2, y: 19}
     - {x: 7, y: 30}
     - {x: 24, y: 30}
+  look: {fileID: 11400000, guid: 3a1624015a5efcf41b7e1eb9722c823b, type: 2}
+  battleLook: {fileID: 11400000, guid: 3faae11927bd6de4991aa9cdf4741481, type: 2}

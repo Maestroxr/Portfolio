@@ -124,6 +124,13 @@ namespace Portfolio.Heroes.EditorTools
         public static void Build(HeroesArt art)
         {
             Skies(art);
+            if (Spec.Models == ModelSet.Kits)
+            {
+                // The textured kits: obstacles and the ring around a field of their own (HeroesRealmBattle).
+                HeroesRealmBattle.Obstacles(art);
+                HeroesRealmBattle.Backdrops(art);
+                return;
+            }
             Obstacles(art);
             Backdrops(art);
         }
@@ -160,6 +167,14 @@ namespace Portfolio.Heroes.EditorTools
                     importer.textureCompression = TextureImporterCompression.CompressedHQ;
                     importer.npotScale = TextureImporterNPOTScale.None;
                 });
+                Measure(relative, look.Lowest, out Vector2 sunAngles, out Color horizon);
+                // A sun the spec places elsewhere turns the picture with it.
+                float turn = 0f;
+                if (!float.IsNaN(look.Yaw))
+                {
+                    turn = Mathf.Repeat(sunAngles.y - look.Yaw, 360f);
+                    sunAngles.y = look.Yaw;
+                }
                 Material material = HeroesAssets.Material($"{Folder}/Sky{name}.mat", panoramic, m =>
                 {
                     m.SetTexture("_MainTex", texture);
@@ -168,12 +183,11 @@ namespace Portfolio.Heroes.EditorTools
                     m.SetFloat("_MirrorOnBack", 0f);
                     m.SetFloat("_Layout", 0f);
                     m.SetFloat("_Exposure", look.Exposure);
-                    m.SetFloat("_Rotation", 0f);
+                    m.SetFloat("_Rotation", turn);
                     m.SetColor("_Tint", look.Tint);
                     m.EnableKeyword("_MAPPING_LATITUDE_LONGITUDE_LAYOUT");
                     m.DisableKeyword("_MAPPING_6_FRAMES_LAYOUT");
                 });
-                Measure(relative, look.Lowest, out Vector2 sunAngles, out Color horizon);
                 art.skies.Add(new HeroesArt.SkyArt
                 {
                     name = name,
@@ -503,7 +517,7 @@ namespace Portfolio.Heroes.EditorTools
             ("Deep", new[] { TerrainType.Rock }, DeepRock, Paint.Deep)
         };
 
-        private static void Obstacles(HeroesArt art)
+        internal static void Obstacles(HeroesArt art)
         {
             art.obstacles.Clear();
             Material scorch = Scorch();
@@ -871,7 +885,7 @@ namespace Portfolio.Heroes.EditorTools
         // ------------------------------------------------------------------ backdrops
 
         /// <summary>The hills, mountains and woods that ring a field: big pieces of the nature pack, many meters across.</summary>
-        private static void Backdrops(HeroesArt art)
+        internal static void Backdrops(HeroesArt art)
         {
             art.backdrops.Clear();
             (TerrainType terrain, Paint paint, Color tint, (string model, float width)[] pieces)[] table =

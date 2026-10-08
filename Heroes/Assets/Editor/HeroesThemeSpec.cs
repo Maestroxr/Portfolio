@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
 namespace Portfolio.Heroes.EditorTools
 {
@@ -76,6 +78,11 @@ namespace Portfolio.Heroes.EditorTools
         public Color Tint = new Color(0.5f, 0.5f, 0.5f, 0.5f);
         /// <summary>How much the fog measured from the horizon is darkened, 1 for not at all.</summary>
         public float FogValue = 1f;
+        /// <summary>
+        /// Where the sun stands around the field (degrees of yaw) instead of where the picture has it, the sky turned to
+        /// match; NaN keeps the picture's. A sun behind the field as the camera looks would show every troop as a shadow.
+        /// </summary>
+        public float Yaw = float.NaN;
 
         public SkyLook(string name, string file, Color sun, float intensity, float lowest, Color sky, Color equator, Color ground)
         {
@@ -157,6 +164,81 @@ namespace Portfolio.Heroes.EditorTools
     }
 
 
+    /// <summary>Which of the downloaded models the builders of a theme put its creatures, heroes, towns and land together from.</summary>
+    internal enum ModelSet
+    {
+        /// <summary>The low poly packs of KayKit and Quaternius in Art/Models, painted with their palette sheets.</summary>
+        Packs,
+        /// <summary>
+        /// The textured kits in Art/Models/Quaternius/Kits: people dressed in the outfits of one rig and moved by the clips of
+        /// the animation library, towns built of the village's modular walls and roofs, the props and the woods in their own
+        /// PBR materials (<see cref="HeroesKitArt"/> and the HeroesRealm builders).
+        /// </summary>
+        Kits
+    }
+
+
+    /// <summary>
+    /// The post processing of a theme, made into a Volume profile by the theme builder: bloom, tone mapping, colour
+    /// adjustments, white balance, split toning and a vignette.
+    /// </summary>
+    internal sealed class PostLook
+    {
+        public float BloomThreshold = 0.95f;
+        public float BloomIntensity = 0.5f;
+        public float BloomScatter = 0.7f;
+        public Color BloomTint = Color.white;
+        public TonemappingMode Tonemapping = TonemappingMode.ACES;
+        public float PostExposure;
+        public float Contrast;
+        public float Saturation;
+        public Color ColorFilter = Color.white;
+        public float Temperature;
+        public float Tint;
+        /// <summary>The colours the shadows and the highlights lean toward (grey for none), and which of them wins.</summary>
+        public Color SplitShadows = new Color(0.5f, 0.5f, 0.5f);
+        public Color SplitHighlights = new Color(0.5f, 0.5f, 0.5f);
+        public float SplitBalance;
+        public float VignetteIntensity = 0.2f;
+        public float VignetteSmoothness = 0.4f;
+        public Color VignetteColor = Color.black;
+
+        /// <summary>Writes the look into <paramref name="profile"/>, adding the components it lacks.</summary>
+        public void Apply(VolumeProfile profile)
+        {
+            Bloom bloom = profile.TryGet(out Bloom existingBloom) ? existingBloom : profile.Add<Bloom>();
+            bloom.active = BloomIntensity > 0f;
+            bloom.threshold.Override(BloomThreshold);
+            bloom.intensity.Override(BloomIntensity);
+            bloom.scatter.Override(BloomScatter);
+            bloom.tint.Override(BloomTint);
+            Tonemapping tonemapping = profile.TryGet(out Tonemapping existingTonemapping) ? existingTonemapping : profile.Add<Tonemapping>();
+            tonemapping.active = Tonemapping != TonemappingMode.None;
+            tonemapping.mode.Override(Tonemapping);
+            ColorAdjustments color = profile.TryGet(out ColorAdjustments existingColor) ? existingColor : profile.Add<ColorAdjustments>();
+            color.active = true;
+            color.postExposure.Override(PostExposure);
+            color.contrast.Override(Contrast);
+            color.saturation.Override(Saturation);
+            color.colorFilter.Override(ColorFilter);
+            WhiteBalance balance = profile.TryGet(out WhiteBalance existingBalance) ? existingBalance : profile.Add<WhiteBalance>();
+            balance.active = !Mathf.Approximately(Temperature, 0f) || !Mathf.Approximately(Tint, 0f);
+            balance.temperature.Override(Temperature);
+            balance.tint.Override(Tint);
+            SplitToning split = profile.TryGet(out SplitToning existingSplit) ? existingSplit : profile.Add<SplitToning>();
+            split.active = true;
+            split.shadows.Override(SplitShadows);
+            split.highlights.Override(SplitHighlights);
+            split.balance.Override(SplitBalance);
+            Vignette vignette = profile.TryGet(out Vignette existingVignette) ? existingVignette : profile.Add<Vignette>();
+            vignette.active = VignetteIntensity > 0f;
+            vignette.intensity.Override(VignetteIntensity);
+            vignette.smoothness.Override(VignetteSmoothness);
+            vignette.color.Override(VignetteColor);
+        }
+    }
+
+
     /// <summary>The colours of the materials the map is drawn with (the water, the fog of war, the markers).</summary>
     internal sealed class SceneMaterials
     {
@@ -168,6 +250,8 @@ namespace Portfolio.Heroes.EditorTools
         public Color Ring = new Color(1f, 1f, 1f, 0.9f);
         public Color Pool = new Color(0.1f, 0.3f, 0.42f, 0.82f);
         public Color Bog = new Color(0.16f, 0.2f, 0.1f, 0.9f);
+        /// <summary>Whether the water of the map is rippled (a normal map of small waves that catch the sun), or a flat sheet.</summary>
+        public bool Ripples;
     }
 
 
@@ -369,6 +453,95 @@ namespace Portfolio.Heroes.EditorTools
             return style;
         }
 
+        /// <summary>
+        /// The kit of the remade Grim Realm: sapphire leather under polished gold rims set with sapphires, silver on the lesser
+        /// rims, ivory paper, royal violet ribbons, and buttons of blue lacquer that brighten under the pointer.
+        /// </summary>
+        public static KitStyle Realm()
+        {
+            var style = new KitStyle
+            {
+                Gold = new Color(0.96f, 0.8f, 0.44f),
+                GoldDark = new Color(0.5f, 0.38f, 0.16f),
+                GoldLight = new Color(1f, 0.94f, 0.72f),
+                Leather = new Color(0.1f, 0.14f, 0.27f),
+                LeatherLight = new Color(0.18f, 0.24f, 0.42f),
+                Stone = new Color(0.3f, 0.32f, 0.38f),
+                Parchment = new Color(0.94f, 0.9f, 0.8f),
+                ParchmentDark = new Color(0.78f, 0.72f, 0.6f),
+                Ink = new Color(0.14f, 0.12f, 0.12f),
+                Edge = new Color(0.02f, 0.03f, 0.08f, 0.95f),
+                Metal = new Ramp(
+                    (0f, new Color(0.24f, 0.16f, 0.06f)), (0.28f, new Color(0.52f, 0.38f, 0.14f)), (0.52f, new Color(0.82f, 0.64f, 0.3f)),
+                    (0.74f, new Color(0.96f, 0.84f, 0.52f)), (0.9f, new Color(1f, 0.95f, 0.72f)), (1f, new Color(1f, 1f, 0.9f))),
+                MetalDark = new Ramp(
+                    (0f, new Color(0.08f, 0.09f, 0.12f)), (0.3f, new Color(0.26f, 0.28f, 0.34f)), (0.55f, new Color(0.5f, 0.53f, 0.6f)),
+                    (0.8f, new Color(0.74f, 0.77f, 0.84f)), (1f, new Color(0.92f, 0.94f, 0.98f))),
+                Iron = IronRamp(),
+                LeatherDark = new Color(0.05f, 0.07f, 0.15f),
+                LeatherMid = new Color(0.14f, 0.19f, 0.34f),
+                PanelDark = new Color(0.04f, 0.06f, 0.12f),
+                PanelLight = new Color(0.12f, 0.16f, 0.28f),
+                EngravedDark = new Color(0.02f, 0.04f, 0.12f, 0.6f),
+                EngravedLight = new Color(1f, 0.92f, 0.7f, 0.35f),
+                Ornaments = true,
+                Gem = new Color(0.18f, 0.36f, 0.9f),
+                CardDark = new[] { new Color(0.06f, 0.08f, 0.16f), new Color(0.09f, 0.12f, 0.22f), new Color(0.1f, 0.12f, 0.24f) },
+                CardLight = new[] { new Color(0.16f, 0.21f, 0.36f), new Color(0.22f, 0.28f, 0.46f), new Color(0.26f, 0.3f, 0.5f) },
+                CardGlow = new Color(1f, 0.82f, 0.42f, 0.55f),
+                SlotGlow = new Color(1f, 0.84f, 0.45f, 0.7f),
+                ButtonTop = new[] { new Color(0.2f, 0.34f, 0.7f), new Color(0.28f, 0.46f, 0.88f), new Color(0.1f, 0.18f, 0.42f), new Color(0.22f, 0.23f, 0.27f) },
+                ButtonBottom = new[] { new Color(0.08f, 0.14f, 0.36f), new Color(0.12f, 0.22f, 0.5f), new Color(0.14f, 0.24f, 0.5f), new Color(0.12f, 0.12f, 0.15f) },
+                ButtonGloss = new Color(0.9f, 0.95f, 1f),
+                ButtonHoverLight = new Color(1f, 0.85f, 0.45f, 0.45f),
+                RoundDark = new[] { new Color(0.05f, 0.07f, 0.15f), new Color(0.08f, 0.12f, 0.24f), new Color(0.03f, 0.04f, 0.09f) },
+                RoundLight = new[] { new Color(0.16f, 0.22f, 0.4f), new Color(0.24f, 0.32f, 0.54f), new Color(0.1f, 0.13f, 0.24f) },
+                WoodDark = new Color(0.04f, 0.05f, 0.1f),
+                WoodLight = new Color(0.16f, 0.2f, 0.34f),
+                PaperDark = new Color(0.84f, 0.78f, 0.64f),
+                PaperLight = new Color(0.97f, 0.94f, 0.86f),
+                PaperBurn = new Color(0.5f, 0.38f, 0.24f),
+                PaperLine = new Color(0.28f, 0.22f, 0.14f, 0.95f),
+                PaperInk = new Color(0.3f, 0.24f, 0.18f, 0.78f),
+                Stains = 0.1f,
+                Stain = new Color(0.55f, 0.48f, 0.38f),
+                Ribbon = new Color(0.42f, 0.16f, 0.62f),
+                RibbonTailDark = new Color(0.18f, 0.06f, 0.3f),
+                RibbonTailLight = new Color(0.3f, 0.1f, 0.44f),
+                RibbonFold = new Color(0.1f, 0.03f, 0.17f),
+                PortraitBackCenter = new Color(0.3f, 0.36f, 0.52f),
+                PortraitBackEdge = new Color(0.05f, 0.07f, 0.14f),
+                TooltipDark = new Color(0.04f, 0.06f, 0.13f, 0.96f),
+                TooltipLight = new Color(0.12f, 0.16f, 0.28f, 0.96f),
+                BannerDark = new Color(0.26f, 0.1f, 0.42f),
+                BannerLight = new Color(0.42f, 0.18f, 0.62f),
+                StarEmptyFill = new Color(0.05f, 0.07f, 0.14f, 0.6f),
+                StarEmptyLine = new Color(0.6f, 0.52f, 0.32f, 0.9f),
+                StrikeLight = new Color(0.95f, 0.96f, 1f),
+                StrikeDark = new Color(0.55f, 0.58f, 0.66f)
+            };
+            var gold = (new Color(1f, 0.94f, 0.7f), new Color(0.78f, 0.56f, 0.22f));
+            var silver = (new Color(0.94f, 0.96f, 1f), new Color(0.5f, 0.56f, 0.7f));
+            var arcane = (new Color(0.84f, 0.92f, 1f), new Color(0.32f, 0.5f, 1f));
+            var flame = (new Color(1f, 0.62f, 0.5f), new Color(0.76f, 0.16f, 0.12f));
+            var hand = (new Color(1f, 0.96f, 0.84f), new Color(0.86f, 0.7f, 0.46f));
+            style.Pointers[CursorKind.Default] = gold;
+            style.Pointers[CursorKind.Hand] = hand;
+            style.Pointers[CursorKind.Move] = gold;
+            style.Pointers[CursorKind.Fly] = silver;
+            style.Pointers[CursorKind.Attack] = (style.StrikeLight, style.StrikeDark);
+            style.Pointers[CursorKind.Shoot] = (new Color(1f, 0.9f, 0.62f), new Color(0.66f, 0.42f, 0.18f));
+            style.Pointers[CursorKind.Cast] = arcane;
+            style.Pointers[CursorKind.Blocked] = flame;
+            style.Pointers[CursorKind.Wait] = gold;
+            style.Pointers[CursorKind.Info] = (new Color(1f, 0.97f, 0.88f), new Color(0.82f, 0.72f, 0.5f));
+            style.Pointers[CursorKind.Travel] = gold;
+            style.Pointers[CursorKind.Visit] = gold;
+            style.Pointers[CursorKind.Fight] = flame;
+            style.Pointers[CursorKind.Take] = hand;
+            return style;
+        }
+
         private static Ramp IronRamp()
         {
             return new Ramp(
@@ -424,6 +597,11 @@ namespace Portfolio.Heroes.EditorTools
         public HeroesTheme.Palette Palette = new HeroesTheme.Palette();
         public HeroesTheme.Atmosphere Atmosphere = new HeroesTheme.Atmosphere();
         public HeroesTheme.Glows Glows = new HeroesTheme.Glows();
+        /// <summary>What the creatures, heroes, towns, map objects and woods are made of.</summary>
+        public ModelSet Models = ModelSet.Packs;
+        /// <summary>The post processing of the map and the title, and of a battlefield of its own; null for none of the theme's own.</summary>
+        public PostLook Post;
+        public PostLook BattlePost;
 
         private static HeroesThemeSpec current;
 
@@ -509,58 +687,58 @@ namespace Portfolio.Heroes.EditorTools
         };
 
         /// <summary>
-        /// The Grim Realm: the same models under an overcast sky, their colours drained and cold, the ground mud, ash and
-        /// dead grass, dead trees and ruins around the fields, black leather and iron for the interface, bone white paper,
-        /// blood red ribbons, an old printed serif and a blackletter name, and magic in blood red and cold blue.
+        /// The Grim Realm, remade in high detail: its people dressed in the outfits of the character kit and moved by the
+        /// animation library, towns built of the village kit's timber, plaster and tile, the woods, rocks and props of the
+        /// nature and props kits in their own PBR materials, all lit by a warm sun under a clear sky and graded like a modern
+        /// game (ACES tone mapping, bloom, cool shadows and warm light). The interface is sapphire leather and polished silver
+        /// with gold where the eye should go, ivory paper and royal violet ribbons; the magic leans toward gold and arcane blue.
         /// </summary>
         public static readonly HeroesThemeSpec GrimRealm = new HeroesThemeSpec
         {
             Name = "GrimRealm",
             DisplayName = "Grim Realm",
-            Description = "A darker realm: overcast skies, weathered armies, mud and ash, black leather and cold iron.",
+            Description = "The realm in high detail: dressed and animated armies, timbered towns, lush woods under a golden sky.",
             Generated = "Art/Themes/GrimRealm/Generated",
             KitFolder = "Art/Themes/GrimRealm/UI",
             FontFolder = "Art/Themes/GrimRealm/Generated/Fonts",
             ArtAsset = "Art/Themes/GrimRealm/HeroesArt.asset",
             ThemeAsset = "Content/Themes/GrimRealm.asset",
-            Grade = new ColorGrade { Saturation = 0.55f, Value = 0.9f, Gamma = 1.1f, Cast = new Color(0.62f, 0.66f, 0.76f), CastMix = 0.18f },
-            IconGrade = new ColorGrade { Saturation = 0.6f, Value = 0.95f },
+            Models = ModelSet.Kits,
+            // The beasts and dragons that keep the packs' models get their colours a little richer (and copies of their own).
+            Grade = new ColorGrade { Saturation = 1.08f, Value = 1f, Gamma = 0.97f },
+            IconGrade = new ColorGrade { Saturation = 1.04f, Value = 1.02f },
             Terrain = new Dictionary<string, ColorGrade>
             {
-                ["Grass"] = new ColorGrade { Saturation = 0.45f, Value = 0.82f, Gamma = 1.05f, Cast = new Color(0.6f, 0.55f, 0.4f), CastMix = 0.35f },
-                ["Dirt"] = new ColorGrade { Saturation = 0.6f, Value = 0.72f, Gamma = 1.05f, Cast = new Color(0.42f, 0.34f, 0.26f), CastMix = 0.4f },
-                ["Sand"] = new ColorGrade { Saturation = 0.3f, Value = 0.72f, Gamma = 1.05f, Cast = new Color(0.56f, 0.54f, 0.52f), CastMix = 0.45f },
-                ["Snow"] = new ColorGrade { Saturation = 0.3f, Value = 0.85f, Gamma = 1.05f, Cast = new Color(0.72f, 0.75f, 0.82f), CastMix = 0.35f },
-                ["Swamp"] = new ColorGrade { Saturation = 0.5f, Value = 0.68f, Gamma = 1.1f, Cast = new Color(0.3f, 0.34f, 0.24f), CastMix = 0.4f },
-                ["Rough"] = new ColorGrade { Saturation = 0.45f, Value = 0.72f, Gamma = 1.05f, Cast = new Color(0.46f, 0.42f, 0.38f), CastMix = 0.4f },
-                ["Wasteland"] = new ColorGrade { Saturation = 0.35f, Value = 0.68f, Gamma = 1.05f, Cast = new Color(0.46f, 0.43f, 0.42f), CastMix = 0.45f },
-                ["Rock"] = new ColorGrade { Saturation = 0.35f, Value = 0.68f, Gamma = 1.1f, Cast = new Color(0.34f, 0.37f, 0.42f), CastMix = 0.4f },
-                ["Road"] = new ColorGrade { Saturation = 0.45f, Value = 0.74f, Gamma = 1.05f, Cast = new Color(0.4f, 0.38f, 0.36f), CastMix = 0.4f },
-                ["ForestFloor"] = new ColorGrade { Saturation = 0.5f, Value = 0.68f, Gamma = 1.1f, Cast = new Color(0.34f, 0.3f, 0.24f), CastMix = 0.4f }
+                // The downloaded grass is a vivid green that the warm light and the grading push toward neon: a little calmer.
+                ["Grass"] = new ColorGrade { Saturation = 0.86f, Value = 0.94f, Gamma = 1.02f, Cast = new Color(0.62f, 0.7f, 0.36f), CastMix = 0.1f },
+                ["ForestFloor"] = new ColorGrade { Saturation = 0.95f, Value = 1f, Gamma = 0.9f },
+                ["Dirt"] = new ColorGrade { Saturation = 1f, Value = 1.02f },
+                // The darker grounds are lifted in their middle tones, so a battle in a bog or the wastes is not fought in the dark.
+                ["Swamp"] = new ColorGrade { Saturation = 1.05f, Value = 1.3f, Gamma = 0.72f, Cast = new Color(0.42f, 0.5f, 0.3f), CastMix = 0.15f },
+                ["Wasteland"] = new ColorGrade { Saturation = 0.9f, Value = 1.1f, Gamma = 0.8f },
+                ["Rough"] = new ColorGrade { Saturation = 0.95f, Value = 1.1f, Gamma = 0.82f },
+                ["Rock"] = new ColorGrade { Saturation = 1f, Value = 1.08f, Gamma = 0.85f }
             },
             Skies = new[]
             {
-                new SkyLook("Gloom", "kloofendal_overcast_puresky", new Color(0.78f, 0.8f, 0.86f), 1.15f, 45f,
-                    new Color(0.4f, 0.42f, 0.47f), new Color(0.34f, 0.34f, 0.36f), new Color(0.16f, 0.15f, 0.15f))
-                    { Exposure = 0.62f, Tint = new Color(0.42f, 0.44f, 0.5f, 0.5f), FogValue = 0.62f },
-                new SkyLook("Bleak", "kloofendal_48d_partly_cloudy_puresky", new Color(0.82f, 0.82f, 0.86f), 1.25f, 38f,
-                    new Color(0.38f, 0.41f, 0.48f), new Color(0.34f, 0.34f, 0.36f), new Color(0.15f, 0.14f, 0.13f))
-                    { Exposure = 0.55f, Tint = new Color(0.4f, 0.42f, 0.48f, 0.5f), FogValue = 0.6f },
-                new SkyLook("Storm", "wasteland_clouds_puresky", new Color(0.84f, 0.8f, 0.76f), 1.2f, 26f,
-                    new Color(0.38f, 0.38f, 0.42f), new Color(0.36f, 0.33f, 0.31f), new Color(0.16f, 0.14f, 0.13f))
-                    { Exposure = 0.58f, Tint = new Color(0.42f, 0.4f, 0.42f, 0.5f), FogValue = 0.6f },
-                new SkyLook("Snow", "snow_field_puresky", new Color(0.84f, 0.86f, 0.92f), 1.1f, 35f,
-                    new Color(0.44f, 0.46f, 0.5f), new Color(0.36f, 0.37f, 0.4f), new Color(0.22f, 0.22f, 0.24f))
-                    { Exposure = 0.62f, Tint = new Color(0.42f, 0.44f, 0.5f, 0.5f), FogValue = 0.68f },
-                new SkyLook("Dusk", "qwantani_dusk_2_puresky", new Color(0.92f, 0.52f, 0.38f), 1.0f, 18f,
-                    new Color(0.3f, 0.28f, 0.38f), new Color(0.3f, 0.23f, 0.25f), new Color(0.12f, 0.1f, 0.1f))
-                    { Exposure = 0.7f, Tint = new Color(0.45f, 0.4f, 0.45f, 0.5f), FogValue = 0.7f }
+                new SkyLook("Clear", "kloofendal_48d_partly_cloudy_puresky", new Color(1f, 0.94f, 0.82f), 1.5f, 40f,
+                    new Color(0.5f, 0.6f, 0.78f), new Color(0.46f, 0.48f, 0.48f), new Color(0.27f, 0.23f, 0.18f)) { Exposure = 1.05f },
+                new SkyLook("Overcast", "kloofendal_overcast_puresky", new Color(0.96f, 0.95f, 0.92f), 1.15f, 45f,
+                    new Color(0.6f, 0.64f, 0.7f), new Color(0.52f, 0.52f, 0.52f), new Color(0.32f, 0.3f, 0.26f)) { Exposure = 1.08f },
+                new SkyLook("Snow", "snow_field_puresky", new Color(1f, 0.97f, 0.94f), 1.2f, 35f,
+                    new Color(0.62f, 0.68f, 0.78f), new Color(0.56f, 0.58f, 0.62f), new Color(0.42f, 0.42f, 0.45f)),
+                // High enough that the troops are lit from above rather than seen against a low sun.
+                new SkyLook("Wasteland", "wasteland_clouds_puresky", new Color(1f, 0.88f, 0.68f), 1.4f, 48f,
+                    new Color(0.6f, 0.63f, 0.72f), new Color(0.56f, 0.5f, 0.44f), new Color(0.34f, 0.27f, 0.21f)) { Yaw = 305f },
+                new SkyLook("Golden", "qwantani_dusk_2_puresky", new Color(1f, 0.76f, 0.54f), 1.3f, 32f,
+                    new Color(0.46f, 0.44f, 0.6f), new Color(0.46f, 0.36f, 0.36f), new Color(0.2f, 0.15f, 0.14f)) { Exposure = 1.1f, FogValue = 0.95f }
             },
-            SkyOfTerrain = new[] { "Gloom", "Bleak", "Storm", "Snow", "Gloom", "Storm", "Dusk", "Bleak", "Dusk" },
-            MapSky = "Gloom",
-            FogStart = 35f,
-            FogEnd = 200f,
-            Kit = KitStyle.Grim(),
+            SkyOfTerrain = new[] { "Clear", "Clear", "Wasteland", "Snow", "Overcast", "Clear", "Wasteland", "Clear", "Golden" },
+            DuskSky = "Golden",
+            MapSky = "Clear",
+            FogStart = 80f,
+            FogEnd = 320f,
+            Kit = KitStyle.Realm(),
             Fonts = new FontLook
             {
                 TitleFile = "Art/Themes/GrimRealm/Fonts/PirataOne-Regular.ttf",
@@ -571,92 +749,116 @@ namespace Portfolio.Heroes.EditorTools
                 ItalicAsset = "Art/Themes/GrimRealm/Generated/Fonts/IMFellEnglish-Italic SDF.asset",
                 LogoFile = "Art/Themes/GrimRealm/Fonts/UnifrakturCook-Bold.ttf",
                 LogoAsset = "Art/Themes/GrimRealm/Generated/Fonts/UnifrakturCook-Bold SDF.asset",
-                TitleOutline = new Color(0.04f, 0.04f, 0.05f, 1f),
-                TitleShadow = new Color(0f, 0f, 0f, 0.85f),
-                Outline = new Color(0.03f, 0.03f, 0.04f, 1f),
-                LogoOutline = new Color(0.08f, 0.02f, 0.02f, 1f),
-                LogoGlow = new Color(0.7f, 0.06f, 0.05f, 0.75f)
+                TitleOutline = new Color(0.05f, 0.07f, 0.16f, 1f),
+                TitleShadow = new Color(0f, 0f, 0.04f, 0.8f),
+                Outline = new Color(0.03f, 0.04f, 0.1f, 1f),
+                LogoOutline = new Color(0.06f, 0.05f, 0.18f, 1f),
+                LogoGlow = new Color(1f, 0.72f, 0.3f, 0.65f)
             },
             Portraits = new PortraitLook
             {
-                KeyColor = new Color(0.86f, 0.88f, 0.94f),
-                Key = 1.35f,
-                KeyAngles = new Vector2(42f, -35f),
-                FillColor = new Color(0.42f, 0.46f, 0.58f),
+                KeyColor = new Color(1f, 0.93f, 0.82f),
+                Key = 1.45f,
+                KeyAngles = new Vector2(36f, -38f),
+                FillColor = new Color(0.55f, 0.66f, 0.95f),
                 Fill = 0.5f,
-                RimColor = new Color(0.62f, 0.72f, 0.95f),
-                Rim = 1.7f,
-                AmbientSky = new Color(0.44f, 0.46f, 0.52f),
-                AmbientEquator = new Color(0.34f, 0.34f, 0.36f),
-                AmbientGround = new Color(0.16f, 0.16f, 0.17f),
-                TownKey = 1.4f,
-                Vignette = 0.3f
+                RimColor = new Color(1f, 0.85f, 0.6f),
+                Rim = 1.3f,
+                AmbientSky = new Color(0.56f, 0.6f, 0.7f),
+                AmbientEquator = new Color(0.44f, 0.42f, 0.42f),
+                AmbientGround = new Color(0.22f, 0.19f, 0.17f),
+                TownKey = 1.5f,
+                Vignette = 0.12f
             },
             Materials = new SceneMaterials
             {
-                Water = new Color(0.06f, 0.14f, 0.18f, 0.85f),
-                FogInside = new Color(0.008f, 0.008f, 0.012f, 1f),
-                FogEdge = new Color(0.1f, 0.1f, 0.14f, 1f),
-                FogOutside = 0.62f,
-                Marker = new Color(0.8f, 0.84f, 0.92f, 0.7f),
-                Ring = new Color(0.9f, 0.92f, 1f, 0.9f),
-                Pool = new Color(0.06f, 0.14f, 0.18f, 0.85f),
-                Bog = new Color(0.1f, 0.12f, 0.07f, 0.92f)
-            },
-            DeadForests = true,
-            BackdropExtras = new[]
-            {
-                (TerrainType.Grass, "KayKit/Halloween/tree_dead_large", 7f), (TerrainType.Grass, "KayKit/Buildings/Neutral/building_destroyed", 9f),
-                (TerrainType.Dirt, "KayKit/Halloween/tree_dead_large", 7f), (TerrainType.Dirt, "KayKit/Halloween/crypt", 8f),
-                (TerrainType.Rough, "KayKit/Buildings/Neutral/building_destroyed", 9f), (TerrainType.Rough, "KayKit/Halloween/tree_dead_medium", 6f),
-                (TerrainType.Water, "KayKit/Halloween/tree_dead_large", 7f),
-                (TerrainType.Swamp, "KayKit/Halloween/tree_dead_large_decorated", 7f), (TerrainType.Swamp, "KayKit/Halloween/crypt", 8f),
-                (TerrainType.Snow, "KayKit/Halloween/tree_dead_large", 7f),
-                (TerrainType.Sand, "KayKit/Buildings/Neutral/building_destroyed", 9f),
-                (TerrainType.Wasteland, "KayKit/Halloween/tree_dead_large", 7f), (TerrainType.Wasteland, "KayKit/Halloween/arch", 6f),
-                (TerrainType.Rock, "KayKit/Halloween/pillar", 5f)
+                Water = new Color(0.1f, 0.36f, 0.52f, 0.74f),
+                FogInside = new Color(0.02f, 0.03f, 0.06f, 1f),
+                FogEdge = new Color(0.18f, 0.24f, 0.4f, 1f),
+                FogOutside = 0.5f,
+                Marker = new Color(1f, 0.9f, 0.55f, 0.75f),
+                Ring = new Color(1f, 1f, 1f, 0.9f),
+                Pool = new Color(0.1f, 0.34f, 0.48f, 0.8f),
+                Bog = new Color(0.18f, 0.24f, 0.12f, 0.9f),
+                Ripples = true
             },
             Palette = new HeroesTheme.Palette
             {
-                ink = new Color(0.86f, 0.84f, 0.78f),
-                dim = new Color(0.6f, 0.58f, 0.54f),
-                gold = new Color(0.76f, 0.8f, 0.88f),
-                bad = new Color(0.85f, 0.3f, 0.25f),
-                good = new Color(0.6f, 0.75f, 0.55f),
-                inkOnParchment = new Color(0.12f, 0.1f, 0.1f),
-                dimOnParchment = new Color(0.36f, 0.33f, 0.31f),
-                headingTop = new Color(0.92f, 0.9f, 0.86f),
-                headingBottom = new Color(0.6f, 0.62f, 0.68f),
-                logoTop = new Color(0.96f, 0.93f, 0.86f),
-                logoBottom = new Color(0.64f, 0.6f, 0.56f),
-                accent = new Color(0.72f, 0.8f, 0.95f),
-                accentMix = 1f,
-                mapSaturation = 0.5f,
-                mapValue = 0.8f,
+                ink = new Color(0.95f, 0.94f, 0.9f),
+                dim = new Color(0.7f, 0.72f, 0.78f),
+                gold = new Color(1f, 0.82f, 0.42f),
+                bad = new Color(1f, 0.42f, 0.36f),
+                good = new Color(0.52f, 0.92f, 0.56f),
+                inkOnParchment = new Color(0.16f, 0.13f, 0.12f),
+                dimOnParchment = new Color(0.4f, 0.35f, 0.32f),
+                headingTop = new Color(1f, 0.96f, 0.84f),
+                headingBottom = new Color(0.98f, 0.76f, 0.38f),
+                logoTop = new Color(1f, 0.97f, 0.86f),
+                logoBottom = new Color(0.96f, 0.7f, 0.3f),
+                accent = new Color(1f, 0.84f, 0.48f),
+                accentMix = 0.35f,
+                mapSaturation = 1.05f,
+                mapValue = 1f,
                 players = new[]
                 {
-                    new Color(0.64f, 0.1f, 0.1f), new Color(0.2f, 0.3f, 0.58f), new Color(0.22f, 0.42f, 0.24f),
-                    new Color(0.6f, 0.5f, 0.28f), new Color(0.45f, 0.45f, 0.47f)
+                    new Color(0.88f, 0.16f, 0.16f), new Color(0.18f, 0.44f, 0.95f), new Color(0.2f, 0.72f, 0.3f),
+                    new Color(0.95f, 0.72f, 0.22f), new Color(0.72f, 0.72f, 0.74f)
                 }
             },
             Atmosphere = new HeroesTheme.Atmosphere
             {
-                sun = new Color(0.82f, 0.84f, 0.9f),
-                sunIntensity = 1.3f,
-                shadowStrength = 0.65f,
-                sunAngles = new Vector2(40f, 150f),
-                ambientSky = new Color(0.42f, 0.45f, 0.52f),
-                ambientEquator = new Color(0.36f, 0.37f, 0.4f),
-                ambientGround = new Color(0.17f, 0.16f, 0.16f),
-                fog = new Color(0.4f, 0.42f, 0.47f),
-                fogStart = 70f,
-                fogEnd = 250f
+                sun = new Color(1f, 0.93f, 0.8f),
+                sunIntensity = 1.5f,
+                shadowStrength = 0.78f,
+                sunAngles = new Vector2(42f, 140f),
+                ambientSky = new Color(0.5f, 0.6f, 0.8f),
+                ambientEquator = new Color(0.46f, 0.47f, 0.46f),
+                ambientGround = new Color(0.27f, 0.23f, 0.18f),
+                fog = new Color(0.64f, 0.72f, 0.84f),
+                fogStart = 100f,
+                fogEnd = 320f
             },
             Glows = new HeroesTheme.Glows
             {
-                warm = new Color(0.85f, 0.1f, 0.06f),
-                cold = new Color(0.42f, 0.58f, 0.95f),
-                mix = 0.6f
+                warm = new Color(1f, 0.68f, 0.24f),
+                cold = new Color(0.42f, 0.66f, 1f),
+                mix = 0.3f
+            },
+            Post = new PostLook
+            {
+                BloomThreshold = 1f,
+                BloomIntensity = 0.5f,
+                BloomScatter = 0.7f,
+                BloomTint = new Color(1f, 0.92f, 0.8f),
+                Tonemapping = TonemappingMode.ACES,
+                PostExposure = 0.05f,
+                Contrast = 12f,
+                Saturation = 4f,
+                Temperature = 4f,
+                SplitShadows = new Color(0.42f, 0.5f, 0.64f),
+                SplitHighlights = new Color(0.62f, 0.56f, 0.46f),
+                SplitBalance = -12f,
+                VignetteIntensity = 0.2f,
+                VignetteSmoothness = 0.42f,
+                VignetteColor = new Color(0.02f, 0.03f, 0.08f)
+            },
+            BattlePost = new PostLook
+            {
+                BloomThreshold = 1f,
+                BloomIntensity = 0.55f,
+                BloomScatter = 0.7f,
+                BloomTint = new Color(1f, 0.92f, 0.8f),
+                Tonemapping = TonemappingMode.ACES,
+                PostExposure = 0f,
+                Contrast = 14f,
+                Saturation = 2f,
+                Temperature = 3f,
+                SplitShadows = new Color(0.42f, 0.5f, 0.64f),
+                SplitHighlights = new Color(0.62f, 0.56f, 0.46f),
+                SplitBalance = -12f,
+                VignetteIntensity = 0.26f,
+                VignetteSmoothness = 0.45f,
+                VignetteColor = new Color(0.02f, 0.03f, 0.08f)
             }
         };
     }

@@ -228,6 +228,21 @@ namespace Portfolio.Heroes
             public GameObject[] prefabs = new GameObject[0];
         }
 
+        /// <summary>
+        /// The small plants and stones strewn over the open ground of one land (grass, flowers, bushes, pebbles): on the
+        /// map, and around a battlefield. They stand on the ground at their origin and block nothing.
+        /// </summary>
+        [Serializable]
+        public sealed class CoverArt
+        {
+            public TerrainType terrain;
+            public GameObject[] prefabs = new GameObject[0];
+            /// <summary>The pieces low enough to strew over the cells of a battlefield, under the troops (grass, clover, pebbles).</summary>
+            public GameObject[] low = new GameObject[0];
+            /// <summary>How many pieces a cell of the map gets on average.</summary>
+            public float density = 1f;
+        }
+
         [Header("Creatures and heroes")]
         public List<UnitArt> units = new List<UnitArt>();
         public List<HeroArt> heroes = new List<HeroArt>();
@@ -242,9 +257,13 @@ namespace Portfolio.Heroes
         public GameObject[] forestTrees = new GameObject[0];
         public GameObject[] pineTrees = new GameObject[0];
         public GameObject[] deadTrees = new GameObject[0];
+        /// <summary>Pines under snow, for the woods around a battlefield on snow; empty to use <see cref="pineTrees"/> there.</summary>
+        public GameObject[] snowTrees = new GameObject[0];
         public GameObject[] mountains = new GameObject[0];
         public GameObject[] rocks = new GameObject[0];
         public GameObject[] waterPlants = new GameObject[0];
+        /// <summary>What is strewn over the open ground of each land; empty for bare ground.</summary>
+        public List<CoverArt> cover = new List<CoverArt>();
         public TerrainLayer[] layers = new TerrainLayer[10];
         /// <summary>The material the terrain itself is drawn with: without one it falls back to a shader no build has.</summary>
         public Material ground;
@@ -448,6 +467,23 @@ namespace Portfolio.Heroes
                 {
                     int index = color >= 0 && color < 4 ? color : 4;
                     return town.byColor[index] != null ? town.byColor[index] : town.byColor[0];
+                }
+            }
+            return null;
+        }
+
+        /// <summary>What is strewn over the open ground of <paramref name="terrain"/>, or null for bare ground.</summary>
+        public CoverArt Cover(TerrainType terrain)
+        {
+            if (cover == null)
+            {
+                return null;
+            }
+            foreach (CoverArt art in cover)
+            {
+                if (art.terrain == terrain && art.prefabs != null && art.prefabs.Length > 0)
+                {
+                    return art;
                 }
             }
             return null;

@@ -146,7 +146,10 @@ namespace Portfolio.Heroes
             }
         }
 
-        /// <summary>The static side of a theme: the palette and the glows everything reads, and the light of the map.</summary>
+        /// <summary>
+        /// The static side of a theme: the palette and the glows everything reads, the light of the map, and the theme's
+        /// post processing on the map's camera (none for a theme without a look of its own).
+        /// </summary>
         private void ApplyTheme(HeroesTheme theme)
         {
             HeroesTheme.Activate(theme);
@@ -154,6 +157,32 @@ namespace Portfolio.Heroes
             if (theme != null && theme.atmosphere != null)
             {
                 theme.atmosphere.Apply(Sun());
+            }
+            ApplyLook(theme != null ? theme.look : null);
+        }
+
+        private UnityEngine.Rendering.Volume lookVolume;
+
+        /// <summary>Puts <paramref name="profile"/> on a global volume of the game's own and has the map's camera draw it.</summary>
+        private void ApplyLook(UnityEngine.Rendering.VolumeProfile profile)
+        {
+            if (profile != null && lookVolume == null)
+            {
+                var holder = new GameObject("Theme Look");
+                holder.transform.SetParent(transform, false);
+                lookVolume = holder.AddComponent<UnityEngine.Rendering.Volume>();
+                lookVolume.isGlobal = true;
+                lookVolume.priority = 0f;
+            }
+            if (lookVolume != null)
+            {
+                lookVolume.sharedProfile = profile;
+                lookVolume.enabled = profile != null;
+            }
+            Camera view = cameraRig != null ? cameraRig.View : Camera.main;
+            if (view != null && (profile != null || lookVolume != null))
+            {
+                UnityEngine.Rendering.Universal.CameraExtensions.GetUniversalAdditionalCameraData(view).renderPostProcessing = profile != null;
             }
         }
 

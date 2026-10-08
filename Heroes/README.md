@@ -246,7 +246,7 @@ faster until it catches up. There is no saving and no pausing online: the menu i
 | `Scripts` | The manager (`HeroesGameManager.cs`, which directs a game; `.Events.cs` plays the events out, `.Battle.cs` opens and closes battles, `.Online.cs` is the online half, `.HotSeat.cs` the hot seat with `HeroesHotSeatRules.cs`), the controllers, the settings, the art and sound assets, and the development tours (`HeroesTour.cs`, `HeroesUITour.cs`, `HeroesOnlineTour.cs`). |
 | `Scripts/Server` | The generated bindings of the game's server and the client stamped for them. |
 | `Scenes` | `Heroes.unity`, and `HeroesBattle.unity` with the prefabs of a town's gatehouse, the ruin of a tower, loose stones and the banners of the five colours, and its colour grading (`Scenes/HeroesBattle/`). |
-| `Editor` | The builders: the art (`HeroesArtBuilder.cs`, with `HeroesObjectArt`, `HeroesBattleArt`, `HeroesPortraits` and `HeroesUIArt` for the interface, its fonts and its pointers), the scenarios (`HeroesContentBuilder.cs`), the two scenes (`HeroesSceneBuilder.cs`), contact sheets, and the menu that runs them all. |
+| `Editor` | The builders: the art (`HeroesArtBuilder.cs`, with `HeroesObjectArt`, `HeroesBattleArt`, `HeroesPortraits` and `HeroesUIArt` for the interface, its fonts and its pointers; for a theme made of the textured kits `HeroesKitArt` for their materials, `HeroesRealmCharacters` for the people, `HeroesRealmArt` for the creatures, heroes and land, `HeroesRealmObjects` and `HeroesRealmVillage` for the map objects and towns, `HeroesRealmBattle` for the battlefield), the themes' specs (`HeroesThemeSpec.cs`), the scenarios (`HeroesContentBuilder.cs`), the two scenes (`HeroesSceneBuilder.cs`), contact sheets, and the menu that runs them all. |
 | `Tests/Editor` | The rules under test: the grid, the generator and skirmish settings, paths, turns, battles in both styles, sieges, the event contract, the damage estimate, the protocol of the log, and that the same commands always give the same game. |
 | `Server` | The server module: the seats of a room, the checks around the action log and the statistics, on top of the Gamebox base server. |
 
@@ -270,7 +270,9 @@ in place, so a rebuild keeps the references the scenes already have and writes t
 - **Heroes > Rebuild Battle Scene**: `Scenes/HeroesBattle.unity` alone, next to the open scene, listed in the game's
   definition as an extra scene and in the build right after the game's own scene. The game loads it by name
   (`GameLauncher.LoadSceneAdditive`); a build without it builds the same field in a scene made in code.
-- **Heroes > Contact Sheets** renders every creature, map object and town into `Logs/shots`.
+- **Heroes > Contact Sheets** renders every creature, hero, map object, town and piece of scenery into `Logs/shots`,
+  the creatures in their idle clips and the heroes in their saddles; **Contact Sheets (Grim Realm)** does the same for the
+  second theme (`grim-units.png`...).
 
 ## Checking it
 
@@ -315,7 +317,9 @@ has a file in `Art/Licenses` with what was taken from it, and `Art/Licenses/CRED
 the title screen shows.
 
 - **Downloaded**: the models of KayKit's Adventurers, Skeletons, Dungeon, Halloween and Medieval Hexagon packs and
-  Quaternius's characters, monsters, animals and items (CC0); the terrain textures and the grain of the interface's
+  Quaternius's characters, monsters, animals and items (CC0); for the Grim Realm, Quaternius's textured kits (CC0, in
+  `Art/Models/Quaternius/Kits`): the Universal Base Characters and the Modular Character Outfits - Fantasy, the
+  Universal Animation Library 1 and 2, the Medieval Village, Fantasy Props and Stylized Nature MegaKits; the terrain textures and the grain of the interface's
   leather, paper and wood from ambientCG (CC0); five pure skies from Poly Haven for the battlefield (CC0); the icons
   from game-icons.net (CC BY 3.0, with the author of every icon in `GameIcons-License.txt`); Kenney's Fantasy UI Borders
   and Cursor Pack (CC0); the fonts Cinzel, Cinzel Decorative, Alegreya and Noto Sans Symbols (OFL); music by Kevin
@@ -351,17 +355,31 @@ There are two themes, in `Content/Themes`, and the game's definition (`Resources
 first and lists both:
 
 - **Classic**: the game as it was drawn, old gold on dark leather and stone, parchment, clear skies, Cinzel and Alegreya.
-- **Grim Realm**: a darker, mature look of the same models. Their colours are drained and cold (a grade over the packs'
-  sheets and tints), the ground is mud, ash, dead grass and wet rock, dead trees stand in the forests and dead trees,
-  ruins and a crypt ring the battlefields under overcast, stormy and dusk skies with a thicker fog. The interface is
-  black leather and iron with riveted corners instead of gold ornaments, bone white paper with stains, blood red
-  ribbons and cold steel bars; the pointers are an iron gauntlet and steel swords; the portraits are lit with a cold
-  rim and their corners darkened in an iron frame; the words are set in IM Fell English, the titles in Pirata One and
-  the name of the game in UnifrakturCook (all OFL, in `Art/Themes/GrimRealm/Fonts` with their licences and
-  `Sources.txt`); the magic glows in blood red and cold blue. The music is the same. Everything of it is generated into
-  `Art/Themes/GrimRealm` by the same builders, run with the `HeroesThemeSpec.GrimRealm` spec (the folders, the colour
-  grade, the terrain grades, the sky table, the kit style, the fonts, the pointer tints, the portrait light and the
-  palette are all in `Editor/HeroesThemeSpec.cs`; there is no second copy of any builder).
+- **Grim Realm**: the realm in high detail, bright and rich, drawn with Quaternius's textured kits instead of the low
+  poly packs (`HeroesThemeSpec.Models = ModelSet.Kits`). Its people are one rig dressed in the outfits of the character
+  kit (peasants and rangers of both sexes, the bare torso of the base body over an outfit's trousers), with the heads,
+  eyes, brows and hair of the base characters bound to the outfit's skeleton, a weapon in the fist or a staff and bow
+  held upright, a shield on the forearm, and the clips of the Universal Animation Library (idle, walk, sword and spell,
+  zombie walk, death) copied into legacy clips that turn the bones and leave their lengths alone
+  (`HeroesRealmCharacters`). Every faction wears its colours (the rangers' green cloth repainted blue for the Castle,
+  violet for the Necropolis, red for the Stronghold), the dead have bone white or ashen skin and glowing eyes, the
+  knights of the Castle ride, and the beasts and dragons keep the packs' models with their colours a little richer.
+  Towns, mines and the buildings a hero visits are built of the village kit's timber, plaster, brick and round tiles and
+  the props kit (`HeroesRealmVillage`, `HeroesRealmObjects`), the woods, rocks and reeds are the nature kit's, and the
+  open ground of the map, the title valley and the battlefields is strewn with its grass, flowers, bushes, ferns and
+  pebbles (`HeroesArt.cover`). The battlefields have obstacles, a ring of groves and outcrops and a siege gatehouse of
+  the same kits (`HeroesRealmBattle`). The kits' materials are URP Lit made from the PBR maps they came with
+  (`HeroesKitArt`; the props, which tint a trim sheet per vertex, are drawn with `Shaders/KitLit.shader`, URP Lit with
+  vertex colours). The light is a warm sun under clear skies, and the map, the title and the battlefields are graded
+  like a modern game by the theme's post processing (`HeroesTheme.look` and `battleLook`: ACES tone mapping, bloom, cool
+  shadows and warm highlights, a soft vignette). The interface is sapphire leather under polished gold rims set with
+  sapphires, silver on the lesser rims, ivory paper and royal violet ribbons, buttons of blue lacquer; the titles are
+  set in Pirata One, the words in IM Fell English and the name of the game in UnifrakturCook (all OFL, in
+  `Art/Themes/GrimRealm/Fonts` with their licences and `Sources.txt`); the magic leans toward gold and arcane blue. The
+  music is the same. Everything of it is generated into `Art/Themes/GrimRealm` by the same builders, run with the
+  `HeroesThemeSpec.GrimRealm` spec (the folders, the model set, the terrain grades, the sky table, the kit style, the
+  fonts, the pointer tints, the portrait light, the palette and the post processing are all in
+  `Editor/HeroesThemeSpec.cs`).
 
 How to switch: point the definition's `Theme` at another theme (or `Gamebox > Themes > Choose...`), press the theme
 button of the game's card in the launcher, pick a **Look** in the settings panel of the pause menu, or start a
@@ -375,4 +393,5 @@ also **Heroes > Rebuild Themes**) and the scene; **Heroes > Build Art (Grim Real
 **Heroes > Art > Interface Preview (Grim Realm)** draws its kit into `Logs/shots/uikit-grim.png`. The theme tests
 (`Tests/Editor/Themes`) check that both themes exist and are complete (`Validate`), that the definition lists them,
 that the classic theme carries the art the scene was built with, that nothing of the classic art is referenced by the
-Grim Realm, and that picking a theme changes what the game reads.
+Grim Realm, that the Grim Realm's people are the kits' (each with every clip it plays) and that it has its cover and
+post processing while the classic look has neither, and that picking a theme changes what the game reads.

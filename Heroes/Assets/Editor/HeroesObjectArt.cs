@@ -36,6 +36,18 @@ namespace Portfolio.Heroes.EditorTools
 
         public static void Build(HeroesArt art)
         {
+            if (HeroesThemeSpec.Current.Models == ModelSet.Kits)
+            {
+                // The textured kits: timbered towns and props of their own (HeroesRealmObjects).
+                HeroesRealmObjects.Build(art);
+                return;
+            }
+            BuildPacks(art);
+        }
+
+        /// <summary>The map objects and towns of the low poly packs.</summary>
+        internal static void BuildPacks(HeroesArt art)
+        {
             art.objects.Clear();
             art.towns.Clear();
             Mines(art);

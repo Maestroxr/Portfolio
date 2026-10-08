@@ -383,6 +383,12 @@ namespace Portfolio.Heroes.EditorTools
         {
             HeroesThemeSpec spec = HeroesThemeSpec.Current;
             string folder = spec == HeroesThemeSpec.Classic ? BattleAssets : $"{spec.Generated}/Siege";
+            if (spec.Models == ModelSet.Kits)
+            {
+                // The textured kits: a gatehouse and wall of the village's stone (HeroesRealmBattle).
+                HeroesRealmBattle.SiegeArt(art, folder);
+                return;
+            }
             art.siegeGate = Gate(folder);
             art.siegeRuin = Ruin(folder);
             art.siegeStones = Stones(folder);
@@ -396,7 +402,7 @@ namespace Portfolio.Heroes.EditorTools
         /// so it stands out of the line seen from above, doors shut; and before it the drawbridge down on the ground. It
         /// runs along x, centered on its origin (the middle of the wall).
         /// </summary>
-        private static GameObject Gate(string folder)
+        internal static GameObject Gate(string folder)
         {
             GameObject wall = HeroesArtBuilder.Model(WallModel);
             float wallLength = wall != null ? Mathf.Max(0.01f, HeroesArtBuilder.BoundsOf(wall).size.x) : 2f;
@@ -433,7 +439,7 @@ namespace Portfolio.Heroes.EditorTools
         /// A heap of the wall's stones, about a cell across and knee high, standing on the ground at its origin: where an
         /// arrow tower fell, and at the broken ends of the wall beside a breach (smaller there).
         /// </summary>
-        private static GameObject Ruin(string folder)
+        internal static GameObject Ruin(string folder)
         {
             GameObject root = HeroesArtBuilder.Root("Ruin");
             HeroesArtBuilder.Piece(root.transform, "KayKit/Dungeon/rubble_large", new Vector3(0.1f, 0f, 0.05f), 20f, 1f, 0.75f, RuinStone);
@@ -457,7 +463,7 @@ namespace Portfolio.Heroes.EditorTools
         }
 
         /// <summary>A few loose stones of the wall lying on the ground, about a pace across, for the ground of a breach.</summary>
-        private static GameObject Stones(string folder)
+        internal static GameObject Stones(string folder)
         {
             GameObject root = HeroesArtBuilder.Root("Stones");
             HeroesArtBuilder.Piece(root.transform, StoneModel, new Vector3(0.2f, 0f, -0.15f), 25f, 1.2f, 0f, LooseStone);
@@ -475,7 +481,7 @@ namespace Portfolio.Heroes.EditorTools
         /// nobody): the dungeon's banners on their brackets at not quite half their size, standing on their lower edge, the cloth
         /// across x.
         /// </summary>
-        private static GameObject[] Banners(string folder)
+        internal static GameObject[] Banners(string folder)
         {
             string[] colors = { "red", "blue", "green", "yellow", "white" };
             var banners = new GameObject[colors.Length];

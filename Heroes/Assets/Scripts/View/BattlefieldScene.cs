@@ -116,7 +116,7 @@ namespace Portfolio.Heroes
         /// Loads the HeroesBattle scene next to the ones open (or, when the build does not have it, makes a scene in code
         /// with a field of its own) and hands its field over once it is there.
         /// </summary>
-        public static IEnumerator Load(HeroesArt art, Action<BattlefieldScene> ready)
+        public static IEnumerator Load(HeroesArt art, Action<BattlefieldScene> ready, VolumeProfile look = null)
         {
             BattlefieldScene found = null;
             if (GameLauncher.CanLoadScene(SceneName))
@@ -167,6 +167,11 @@ namespace Portfolio.Heroes
                 found.art = art;
             }
             found.Prepare();
+            // A theme with a look of its own for the battlefield grades it so; the others keep the scene's grading.
+            if (look != null && found.volume != null)
+            {
+                found.volume.sharedProfile = look;
+            }
             current = found;
             ready(found);
         }
@@ -796,6 +801,49 @@ namespace Portfolio.Heroes
                     }
                 }
             }
+            Strew(land);
+        }
+
+        /// <summary>
+        /// The land's cover (grass, flowers, bushes, pebbles) strewn thickly around the field, and its lowest pieces lightly
+        /// over it. A theme without cover leaves the ground bare.
+        /// </summary>
+        private void Strew(TerrainType land)
+        {
+            HeroesArt.CoverArt cover = art.Cover(land);
+            if (cover == null)
+            {
+                return;
+            }
+            int around = Mathf.RoundToInt(150 * cover.density);
+            int over = cover.low != null && cover.low.Length > 0 ? Mathf.RoundToInt(40 * cover.density) : 0;
+            for (int i = 0; i < around + over; i++)
+            {
+                Vector3 at;
+                if (i < around)
+                {
+                    // Down the sides, behind, and a narrow strip before the first row.
+                    int side = dice.Next(4);
+                    at = side == 0 ? new Vector3(Range(-14f, -0.6f), 0f, Range(-2f, size.y + 10f))
+                        : side == 1 ? new Vector3(Range(size.x + 0.6f, size.x + 14f), 0f, Range(-2f, size.y + 10f))
+                        : side == 2 ? new Vector3(Range(-8f, size.x + 8f), 0f, Range(size.y + 0.6f, size.y + 10f))
+                        : new Vector3(Range(-4f, size.x + 4f), 0f, Range(-3.5f, -0.8f));
+                }
+                else
+                {
+                    at = new Vector3(Range(0f, size.x), 0f, Range(0f, size.y));
+                }
+                if (NearTown(at, 5f) || NearWall(at, 1.2f))
+                {
+                    continue;
+                }
+                GameObject[] pieces = i < around ? cover.prefabs : cover.low;
+                GameObject piece = Stand(pieces[dice.Next(pieces.Length)], at, Range(1.05f, 1.45f), null, 0f);
+                if (piece != null)
+                {
+                    piece.name = "Cover";
+                }
+            }
         }
 
         private bool NearTown(Vector3 at, float distance)
@@ -815,7 +863,7 @@ namespace Portfolio.Heroes
             switch (land)
             {
                 case TerrainType.Snow:
-                    return art.pineTrees;
+                    return art.snowTrees != null && art.snowTrees.Length > 0 ? art.snowTrees : art.pineTrees;
                 case TerrainType.Sand:
                 case TerrainType.Wasteland:
                 case TerrainType.Rough:

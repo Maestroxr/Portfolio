@@ -1,0 +1,26 @@
+Quaternius kits (quaternius.com), CC0
+
+The textured kits the remade Grim Realm is built from, the free Standard versions downloaded from
+https://quaternius.itch.io on 2026-10-07. Every one of them is CC0 1.0 Universal (the licence files that came with
+them are in Art/Models/Quaternius/Kits).
+
+- Universal Base Characters [Standard], https://quaternius.com/packs/universalbasecharacters.html
+  Used (Kits/Characters): Superhero_Male_FullBody, Superhero_Female_FullBody (their heads, eyes and brows are put on
+  the outfits; the upper body of the male is the brawler's), and the hairstyles rigged to the head bone (Hair).
+- Modular Character Outfits - Fantasy [Standard], https://quaternius.com/packs/modularcharacteroutfitsfantasy.html
+  Used (Kits/Characters): the Peasant and Ranger outfits of both sexes, and their legs and feet on their own (Parts).
+- Universal Animation Library and Universal Animation Library 2 [Standard],
+  https://quaternius.com/packs/universalanimationlibrary.html, https://quaternius.com/packs/universalanimationlibrary2.html
+  Used (Kits/Animation): UAL1_Standard and UAL2_Standard (without root motion); the builder copies the clips the people
+  play into legacy clips of the theme.
+- Medieval Village MegaKit [Standard], https://quaternius.com/packs/medievalvillagemegakit.html
+  Used (Kits/Village): every modular piece, for the towns and buildings.
+- Fantasy Props MegaKit [Standard], https://quaternius.com/packs/fantasypropsmegakit.html
+  Used (Kits/Props): every prop but Chest_Wood (10 MB of geometry).
+- Stylized Nature MegaKit [Standard], https://quaternius.com/packs/stylizednaturemegakit.html
+  Used (Kits/Nature): every model (the FBX (Unity) export).
+
+The textures were prepared once when they were downloaded (scratchpad tool prep_kits.py of the session that added
+them): base colours scaled down to at most 2048 pixels (JPEG when they have no alpha), normal maps in Unity's
+convention, and each material's ORM or roughness map repacked as one map for URP Lit (metallic in red, occlusion in
+green, smoothness in alpha). Materials.json in each kit says which textures each material of its models wears.

@@ -76,6 +76,11 @@ namespace Portfolio.Heroes.EditorTools
                 AnimationClip found = Clip(animation, clip);
                 if (found == null)
                 {
+                    // A model riding along without a puppet of its own (the cavalier's knight) holds the clip it plays by itself.
+                    if (animation.playAutomatically && animation.clip != null && animation.GetComponentsInParent<Animation>(true).Length > 1)
+                    {
+                        animation.clip.SampleAnimation(animation.gameObject, 0f);
+                    }
                     continue;
                 }
                 found.SampleAnimation(animation.gameObject, found.length * at);
@@ -173,6 +178,13 @@ namespace Portfolio.Heroes.EditorTools
                     shot.Padding = 0.04f;
                     break;
             }
+            if (shot.Framing != StudioFraming.Bust && unit.creature != CreatureId.Cavalier && IsPerson(unit.prefab))
+            {
+                // Every person of the kits stands as tall as a man, so all of them are seen from the knees up.
+                shot.Framing = StudioFraming.Bust;
+                shot.BustFraction = 0.72f;
+                shot.Padding = 0.04f;
+            }
             Texture2D picture = studio.Shoot(unit.prefab, shot, model => Pose(model, unit.idle, at));
             return Save(picture, $"Creature_{unit.creature}");
         }
@@ -208,7 +220,13 @@ namespace Portfolio.Heroes.EditorTools
         private static bool IsTall(HeroesArt.HeroArt hero)
         {
             var animation = hero.rider != null ? hero.rider.GetComponentInChildren<Animation>(true) : null;
-            return animation != null && animation.GetClip("CharacterArmature|Idle") != null;
+            return animation != null && (animation.GetClip("CharacterArmature|Idle") != null || IsPerson(hero.rider));
+        }
+
+        /// <summary>Whether a model is one of the people of the kits (their rig has a pelvis; the packs' adventurers have hips).</summary>
+        private static bool IsPerson(GameObject model)
+        {
+            return model != null && model.GetComponentsInChildren<Transform>(true).Any(bone => bone.name == "pelvis");
         }
 
         /// <summary>The hero on his mount, as the map shows him: the rider seated on the saddle.</summary>

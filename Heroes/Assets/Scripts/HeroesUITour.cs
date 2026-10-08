@@ -190,6 +190,7 @@ namespace Portfolio.Heroes
             yield return Shot("adventure_start");
             yield return new WaitForSeconds(2.2f);
             yield return Shot("adventure_settled");
+            yield return FrameTime("the adventure map");
 
             HeroState hero = FirstHero();
             MapObject monster = Nearest(hero, ObjectKind.Monster);
@@ -759,6 +760,24 @@ namespace Portfolio.Heroes
             ScreenCapture.CaptureScreenshot(file);
             Write($"shot {file}");
             yield return new WaitForSecondsRealtime(0.3f);
+        }
+
+        /// <summary>Writes how long the frames of the screen as it stands take, over two seconds: on average and at worst.</summary>
+        private IEnumerator FrameTime(string what)
+        {
+            float start = Time.realtimeSinceStartup;
+            float last = start;
+            float worst = 0f;
+            int frames = 0;
+            while (Time.realtimeSinceStartup - start < 2f)
+            {
+                yield return null;
+                float now = Time.realtimeSinceStartup;
+                worst = Mathf.Max(worst, now - last);
+                last = now;
+                frames++;
+            }
+            Write($"Frames on {what}: {(last - start) * 1000f / Mathf.Max(1, frames):0.0} ms on average, {worst * 1000f:0.0} ms at worst.");
         }
 
         private void Write(string text)

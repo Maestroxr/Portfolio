@@ -56,6 +56,8 @@ namespace Portfolio.Heroes.EditorTools
             HeroesArt.SkyArt mapSky = art.skies.Find(sky => sky.name == spec.MapSky) ?? art.Sky(TerrainType.Grass);
             theme.atmosphere.sky = mapSky != null ? mapSky.material : null;
             theme.glows = Copy(spec.Glows);
+            theme.look = spec.Post != null ? Profile($"{spec.Generated}/Look/Map.asset", spec.Post) : null;
+            theme.battleLook = spec.BattlePost != null ? Profile($"{spec.Generated}/Look/Battle.asset", spec.BattlePost) : null;
             theme.pointers = new HeroesTheme.Pointers
             {
                 cursors = (Texture2D[])art.cursors.Clone(),
@@ -71,6 +73,34 @@ namespace Portfolio.Heroes.EditorTools
             theme.Menu.rowsColor = Color.white;
             EditorUtility.SetDirty(theme);
             return theme;
+        }
+
+        /// <summary>
+        /// The post processing of a theme as a Volume profile asset, written in place: the overrides live in the profile's
+        /// file, as the profile editor keeps them.
+        /// </summary>
+        private static UnityEngine.Rendering.VolumeProfile Profile(string relative, PostLook look)
+        {
+            var profile = HeroesAssets.Load<UnityEngine.Rendering.VolumeProfile>(relative);
+            if (profile == null)
+            {
+                profile = ScriptableObject.CreateInstance<UnityEngine.Rendering.VolumeProfile>();
+                HeroesAssets.EnsureFolderOf(relative);
+                AssetDatabase.CreateAsset(profile, HeroesAssets.Path(relative));
+            }
+            look.Apply(profile);
+            foreach (UnityEngine.Rendering.VolumeComponent component in profile.components)
+            {
+                if (!AssetDatabase.Contains(component))
+                {
+                    component.name = component.GetType().Name;
+                    component.hideFlags = HideFlags.HideInInspector | HideFlags.HideInHierarchy;
+                    AssetDatabase.AddObjectToAsset(component, profile);
+                }
+                EditorUtility.SetDirty(component);
+            }
+            EditorUtility.SetDirty(profile);
+            return profile;
         }
 
         /// <summary>A copy of a serializable part of a spec, so the asset does not share the spec's own.</summary>

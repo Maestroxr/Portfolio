@@ -197,6 +197,10 @@ namespace Portfolio.Heroes
         public Atmosphere atmosphere = new Atmosphere();
         public Glows glows = new Glows();
         public Pointers pointers = new Pointers();
+        [Tooltip("The post processing of the map and the title (bloom, tone mapping, colour), or none for the plain camera.")]
+        [ThemeOptional] public UnityEngine.Rendering.VolumeProfile look;
+        [Tooltip("The post processing of a battlefield of its own, or none for the battlefield's own grading.")]
+        [ThemeOptional] public UnityEngine.Rendering.VolumeProfile battleLook;
 
         public override GameType Game => GameType.Heroes;
 

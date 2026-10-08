@@ -16,12 +16,12 @@ MonoBehaviour:
   - creature: 0
     prefab: {fileID: 2927694780250003874, guid: 05ab0dd6a51583143acfe52e4b83d43e, type: 3}
     height: 1.35
-    idle: CharacterArmature|Idle
-    walk: CharacterArmature|Walk
-    attack: CharacterArmature|Attack
+    idle: Idle
+    walk: Walk
+    attack: Sword_Attack
     shoot: 
-    hit: CharacterArmature|RecieveHit
-    death: CharacterArmature|Death
+    hit: Hit_Chest
+    death: Death01
     cast: 
     projectile: 0
     flies: 0
@@ -29,12 +29,12 @@ MonoBehaviour:
   - creature: 1
     prefab: {fileID: 7615779599535841385, guid: 386094be644b5a34686ff531bba75455, type: 3}
     height: 1.5
-    idle: CharacterArmature|Idle
-    walk: CharacterArmature|Walk
-    attack: CharacterArmature|Punch
-    shoot: CharacterArmature|Bow_Attack_Shoot
-    hit: CharacterArmature|RecieveHit
-    death: CharacterArmature|Death
+    idle: Pistol_Idle_Loop
+    walk: Walk
+    attack: Punch_Cross
+    shoot: Pistol_Shoot
+    hit: Hit_Chest
+    death: Death01
     cast: 
     projectile: 1
     flies: 0
@@ -42,45 +42,45 @@ MonoBehaviour:
   - creature: 2
     prefab: {fileID: 3128779021275519246, guid: cb0af0cdbdfbc85458ef849a4624ecf4, type: 3}
     height: 1.6
-    idle: Idle
-    walk: Walking_A
-    attack: 1H_Melee_Attack_Chop
+    idle: Sword_Idle
+    walk: Walk
+    attack: Sword_Regular_A
     shoot: 
-    hit: Hit_A
-    death: Death_A
-    cast: Spellcast_Shoot
+    hit: Hit_Chest
+    death: Death01
+    cast: 
     projectile: 0
     flies: 0
     portrait: {fileID: 21300000, guid: b25f56345ff52484980688870ebfb278, type: 3}
   - creature: 3
     prefab: {fileID: 8114323738726291841, guid: 6100229b92e49214696231833ea0c7aa, type: 3}
     height: 1.6
-    idle: CharacterArmature|Idle
-    walk: CharacterArmature|Walk
-    attack: CharacterArmature|Punch
-    shoot: CharacterArmature|Spell1
-    hit: CharacterArmature|RecieveHit
-    death: CharacterArmature|Death
-    cast: CharacterArmature|Spell1
+    idle: Idle
+    walk: Walk
+    attack: Spell_Simple_Shoot
+    shoot: Spell_Simple_Shoot
+    hit: Hit_Chest
+    death: Death01
+    cast: Spell_Simple_Shoot
     projectile: 3
     flies: 0
     portrait: {fileID: 21300000, guid: a3f8525ea453ecb40910ac9ba46f39fe, type: 3}
   - creature: 4
     prefab: {fileID: 835432686985305970, guid: d686c7b7fb0681a40b4a4f8ad9794a07, type: 3}
     height: 1.75
-    idle: CharacterArmature|Idle
-    walk: CharacterArmature|Walk
-    attack: CharacterArmature|Sword_Attack
+    idle: Sword_Idle
+    walk: Walk
+    attack: Sword_Regular_C
     shoot: 
-    hit: CharacterArmature|RecieveHit
-    death: CharacterArmature|Death
+    hit: Hit_Chest
+    death: Death01
     cast: 
     projectile: 0
     flies: 0
     portrait: {fileID: 21300000, guid: 565a400a0f554434c86445af02a8c823, type: 3}
   - creature: 5
     prefab: {fileID: 1770262365388571990, guid: ada48e6745f146848905d64cb015ad5e, type: 3}
-    height: 1.9
+    height: 2.21145
     idle: AnimalArmature|Idle
     walk: AnimalArmature|Gallop
     attack: AnimalArmature|Attack_Kick
@@ -107,25 +107,25 @@ MonoBehaviour:
   - creature: 7
     prefab: {fileID: 6191530562943665277, guid: fd2a0e756acc87d46b28a9cd4106e80a, type: 3}
     height: 1.35
-    idle: Idle
-    walk: Walking_A
-    attack: 1H_Melee_Attack_Chop
+    idle: Sword_Idle
+    walk: Walk
+    attack: Sword_Regular_A
     shoot: 
-    hit: Hit_A
-    death: Death_A
-    cast: Spellcast_Shoot
+    hit: Hit_Chest
+    death: Death01
+    cast: 
     projectile: 0
     flies: 0
     portrait: {fileID: 21300000, guid: 331a0b772370b6e458dde560e6043f3e, type: 3}
   - creature: 8
     prefab: {fileID: 8052956965213858322, guid: bad271192303283418fd1a015784fb5d, type: 3}
     height: 1.5
-    idle: Zombie|ZombieIdle
-    walk: Zombie|ZombieWalk
-    attack: Zombie|ZombieBite
+    idle: Zombie_Idle_Loop
+    walk: Zombie_Walk_Fwd_Loop
+    attack: Zombie_Scratch
     shoot: 
-    hit: 
-    death: 
+    hit: Hit_Chest
+    death: Death01
     cast: 
     projectile: 0
     flies: 0
@@ -133,26 +133,26 @@ MonoBehaviour:
   - creature: 9
     prefab: {fileID: 6007099449846462152, guid: ad0b78714b6ae00419e302c73b5fd567, type: 3}
     height: 1.6
-    idle: Idle
-    walk: Walking_A
-    attack: 2H_Melee_Attack_Chop
+    idle: Sword_Idle
+    walk: Walk
+    attack: Sword_Regular_B
     shoot: 
-    hit: Hit_A
-    death: Death_A
-    cast: Spellcast_Shoot
+    hit: Hit_Chest
+    death: Death01
+    cast: 
     projectile: 0
     flies: 0
     portrait: {fileID: 21300000, guid: b4c36f8fa13008942bd9fe4628833110, type: 3}
   - creature: 10
     prefab: {fileID: 7250616351417100439, guid: 777dc889a1aa89645b335ffdd3009c20, type: 3}
     height: 1.6
-    idle: Idle
-    walk: Walking_A
-    attack: 1H_Melee_Attack_Chop
-    shoot: 1H_Ranged_Shoot
-    hit: Hit_A
-    death: Death_A
-    cast: Spellcast_Shoot
+    idle: Pistol_Idle_Loop
+    walk: Walk
+    attack: Punch_Jab
+    shoot: Pistol_Shoot
+    hit: Hit_Chest
+    death: Death01
+    cast: 
     projectile: 1
     flies: 0
     portrait: {fileID: 21300000, guid: 48474f5e856a37d4caecb88c25759a53, type: 3}
@@ -173,12 +173,12 @@ MonoBehaviour:
     prefab: {fileID: 1675811465436619630, guid: 7661705748fc43c4087a41eafb78e609, type: 3}
     height: 1.9
     idle: Idle
-    walk: Walking_A
-    attack: Spellcast_Shoot
-    shoot: Spellcast_Shoot
-    hit: Hit_A
-    death: Death_A
-    cast: Spellcast_Shoot
+    walk: Walk
+    attack: Spell_Simple_Shoot
+    shoot: Spell_Simple_Shoot
+    hit: Hit_Chest
+    death: Death01
+    cast: Spell_Simple_Shoot
     projectile: 4
     flies: 0
     portrait: {fileID: 21300000, guid: 8210e14e158613d408d43b6497166915, type: 3}
@@ -212,51 +212,51 @@ MonoBehaviour:
     prefab: {fileID: 2100563075648737560, guid: b29d5407670697346aa1ee9fedcd9d55, type: 3}
     height: 1.5
     idle: Idle
-    walk: Walking_A
-    attack: 1H_Melee_Attack_Chop
+    walk: Walk
+    attack: Punch_Cross
     shoot: 
-    hit: Hit_A
-    death: Death_A
-    cast: Spellcast_Shoot
+    hit: Hit_Chest
+    death: Death01
+    cast: 
     projectile: 0
     flies: 0
     portrait: {fileID: 21300000, guid: d7efafc33f1c1e74b9304013cd0ef596, type: 3}
   - creature: 16
     prefab: {fileID: 1312430464400885428, guid: a808d6d8c2b2065419cfba0625c7c312, type: 3}
     height: 1.6
-    idle: Idle
-    walk: Walking_A
-    attack: 1H_Melee_Attack_Chop
-    shoot: 1H_Ranged_Shoot
-    hit: Hit_A
-    death: Death_A
-    cast: Spellcast_Shoot
+    idle: Pistol_Idle_Loop
+    walk: Walk
+    attack: Punch_Jab
+    shoot: Pistol_Shoot
+    hit: Hit_Chest
+    death: Death01
+    cast: 
     projectile: 1
     flies: 0
     portrait: {fileID: 21300000, guid: 5ea21cd9d8dbc924c8bbb5382eb712de, type: 3}
   - creature: 17
     prefab: {fileID: 6381082547277949747, guid: bb2abd68460568549a895bc0ded6e0be, type: 3}
     height: 1.6
-    idle: CharacterArmature|Idle
-    walk: CharacterArmature|Walk
-    attack: CharacterArmature|Punch
-    shoot: CharacterArmature|Spell1
-    hit: CharacterArmature|RecieveHit
-    death: CharacterArmature|Death
-    cast: CharacterArmature|Spell1
+    idle: Idle
+    walk: Walk
+    attack: Spell_Simple_Shoot
+    shoot: Spell_Simple_Shoot
+    hit: Hit_Chest
+    death: Death01
+    cast: Spell_Simple_Shoot
     projectile: 5
     flies: 0
     portrait: {fileID: 21300000, guid: b6c2c84ff39a82746978a77f4bef0e6a, type: 3}
   - creature: 18
     prefab: {fileID: 6946248420559779313, guid: 5905620e93716f64ea4f9dddbc2488d3, type: 3}
     height: 1.75
-    idle: Idle
-    walk: Walking_A
-    attack: 2H_Melee_Attack_Chop
+    idle: Sword_Idle
+    walk: Walk
+    attack: Sword_Regular_Combo
     shoot: 
-    hit: Hit_A
-    death: Death_A
-    cast: Spellcast_Shoot
+    hit: Hit_Chest
+    death: Death01
+    cast: 
     projectile: 0
     flies: 0
     portrait: {fileID: 21300000, guid: df2a6333256b9a84c8d7bf432bf2b6a7, type: 3}
@@ -302,12 +302,12 @@ MonoBehaviour:
   - creature: 22
     prefab: {fileID: 4397873661705603605, guid: d5ccc26bf001c99429e7a11fad87106b, type: 3}
     height: 1.5
-    idle: CharacterArmature|Idle
-    walk: CharacterArmature|Walk
-    attack: CharacterArmature|Dagger_Attack
+    idle: Sword_Idle
+    walk: Walk
+    attack: Melee_Hook
     shoot: 
-    hit: CharacterArmature|RecieveHit
-    death: CharacterArmature|Death
+    hit: Hit_Chest
+    death: Death01
     cast: 
     projectile: 0
     flies: 0
@@ -342,12 +342,12 @@ MonoBehaviour:
     prefab: {fileID: 7184617429396044796, guid: 1ae0e56bcaef77944b6e782240668f1d, type: 3}
     height: 1.6
     idle: Idle
-    walk: Walking_A
-    attack: Spellcast_Shoot
-    shoot: Spellcast_Shoot
-    hit: Hit_A
-    death: Death_A
-    cast: Spellcast_Shoot
+    walk: Walk
+    attack: Spell_Simple_Shoot
+    shoot: Spell_Simple_Shoot
+    hit: Hit_Chest
+    death: Death01
+    cast: Spell_Simple_Shoot
     projectile: 6
     flies: 0
     portrait: {fileID: 21300000, guid: e2b3dd9099ef4f44eb67307108db1822, type: 3}
@@ -394,61 +394,61 @@ MonoBehaviour:
   - heroClass: 0
     rider: {fileID: 3375664299320547520, guid: 7b5e3dfbdf4298f4bab6e2a965db831f, type: 3}
     mount: {fileID: 7281419605979702799, guid: 15eab2373eccc9d41b87fac061aface9, type: 3}
-    riderPose: Sit_Chair_Pose
+    riderPose: KnightSaddle
     riderCast: 
     mountIdle: AnimalArmature|Idle
     mountWalk: AnimalArmature|Walk
-    seat: {x: 0, y: 0.98533344, z: 0.7260643}
+    seat: {x: 0, y: 0.5151186, z: 0.0450872}
     portrait: {fileID: 21300000, guid: cbe50389b8dec3a47ba6a6a45278b42d, type: 3}
     mounted: {fileID: 21300000, guid: bef3e353258293f418165fc4037d88d1, type: 3}
   - heroClass: 1
     rider: {fileID: 777834261806217887, guid: e5cf60e7d945ba646875e6d00c68f4c1, type: 3}
     mount: {fileID: 1857158373606221401, guid: 739d44391b671fd45b6a058b97d4350a, type: 3}
     riderPose: ClericSaddle
-    riderCast: CharacterArmature|Spell1
+    riderCast: Spell_Simple_Shoot
     mountIdle: AnimalArmature|Idle
     mountWalk: AnimalArmature|Walk
-    seat: {x: 0, y: 0.74265766, z: 0.3078839}
+    seat: {x: 0, y: 0.4892397, z: 0.04771876}
     portrait: {fileID: 21300000, guid: 63f687b5e50bf2b41a1bfe14f0cce130, type: 3}
     mounted: {fileID: 21300000, guid: b43028ae2703c4349a23c4dd25e74c51, type: 3}
   - heroClass: 2
     rider: {fileID: 4555070128963101771, guid: 2dfe3a9cddf29c040b1c62fc71ed80be, type: 3}
     mount: {fileID: 2448850774750114369, guid: 08d94c798e1ae1e459625c6b641161a3, type: 3}
-    riderPose: Sit_Chair_Pose
+    riderPose: DeathKnightSaddle
     riderCast: 
     mountIdle: AnimalArmature|Idle
     mountWalk: AnimalArmature|Walk
-    seat: {x: 0, y: 1.0008639, z: 0.20529199}
+    seat: {x: 0, y: 0.5018405, z: 0.04641737}
     portrait: {fileID: 21300000, guid: 5b62d1423587bf5489214fe9665b2a82, type: 3}
     mounted: {fileID: 21300000, guid: 193e1489844e7714b897e14cf3c8e176, type: 3}
   - heroClass: 3
     rider: {fileID: 9042369241814914235, guid: 9c0612f9cd7cbb64591d23d65b5d35f9, type: 3}
     mount: {fileID: 6748069057497864110, guid: 6e98131d8a177a5488c9c8f5b7cd09ca, type: 3}
-    riderPose: Sit_Chair_Pose
-    riderCast: Spellcast_Shoot
+    riderPose: NecromancerSaddle
+    riderCast: Spell_Simple_Shoot
     mountIdle: AnimalArmature|Idle
     mountWalk: AnimalArmature|Walk
-    seat: {x: 0, y: 1.0057467, z: 0.23277965}
+    seat: {x: 0, y: 0.49451625, z: 0.047151297}
     portrait: {fileID: 21300000, guid: 5e769fe93e183074cb325a97ac2713c2, type: 3}
     mounted: {fileID: 21300000, guid: 30ad6ac2c608da84c85f1d8414c32195, type: 3}
   - heroClass: 4
     rider: {fileID: 7844359208454091551, guid: 09a5c4095ac71724e9dc87e8886c5373, type: 3}
     mount: {fileID: 3178875535213472193, guid: 8fffb311f7872fb4c81d5cde665c7ff6, type: 3}
-    riderPose: Sit_Chair_Pose
+    riderPose: BarbarianSaddle
     riderCast: 
     mountIdle: AnimalArmature|Idle
     mountWalk: AnimalArmature|Walk
-    seat: {x: 0, y: 1.4132953, z: 0.34139737}
+    seat: {x: 0, y: 0.93966246, z: -0.1408023}
     portrait: {fileID: 21300000, guid: fbfc5c3bf66945042b40d149873845df, type: 3}
     mounted: {fileID: 21300000, guid: 9c1989e8daa61544dbd69345de688cc7, type: 3}
   - heroClass: 5
     rider: {fileID: 8963127785256887906, guid: 07453cee8b25f0347ad061f64f0513ea, type: 3}
     mount: {fileID: 4038597065965320483, guid: 23cf971144e1b1c48aac12be79a550ba, type: 3}
     riderPose: BattleMageSaddle
-    riderCast: CharacterArmature|Spell1
+    riderCast: Spell_Simple_Shoot
     mountIdle: AnimalArmature|Idle
     mountWalk: AnimalArmature|Walk
-    seat: {x: 0, y: 0.7669772, z: -0.085545674}
+    seat: {x: 0, y: 0.49451625, z: 0.047151297}
     portrait: {fileID: 21300000, guid: 7e7701bd1107c3947906cc3308622b50, type: 3}
     mounted: {fileID: 21300000, guid: 852ec7d812a6e6b4bb952b74709d1cab, type: 3}
   objects:
@@ -747,19 +747,21 @@ MonoBehaviour:
   - {fileID: 6032331455167610795, guid: 27b0cea3fa3c7da42b9f73f1f3b307d5, type: 3}
   - {fileID: 8665292019515270715, guid: 896718a54accc4f4ca41f1dac65ad01c, type: 3}
   - {fileID: 3400205188038903508, guid: efd560f5fccc57f4cb0c423d7dc2e949, type: 3}
-  - {fileID: 4640169252754026658, guid: 2b4cf4cac1004f2469f065373597eb4a, type: 3}
-  - {fileID: 2679990362825890983, guid: 32084f5bb375bdb46863a5f27bcfed5b, type: 3}
-  - {fileID: 1374736428309319442, guid: 094e5b0b7e64d8045954117038282de3, type: 3}
-  - {fileID: 6807883511907707913, guid: 5c266b5f86ee6dc49b1cb771e1f2254f, type: 3}
   pineTrees:
   - {fileID: 5383461669340205849, guid: 9810f6a4528507a4693d122b1e6427df, type: 3}
   - {fileID: 8010385063170978674, guid: 7274f91a2c4cee74da2cf72f07fb9240, type: 3}
   - {fileID: 3904660582702968421, guid: 589acdd664c157246b4230f5c09595e9, type: 3}
   - {fileID: 6403135506830736869, guid: 830635f88828dc5409e98b6d627c379a, type: 3}
+  - {fileID: 9167659550455203957, guid: 40152185f82971e459a7007e350d28d8, type: 3}
   deadTrees:
   - {fileID: 2679990362825890983, guid: 32084f5bb375bdb46863a5f27bcfed5b, type: 3}
   - {fileID: 1374736428309319442, guid: 094e5b0b7e64d8045954117038282de3, type: 3}
   - {fileID: 6807883511907707913, guid: 5c266b5f86ee6dc49b1cb771e1f2254f, type: 3}
+  - {fileID: 7866076284872697304, guid: b2b999630051d874c80074f01827ef1f, type: 3}
+  snowTrees:
+  - {fileID: 3512116353106700616, guid: e898926de384f2c46ba7c95c7e109d2a, type: 3}
+  - {fileID: 3172741503374073673, guid: 1f7ac8f34b96daa4180c4ca7e1d55af3, type: 3}
+  - {fileID: 8290718215932640094, guid: 03758f395b8dfaf409d00caefc8f961a, type: 3}
   mountains:
   - {fileID: 3898319256563480500, guid: 99616f8f11d7a024bb201cf0d1906024, type: 3}
   - {fileID: 4985014396361302563, guid: a3d7d6413ed3a7947a69f178310a90c3, type: 3}
@@ -769,13 +771,101 @@ MonoBehaviour:
   - {fileID: 791176911107435251, guid: 13ea42e3731c3e3419700733df8a686a, type: 3}
   - {fileID: 557626235585211499, guid: 111c2ab5638e1244e8dfbeed00afc9de, type: 3}
   - {fileID: 2982499290818922628, guid: 524e9804a61afdd4d8f3c02b8d82bbf1, type: 3}
-  - {fileID: 6074769071993798171, guid: 9712937e3b8c092478ee8c03bc0688d5, type: 3}
   waterPlants:
   - {fileID: 4663466921391487166, guid: e518517cc7faade4dab3ba82f73fe791, type: 3}
   - {fileID: 5752702105894853944, guid: 8a5accb1eb554614a8d11e4df50ca8c6, type: 3}
   - {fileID: 8252988185826194589, guid: aca7270f85931ee4587786fc608f8fd1, type: 3}
   - {fileID: 3516145257732502895, guid: e70661a55216bac41b7eff79c3153d75, type: 3}
-  - {fileID: 33629906475643076, guid: 4aa5065e0c303ae48a17f18221fe9dde, type: 3}
+  cover:
+  - terrain: 0
+    prefabs:
+    - {fileID: 37786324859188354, guid: a98c9a1d554895a40ba250ef7d480442, type: 3}
+    - {fileID: 1541125096320625858, guid: aaba1b1b6fba9734e95e61319edfa948, type: 3}
+    - {fileID: 37786324859188354, guid: a98c9a1d554895a40ba250ef7d480442, type: 3}
+    - {fileID: 1541125096320625858, guid: aaba1b1b6fba9734e95e61319edfa948, type: 3}
+    - {fileID: 1898771585638791970, guid: b02dd612e41cca945b359ac4b15e5f53, type: 3}
+    - {fileID: 1605903154608647480, guid: bd1144a0147bdcf478aa151f46479751, type: 3}
+    - {fileID: 8948845870807245650, guid: b5462fe491d95b94f8118c23642bbf8d, type: 3}
+    - {fileID: 3653309794491796179, guid: 31673a4eeb494ad438ae1f93685fa868, type: 3}
+    - {fileID: 6757932937234905958, guid: 34f35051e538a5e4d927f0b76cf6e185, type: 3}
+    - {fileID: 37786324859188354, guid: a98c9a1d554895a40ba250ef7d480442, type: 3}
+    - {fileID: 1603620697502515677, guid: 9daa046f4bdc2b1459d4540423f8a623, type: 3}
+    low:
+    - {fileID: 37786324859188354, guid: a98c9a1d554895a40ba250ef7d480442, type: 3}
+    - {fileID: 1541125096320625858, guid: aaba1b1b6fba9734e95e61319edfa948, type: 3}
+    - {fileID: 1898771585638791970, guid: b02dd612e41cca945b359ac4b15e5f53, type: 3}
+    density: 1.5
+  - terrain: 1
+    prefabs:
+    - {fileID: 1541125096320625858, guid: aaba1b1b6fba9734e95e61319edfa948, type: 3}
+    - {fileID: 7043671286293692952, guid: 002ec26ae1752f340b017c43d12808b2, type: 3}
+    - {fileID: 1075019570177820302, guid: 4e7007d07d28279449c181a927b16b13, type: 3}
+    - {fileID: 3653309794491796179, guid: 31673a4eeb494ad438ae1f93685fa868, type: 3}
+    - {fileID: 1898771585638791970, guid: b02dd612e41cca945b359ac4b15e5f53, type: 3}
+    - {fileID: 37786324859188354, guid: a98c9a1d554895a40ba250ef7d480442, type: 3}
+    low:
+    - {fileID: 1541125096320625858, guid: aaba1b1b6fba9734e95e61319edfa948, type: 3}
+    - {fileID: 7043671286293692952, guid: 002ec26ae1752f340b017c43d12808b2, type: 3}
+    - {fileID: 1075019570177820302, guid: 4e7007d07d28279449c181a927b16b13, type: 3}
+    - {fileID: 1898771585638791970, guid: b02dd612e41cca945b359ac4b15e5f53, type: 3}
+    - {fileID: 37786324859188354, guid: a98c9a1d554895a40ba250ef7d480442, type: 3}
+    density: 0.9
+  - terrain: 5
+    prefabs:
+    - {fileID: 4628739315881686455, guid: b57528e2f141e1e4da95863e087dd959, type: 3}
+    - {fileID: 4612234923324018905, guid: 7e0574210c0ef3348bee364857549208, type: 3}
+    - {fileID: 7043671286293692952, guid: 002ec26ae1752f340b017c43d12808b2, type: 3}
+    - {fileID: 1541125096320625858, guid: aaba1b1b6fba9734e95e61319edfa948, type: 3}
+    - {fileID: 3004232887561113455, guid: bb00f28c32b1424469dac1183023968a, type: 3}
+    low:
+    - {fileID: 4628739315881686455, guid: b57528e2f141e1e4da95863e087dd959, type: 3}
+    - {fileID: 4612234923324018905, guid: 7e0574210c0ef3348bee364857549208, type: 3}
+    - {fileID: 7043671286293692952, guid: 002ec26ae1752f340b017c43d12808b2, type: 3}
+    - {fileID: 1541125096320625858, guid: aaba1b1b6fba9734e95e61319edfa948, type: 3}
+    density: 1
+  - terrain: 2
+    prefabs:
+    - {fileID: 4021734297505102452, guid: 893cb8ff0ba7b7c4bbc2689991115fe8, type: 3}
+    - {fileID: 4029223088796493715, guid: 00ff91b9e94b1a94b9c4139a151f90f4, type: 3}
+    - {fileID: 4021734297505102452, guid: 893cb8ff0ba7b7c4bbc2689991115fe8, type: 3}
+    low:
+    - {fileID: 4021734297505102452, guid: 893cb8ff0ba7b7c4bbc2689991115fe8, type: 3}
+    - {fileID: 4029223088796493715, guid: 00ff91b9e94b1a94b9c4139a151f90f4, type: 3}
+    density: 0.6
+  - terrain: 3
+    prefabs:
+    - {fileID: 1577186777341341018, guid: c25a3765fb8fdc749a3c5be74880b8b0, type: 3}
+    low:
+    - {fileID: 1577186777341341018, guid: c25a3765fb8fdc749a3c5be74880b8b0, type: 3}
+    density: 0.35
+  - terrain: 4
+    prefabs:
+    - {fileID: 8594475779997992998, guid: ee51b07c21b2b4f44b59751660842dde, type: 3}
+    - {fileID: 8409354183973782181, guid: b785a435e85573d4a9c6ecb864673037, type: 3}
+    - {fileID: 9098405817009473242, guid: 4fa99af7ea5de26419bc3a1c2e20e0da, type: 3}
+    - {fileID: 7398860776604204498, guid: 6eb6737f5e13b2d4f969f668b6d36380, type: 3}
+    - {fileID: 8594475779997992998, guid: ee51b07c21b2b4f44b59751660842dde, type: 3}
+    low: []
+    density: 1.3
+  - terrain: 6
+    prefabs:
+    - {fileID: 5675922283399099429, guid: b2b32476cff782f489aeb945a3f8cb5d, type: 3}
+    - {fileID: 5958392531148058446, guid: a9d3ad95298f49d469b492492cf48214, type: 3}
+    - {fileID: 5675922283399099429, guid: b2b32476cff782f489aeb945a3f8cb5d, type: 3}
+    low:
+    - {fileID: 5675922283399099429, guid: b2b32476cff782f489aeb945a3f8cb5d, type: 3}
+    - {fileID: 5958392531148058446, guid: a9d3ad95298f49d469b492492cf48214, type: 3}
+    density: 0.7
+  - terrain: 8
+    prefabs:
+    - {fileID: 4628739315881686455, guid: b57528e2f141e1e4da95863e087dd959, type: 3}
+    - {fileID: 4612234923324018905, guid: 7e0574210c0ef3348bee364857549208, type: 3}
+    - {fileID: 7043671286293692952, guid: 002ec26ae1752f340b017c43d12808b2, type: 3}
+    low:
+    - {fileID: 4628739315881686455, guid: b57528e2f141e1e4da95863e087dd959, type: 3}
+    - {fileID: 4612234923324018905, guid: 7e0574210c0ef3348bee364857549208, type: 3}
+    - {fileID: 7043671286293692952, guid: 002ec26ae1752f340b017c43d12808b2, type: 3}
+    density: 0.6
   layers:
   - {fileID: 8574412962073106934, guid: 74effdb37c69b6443a71ebe6b720ff12, type: 2}
   - {fileID: 8574412962073106934, guid: c68cf090822422c439f33bac99edf76b, type: 2}
@@ -797,62 +887,62 @@ MonoBehaviour:
   particleMaterial: {fileID: 2100000, guid: 51bdd74cdc7f37346bc05c76943481c0, type: 2}
   glowMaterial: {fileID: 2100000, guid: 76add9bdbe651e6409159cd3933e3b1f, type: 2}
   skies:
-  - name: Gloom
-    material: {fileID: 2100000, guid: c0493c37a991464468b0ee68f17ac23a, type: 2}
-    sun: {r: 0.78, g: 0.8, b: 0.86, a: 1}
+  - name: Clear
+    material: {fileID: 2100000, guid: 9878701c7f300ed4fbbfcdda091fce3c, type: 2}
+    sun: {r: 1, g: 0.94, b: 0.82, a: 1}
+    sunIntensity: 1.5
+    sunAngles: {x: 47.4, y: 307.4}
+    ambientSky: {r: 0.5, g: 0.6, b: 0.78, a: 1}
+    ambientEquator: {r: 0.46, g: 0.48, b: 0.48, a: 1}
+    ambientGround: {r: 0.27, g: 0.23, b: 0.18, a: 1}
+    fog: {r: 0.61, g: 0.63, b: 0.68, a: 1}
+    fogStart: 80
+    fogEnd: 320
+  - name: Overcast
+    material: {fileID: 2100000, guid: 87aebd12ad513e047a8961eebee9afbb, type: 2}
+    sun: {r: 0.96, g: 0.95, b: 0.92, a: 1}
     sunIntensity: 1.15
     sunAngles: {x: 45, y: 302.3}
-    ambientSky: {r: 0.4, g: 0.42, b: 0.47, a: 1}
-    ambientEquator: {r: 0.34, g: 0.34, b: 0.36, a: 1}
-    ambientGround: {r: 0.16, g: 0.15, b: 0.15, a: 1}
-    fog: {r: 0.30380002, g: 0.3162, b: 0.3348, a: 1}
-    fogStart: 35
-    fogEnd: 200
-  - name: Bleak
-    material: {fileID: 2100000, guid: cc5e265eab4422347a434dde64129f15, type: 2}
-    sun: {r: 0.82, g: 0.82, b: 0.86, a: 1}
-    sunIntensity: 1.25
-    sunAngles: {x: 47.4, y: 307.4}
-    ambientSky: {r: 0.38, g: 0.41, b: 0.48, a: 1}
-    ambientEquator: {r: 0.34, g: 0.34, b: 0.36, a: 1}
-    ambientGround: {r: 0.15, g: 0.14, b: 0.13, a: 1}
-    fog: {r: 0.36600003, g: 0.37800002, b: 0.40800002, a: 1}
-    fogStart: 35
-    fogEnd: 200
-  - name: Storm
-    material: {fileID: 2100000, guid: 317030d5ae335014aa02636e106ba67a, type: 2}
-    sun: {r: 0.84, g: 0.8, b: 0.76, a: 1}
-    sunIntensity: 1.2
-    sunAngles: {x: 26, y: 143.2}
-    ambientSky: {r: 0.38, g: 0.38, b: 0.42, a: 1}
-    ambientEquator: {r: 0.36, g: 0.33, b: 0.31, a: 1}
-    ambientGround: {r: 0.16, g: 0.14, b: 0.13, a: 1}
-    fog: {r: 0.39000002, g: 0.39600003, b: 0.36, a: 1}
-    fogStart: 35
-    fogEnd: 200
+    ambientSky: {r: 0.6, g: 0.64, b: 0.7, a: 1}
+    ambientEquator: {r: 0.52, g: 0.52, b: 0.52, a: 1}
+    ambientGround: {r: 0.32, g: 0.3, b: 0.26, a: 1}
+    fog: {r: 0.49, g: 0.51, b: 0.54, a: 1}
+    fogStart: 80
+    fogEnd: 320
   - name: Snow
     material: {fileID: 2100000, guid: 56c180fcd9362d2429de3e0ae570c5be, type: 2}
-    sun: {r: 0.84, g: 0.86, b: 0.92, a: 1}
-    sunIntensity: 1.1
+    sun: {r: 1, g: 0.97, b: 0.94, a: 1}
+    sunIntensity: 1.2
     sunAngles: {x: 35, y: 312.7}
-    ambientSky: {r: 0.44, g: 0.46, b: 0.5, a: 1}
-    ambientEquator: {r: 0.36, g: 0.37, b: 0.4, a: 1}
-    ambientGround: {r: 0.22, g: 0.22, b: 0.24, a: 1}
-    fog: {r: 0.3876, g: 0.3876, b: 0.3808, a: 1}
-    fogStart: 35
-    fogEnd: 200
-  - name: Dusk
-    material: {fileID: 2100000, guid: 7c6586372f5495b4dbee052609b3433e, type: 2}
-    sun: {r: 0.92, g: 0.52, b: 0.38, a: 1}
-    sunIntensity: 1
-    sunAngles: {x: 18, y: 304.8}
-    ambientSky: {r: 0.3, g: 0.28, b: 0.38, a: 1}
-    ambientEquator: {r: 0.3, g: 0.23, b: 0.25, a: 1}
-    ambientGround: {r: 0.12, g: 0.1, b: 0.1, a: 1}
-    fog: {r: 0.399, g: 0.35, b: 0.399, a: 1}
-    fogStart: 35
-    fogEnd: 200
-  terrainSkies: 000000000100000002000000030000000000000002000000040000000100000004000000i
+    ambientSky: {r: 0.62, g: 0.68, b: 0.78, a: 1}
+    ambientEquator: {r: 0.56, g: 0.58, b: 0.62, a: 1}
+    ambientGround: {r: 0.42, g: 0.42, b: 0.45, a: 1}
+    fog: {r: 0.57, g: 0.57, b: 0.56, a: 1}
+    fogStart: 80
+    fogEnd: 320
+  - name: Wasteland
+    material: {fileID: 2100000, guid: 34ebfaa158cdc174e9efb879969237e7, type: 2}
+    sun: {r: 1, g: 0.88, b: 0.68, a: 1}
+    sunIntensity: 1.4
+    sunAngles: {x: 48, y: 305}
+    ambientSky: {r: 0.6, g: 0.63, b: 0.72, a: 1}
+    ambientEquator: {r: 0.56, g: 0.5, b: 0.44, a: 1}
+    ambientGround: {r: 0.34, g: 0.27, b: 0.21, a: 1}
+    fog: {r: 0.65, g: 0.66, b: 0.6, a: 1}
+    fogStart: 80
+    fogEnd: 320
+  - name: Golden
+    material: {fileID: 2100000, guid: c8dd112e17a14e742a312ee18a77d306, type: 2}
+    sun: {r: 1, g: 0.76, b: 0.54, a: 1}
+    sunIntensity: 1.3
+    sunAngles: {x: 32, y: 304.8}
+    ambientSky: {r: 0.46, g: 0.44, b: 0.6, a: 1}
+    ambientEquator: {r: 0.46, g: 0.36, b: 0.36, a: 1}
+    ambientGround: {r: 0.2, g: 0.15, b: 0.14, a: 1}
+    fog: {r: 0.5415, g: 0.475, b: 0.5415, a: 1}
+    fogStart: 80
+    fogEnd: 320
+  terrainSkies: 000000000000000003000000020000000100000000000000030000000000000004000000i
   duskSky: 4
   obstacles:
   - kind: 1
@@ -1553,59 +1643,46 @@ MonoBehaviour:
     - {fileID: 3611164896774058655, guid: 56db6a7634231ee4b978c3c6300d533c, type: 3}
     - {fileID: 3907277736555922826, guid: 1654cab10629fec44863fddd556414e1, type: 3}
     - {fileID: 8049678802411353532, guid: ae84ca4452af128448bed9304a0a5189, type: 3}
-    - {fileID: 5746696696117821633, guid: 5933e57a8f93cd44dbb98296f2559c9b, type: 3}
-    - {fileID: 8681395362143356094, guid: 3e7fcd9db13d1524998ef0016accb161, type: 3}
   - terrain: 1
     prefabs:
     - {fileID: 5759402926990518828, guid: f5ec409a8a5acd545a40dafd6188cd85, type: 3}
     - {fileID: 575188202253719666, guid: 312d3de4a8ce97d4396d07a61ef70aec, type: 3}
     - {fileID: 9105257626615123168, guid: b14ccdb9c43b184428d516c4e0a1d9f0, type: 3}
     - {fileID: 1612945133739826770, guid: 28c39b897d4c5174687e47c826facd20, type: 3}
-    - {fileID: 5289833806796923229, guid: c9d0b2a1561b6c44cb0cf7ead6180e0a, type: 3}
-    - {fileID: 4935108658341724053, guid: e8686c08a30d837429fd0d5e851e195a, type: 3}
   - terrain: 5
     prefabs:
     - {fileID: 7603172772737981719, guid: e688066a3de97494aaa338a5303b9736, type: 3}
     - {fileID: 3916473782259330380, guid: 4860540c2b63eb3499658212c06b3734, type: 3}
     - {fileID: 1450501972510815735, guid: a567f5b0eeb6efb489f39f1cc5c944bb, type: 3}
     - {fileID: 6917249634899964834, guid: 3dea91b1dce4fbb47a89c0cb53460505, type: 3}
-    - {fileID: 8332963994685446941, guid: 5980e51433fe5c544a16e74033f015aa, type: 3}
-    - {fileID: 3372041295539299521, guid: d5aa528796296f1479bb42407104a7de, type: 3}
   - terrain: 7
     prefabs:
     - {fileID: 3289730793248267128, guid: 72078b7271e2f084db6b4e3c9b876e04, type: 3}
     - {fileID: 369519900180326676, guid: 6c275a0267a8c0e44a4f7720e532ec88, type: 3}
     - {fileID: 6922422414269831217, guid: e0394ec1536c91c47801ad8ec3952ad4, type: 3}
-    - {fileID: 4257616113479126397, guid: ae5dec47837cf9c428566036c768715d, type: 3}
   - terrain: 3
     prefabs:
     - {fileID: 3724468611666850561, guid: ec58dbc72322bca4389c9ea2b8e113ba, type: 3}
     - {fileID: 8896461694450684381, guid: 0c10dd4e498549c4f86879df38a2abc0, type: 3}
     - {fileID: 3849918190664325549, guid: 2dd7f9e3c0978614cbe11a20f2d6413a, type: 3}
     - {fileID: 5025662168109818152, guid: ce0ba517e1e0e6549ab6bacb032f01dd, type: 3}
-    - {fileID: 3678260127100832107, guid: e1c992d17bb5166419e0005c158ad1cd, type: 3}
   - terrain: 2
     prefabs:
     - {fileID: 7702530611070736997, guid: 290cc065e33b99a4aad696ade39cab72, type: 3}
     - {fileID: 1115456576616766887, guid: 0f1d25d968fb4594589705af175ef19c, type: 3}
     - {fileID: 6797285021714222765, guid: 8cb6d4ab5e386f2448d7a97305e673c2, type: 3}
     - {fileID: 269155582468580664, guid: d531f17de42c28e4aaf969588b4f08f2, type: 3}
-    - {fileID: 4883797007783193094, guid: 9e59325761f883c4b8b437c43790348a, type: 3}
   - terrain: 4
     prefabs:
     - {fileID: 4267677720610698025, guid: 97344ae9a2ba2034bb8eee55f19b784a, type: 3}
     - {fileID: 1951722977306249260, guid: 6cb63199612d3b94eb60f87afa04cac3, type: 3}
     - {fileID: 7458227864540213259, guid: 06c67519ffc697f44bee243dfa9d33df, type: 3}
     - {fileID: 6276211232006225036, guid: f4e00878c51e446428b244b8511ca1bc, type: 3}
-    - {fileID: 4597906234787665651, guid: 590ca77e73c58ea40992e49efbcbff0e, type: 3}
-    - {fileID: 4006071067364696453, guid: 83f01a8be22be6e40a82ff7389feb356, type: 3}
   - terrain: 6
     prefabs:
     - {fileID: 836792767404578557, guid: 946e70229f5e48743a1e9d9fd4f4289f, type: 3}
     - {fileID: 410543995861304111, guid: c8670dc7e7b705e449004afc84116970, type: 3}
     - {fileID: 7977742314469075661, guid: 840ead833dc18714399a7998967a1db6, type: 3}
-    - {fileID: 2920425350094951920, guid: 81c4fc3336c93314dbc16a710a82be4e, type: 3}
-    - {fileID: 4368362689591132381, guid: cc2255b2f5e24ee41bd8a824eb4e1f5a, type: 3}
   - terrain: 8
     prefabs:
     - {fileID: 6377313847571111548, guid: 24cb7d4d439e44a44b37d9de8a744274, type: 3}

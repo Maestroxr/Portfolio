@@ -75,9 +75,19 @@ namespace Portfolio.Heroes.EditorTools
                 {
                     Materials(art);
                     TerrainLayers(art);
-                    Units(art);
-                    Heroes(art);
-                    Scatter(art);
+                    if (spec.Models == ModelSet.Kits)
+                    {
+                        // The textured kits: people of one rig, the woods and rocks of the nature kit (HeroesRealmArt).
+                        HeroesRealmArt.Units(art);
+                        HeroesRealmArt.Heroes(art);
+                        HeroesRealmArt.Scatter(art);
+                    }
+                    else
+                    {
+                        Units(art);
+                        Heroes(art);
+                        Scatter(art);
+                    }
                     HeroesObjectArt.Build(art);
                     HeroesBattleArt.Build(art);
                     HeroesSceneBuilder.SiegeArt(art);
@@ -164,9 +174,13 @@ namespace Portfolio.Heroes.EditorTools
                 // Materials come from what the file describes and stay inside it, so the packs keep their own look.
                 importer.materialImportMode = ModelImporterMaterialImportMode.ImportViaMaterialDescription;
                 importer.materialLocation = ModelImporterMaterialLocation.InPrefab;
+                // The people of the kits are skinned without clips of their own: they keep their rig (an importer without
+                // one would flatten them into still meshes), and the builder reads their meshes to take a head off a body.
+                bool rigged = path.Contains("/Kits/Characters/");
+                importer.isReadable = rigged;
                 bool animated = HasClips(path);
                 importer.importAnimation = animated;
-                importer.animationType = animated ? ModelImporterAnimationType.Legacy : ModelImporterAnimationType.None;
+                importer.animationType = animated || rigged ? ModelImporterAnimationType.Legacy : ModelImporterAnimationType.None;
                 if (animated)
                 {
                     importer.animationCompression = ModelImporterAnimationCompression.KeyframeReduction;
@@ -282,6 +296,12 @@ namespace Portfolio.Heroes.EditorTools
         /// </summary>
         public static void Dress(GameObject instance, string relative, Color tint)
         {
+            if (HeroesKitArt.IsKit(relative))
+            {
+                // The kits come with materials of their own, made from the textures they were downloaded with.
+                HeroesKitArt.Dress(instance, relative, tint);
+                return;
+            }
             bool tinted = tint.a > 0f && tint != Color.white;
             foreach (Renderer renderer in instance.GetComponentsInChildren<Renderer>(true))
             {
@@ -484,6 +504,7 @@ namespace Portfolio.Heroes.EditorTools
             GradedMaterials.Clear();
             GradedTextures.Clear();
             HeroesBattleArt.ForgetCaches();
+            HeroesKitArt.ForgetCaches();
         }
 
         /// <summary>The pack's own texture a graded copy was made from, or <paramref name="texture"/> itself when it is no copy.</summary>
@@ -671,12 +692,25 @@ namespace Portfolio.Heroes.EditorTools
             art.ground = ground != null
                 ? HeroesAssets.Material($"{Generated}/Materials/Ground.mat", ground, m => { })
                 : null;
+            Texture2D ripples = Spec.Materials.Ripples ? Ripples() : null;
             art.water = HeroesAssets.Material($"{Generated}/Materials/Water.mat", lit, m =>
             {
                 m.SetColor("_BaseColor", Spec.Materials.Water);
                 m.SetFloat("_Smoothness", 0.92f);
                 m.SetFloat("_Metallic", 0.1f);
                 Transparent(m);
+                if (ripples != null)
+                {
+                    m.SetTexture("_BumpMap", ripples);
+                    m.SetTextureScale("_BumpMap", new Vector2(36f, 36f));
+                    m.SetFloat("_BumpScale", 0.15f);
+                    m.EnableKeyword("_NORMALMAP");
+                    // Glossy rippled water mirrors the sun (the light's and the one in the sky's picture) in hot white
+                    // spots the bloom blows up into blobs: a softer gloss and no mirrored sky leave a broad sheen instead.
+                    m.SetFloat("_Smoothness", 0.62f);
+                    m.SetFloat("_EnvironmentReflections", 0f);
+                    m.EnableKeyword("_ENVIRONMENTREFLECTIONS_OFF");
+                }
             });
             art.fog = fog != null
                 ? HeroesAssets.Material($"{Generated}/Materials/FogOfWar.mat", fog, m =>
@@ -704,6 +738,47 @@ namespace Portfolio.Heroes.EditorTools
             Shader particles = Shader.Find("Universal Render Pipeline/Particles/Unlit");
             art.particleMaterial = HeroesAssets.Material($"{Generated}/Effects/Particle.mat", particles, m => Particle(m, soft, false));
             art.glowMaterial = HeroesAssets.Material($"{Generated}/Effects/Glow.mat", particles, m => Particle(m, soft, true));
+        }
+
+        /// <summary>
+        /// The small waves of rippled water as a normal map that tiles: a sum of crossing waves whose frequencies are whole
+        /// numbers of the tile, so the picture wraps around without a seam.
+        /// </summary>
+        private static Texture2D Ripples()
+        {
+            const int size = 256;
+            var waves = new (float u, float v, float amplitude, float phase)[]
+            {
+                (3f, 1f, 1f, 0.3f), (-2f, 4f, 0.8f, 1.7f), (5f, -3f, 0.55f, 4.1f), (1f, 7f, 0.4f, 2.6f), (-7f, -5f, 0.3f, 5.3f), (9f, 4f, 0.22f, 0.9f)
+            };
+            float Height(float x, float y)
+            {
+                float h = 0f;
+                foreach ((float u, float v, float amplitude, float phase) in waves)
+                {
+                    h += amplitude * Mathf.Sin((u * x + v * y) * Mathf.PI * 2f / size + phase);
+                }
+                return h;
+            }
+            var raster = new Raster(size, size, Color.clear);
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float dx = (Height(x + 1, y) - Height(x - 1, y)) * 3f;
+                    float dy = (Height(x, y + 1) - Height(x, y - 1)) * 3f;
+                    Vector3 normal = new Vector3(-dx, -dy, 1f).normalized;
+                    raster.Set(x, y, new Color(normal.x * 0.5f + 0.5f, normal.y * 0.5f + 0.5f, normal.z * 0.5f + 0.5f, 1f));
+                }
+            }
+            return HeroesAssets.SaveTexture(raster.ToTexture(), $"{Generated}/Materials/WaterRipples.png", importer =>
+            {
+                importer.textureType = TextureImporterType.NormalMap;
+                importer.mipmapEnabled = true;
+                importer.wrapMode = TextureWrapMode.Repeat;
+                importer.maxTextureSize = 256;
+                importer.textureCompression = TextureImporterCompression.Uncompressed;
+            });
         }
 
         /// <summary>A white dot, solid in its middle and fading softly to nothing at its rim.</summary>
@@ -837,7 +912,7 @@ namespace Portfolio.Heroes.EditorTools
 
         // ------------------------------------------------------------------ creatures
 
-        private sealed class UnitSpec
+        internal sealed class UnitSpec
         {
             public CreatureId Creature;
             public string Model;
@@ -889,7 +964,7 @@ namespace Portfolio.Heroes.EditorTools
             };
         }
 
-        private static UnitSpec[] UnitTable()
+        internal static UnitSpec[] UnitTable()
         {
             var table = new List<UnitSpec>();
 
@@ -1032,31 +1107,44 @@ namespace Portfolio.Heroes.EditorTools
             art.units.Clear();
             foreach (UnitSpec spec in UnitTable())
             {
-                CreatureDef def = Creatures.Get(spec.Creature);
-                float height = spec.Height > 0f ? spec.Height : TierHeight[Mathf.Clamp(def.Tier - 1, 0, TierHeight.Length - 1)];
-                if (def.Abilities.HasFlag(Ability.Flying) && spec.Height <= 0f)
-                {
-                    height *= 1.15f;
-                }
-                GameObject root = Root(def.Name.Replace(" ", string.Empty));
-                Piece(root.transform, spec.Model, Vector3.zero, spec.Yaw, 1f, height, spec.Tint);
-                GameObject prefab = Save(root, $"{Generated}/Units/{spec.Creature}.prefab");
-                art.units.Add(new HeroesArt.UnitArt
-                {
-                    creature = spec.Creature,
-                    prefab = prefab,
-                    height = height,
-                    idle = spec.Idle,
-                    walk = spec.Walk,
-                    attack = spec.Attack,
-                    shoot = spec.Shoot,
-                    hit = spec.Hit,
-                    death = spec.Death,
-                    cast = spec.Cast,
-                    projectile = spec.Projectile,
-                    flies = def.Abilities.HasFlag(Ability.Flying)
-                });
+                art.units.Add(PackUnit(spec));
             }
+        }
+
+        /// <summary>How tall a creature stands on the field: by its tier, a little taller when it flies, unless the spec says.</summary>
+        internal static float HeightOf(CreatureDef def, float specified)
+        {
+            float height = specified > 0f ? specified : TierHeight[Mathf.Clamp(def.Tier - 1, 0, TierHeight.Length - 1)];
+            if (def.Abilities.HasFlag(Ability.Flying) && specified <= 0f)
+            {
+                height *= 1.15f;
+            }
+            return height;
+        }
+
+        /// <summary>The prefab and clips of a creature made of one model of the packs.</summary>
+        internal static HeroesArt.UnitArt PackUnit(UnitSpec spec)
+        {
+            CreatureDef def = Creatures.Get(spec.Creature);
+            float height = HeightOf(def, spec.Height);
+            GameObject root = Root(def.Name.Replace(" ", string.Empty));
+            Piece(root.transform, spec.Model, Vector3.zero, spec.Yaw, 1f, height, spec.Tint);
+            GameObject prefab = Save(root, $"{Generated}/Units/{spec.Creature}.prefab");
+            return new HeroesArt.UnitArt
+            {
+                creature = spec.Creature,
+                prefab = prefab,
+                height = height,
+                idle = spec.Idle,
+                walk = spec.Walk,
+                attack = spec.Attack,
+                shoot = spec.Shoot,
+                hit = spec.Hit,
+                death = spec.Death,
+                cast = spec.Cast,
+                projectile = spec.Projectile,
+                flies = def.Abilities.HasFlag(Ability.Flying)
+            };
         }
 
         // ------------------------------------------------------------------ heroes
@@ -1108,7 +1196,7 @@ namespace Portfolio.Heroes.EditorTools
         /// down, held in a legacy clip added to his model's clips, so the map's puppet plays it like any other. Returns
         /// the name the clip plays by, which is the name of its file.
         /// </summary>
-        private static string Saddle(GameObject model, string relative)
+        internal static string Saddle(GameObject model, string relative)
         {
             var animation = model.GetComponentInChildren<Animation>(true);
             if (animation == null)
@@ -1160,7 +1248,7 @@ namespace Portfolio.Heroes.EditorTools
         /// from the withers (the first bone of the neck) to the croup (the root of the tail), a little under the top of
         /// the mount's back there, with the mount in its idle and the rider in his seated pose.
         /// </summary>
-        private static Vector3 Seat(GameObject mount, GameObject rider, string mountIdle, string pose)
+        internal static Vector3 Seat(GameObject mount, GameObject rider, string mountIdle, string pose)
         {
             var fallback = new Vector3(0f, 1.25f, -0.05f);
             using (var studio = new ModelStudio())
@@ -1175,7 +1263,8 @@ namespace Portfolio.Heroes.EditorTools
                 {
                     withers = Bone(horse, "Torso");
                 }
-                Transform hips = Bone(man, "hips");
+                // The adventurers of the packs call their hips so; the people of the kits, their pelvis.
+                Transform hips = Bone(man, "hips") ?? Bone(man, "pelvis");
                 if (croup == null || withers == null || hips == null)
                 {
                     return fallback;
@@ -1278,12 +1367,12 @@ namespace Portfolio.Heroes.EditorTools
             };
         }
 
-        private static (string model, float size, bool across) Tall(string model, float height)
+        internal static (string model, float size, bool across) Tall(string model, float height)
         {
             return (model, height, false);
         }
 
-        private static (string model, float size, bool across) Wide(string model, float width)
+        internal static (string model, float size, bool across) Wide(string model, float width)
         {
             return (model, width, true);
         }
@@ -1292,7 +1381,7 @@ namespace Portfolio.Heroes.EditorTools
         /// The trees the terrain plants: the model itself is the prefab, because a terrain prototype has to carry a
         /// renderer on its own root and an empty holder around it would be refused.
         /// </summary>
-        private static GameObject[] Trees(string name, (string model, float height)[] pieces,
+        internal static GameObject[] Trees(string name, (string model, float height)[] pieces,
             HeroesBattleArt.Paint paint = HeroesBattleArt.Paint.None)
         {
             var prefabs = new List<GameObject>();
@@ -1315,7 +1404,7 @@ namespace Portfolio.Heroes.EditorTools
             return prefabs.ToArray();
         }
 
-        private static GameObject[] Group(string name, (string model, float size, bool across)[] pieces)
+        internal static GameObject[] Group(string name, (string model, float size, bool across)[] pieces)
         {
             var prefabs = new List<GameObject>();
             for (int i = 0; i < pieces.Length; i++)
@@ -1346,14 +1435,14 @@ namespace Portfolio.Heroes.EditorTools
             return prefabs.ToArray();
         }
 
-        private static GameObject Flag(int color, string model)
+        internal static GameObject Flag(int color, string model)
         {
             GameObject root = Root($"Flag{color}");
             Piece(root.transform, model, Vector3.zero, 0f, 1f, 1.9f);
             return Save(root, $"{Generated}/Scenery/Flag{color}.prefab");
         }
 
-        private static GameObject Tower(int color, string folder)
+        internal static GameObject Tower(int color, string folder)
         {
             GameObject root = Root($"Tower{color}");
             Piece(root.transform, $"KayKit/Buildings/{folder}/building_tower_A_{folder.ToLowerInvariant()}", Vector3.zero, 0f, 1f, 3.2f);

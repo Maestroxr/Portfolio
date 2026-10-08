@@ -13,7 +13,8 @@ namespace Portfolio.Heroes.Tests
     /// <summary>
     /// The themes of the game as the builders left them: both assets exist and are complete, the definition starts with
     /// the classic one and lists both, the classic theme carries the art the scene was built with, the Grim Realm has
-    /// art of its own with nothing of the classic one in it, and picking a theme changes what the game reads. These run
+    /// art of its own with nothing of the classic one in it (its people, towns and woods made of the textured kits, with
+    /// ground cover and post processing the classic look does not have), and picking a theme changes what the game reads. These run
     /// in the editor only (they read the assets); dotnet test leaves this folder out.
     /// </summary>
     public class HeroesThemeTests
@@ -195,7 +196,8 @@ namespace Portfolio.Heroes.Tests
             OwnPrefab(art.siegeGate, "siege gate");
             OwnPrefab(art.siegeRuin, "siege ruin");
             OwnPrefab(art.siegeStones, "siege stones");
-            foreach (GameObject[] group in new[] { art.flags, art.towers, art.siegeBanners, art.forestTrees, art.pineTrees, art.deadTrees, art.rocks, art.waterPlants })
+            foreach (GameObject[] group in new[] { art.flags, art.towers, art.siegeBanners, art.forestTrees, art.pineTrees, art.deadTrees, art.rocks, art.waterPlants,
+                art.cover.SelectMany(cover => cover.prefabs).ToArray() })
             {
                 foreach (GameObject prefab in group)
                 {
@@ -230,6 +232,40 @@ namespace Portfolio.Heroes.Tests
             Own(art.logoFont, "logo font");
             Own(art.iconSprites, "icon sprites");
             Assert.IsEmpty(strays, "everything the Grim Realm shows is its own:\n" + string.Join("\n", strays.Take(40)));
+        }
+
+        [Test]
+        public void TheGrimRealmIsMadeOfTheKitsWithALookOfItsOwn()
+        {
+            HeroesTheme classic = Theme("Classic");
+            HeroesTheme grim = Theme("Grim Realm");
+            // The looks are Volume profiles, read here as plain assets (this assembly knows nothing of the pipeline).
+            Object Look(HeroesTheme theme, string field) => new SerializedObject(theme).FindProperty(field).objectReferenceValue;
+            Assert.IsNull(Look(classic, "look"), "the classic map is drawn without post processing of its own");
+            Assert.IsNull(Look(classic, "battleLook"), "the classic battlefield keeps the scene's grading");
+            Assert.IsEmpty(classic.art.cover, "the classic ground stays bare");
+            Assert.IsNotNull(Look(grim, "look"), "the Grim Realm grades its map");
+            Assert.IsNotNull(Look(grim, "battleLook"), "the Grim Realm grades its battlefield");
+            Assert.IsTrue(AssetDatabase.LoadAllAssetsAtPath(AssetDatabase.GetAssetPath(Look(grim, "look"))).Any(part => part != null && part.GetType().Name == "Tonemapping"),
+                "the Grim Realm is tone mapped");
+            Assert.IsNotNull(grim.art.Cover(TerrainType.Grass), "the Grim Realm's meadows have grass and flowers");
+
+            bool Person(GameObject prefab) => prefab != null && prefab.GetComponentsInChildren<Transform>(true).Any(bone => bone.name == "pelvis");
+            List<CreatureId> people = grim.art.units.Where(unit => Person(unit.prefab)).Select(unit => unit.creature).ToList();
+            Assert.GreaterOrEqual(people.Count, 16, "the people of every faction are the kits' dressed and animated people: " + string.Join(", ", people));
+            foreach (HeroesArt.HeroArt hero in grim.art.heroes)
+            {
+                Assert.IsTrue(Person(hero.rider), $"the {hero.heroClass} rides as a person of the kits");
+                Assert.IsNotNull(hero.rider.GetComponentInChildren<Animation>(true).GetClip(hero.riderPose), $"the {hero.heroClass} has a seat");
+            }
+            foreach (HeroesArt.UnitArt unit in grim.art.units.Where(unit => Person(unit.prefab)))
+            {
+                var animation = unit.prefab.GetComponentInChildren<Animation>(true);
+                foreach (string clip in new[] { unit.idle, unit.walk, unit.attack, unit.shoot, unit.hit, unit.death, unit.cast }.Where(name => !string.IsNullOrEmpty(name)))
+                {
+                    Assert.IsNotNull(animation.GetClip(clip), $"{unit.creature} plays {clip}");
+                }
+            }
         }
 
         [Test]

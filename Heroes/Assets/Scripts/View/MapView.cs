@@ -152,6 +152,50 @@ namespace Portfolio.Heroes
                         piece.transform.position.z);
                 }
             }
+            Strew();
+        }
+
+        /// <summary>
+        /// Strews the open ground with the art's cover (grass, flowers, bushes, pebbles): a few pieces on a cell, placed by
+        /// the cell's own hash so the same map always looks the same, kept off the roads and the cells things stand on. A
+        /// theme without cover leaves the ground bare.
+        /// </summary>
+        private void Strew()
+        {
+            if (art.cover == null || art.cover.Count == 0)
+            {
+                return;
+            }
+            var cover = new GameObject("Cover").transform;
+            cover.SetParent(scenery, false);
+            float radius = Layout.Radius;
+            for (int cell = 0; cell < state.map.grid.Count; cell++)
+            {
+                if (!state.map.Open(cell) || state.map.HasRoad(cell) || state.map.occupant[cell] >= 0)
+                {
+                    continue;
+                }
+                HeroesArt.CoverArt kind = art.Cover(state.map.TerrainAt(cell));
+                if (kind == null)
+                {
+                    continue;
+                }
+                uint hash = TerrainBuilder.Hash(cell, 53);
+                int count = Mathf.FloorToInt(kind.density * 2f * (hash % 1000) / 1000f + 0.5f);
+                Vector3 center = Point(cell);
+                for (int k = 0; k < count; k++)
+                {
+                    uint h = TerrainBuilder.Hash(cell, 61 + k * 13);
+                    float angle = (h % 3600) / 10f * Mathf.Deg2Rad;
+                    float distance = (0.2f + (h >> 12) % 60 / 100f) * radius;
+                    var at = new Vector3(center.x + Mathf.Cos(angle) * distance, 0f, center.z + Mathf.Sin(angle) * distance);
+                    at.y = Terrain.SampleHeight(at);
+                    GameObject piece = Instantiate(kind.prefabs[(h >> 5) % (uint)kind.prefabs.Length], cover);
+                    piece.transform.position = at;
+                    piece.transform.rotation = Quaternion.Euler(0f, (h >> 9) % 360, 0f);
+                    piece.transform.localScale *= 0.8f + (h >> 17) % 45 / 100f;
+                }
+            }
         }
 
         // ------------------------------------------------------------------ where things are
