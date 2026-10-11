@@ -17,7 +17,11 @@ namespace Portfolio.MemoryCards
     /// leaves in the middle of the game. <c>-memorycards-mistakes 0.6</c> makes a player miss that often, so the turn
     /// changes hands, <c>-memorycards-bombs</c> lets it flip bombs, and the host's <c>-memorycards-level &lt;n&gt;</c> picks
     /// another of the levels a room can play. Run the players with <c>-gamebox-identity</c> to tell them apart, and
-    /// <c>-gamebox-server</c> / <c>-gamebox-database</c> for a test server.
+    /// <c>-gamebox-server</c> / <c>-gamebox-database</c> for a test server. The roles <c>hosttournament</c> and
+    /// <c>jointournament</c> play a tournament instead of a room: the host opens one (two a match, as many entrants as
+    /// <c>-memorycards-entrants</c>, default 4, with <c>-memorycards-ready</c> seconds to show up for a match, default 30)
+    /// and starts it once the others entered, and everybody plays their matches with the autopilot until they are out or
+    /// champion, with a picture of the bracket after every match (<see cref="OnlineTour.PlayTournament"/>).
     /// </summary>
     public class MemoryCardsOnlineTour : OnlineTour
     {
@@ -25,6 +29,8 @@ namespace Portfolio.MemoryCards
         private const string MistakesArgument = "-memorycards-mistakes";
         private const string BombsArgument = "-memorycards-bombs";
         private const string LevelArgument = "-memorycards-level";
+        private const string EntrantsArgument = "-memorycards-entrants";
+        private const string ReadyArgument = "-memorycards-ready";
         /// <summary>Which of the levels a room can play the host picks unless told otherwise: the third, or the last.</summary>
         private const int LevelChoice = 2;
         private const int TurnSeconds = 10;
@@ -59,6 +65,11 @@ namespace Portfolio.MemoryCards
                 yield break;
             }
             yield return new WaitForSeconds(0.5f);
+            if (InTournament)
+            {
+                yield return Tournament();
+                yield break;
+            }
 
             if (Hosting)
             {
@@ -128,6 +139,58 @@ namespace Portfolio.MemoryCards
             yield return new WaitForSeconds(1f);
             Note("done");
             Quit();
+        }
+
+        /// <summary>A tournament of versus games: the host opens and starts it, everybody plays their matches with the autopilot.</summary>
+        private IEnumerator Tournament()
+        {
+            int entrants = Mathf.Clamp(NumberArgument(EntrantsArgument, 4), 2, 64);
+            if (Hosting)
+            {
+                IReadOnlyList<RoomLevelChoice> choices = manager.online.LevelChoices;
+                if (choices.Count == 0)
+                {
+                    yield return Fail("no level to play online");
+                    yield break;
+                }
+                int level = choices[Mathf.Clamp(NumberArgument(LevelArgument, LevelChoice), 0, choices.Count - 1)].Index;
+                string options = manager.online.ComposeOptions(level, RoomOptions.Write(RoomOptions.TurnOption, TurnSeconds));
+                yield return HostTournament("Tour cup", level, options, 2, (byte)entrants, (uint)Mathf.Clamp(NumberArgument(ReadyArgument, 30), 10, 3600));
+                yield return Shot("t0_open");
+                yield return WaitForEntrants(entrants - 1, 180f);
+                yield return new WaitForSeconds(0.5f);
+                yield return Shot("t0_entrants");
+                StartTournament();
+            }
+            else
+            {
+                yield return JoinFirstTournament(180f);
+                yield return new WaitForSeconds(0.5f);
+                yield return Shot("t0_entered");
+            }
+            yield return PlayTournament(() => manager.IsOnlineVersus && manager.IsPlaying, PlayMatch, manager.ReturnToLevelSelect, manager.online.LobbyUI, 300f);
+            yield return new WaitForSeconds(1f);
+            Note("done");
+            Quit();
+        }
+
+        /// <summary>One match of the tournament, with the autopilot, until the game is over and the results showed.</summary>
+        private IEnumerator PlayMatch(int number)
+        {
+            Note($"playing match {number}");
+            var pilot = gameObject.AddComponent<MemoryCardsAutopilot>();
+            pilot.manager = manager;
+            pilot.mistakeRate = Mathf.Clamp01(NumberArgument(MistakesArgument, 0.3f));
+            pilot.avoidBombs = !HasArgument(BombsArgument);
+            pilot.interval = 0.55f;
+            yield return new WaitForSeconds(6f);
+            yield return Shot($"t{number}_playing");
+            yield return WaitFor(() => Over, 600f, "the end of the game");
+            pilot.enabled = false;
+            Destroy(pilot);
+            yield return new WaitForSeconds(2.5f);
+            yield return Shot($"t{number}_results");
+            Note($"result: {manager.State}; " + string.Join(", ", manager.Versus.Seats.Select(seat => $"{seat.Name} {seat.Score} ({seat.Sets} sets)")));
         }
     }
 }
