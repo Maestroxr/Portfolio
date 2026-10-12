@@ -9,14 +9,14 @@ using SpacetimeDB.ClientApi;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 
-namespace Portfolio.Checkers.Server
+namespace Portfolio.BoardGames.Server
 {
     public sealed partial class RemoteReducers : RemoteBase
     {
-        public delegate void SetRoomSaveHandler(ReducerEventContext ctx, string name, int level, string data, System.Collections.Generic.List<Portfolio.Checkers.Server.SavedSeat> seats);
+        public delegate void SetRoomSaveHandler(ReducerEventContext ctx, string name, int level, string data, System.Collections.Generic.List<Portfolio.BoardGames.Server.SavedSeat> seats);
         public event SetRoomSaveHandler? OnSetRoomSave;
 
-        public void SetRoomSave(string name, int level, string data, System.Collections.Generic.List<Portfolio.Checkers.Server.SavedSeat> seats)
+        public void SetRoomSave(string name, int level, string data, System.Collections.Generic.List<Portfolio.BoardGames.Server.SavedSeat> seats)
         {
             conn.InternalCallReducer(new Reducer.SetRoomSave(name, level, data, seats));
         }

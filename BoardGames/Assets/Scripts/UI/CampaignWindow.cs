@@ -5,12 +5,14 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Portfolio.Checkers
+namespace Portfolio.BoardGames
 {
     /// <summary>
-    /// The campaign: a row per level with its title, the rules and the computer's strength, the stars earned on it and
-    /// a Play button; a level is open once the one before it is won, the rest are dimmed. The hint counts the stars of
-    /// the whole campaign. Built in code over the game (<see cref="OverlayWindow"/>) in the game's look.
+    /// The campaign of the game the title shows (its name in the window's title): a row per level of that game with its
+    /// title, the rules and the computer's strength, the stars earned on it and a Play button; the first level of each
+    /// game is open, any other once the level before it in the same game is won (<see cref="BoardGamesCampaign"/>), the
+    /// rest are dimmed. The hint counts the stars of that game and says what earns them. Built in code over the game
+    /// (<see cref="OverlayWindow"/>) in the game's look.
     /// </summary>
     public sealed class CampaignWindow : OverlayWindow
     {
@@ -20,8 +22,13 @@ namespace Portfolio.Checkers
         private const float StarSize = 40f;
         private const float StarStep = 50f;
 
+        /// <summary>Height of a level's row and the gap between two.</summary>
+        private const float RowHeight = 118f;
+        private const float RowGap = 12f;
+
         private sealed class LevelRow
         {
+            public int Index;
             public RectTransform Row;
             public CanvasGroup Group;
             public TMP_Text Title;
@@ -32,9 +39,20 @@ namespace Portfolio.Checkers
 
         private readonly List<LevelRow> rows = new List<LevelRow>();
 
-        protected override string CanvasName => "CheckersCampaign";
+        protected override string CanvasName => "BoardGamesCampaign";
 
-        protected override Vector2 PanelSize => new Vector2(1240f, 960f);
+        /// <summary>
+        /// Tall enough for every level of the title's game at once: the title and hint take 140 at the top, the list
+        /// keeps 40 over the bottom edge.
+        /// </summary>
+        protected override Vector2 PanelSize
+        {
+            get
+            {
+                int count = Mathf.Max(3, LevelsOf(Mode).Count);
+                return new Vector2(1240f, 180f + count * RowHeight + (count - 1) * RowGap + RowGap);
+            }
+        }
 
         /// <summary>The campaign window of <paramref name="manager"/>'s game (added to the manager when it has none).</summary>
         public static CampaignWindow For(BaseGameManager manager)
@@ -47,36 +65,47 @@ namespace Portfolio.Checkers
             Open();
         }
 
-        private CheckersGameManager Checkers => manager as CheckersGameManager;
+        private BoardGamesManager Games => manager as BoardGamesManager;
 
-        private CheckersCampaign Campaign => manager != null ? manager.Campaign as CheckersCampaign : null;
+        private BoardGamesCampaign Campaign => manager != null ? manager.Campaign as BoardGamesCampaign : null;
 
-        private CampaignProgress Progress => Checkers != null ? Checkers.Progress : null;
+        private CampaignProgress Progress => Games != null ? Games.Progress : null;
+
+        /// <summary>The game whose levels the window lists: the title's.</summary>
+        private GameMode Mode => Games != null ? Games.TitleMode : GameMode.Checkers;
 
         /// <summary>The star picture the HUD was built with (null leaves the stars of the rows unseen).</summary>
-        private Sprite Star => Checkers != null && Checkers.UI is CheckersUI ui ? ui.StarSprite : null;
+        private Sprite Star => Games != null && Games.UI is BoardGamesUI ui ? ui.StarSprite : null;
+
+        /// <summary>The campaign indices of the levels of <paramref name="mode"/>, in the campaign's order (none without a campaign).</summary>
+        private IReadOnlyList<int> LevelsOf(GameMode mode)
+        {
+            BoardGamesCampaign campaign = Campaign;
+            return campaign != null ? campaign.Levels(mode) : new List<int>();
+        }
 
         protected override void BuildContent()
         {
             rows.Clear();
-            title.text = L("Campaign");
-            // Six rows of 118 and five gaps of 12 are 768: between the hint (140 from the top) and 40 over the panel's
-            // bottom edge the list has 780, so every level shows at once.
-            RectTransform list = kit.ScrollList(panel, "Levels", new Vector2(40f, 40f), new Vector2(-40f, -140f), 12f);
-            CheckersCampaign campaign = Campaign;
-            int count = campaign != null ? campaign.Count : 0;
-            if (count == 0)
+            GameMode mode = Mode;
+            title.text = LF("Campaign: {0}", L(RuleSets.ModeNameKey(mode)));
+            // Rows of 118 with gaps of 12 between the hint (140 from the top) and 40 over the panel's bottom edge: the
+            // panel is as tall as the game's levels need, so every level shows at once.
+            RectTransform list = kit.ScrollList(panel, "Levels", new Vector2(40f, 40f), new Vector2(-40f, -140f), RowGap);
+            BoardGamesCampaign campaign = Campaign;
+            IReadOnlyList<int> indices = LevelsOf(mode);
+            if (campaign == null || indices.Count == 0)
             {
                 kit.Note(list, L("There are no levels yet."));
                 return;
             }
             OverlayLook look = kit.Look;
             float width = PanelSize.x - 80f;
-            for (int i = 0; i < count; i++)
+            foreach (int index in indices)
             {
-                int index = i;
-                var level = new LevelRow();
-                level.Row = kit.Row(list, 118f);
+                int levelIndex = index;
+                var level = new LevelRow { Index = index };
+                level.Row = kit.Row(list, RowHeight);
                 level.Group = level.Row.gameObject.AddComponent<CanvasGroup>();
                 level.Title = kit.Text(level.Row, "Title", "", 32f, look.text, TextAlignmentOptions.MidlineLeft, FontStyles.Bold, true);
                 OverlayKit.Anchor(level.Title.rectTransform, new Vector2(0f, 1f), new Vector2(28f, -10f), new Vector2(width - 420f, 44f));
@@ -87,7 +116,7 @@ namespace Portfolio.Checkers
                 OverlayKit.Anchor(level.Words.rectTransform, new Vector2(0f, 1f), new Vector2(28f, -54f), new Vector2(width - 420f, 58f));
                 OverlayKit.Fit(level.Words, 21f);
                 level.Stars = BuildStars(level.Row, campaign.MaxStarsPerLevel, look);
-                level.Play = kit.MakeButton(level.Row, "Play", look.accent, new Vector2(160f, 60f), () => PlayLevel(index));
+                level.Play = kit.MakeButton(level.Row, "Play", look.accent, new Vector2(160f, 60f), () => PlayLevel(levelIndex));
                 OverlayKit.Anchor(level.Play.GetComponent<RectTransform>(), new Vector2(1f, 0.5f), new Vector2(-28f, 0f), new Vector2(160f, 60f));
                 rows.Add(level);
             }
@@ -95,21 +124,23 @@ namespace Portfolio.Checkers
 
         protected override void Refresh()
         {
-            CheckersCampaign campaign = Campaign;
+            BoardGamesCampaign campaign = Campaign;
             CampaignProgress progress = Progress;
             if (campaign == null)
             {
                 hint.text = "";
                 return;
             }
-            hint.text = LF("{0} of {1} stars", campaign.TotalStars(progress), campaign.MaxStars) + "   " + L(CheckersCampaign.StarRules);
+            GameMode mode = Mode;
+            int earned = 0;
             for (int i = 0; i < rows.Count; i++)
             {
                 LevelRow row = rows[i];
-                CheckersLevel level = campaign.Level(i);
-                bool unlocked = campaign.IsUnlocked(i, progress);
-                int stars = progress != null ? progress.Stars(i) : 0;
-                string name = level != null ? Portfolio.Checkers.L.Data(level.Title) : "";
+                BoardGamesLevel level = campaign.Level(row.Index);
+                bool unlocked = campaign.IsUnlocked(row.Index, progress);
+                int stars = progress != null ? progress.Stars(row.Index) : 0;
+                earned += stars;
+                string name = level != null ? Portfolio.BoardGames.L.Data(level.Title) : "";
                 row.Title.text = LF("Level {0}", i + 1) + (string.IsNullOrEmpty(name) ? "" : ": " + name);
                 row.Words.text = level != null ? Words(level) : "";
                 ShowStars(row.Stars, stars, kit.Look);
@@ -122,15 +153,17 @@ namespace Portfolio.Checkers
                     label.text = unlocked ? L("Play") : L("Locked");
                 }
             }
+            hint.text = LF("{0} of {1} stars", earned, rows.Count * campaign.MaxStarsPerLevel) + "   " + L(BoardGamesCampaign.StarRulesOf(mode));
         }
 
-        /// <summary>"Russian, Normal computer, you play Light. A sentence about the level."</summary>
-        private string Words(CheckersLevel level)
+        /// <summary>"Russian draughts, Normal computer, you play Light. A sentence about the level."</summary>
+        private string Words(BoardGamesLevel level)
         {
-            string rules = L(VariantRules.Of(level.Variant).NameKey);
+            string rules = L(RuleSets.NameKey(level.RuleSet));
             int strength = Mathf.Clamp(level.ComputerLevel, 0, LevelNames.Length - 1);
-            string words = LF("{0}, {1} computer, you play {2}", rules, L(LevelNames[strength]), L(Sides.NameKey(level.Side)));
-            string description = Portfolio.Checkers.L.Data(level.Description);
+            string side = L(Sides.NameKey(level.Side, level.Mode));
+            string words = LF("{0}, {1} computer, you play {2}", rules, L(LevelNames[strength]), side);
+            string description = Portfolio.BoardGames.L.Data(level.Description);
             return string.IsNullOrEmpty(description) ? words : words + ".  " + description;
         }
 
@@ -170,14 +203,14 @@ namespace Portfolio.Checkers
 
         private void PlayLevel(int index)
         {
-            CheckersCampaign campaign = Campaign;
+            BoardGamesCampaign campaign = Campaign;
             if (campaign == null || !campaign.IsUnlocked(index, Progress))
             {
                 ShowMessage(L("Win the level before it first."));
                 return;
             }
             Hide();
-            Checkers?.StartCampaignLevel(index);
+            Games?.StartCampaignLevel(index);
         }
     }
 }

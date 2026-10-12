@@ -1,6 +1,6 @@
 using Gamebox;
 
-namespace Portfolio.Checkers
+namespace Portfolio.BoardGames
 {
     /// <summary>The pool of the pieces on the board (<see cref="PieceView"/>): up to 40 are deployed at once.</summary>
     public sealed class PiecePool : PrefabPool<PieceView>

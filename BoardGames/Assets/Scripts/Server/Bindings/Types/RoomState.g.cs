@@ -6,7 +6,7 @@
 using System;
 using SpacetimeDB;
 
-namespace Portfolio.Checkers.Server
+namespace Portfolio.BoardGames.Server
 {
     [SpacetimeDB.Type]
     public enum RoomState

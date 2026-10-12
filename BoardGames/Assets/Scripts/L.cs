@@ -1,14 +1,14 @@
 using Gamebox;
 
-namespace Portfolio.Checkers
+namespace Portfolio.BoardGames
 {
     /// <summary>
-    /// The words of Checkers in the language shown (see <see cref="Loc"/>): the key is the English text, and the table is
-    /// the game's (<c>Assets/Localization/Checkers.csv</c>), then the shared one. English needs no lookup.
+    /// The words of Board Games in the language shown (see <see cref="Loc"/>): the key is the English text, and the table
+    /// is the game's (<c>Assets/Localization/BoardGames.csv</c>), then the shared one. English needs no lookup.
     /// </summary>
     public static class L
     {
-        public const GameType Game = GameType.Checkers;
+        public const GameType Game = GameType.BoardGames;
 
         /// <summary>Whether the language shown is English (the keys are the English texts).</summary>
         public static bool English => GameLanguages.IsEnglish;

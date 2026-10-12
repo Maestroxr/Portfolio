@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The tests of the rules of the board games outside Unity: "dotnet test" in this folder runs them in about a second. They are
+    the test files the editor runs (Assets/Tests/Editor, the ones that need no engine), compiled with the engine-free
+    model (Assets/Scripts/Model) and Gamebox.Lockstep, which BaseGame's ModelTests.props brings along with the test
+    packages.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>Portfolio.BoardGames.Tests</RootNamespace>
+    <AssemblyName>BoardGames.Model.Tests</AssemblyName>
+  </PropertyGroup>
+
+  <Import Project="../../../BaseGame/Assets/Tests/ModelTests~/ModelTests.props" />
+
+  <ItemGroup>
+    <Compile Include="../Assets/Scripts/Model/**/*.cs" Link="Model/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="../Assets/Tests/Editor/Model/**/*.cs" Link="Tests/%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>

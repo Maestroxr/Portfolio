@@ -1,10 +1,11 @@
 using UnityEngine;
 
-namespace Portfolio.Checkers
+namespace Portfolio.BoardGames
 {
     /// <summary>
-    /// Frames the board from the side of the player at the bottom: the whole board and a margin fit the part of the
-    /// screen the interface leaves free, whatever the screen's shape. The view turns half a circle, smoothly, when the
+    /// Frames the board from the side of the player at the bottom: the whole board (a square board, or the area of the
+    /// backgammon board, see <see cref="FrameArea"/>) and a margin fit the part of the screen the interface leaves free,
+    /// whatever the screen's shape. The view turns half a circle, smoothly, when the
     /// bottom side changes (hot seat); on the title it sits a touch lower and closer.
     /// </summary>
     public sealed class CameraRig : MonoBehaviour
@@ -20,7 +21,8 @@ namespace Portfolio.Checkers
         [Tooltip("Part of the screen the board may use in play: x/y = lower left, z/w = upper right, as fractions of the screen.")]
         [SerializeField] private Vector4 playArea = new Vector4(0.02f, 0.13f, 0.98f, 0.87f);
 
-        private int size = 8;
+        private float halfWidth = 4f;
+        private float halfDepth = 4f;
         private Side bottom = Side.Light;
         private bool title = true;
         private bool snap = true;
@@ -34,7 +36,8 @@ namespace Portfolio.Checkers
         private float yawVelocity;
         private float fitDistance = 20f;
         private Vector2Int fitScreen;
-        private int fitSize;
+        private float fitHalfWidth;
+        private float fitHalfDepth;
         private bool fitTitle;
         private float fitFov;
 
@@ -43,10 +46,22 @@ namespace Portfolio.Checkers
         /// <summary>The side the camera shows at the bottom of the screen.</summary>
         public Side Bottom => bottom;
 
-        /// <summary>Frames a board of <paramref name="size"/> squares from <paramref name="bottom"/>'s side, at once or smoothly.</summary>
+        /// <summary>Frames a square board of <paramref name="size"/> squares from <paramref name="bottom"/>'s side, at once or smoothly.</summary>
         public void Frame(int size, Side bottom, bool immediate)
         {
-            this.size = Mathf.Max(size, 2);
+            float half = Mathf.Max(size, 2) * 0.5f;
+            FrameArea(half, half, bottom, immediate);
+        }
+
+        /// <summary>
+        /// Frames an area of the table <paramref name="halfWidth"/> to each side of its centre and
+        /// <paramref name="halfDepth"/> towards and away from the player (in board units, the margin comes on top), from
+        /// <paramref name="bottom"/>'s side, at once or smoothly.
+        /// </summary>
+        public void FrameArea(float halfWidth, float halfDepth, Side bottom, bool immediate)
+        {
+            this.halfWidth = Mathf.Max(halfWidth, 1f);
+            this.halfDepth = Mathf.Max(halfDepth, 1f);
             this.bottom = bottom;
             snap |= immediate;
             fitScreen = Vector2Int.zero;
@@ -109,30 +124,34 @@ namespace Portfolio.Checkers
             view.transform.SetPositionAndRotation(pivot - rotation * Vector3.forward * dist, rotation);
         }
 
-        /// <summary>The camera distance at which the board and its margin just fit the screen (cached per screen, size and mode).</summary>
+        /// <summary>The camera distance at which the area and its margin just fit the screen (cached per screen, area and mode).</summary>
         private float FitDistance(Vector3 center, float pitchDegrees)
         {
             var screen = new Vector2Int(Screen.width, Screen.height);
-            if (screen == fitScreen && fitSize == size && fitTitle == title && Mathf.Approximately(fitFov, fieldOfView))
+            if (screen == fitScreen && Mathf.Approximately(fitHalfWidth, halfWidth) && Mathf.Approximately(fitHalfDepth, halfDepth) && fitTitle == title
+                && Mathf.Approximately(fitFov, fieldOfView))
             {
                 return fitDistance;
             }
             fitScreen = screen;
-            fitSize = size;
+            fitHalfWidth = halfWidth;
+            fitHalfDepth = halfDepth;
             fitTitle = title;
             fitFov = fieldOfView;
             Vector3 position = view.transform.position;
             Quaternion rotation = view.transform.rotation;
-            float half = size * 0.5f + margin;
+            float x = halfWidth + margin;
+            float z = halfDepth + margin;
             Vector3[] corners =
             {
-                center + new Vector3(-half, 0f, -half), center + new Vector3(half, 0f, -half),
-                center + new Vector3(-half, 0f, half), center + new Vector3(half, 0f, half),
-                center + new Vector3(-half, 0.4f, half), center + new Vector3(half, 0.4f, half)
+                center + new Vector3(-x, 0f, -z), center + new Vector3(x, 0f, -z),
+                center + new Vector3(-x, 0f, z), center + new Vector3(x, 0f, z),
+                center + new Vector3(-x, 0.4f, z), center + new Vector3(x, 0.4f, z)
             };
             Vector4 area = title ? new Vector4(0.02f, 0.02f, 0.98f, 0.98f) : playArea;
-            float low = size * 0.3f;
-            float high = size * 10f;
+            float extent = Mathf.Max(halfWidth, halfDepth) * 2f;
+            float low = extent * 0.3f;
+            float high = extent * 10f;
             for (int i = 0; i < 28; i++)
             {
                 float mid = (low + high) * 0.5f;

@@ -2,7 +2,7 @@ using System.Collections;
 using Gamebox;
 using UnityEngine;
 
-namespace Portfolio.Checkers
+namespace Portfolio.BoardGames
 {
     /// <summary>
     /// One piece on the 3D board: a disc in its side's material, a crown on top once it is a king, and a soft contact

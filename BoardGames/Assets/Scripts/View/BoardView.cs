@@ -4,13 +4,15 @@ using System.Collections.Generic;
 using Gamebox;
 using UnityEngine;
 
-namespace Portfolio.Checkers
+namespace Portfolio.BoardGames
 {
     /// <summary>
     /// The 3D board: the slab, a square per cell and a piece per man or king, all from pools so an 8x8 and a 10x10 game
     /// share one scene. Square <c>i</c> of a board of size <c>n</c> sits at local <c>(col - (n-1)/2, surface, row - (n-1)/2)</c>,
     /// row 0 nearest to the Light side. Moves are animated along their path (<see cref="Animate"/>): the manager waits
     /// for <see cref="IsAnimating"/> before it goes on. Highlights tint the squares' quads through a property block.
+    /// Chess plays on the same squares with pieces of its own (<see cref="ShowSquares"/>, <see cref="SetSquareMarks"/>);
+    /// backgammon hides the board (<see cref="SetVisible"/>).
     /// </summary>
     public sealed class BoardView : MonoBehaviour
     {
@@ -33,7 +35,7 @@ namespace Portfolio.Checkers
         private readonly List<Action> pendingDone = new List<Action>();
         /// <summary>Moves that arrived while one was playing (online, the other side's move can come at once): played in order.</summary>
         private readonly Queue<Pending> queued = new Queue<Pending>();
-        private CheckersTheme theme;
+        private BoardGamesTheme theme;
         private int size;
         private int running;
         private Color selectedColor = new Color(1f, 0.85f, 0.3f, 0.85f);
@@ -41,8 +43,13 @@ namespace Portfolio.Checkers
         private Color captureColor = new Color(1f, 0.45f, 0.3f, 0.9f);
         private Color lastMoveColor = new Color(0.5f, 0.7f, 1f, 0.35f);
         private Color hoverColor = new Color(1f, 1f, 1f, 0.9f);
+        private Color checkColor = new Color(0.95f, 0.15f, 0.12f, 0.9f);
+        private bool visible = true;
 
         public float Surface => surface;
+
+        /// <summary>Whether the slab, the squares and the draughts pieces show (see <see cref="SetVisible"/>).</summary>
+        public bool IsVisible => visible;
 
         /// <summary>The board shown: 8, 10, or 0 before <see cref="Show"/>.</summary>
         public int Size => size;
@@ -60,6 +67,7 @@ namespace Portfolio.Checkers
                 Clear();
                 return;
             }
+            SetVisible(true);
             int n = game.board.size;
             if (n != size)
             {
@@ -73,6 +81,49 @@ namespace Portfolio.Checkers
                 return;
             }
             Animate(last, game, null);
+        }
+
+        /// <summary>
+        /// Lays out the slab and the squares of a board of <paramref name="n"/> squares a side with no draughts piece on
+        /// it and no mark (chess shows its own pieces on them), and shows the board.
+        /// </summary>
+        public void ShowSquares(int n)
+        {
+            ClearPieces();
+            if (n != size)
+            {
+                Layout(n);
+            }
+            SetVisible(true);
+            SetSquareMarks(null);
+        }
+
+        /// <summary>Shows or hides the slab, the squares and the draughts pieces (the table and other games' objects stay as they are).</summary>
+        public void SetVisible(bool show)
+        {
+            visible = show;
+            if (!show)
+            {
+                StopAnimations();
+            }
+            if (slab != null)
+            {
+                slab.gameObject.SetActive(show);
+            }
+            foreach (SquareView square in squares)
+            {
+                if (square != null)
+                {
+                    square.gameObject.SetActive(show);
+                }
+            }
+            foreach (PieceView piece in pieces.Values)
+            {
+                if (piece != null)
+                {
+                    piece.gameObject.SetActive(show);
+                }
+            }
         }
 
         /// <summary>
@@ -202,6 +253,69 @@ namespace Portfolio.Checkers
             }
         }
 
+        /// <summary>
+        /// Marks the squares for a game with pieces of its own (chess), in the colours of the draughts marks: the last
+        /// move faintly, a faint glow under the pieces that may move, a red glow under a king in check, the selected
+        /// square, and a dot on every target (stronger for a capture, brighter under the pointer). Null clears every mark.
+        /// </summary>
+        public void SetSquareMarks(SquareMarks marks)
+        {
+            foreach (SquareView square in squares)
+            {
+                if (square != null)
+                {
+                    square.Highlight(null, 1f);
+                    square.Dot(false);
+                }
+            }
+            if (marks == null)
+            {
+                return;
+            }
+            if (marks.lastFrom >= 0 && marks.lastTo >= 0)
+            {
+                Square(marks.lastFrom)?.Highlight(lastMoveColor, 1f);
+                Square(marks.lastTo)?.Highlight(lastMoveColor, 1f);
+            }
+            if (marks.movable != null)
+            {
+                Color faint = legalColor;
+                faint.a *= MovableAlpha;
+                foreach (int square in marks.movable)
+                {
+                    Square(square)?.Highlight(faint, 1f);
+                }
+            }
+            if (marks.check >= 0)
+            {
+                Square(marks.check)?.Highlight(checkColor, 1f);
+            }
+            if (marks.selected >= 0)
+            {
+                Square(marks.selected)?.Highlight(selectedColor, 1f);
+            }
+            MarkTargets(marks.targets, legalColor, 1f, marks.hovered);
+            MarkTargets(marks.captures, captureColor, 1.3f, marks.hovered);
+        }
+
+        private void MarkTargets(List<int> targets, Color color, float scale, int hovered)
+        {
+            if (targets == null)
+            {
+                return;
+            }
+            foreach (int target in targets)
+            {
+                SquareView square = Square(target);
+                if (square == null)
+                {
+                    continue;
+                }
+                bool hover = target == hovered;
+                square.Dot(hover ? Color.Lerp(color, hoverColor, 0.5f) : color, scale * (hover ? 1.15f : 1f), hover ? 1.3f : 1f);
+            }
+        }
+
         /// <summary>The square under <paramref name="ray"/> on the plane of the surface, or -1 off the board.</summary>
         public int SquareAt(Ray ray)
         {
@@ -232,7 +346,7 @@ namespace Portfolio.Checkers
         }
 
         /// <summary>Takes the materials and colours of <paramref name="theme"/>, for what is shown and what comes later.</summary>
-        public void ApplyTheme(CheckersTheme theme)
+        public void ApplyTheme(BoardGamesTheme theme)
         {
             this.theme = theme;
             if (theme == null)
@@ -270,8 +384,8 @@ namespace Portfolio.Checkers
             }
         }
 
-        /// <summary>Recycles everything: squares, pieces, animations (their callbacks are called).</summary>
-        public void Clear()
+        /// <summary>Recycles the draughts pieces and stops their animations (their callbacks are called); the squares stay.</summary>
+        public void ClearPieces()
         {
             StopAnimations();
             foreach (PieceView piece in pieces.Values)
@@ -279,6 +393,12 @@ namespace Portfolio.Checkers
                 piecePool?.Recycle(piece);
             }
             pieces.Clear();
+        }
+
+        /// <summary>Recycles everything: squares, pieces, animations (their callbacks are called).</summary>
+        public void Clear()
+        {
+            ClearPieces();
             foreach (SquareView square in squares)
             {
                 squarePool?.Recycle(square);
@@ -333,6 +453,7 @@ namespace Portfolio.Checkers
                 {
                     square.SetHighlightMaterial(theme.highlight);
                 }
+                square.gameObject.SetActive(visible);
                 squares.Add(square);
             }
         }
@@ -371,6 +492,7 @@ namespace Portfolio.Checkers
                     view = piecePool.Deploy();
                     view.transform.SetParent(transform, false);
                     view.transform.localRotation = Quaternion.identity;
+                    view.gameObject.SetActive(visible);
                     pieces[square] = view;
                 }
                 view.Square = square;

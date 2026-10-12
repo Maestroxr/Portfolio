@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7c1fcaf92ee74fc994b38b7400fec86d, type: 3}
   m_Name: Midnight
-  m_EditorClassIdentifier: Skinnerboxes.Checkers::Portfolio.Checkers.CheckersTheme
+  m_EditorClassIdentifier: Skinnerboxes.BoardGames::Portfolio.BoardGames.BoardGamesTheme
   displayName: Midnight
   description: A slate glass board under a deep blue night, neon cyan against magenta.
   preview: {fileID: 21300000, guid: 8e9b37255da135847ac4a8f89ce6b731, type: 3}
@@ -111,4 +111,39 @@ MonoBehaviour:
   ambientGround: {r: 0.03529412, g: 0.043137256, b: 0.078431375, a: 1}
   sunColor: {r: 0.7490196, g: 0.83137256, b: 1, a: 1}
   sunIntensity: 0.8
+  chess:
+    meshes:
+    - {fileID: 4300000, guid: 49ce1b1e5912c03419bb3803c88656c3, type: 2}
+    - {fileID: 4300000, guid: 0ba358cba7670854f9b0a02f044dd770, type: 2}
+    - {fileID: 4300000, guid: 8d607b86c8622054cb42b32db832736f, type: 2}
+    - {fileID: 4300000, guid: ab21c5fd2d946f544bf648b91421fd09, type: 2}
+    - {fileID: 4300000, guid: 12bffbca586ebfb4e9919e65d71736ae, type: 2}
+    - {fileID: 4300000, guid: 6b624c8a13063ac41a1eefda30038acd, type: 2}
+    sideMaterials:
+    - {fileID: 2100000, guid: b0d100ec33d8dec458fe4b81feaa7ed6, type: 2}
+    - {fileID: 2100000, guid: 63824e9dec4673348834d8b5fe9d368b, type: 2}
+    trimMaterials:
+    - {fileID: 2100000, guid: a5f60ed2fc7652840b48fc52a18eb3a2, type: 2}
+    - {fileID: 2100000, guid: 38a6622cbddb3034e828eefaa89f31a8, type: 2}
+    knightTurn: 18
+  backgammon:
+    frameMesh: {fileID: 4300000, guid: 7ce74ce0697056146ab872eae73b2e5b, type: 2}
+    feltMesh: {fileID: 4300000, guid: 9895656289c06e04b9fe6ad14f3a0b88, type: 2}
+    pointMesh: {fileID: 4300000, guid: d951f19ab64c86c4bbe1115db5935bca, type: 2}
+    checkerMesh: {fileID: 4300000, guid: 3c9a5d9f8c4f16941866fde45c61470a, type: 2}
+    dieMesh: {fileID: 4300000, guid: dfd220410bb17e24393a4c821f809c64, type: 2}
+    cubeMesh: {fileID: 4300000, guid: 3df418deac5a2f34693028556cb2fe38, type: 2}
+    frame: {fileID: 2100000, guid: 22a93e7176b955445929ef968bb4b594, type: 2}
+    felt: {fileID: 2100000, guid: 63f409d852b85d843a910221a67a7267, type: 2}
+    points:
+    - {fileID: 2100000, guid: 89b6ff9923bb4cf4a92f95f8c9bcdd8c, type: 2}
+    - {fileID: 2100000, guid: be9b650e7a1d56748a805e85e3424f3b, type: 2}
+    pointGlow: {fileID: 2100000, guid: 3d220c9fc1ecdc3499de48656a68aed1, type: 2}
+    checkers:
+    - {fileID: 2100000, guid: 7bea80445e868b74eb407fbad10ba84f, type: 2}
+    - {fileID: 2100000, guid: 16de7fbbb4e16a445aed0deaa049fe7f, type: 2}
+    dice:
+    - {fileID: 2100000, guid: 1c42455000da9644eaea48f639761ee8, type: 2}
+    - {fileID: 2100000, guid: 86813c133d7a3b04890bcac71090c493, type: 2}
+    cube: {fileID: 2100000, guid: 77e1eae436117e34dbf392fe47ca5a1d, type: 2}
   gameIcon: {fileID: 0}

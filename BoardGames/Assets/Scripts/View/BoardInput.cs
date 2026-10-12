@@ -1,16 +1,18 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace Portfolio.Checkers
+namespace Portfolio.BoardGames
 {
     /// <summary>
-    /// Clicks and taps on the board (not on the interface): a tap on a square goes to the manager, which selects a piece
-    /// or plays a move with it; the mouse also hovers squares. Nothing is sent while the manager is not waiting for a
-    /// person at this device.
+    /// Clicks and taps on the board (not on the interface): the manager says what is under the pointer
+    /// (<see cref="BoardGamesManager.PickTarget"/>: a square, or a point of the backgammon board) and the game played
+    /// reacts to a click or a tap on it (<see cref="BoardGamesManager.TargetClicked"/>, -1 for a click on nothing); the
+    /// mouse also hovers targets. Nothing is sent while the manager is not waiting for a person at this device.
     /// </summary>
     public sealed class BoardInput : MonoBehaviour
     {
-        [SerializeField] private CheckersGameManager manager;
+        [SerializeField] private BoardGamesManager manager;
+        [Tooltip("The board of the square games; the manager picks the targets of every game (see BoardGamesManager.PickTarget).")]
         [SerializeField] private BoardView board;
         [SerializeField] private Camera view;
 
@@ -20,7 +22,7 @@ namespace Portfolio.Checkers
 
         private void Update()
         {
-            if (manager == null || board == null || view == null)
+            if (manager == null || view == null)
             {
                 return;
             }
@@ -63,27 +65,23 @@ namespace Portfolio.Checkers
             }
             else
             {
-                Hover(OverInterface(-1) ? -1 : board.SquareAt(view.ScreenPointToRay(Input.mousePosition)));
+                Hover(OverInterface(-1) ? -1 : manager.PickTarget(view.ScreenPointToRay(Input.mousePosition)));
             }
         }
 
-        private void Hover(int square)
+        private void Hover(int target)
         {
-            if (square == hovered)
+            if (target == hovered)
             {
                 return;
             }
-            hovered = square;
-            manager.SquareHovered(square);
+            hovered = target;
+            manager.TargetHovered(target);
         }
 
         private void Click(Vector2 screen)
         {
-            int square = board.SquareAt(view.ScreenPointToRay(screen));
-            if (square >= 0)
-            {
-                manager.SquareClicked(square);
-            }
+            manager.TargetClicked(manager.PickTarget(view.ScreenPointToRay(screen)));
         }
 
         private static bool OverInterface(int pointer)

@@ -8,7 +8,7 @@ using SpacetimeDB;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 
-namespace Portfolio.Checkers.Server
+namespace Portfolio.BoardGames.Server
 {
     [SpacetimeDB.Type]
     [DataContract]

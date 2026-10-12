@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7c1fcaf92ee74fc994b38b7400fec86d, type: 3}
   m_Name: Classic
-  m_EditorClassIdentifier: Skinnerboxes.Checkers::Portfolio.Checkers.CheckersTheme
+  m_EditorClassIdentifier: Skinnerboxes.BoardGames::Portfolio.BoardGames.BoardGamesTheme
   displayName: Classic
   description: A warm wooden board on green felt, ivory against ebony.
   preview: {fileID: 21300000, guid: f9a34eed3c828ef4abb1377298889d25, type: 3}
@@ -111,4 +111,39 @@ MonoBehaviour:
   ambientGround: {r: 0.16862746, g: 0.16470589, b: 0.14901961, a: 1}
   sunColor: {r: 1, g: 0.95686275, b: 0.8784314, a: 1}
   sunIntensity: 1.1
+  chess:
+    meshes:
+    - {fileID: 4300000, guid: 49ce1b1e5912c03419bb3803c88656c3, type: 2}
+    - {fileID: 4300000, guid: 0ba358cba7670854f9b0a02f044dd770, type: 2}
+    - {fileID: 4300000, guid: 8d607b86c8622054cb42b32db832736f, type: 2}
+    - {fileID: 4300000, guid: ab21c5fd2d946f544bf648b91421fd09, type: 2}
+    - {fileID: 4300000, guid: 12bffbca586ebfb4e9919e65d71736ae, type: 2}
+    - {fileID: 4300000, guid: 6b624c8a13063ac41a1eefda30038acd, type: 2}
+    sideMaterials:
+    - {fileID: 2100000, guid: 840275c0bec070642804492015f2218b, type: 2}
+    - {fileID: 2100000, guid: a571f884970df064dbd51b87075097db, type: 2}
+    trimMaterials:
+    - {fileID: 2100000, guid: 840275c0bec070642804492015f2218b, type: 2}
+    - {fileID: 2100000, guid: a571f884970df064dbd51b87075097db, type: 2}
+    knightTurn: 18
+  backgammon:
+    frameMesh: {fileID: 4300000, guid: 7ce74ce0697056146ab872eae73b2e5b, type: 2}
+    feltMesh: {fileID: 4300000, guid: 9895656289c06e04b9fe6ad14f3a0b88, type: 2}
+    pointMesh: {fileID: 4300000, guid: d951f19ab64c86c4bbe1115db5935bca, type: 2}
+    checkerMesh: {fileID: 4300000, guid: 3c9a5d9f8c4f16941866fde45c61470a, type: 2}
+    dieMesh: {fileID: 4300000, guid: dfd220410bb17e24393a4c821f809c64, type: 2}
+    cubeMesh: {fileID: 4300000, guid: 3df418deac5a2f34693028556cb2fe38, type: 2}
+    frame: {fileID: 2100000, guid: 3cb27b462d61db84e9e50a3b3494bb58, type: 2}
+    felt: {fileID: 2100000, guid: 467a70bdc2bcbcb4e90d6957cc28889c, type: 2}
+    points:
+    - {fileID: 2100000, guid: 5eb237e60fec60f4a97311aa11c2c043, type: 2}
+    - {fileID: 2100000, guid: 91eae1f9cac8cd948b80ebd77596379f, type: 2}
+    pointGlow: {fileID: 2100000, guid: 293433032e402e44aa8f0a0a008f711c, type: 2}
+    checkers:
+    - {fileID: 2100000, guid: bc042f1cb13d31249b305b7f511d917c, type: 2}
+    - {fileID: 2100000, guid: 710664588dc7a2342b5e4cc86fe08ee0, type: 2}
+    dice:
+    - {fileID: 2100000, guid: a3b54cd62e27c6a46880fa08d9a2b734, type: 2}
+    - {fileID: 2100000, guid: e028b75634697b54ab50732f7301f96d, type: 2}
+    cube: {fileID: 2100000, guid: 34204c0118e437c4c9569000f8fa2cd0, type: 2}
   gameIcon: {fileID: 21300000, guid: 0e7bd298bae31ef4a9a6b98bd8b1d7bd, type: 3}

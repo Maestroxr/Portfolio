@@ -11,7 +11,7 @@ using SpacetimeDB.ClientApi;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 
-namespace Portfolio.Checkers.Server
+namespace Portfolio.BoardGames.Server
 {
     public sealed partial class RemoteReducers : RemoteBase
     {
@@ -28,7 +28,7 @@ namespace Portfolio.Checkers.Server
     {
         public RemoteTables(DbConnection conn)
         {
-            AddTable(CheckersStats = new(conn));
+            AddTable(BoardGamesStats = new(conn));
             AddTable(Room = new(conn));
             AddTable(RoomAction = new(conn));
             AddTable(RoomMember = new(conn));
@@ -536,7 +536,7 @@ namespace Portfolio.Checkers.Server
 
         internal static string[] AllTablesSqlQueries() => new string[]
         {
-            new QueryBuilder().From.CheckersStats().ToSql(),
+            new QueryBuilder().From.BoardGamesStats().ToSql(),
             new QueryBuilder().From.Room().ToSql(),
             new QueryBuilder().From.RoomAction().ToSql(),
             new QueryBuilder().From.RoomMember().ToSql(),
@@ -554,7 +554,7 @@ namespace Portfolio.Checkers.Server
 
     public sealed class From
     {
-        public global::SpacetimeDB.Table<CheckersStats, CheckersStatsCols, CheckersStatsIxCols> CheckersStats() => new("checkers_stats", new CheckersStatsCols("checkers_stats"), new CheckersStatsIxCols("checkers_stats"));
+        public global::SpacetimeDB.Table<BoardGamesStats, BoardGamesStatsCols, BoardGamesStatsIxCols> BoardGamesStats() => new("board_games_stats", new BoardGamesStatsCols("board_games_stats"), new BoardGamesStatsIxCols("board_games_stats"));
         public global::SpacetimeDB.Table<Room, RoomCols, RoomIxCols> Room() => new("room", new RoomCols("room"), new RoomIxCols("room"));
         public global::SpacetimeDB.Table<RoomAction, RoomActionCols, RoomActionIxCols> RoomAction() => new("room_action", new RoomActionCols("room_action"), new RoomActionIxCols("room_action"));
         public global::SpacetimeDB.Table<RoomMember, RoomMemberCols, RoomMemberIxCols> RoomMember() => new("room_member", new RoomMemberCols("room_member"), new RoomMemberIxCols("room_member"));

@@ -10,7 +10,7 @@ using SpacetimeDB.ClientApi;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 
-namespace Portfolio.Checkers.Server
+namespace Portfolio.BoardGames.Server
 {
     public sealed partial class RemoteTables
     {

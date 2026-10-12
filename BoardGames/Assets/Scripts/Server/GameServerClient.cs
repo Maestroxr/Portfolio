@@ -5,7 +5,7 @@ using System;
 using Gamebox.Online;
 using UnityEngine;
 
-namespace Portfolio.Checkers.Server
+namespace Portfolio.BoardGames.Server
 {
     /// <summary>
     /// The server client of the bindings next to this file: the component to put in a scene. It ties the shared
@@ -20,7 +20,7 @@ namespace Portfolio.Checkers.Server
     /// classes, and add a game's own tables and reducers in a class derived from this one, or from outside through
     /// <c>Connection</c> and <c>ConnectionOpened</c>.
     /// </summary>
-    [AddComponentMenu("Gamebox/Online/Game Server Client (Portfolio.Checkers.Server)")]
+    [AddComponentMenu("Gamebox/Online/Game Server Client (Portfolio.BoardGames.Server)")]
     public class GameServerClient : ServerClient<DbConnection, RemoteTables, Reducer>
     {
         protected override void Bind(DbConnection connection)

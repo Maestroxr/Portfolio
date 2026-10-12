@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Portfolio.Checkers
+namespace Portfolio.BoardGames
 {
     /// <summary>
     /// One square of the 3D board: its face in the light or dark square material, a highlight quad over it that glows in
