@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b88d8da0a608470ba589e43a37c07d05, type: 3}
+  m_Name: Checkers
+  m_EditorClassIdentifier: BaseGameAssembly::Gamebox.Launcher.GameDefinition
+  type: 6
+  displayName: Checkers
+  description: 'Draughts for two: English, Russian or International rules, against the computer, at one device or online.'
+  icon: {fileID: 21300000, guid: 0e7bd298bae31ef4a9a6b98bd8b1d7bd, type: 3}
+  sortOrder: 6
+  scenePath: Assets/Scenes/Checkers.unity
+  extraScenePaths: []
+  theme: {fileID: 11400000, guid: c6267081f5c7ae64ca09f02775699138, type: 2}
+  themes:
+  - {fileID: 11400000, guid: c6267081f5c7ae64ca09f02775699138, type: 2}
+  - {fileID: 11400000, guid: c11e0000aac12bf4a982ffcc7c08b1cf, type: 2}
+  scene: {fileID: 102900000, guid: da53689d0e28ba74f9d952efdf0e4393, type: 3}
+  extraScenes: []
