@@ -77,6 +77,11 @@ namespace Portfolio.EndlessRunner
                 yield break;
             }
             yield return new WaitForSeconds(0.5f);
+            if (InTournament)
+            {
+                yield return Tournament();
+                yield break;
+            }
 
             if (Hosting)
             {
@@ -122,6 +127,66 @@ namespace Portfolio.EndlessRunner
             yield return new WaitForSeconds(1f);
             Note("done");
             Quit();
+        }
+
+        /// <summary>
+        /// A tournament of races (<c>hosttournament</c> opens and starts it, <c>jointournament</c> enters the first open one):
+        /// every match is a race the autopilot runs for <c>-runner-give-up</c> seconds (12 by default) before it lets go,
+        /// so the run ends and the race is decided; <c>-runner-entrants</c> (4) and <c>-runner-ready</c> (40) set the
+        /// tournament up.
+        /// </summary>
+        private IEnumerator Tournament()
+        {
+            int entrants = Mathf.Clamp(NumberArgument("-runner-entrants", 4), 2, 64);
+            if (Hosting)
+            {
+                var choices = manager.online.LevelChoices;
+                int wanted = NumberArgument(LevelArgument, choices[0].Index);
+                int level = choices.Any(choice => choice.Index == wanted) ? wanted : choices[0].Index;
+                string options = manager.online.ComposeOptions(level, string.Empty);
+                yield return HostTournament("Tour cup", level, options, 2, (byte)entrants, (uint)Mathf.Clamp(NumberArgument("-runner-ready", 40), 10, 3600));
+                yield return Shot("t0_open");
+                yield return WaitForEntrants(entrants - 1, 180f);
+                yield return new WaitForSeconds(0.5f);
+                yield return Shot("t0_entrants");
+                StartTournament();
+            }
+            else
+            {
+                yield return JoinFirstTournament(180f);
+                yield return new WaitForSeconds(0.5f);
+                yield return Shot("t0_entered");
+            }
+            yield return PlayTournament(() => manager.InRace && manager.IsGameRunning, PlayMatch, manager.ReturnToLevelSelect, manager.online.LobbyUI, 300f);
+            yield return new WaitForSeconds(1f);
+            Note("done");
+            Quit();
+        }
+
+        /// <summary>One race of the tournament: the autopilot runs, lets go after a while, and the race plays out.</summary>
+        private IEnumerator PlayMatch(int number)
+        {
+            Note($"racing match {number} on seat {manager.LocalSeat} of {manager.Racers.Count}; layout of the first 250 m: {manager.track.LayoutHash(250f):X8}");
+            pilot = manager.Player.gameObject.AddComponent<RunnerAutopilot>();
+            float giveUp = Mathf.Max(3f, NumberArgument(GiveUpArgument, 12f));
+            float started = Time.unscaledTime;
+            yield return new WaitForSeconds(4.5f);
+            Progress();
+            yield return Shot($"t{number}_running");
+            while (!Ended && !manager.IsWatching && Time.unscaledTime - started < giveUp)
+            {
+                yield return null;
+            }
+            if (pilot != null)
+            {
+                Note("the autopilot lets go");
+                Destroy(pilot);
+                pilot = null;
+            }
+            yield return WaitFor(() => Ended, 600f, "the end of the race");
+            yield return new WaitForSeconds(2.5f);
+            yield return Shot($"t{number}_results");
+            Report();
         }
 
         /// <summary>A race of the room, from its start to the way back into the room.</summary>

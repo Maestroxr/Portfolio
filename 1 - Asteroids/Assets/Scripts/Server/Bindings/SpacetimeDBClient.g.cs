@@ -43,6 +43,9 @@ namespace Portfolio.Asteroids.Server
             AddTable(RoomTurn = new(conn));
             AddTable(ShipSignal = new(conn));
             AddTable(ShotVolley = new(conn));
+            AddTable(Tournament = new(conn));
+            AddTable(TournamentEntry = new(conn));
+            AddTable(TournamentMatch = new(conn));
             AddTable(User = new(conn));
         }
     }
@@ -555,6 +558,9 @@ namespace Portfolio.Asteroids.Server
             new QueryBuilder().From.RoomTurn().ToSql(),
             new QueryBuilder().From.ShipSignal().ToSql(),
             new QueryBuilder().From.ShotVolley().ToSql(),
+            new QueryBuilder().From.Tournament().ToSql(),
+            new QueryBuilder().From.TournamentEntry().ToSql(),
+            new QueryBuilder().From.TournamentMatch().ToSql(),
             new QueryBuilder().From.User().ToSql(),
         }
         ;
@@ -577,6 +583,9 @@ namespace Portfolio.Asteroids.Server
         public global::SpacetimeDB.Table<RoomTurn, RoomTurnCols, RoomTurnIxCols> RoomTurn() => new("room_turn", new RoomTurnCols("room_turn"), new RoomTurnIxCols("room_turn"));
         public global::SpacetimeDB.Table<ShipSignal, ShipSignalCols, ShipSignalIxCols> ShipSignal() => new("ship_signal", new ShipSignalCols("ship_signal"), new ShipSignalIxCols("ship_signal"));
         public global::SpacetimeDB.Table<ShotVolley, ShotVolleyCols, ShotVolleyIxCols> ShotVolley() => new("shot_volley", new ShotVolleyCols("shot_volley"), new ShotVolleyIxCols("shot_volley"));
+        public global::SpacetimeDB.Table<Tournament, TournamentCols, TournamentIxCols> Tournament() => new("tournament", new TournamentCols("tournament"), new TournamentIxCols("tournament"));
+        public global::SpacetimeDB.Table<TournamentEntry, TournamentEntryCols, TournamentEntryIxCols> TournamentEntry() => new("tournament_entry", new TournamentEntryCols("tournament_entry"), new TournamentEntryIxCols("tournament_entry"));
+        public global::SpacetimeDB.Table<TournamentMatch, TournamentMatchCols, TournamentMatchIxCols> TournamentMatch() => new("tournament_match", new TournamentMatchCols("tournament_match"), new TournamentMatchIxCols("tournament_match"));
         public global::SpacetimeDB.Table<User, UserCols, UserIxCols> User() => new("user", new UserCols("user"), new UserIxCols("user"));
     }
 
@@ -661,15 +670,20 @@ namespace Portfolio.Asteroids.Server
             {
                 Reducer.ClaimBody args => Reducers.InvokeClaimBody(eventContext, args),
                 Reducer.ClearRoomSave args => Reducers.InvokeClearRoomSave(eventContext, args),
+                Reducer.CloseTournament args => Reducers.InvokeCloseTournament(eventContext, args),
                 Reducer.CompleteMission args => Reducers.InvokeCompleteMission(eventContext, args),
                 Reducer.ConfigureRoomGame args => Reducers.InvokeConfigureRoomGame(eventContext, args),
                 Reducer.CreateRoom args => Reducers.InvokeCreateRoom(eventContext, args),
+                Reducer.CreateTournament args => Reducers.InvokeCreateTournament(eventContext, args),
                 Reducer.DeleteAccount args => Reducers.InvokeDeleteAccount(eventContext, args),
                 Reducer.EndRoom args => Reducers.InvokeEndRoom(eventContext, args),
                 Reducer.FinishPlaying args => Reducers.InvokeFinishPlaying(eventContext, args),
                 Reducer.FireShots args => Reducers.InvokeFireShots(eventContext, args),
+                Reducer.JoinMatch args => Reducers.InvokeJoinMatch(eventContext, args),
                 Reducer.JoinRoom args => Reducers.InvokeJoinRoom(eventContext, args),
+                Reducer.JoinTournament args => Reducers.InvokeJoinTournament(eventContext, args),
                 Reducer.LeaveRoom args => Reducers.InvokeLeaveRoom(eventContext, args),
+                Reducer.LeaveTournament args => Reducers.InvokeLeaveTournament(eventContext, args),
                 Reducer.ReportHits args => Reducers.InvokeReportHits(eventContext, args),
                 Reducer.ReportMission args => Reducers.InvokeReportMission(eventContext, args),
                 Reducer.ReportScore args => Reducers.InvokeReportScore(eventContext, args),
@@ -679,6 +693,7 @@ namespace Portfolio.Asteroids.Server
                 Reducer.SetRoomSave args => Reducers.InvokeSetRoomSave(eventContext, args),
                 Reducer.SignalShip args => Reducers.InvokeSignalShip(eventContext, args),
                 Reducer.StartRoom args => Reducers.InvokeStartRoom(eventContext, args),
+                Reducer.StartTournament args => Reducers.InvokeStartTournament(eventContext, args),
                 Reducer.SubmitAction args => Reducers.InvokeSubmitAction(eventContext, args),
                 Reducer.SyncField args => Reducers.InvokeSyncField(eventContext, args),
                 Reducer.UpdatePose args => Reducers.InvokeUpdatePose(eventContext, args),

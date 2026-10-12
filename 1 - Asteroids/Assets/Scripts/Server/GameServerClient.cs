@@ -10,8 +10,9 @@ namespace Portfolio.Asteroids.Server
     /// <summary>
     /// The server client of the bindings next to this file: the component to put in a scene. It ties the shared
     /// <see cref="ServerClient"/> to the tables and the reducers of the base server as these bindings name them
-    /// (users, rooms and their members, turns, the action log, the seats of a table, saved games, poses), which is all that has to
-    /// be written per set of bindings; everything else, the same whatever the names, is in the base classes.
+    /// (users, rooms and their members, turns, the action log, the seats of a table, saved games, poses, tournaments with
+    /// their entries and matches), which is all that has to be written per set of bindings; everything else, the same
+    /// whatever the names, is in the base classes.
     ///
     /// The original of this class belongs to BaseGame's bindings of the base server;
     /// <c>Gamebox &gt; Server &gt; Generate Client Bindings</c> and <c>Publish All Games</c> write it into a game, in the
@@ -33,6 +34,9 @@ namespace Portfolio.Asteroids.Server
             Watch(db.RoomSave, row => NotifySaveChanged(ToSave(row)), row => NotifySaveRemoved(row.RoomId));
             Watch(db.RoomPose, row => NotifyPoseChanged(ToPose(row)), row => NotifyPoseRemoved(row.Identity));
             db.RoomAction.OnInsert += (context, row) => NotifyAction(ToAction(row));
+            Watch(db.Tournament, row => NotifyTournamentChanged(ToTournament(row)), row => NotifyTournamentRemoved(row.Id));
+            Watch(db.TournamentEntry, row => NotifyEntryChanged(ToEntry(row)), row => NotifyEntryRemoved(row.Id));
+            Watch(db.TournamentMatch, row => NotifyMatchChanged(ToMatch(row)), row => NotifyMatchRemoved(row.Id));
 
             RemoteReducers reducers = connection.Reducers;
             reducers.OnSetName += (context, playerName) => NotifyReducerFinished(SetNameReducer, context.Event.Status);
@@ -50,6 +54,13 @@ namespace Portfolio.Asteroids.Server
             reducers.OnSubmitAction += (context, seat, kind, payload) => NotifyReducerFinished(SubmitActionReducer, context.Event.Status);
             reducers.OnSetRoomSave += (context, saveName, level, data, seats) => NotifyReducerFinished(SetRoomSaveReducer, context.Event.Status);
             reducers.OnClearRoomSave += context => NotifyReducerFinished(ClearRoomSaveReducer, context.Event.Status);
+            reducers.OnCreateTournament += (context, tournamentName, level, options, playersPerMatch, maxEntrants, readySeconds) =>
+                NotifyReducerFinished(CreateTournamentReducer, context.Event.Status);
+            reducers.OnJoinTournament += (context, tournamentId) => NotifyReducerFinished(JoinTournamentReducer, context.Event.Status);
+            reducers.OnLeaveTournament += context => NotifyReducerFinished(LeaveTournamentReducer, context.Event.Status);
+            reducers.OnStartTournament += context => NotifyReducerFinished(StartTournamentReducer, context.Event.Status);
+            reducers.OnCloseTournament += context => NotifyReducerFinished(CloseTournamentReducer, context.Event.Status);
+            reducers.OnJoinMatch += context => NotifyReducerFinished(JoinMatchReducer, context.Event.Status);
             connection.OnUnhandledReducerError += (context, error) => Fail(error.Message);
         }
 
@@ -100,6 +111,19 @@ namespace Portfolio.Asteroids.Server
         protected override void SendUpdatePose(Vector3 position, Vector3 velocity, float heading, uint state, int value) =>
             Connection.Reducers.UpdatePose(position.x, position.y, position.z, velocity.x, velocity.y, velocity.z, heading, state, value);
 
+        protected override void SendCreateTournament(string tournamentName, int level, string options, byte playersPerMatch, byte maxEntrants, uint readySeconds) =>
+            Connection.Reducers.CreateTournament(tournamentName, level, options, playersPerMatch, maxEntrants, readySeconds);
+
+        protected override void SendJoinTournament(ulong tournamentId) => Connection.Reducers.JoinTournament(tournamentId);
+
+        protected override void SendLeaveTournament() => Connection.Reducers.LeaveTournament();
+
+        protected override void SendStartTournament() => Connection.Reducers.StartTournament();
+
+        protected override void SendCloseTournament() => Connection.Reducers.CloseTournament();
+
+        protected override void SendJoinMatch() => Connection.Reducers.JoinMatch();
+
         private static PlayerProfile ToProfile(User row) => new PlayerProfile(row.Identity, row.Name, row.Guest, row.Avatar, row.Online,
             row.CreatedAt, row.LastLoginAt, row.LastSeenAt, row.Logins, row.SecondsOnline);
 
@@ -129,5 +153,23 @@ namespace Portfolio.Asteroids.Server
 
         private static RoomPoseInfo ToPose(RoomPose row) => new RoomPoseInfo(row.Identity, row.RoomId, new Vector3(row.X, row.Y, row.Z),
             new Vector3(row.VelocityX, row.VelocityY, row.VelocityZ), row.Heading, row.State, row.Value, row.Sequence);
+
+        private static Gamebox.Online.TournamentInfo ToTournament(Tournament row) => new Gamebox.Online.TournamentInfo(row.Id, row.Name, row.Host, (Gamebox.Online.TournamentPhase)(int)row.State,
+            row.Level, row.Options, row.PlayersPerMatch, row.MaxEntrants, row.ReadySeconds, row.Rounds, row.Round, row.Winner, row.HasWinner);
+
+        private static Gamebox.Online.TournamentEntryInfo ToEntry(TournamentEntry row) =>
+            new Gamebox.Online.TournamentEntryInfo(row.Id, row.TournamentId, row.Player, row.Name, row.Seed, row.OutInRound, row.Place, row.Wins);
+
+        private static Gamebox.Online.TournamentMatchInfo ToMatch(TournamentMatch row)
+        {
+            // Qualified: a game may have types of these names in the namespace of its bindings' parent (Monopoly has a MatchPhase).
+            var slots = new System.Collections.Generic.List<Gamebox.Online.MatchSlotInfo>();
+            foreach (MatchSlot slot in row.Slots)
+            {
+                slots.Add(new Gamebox.Online.MatchSlotInfo(slot.Taken, slot.Player, slot.Name, slot.Place, slot.Score, slot.Forfeited));
+            }
+            return new Gamebox.Online.TournamentMatchInfo(row.Id, row.TournamentId, row.Round, row.Index, (Gamebox.Online.MatchPhase)(int)row.State, row.RoomId, slots,
+                row.Winner, row.HasWinner, row.DueAt.MicrosecondsSinceUnixEpoch);
+        }
     }
 }

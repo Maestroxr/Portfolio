@@ -108,7 +108,7 @@ scene, so the Quit button closes a build of the game on its own; in the editor i
 | `Scripts/UI/*` | Level select (world tabs, level cards, details), HUD, results, pause menu, settings panel |
 | `Scripts/MemoryCardsAutopilot.cs` | Plays a level by itself; add it to any object in play mode to test a level end to end |
 | `Scripts/MemoryCardsTour.cs` | Development builds only: `-memorycards-tour <folder>` plays through the game and saves screenshots; `-memorycards-versus <folder>` plays only the versus game for three |
-| `Scripts/MemoryCardsOnlineTour.cs` | Development builds only, on BaseGame's `OnlineTour`: `-memorycards-online host <folder>` and `-memorycards-online join <folder>` (or `idle`, `quitter`) play an online game between two running players; `-memorycards-mistakes <rate>`, `-memorycards-bombs` and `-memorycards-level <n>` change what and how they play |
+| `Scripts/MemoryCardsOnlineTour.cs` | Development builds only, on BaseGame's `OnlineTour`: `-memorycards-online host <folder>` and `-memorycards-online join <folder>` (or `idle`, `quitter`) play an online game between two running players; `-memorycards-mistakes <rate>`, `-memorycards-bombs` and `-memorycards-level <n>` change what and how they play; `hosttournament` and `jointournament` play a tournament of versus games (`-memorycards-entrants <n>`, `-memorycards-ready <seconds>`) with a picture of the bracket after every match |
 | `Scripts/MemoryCardsTheme.cs`, `Scripts/View/ThemedLabel.cs` | The look of the game in one asset (see "Themes"), and the label that takes its font, text material and colour from it |
 
 The rules engine knows nothing of Unity objects, so it is covered by edit mode tests (`Tests/Editor`, assembly

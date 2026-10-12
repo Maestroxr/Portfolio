@@ -36,6 +36,9 @@ namespace Portfolio.Heroes.Server
             AddTable(RoomSave = new(conn));
             AddTable(RoomSeat = new(conn));
             AddTable(RoomTurn = new(conn));
+            AddTable(Tournament = new(conn));
+            AddTable(TournamentEntry = new(conn));
+            AddTable(TournamentMatch = new(conn));
             AddTable(User = new(conn));
         }
     }
@@ -541,6 +544,9 @@ namespace Portfolio.Heroes.Server
             new QueryBuilder().From.RoomSave().ToSql(),
             new QueryBuilder().From.RoomSeat().ToSql(),
             new QueryBuilder().From.RoomTurn().ToSql(),
+            new QueryBuilder().From.Tournament().ToSql(),
+            new QueryBuilder().From.TournamentEntry().ToSql(),
+            new QueryBuilder().From.TournamentMatch().ToSql(),
             new QueryBuilder().From.User().ToSql(),
         }
         ;
@@ -556,6 +562,9 @@ namespace Portfolio.Heroes.Server
         public global::SpacetimeDB.Table<RoomSave, RoomSaveCols, RoomSaveIxCols> RoomSave() => new("room_save", new RoomSaveCols("room_save"), new RoomSaveIxCols("room_save"));
         public global::SpacetimeDB.Table<RoomSeat, RoomSeatCols, RoomSeatIxCols> RoomSeat() => new("room_seat", new RoomSeatCols("room_seat"), new RoomSeatIxCols("room_seat"));
         public global::SpacetimeDB.Table<RoomTurn, RoomTurnCols, RoomTurnIxCols> RoomTurn() => new("room_turn", new RoomTurnCols("room_turn"), new RoomTurnIxCols("room_turn"));
+        public global::SpacetimeDB.Table<Tournament, TournamentCols, TournamentIxCols> Tournament() => new("tournament", new TournamentCols("tournament"), new TournamentIxCols("tournament"));
+        public global::SpacetimeDB.Table<TournamentEntry, TournamentEntryCols, TournamentEntryIxCols> TournamentEntry() => new("tournament_entry", new TournamentEntryCols("tournament_entry"), new TournamentEntryIxCols("tournament_entry"));
+        public global::SpacetimeDB.Table<TournamentMatch, TournamentMatchCols, TournamentMatchIxCols> TournamentMatch() => new("tournament_match", new TournamentMatchCols("tournament_match"), new TournamentMatchIxCols("tournament_match"));
         public global::SpacetimeDB.Table<User, UserCols, UserIxCols> User() => new("user", new UserCols("user"), new UserIxCols("user"));
     }
 
@@ -639,19 +648,25 @@ namespace Portfolio.Heroes.Server
             return reducer switch
             {
                 Reducer.ClearRoomSave args => Reducers.InvokeClearRoomSave(eventContext, args),
+                Reducer.CloseTournament args => Reducers.InvokeCloseTournament(eventContext, args),
                 Reducer.ConfigureRoomGame args => Reducers.InvokeConfigureRoomGame(eventContext, args),
                 Reducer.CreateRoom args => Reducers.InvokeCreateRoom(eventContext, args),
+                Reducer.CreateTournament args => Reducers.InvokeCreateTournament(eventContext, args),
                 Reducer.DeleteAccount args => Reducers.InvokeDeleteAccount(eventContext, args),
                 Reducer.EndRoom args => Reducers.InvokeEndRoom(eventContext, args),
                 Reducer.FinishPlaying args => Reducers.InvokeFinishPlaying(eventContext, args),
+                Reducer.JoinMatch args => Reducers.InvokeJoinMatch(eventContext, args),
                 Reducer.JoinRoom args => Reducers.InvokeJoinRoom(eventContext, args),
+                Reducer.JoinTournament args => Reducers.InvokeJoinTournament(eventContext, args),
                 Reducer.LeaveRoom args => Reducers.InvokeLeaveRoom(eventContext, args),
+                Reducer.LeaveTournament args => Reducers.InvokeLeaveTournament(eventContext, args),
                 Reducer.ReportScore args => Reducers.InvokeReportScore(eventContext, args),
                 Reducer.SetAvatar args => Reducers.InvokeSetAvatar(eventContext, args),
                 Reducer.SetName args => Reducers.InvokeSetName(eventContext, args),
                 Reducer.SetReady args => Reducers.InvokeSetReady(eventContext, args),
                 Reducer.SetRoomSave args => Reducers.InvokeSetRoomSave(eventContext, args),
                 Reducer.StartRoom args => Reducers.InvokeStartRoom(eventContext, args),
+                Reducer.StartTournament args => Reducers.InvokeStartTournament(eventContext, args),
                 Reducer.SubmitAction args => Reducers.InvokeSubmitAction(eventContext, args),
                 Reducer.UpdatePose args => Reducers.InvokeUpdatePose(eventContext, args),
                 _ => throw new ArgumentOutOfRangeException("Reducer", $"Unknown reducer {reducer}")
