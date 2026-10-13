@@ -28,10 +28,13 @@ namespace Portfolio.MemoryCards.Server
     {
         public RemoteTables(DbConnection conn)
         {
+            AddTable(Admin = new(conn));
             AddTable(BoardCard = new(conn));
             AddTable(FlipEvent = new(conn));
             AddTable(MemoryBoard = new(conn));
             AddTable(MemoryStats = new(conn));
+            AddTable(MyTournamentCodes = new(conn));
+            AddTable(PlayerData = new(conn));
             AddTable(Room = new(conn));
             AddTable(RoomAction = new(conn));
             AddTable(RoomMember = new(conn));
@@ -539,10 +542,13 @@ namespace Portfolio.MemoryCards.Server
 
         internal static string[] AllTablesSqlQueries() => new string[]
         {
+            new QueryBuilder().From.Admin().ToSql(),
             new QueryBuilder().From.BoardCard().ToSql(),
             new QueryBuilder().From.FlipEvent().ToSql(),
             new QueryBuilder().From.MemoryBoard().ToSql(),
             new QueryBuilder().From.MemoryStats().ToSql(),
+            new QueryBuilder().From.MyTournamentCodes().ToSql(),
+            new QueryBuilder().From.PlayerData().ToSql(),
             new QueryBuilder().From.Room().ToSql(),
             new QueryBuilder().From.RoomAction().ToSql(),
             new QueryBuilder().From.RoomMember().ToSql(),
@@ -560,10 +566,13 @@ namespace Portfolio.MemoryCards.Server
 
     public sealed class From
     {
+        public global::SpacetimeDB.Table<Admin, AdminCols, AdminIxCols> Admin() => new("admin", new AdminCols("admin"), new AdminIxCols("admin"));
         public global::SpacetimeDB.Table<BoardCard, BoardCardCols, BoardCardIxCols> BoardCard() => new("board_card", new BoardCardCols("board_card"), new BoardCardIxCols("board_card"));
         public global::SpacetimeDB.Table<FlipEvent, FlipEventCols, FlipEventIxCols> FlipEvent() => new("flip_event", new FlipEventCols("flip_event"), new FlipEventIxCols("flip_event"));
         public global::SpacetimeDB.Table<MemoryBoard, MemoryBoardCols, MemoryBoardIxCols> MemoryBoard() => new("memory_board", new MemoryBoardCols("memory_board"), new MemoryBoardIxCols("memory_board"));
         public global::SpacetimeDB.Table<MemoryStats, MemoryStatsCols, MemoryStatsIxCols> MemoryStats() => new("memory_stats", new MemoryStatsCols("memory_stats"), new MemoryStatsIxCols("memory_stats"));
+        public global::SpacetimeDB.Table<TournamentCode, MyTournamentCodesCols, MyTournamentCodesIxCols> MyTournamentCodes() => new("my_tournament_codes", new MyTournamentCodesCols("my_tournament_codes"), new MyTournamentCodesIxCols("my_tournament_codes"));
+        public global::SpacetimeDB.Table<PlayerData, PlayerDataCols, PlayerDataIxCols> PlayerData() => new("player_data", new PlayerDataCols("player_data"), new PlayerDataIxCols("player_data"));
         public global::SpacetimeDB.Table<Room, RoomCols, RoomIxCols> Room() => new("room", new RoomCols("room"), new RoomIxCols("room"));
         public global::SpacetimeDB.Table<RoomAction, RoomActionCols, RoomActionIxCols> RoomAction() => new("room_action", new RoomActionCols("room_action"), new RoomActionIxCols("room_action"));
         public global::SpacetimeDB.Table<RoomMember, RoomMemberCols, RoomMemberIxCols> RoomMember() => new("room_member", new RoomMemberCols("room_member"), new RoomMemberIxCols("room_member"));
@@ -668,10 +677,13 @@ namespace Portfolio.MemoryCards.Server
                 Reducer.JoinMatch args => Reducers.InvokeJoinMatch(eventContext, args),
                 Reducer.JoinRoom args => Reducers.InvokeJoinRoom(eventContext, args),
                 Reducer.JoinTournament args => Reducers.InvokeJoinTournament(eventContext, args),
+                Reducer.JoinTournamentByCode args => Reducers.InvokeJoinTournamentByCode(eventContext, args),
                 Reducer.LeaveRoom args => Reducers.InvokeLeaveRoom(eventContext, args),
                 Reducer.LeaveTournament args => Reducers.InvokeLeaveTournament(eventContext, args),
                 Reducer.ReportScore args => Reducers.InvokeReportScore(eventContext, args),
+                Reducer.SavePlayerData args => Reducers.InvokeSavePlayerData(eventContext, args),
                 Reducer.SetAvatar args => Reducers.InvokeSetAvatar(eventContext, args),
+                Reducer.SetLook args => Reducers.InvokeSetLook(eventContext, args),
                 Reducer.SetName args => Reducers.InvokeSetName(eventContext, args),
                 Reducer.SetReady args => Reducers.InvokeSetReady(eventContext, args),
                 Reducer.SetRoomSave args => Reducers.InvokeSetRoomSave(eventContext, args),

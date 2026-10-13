@@ -43,7 +43,8 @@ namespace Portfolio.Monopoly
                 for (int i = 0; modes != null && i < modes.Count; i++)
                 {
                     MonopolyLevel mode = modes.Mode(i);
-                    if (mode != null && !mode.UsesCustomRules)
+                    // The modes the player unlocked online, by winning online.
+                    if (mode != null && !mode.UsesCustomRules && IsUnlockedOnline(i))
                     {
                         choices.Add(new RoomLevelChoice(i, L.Data(mode.Title)));
                     }
@@ -63,6 +64,18 @@ namespace Portfolio.Monopoly
         {
             int computers = room.Option(RoomOptions.ComputersOption, 0);
             return computers > 0 ? L.F("{0}, computer players", base.DescribeRoom(room)) : base.DescribeRoom(room);
+        }
+
+        protected override CampaignProgress CreateOnlineProgress(IStorageStrategy storage)
+        {
+            return new MonopolyProgress(storage, GameType.Monopoly);
+        }
+
+        /// <summary>A game played online: counted, and a win of the mode with its richest net worth, like a game on the device.</summary>
+        protected override void RecordOnlineResult(RoomInfo room, RoomMemberInfo me)
+        {
+            bool won = me.Place == 1;
+            ((MonopolyProgress)OnlineProgress).RecordMatch(room.Level, won, won ? 1 : 0, (int)System.Math.Min(me.Score, int.MaxValue));
         }
 
         protected override void Start()

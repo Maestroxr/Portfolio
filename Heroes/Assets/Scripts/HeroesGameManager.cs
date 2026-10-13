@@ -73,7 +73,7 @@ namespace Portfolio.Heroes
 
         public HeroesSettings Options => Settings as HeroesSettings ?? settings;
 
-        public HeroesProgress Progress => progress ??= new HeroesProgress(Disk, GameType.Heroes);
+        public HeroesProgress Progress => progress ??= new HeroesProgress(Disk, GameType.Heroes) { Avatar = LocalAvatar.Instance };
 
         public HeroesLevel Scenario => campaign != null ? campaign.Scenario(LevelIndex) : null;
 

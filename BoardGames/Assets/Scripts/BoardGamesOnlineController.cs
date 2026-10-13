@@ -32,6 +32,29 @@ namespace Portfolio.BoardGames
         public override int MinPlayersLimit => 2;
 
         /// <summary>The rule sets a room can play: one level per rule set (the number is the <see cref="RuleSet"/>).</summary>
+        protected override CampaignProgress CreateOnlineProgress(IStorageStrategy storage)
+        {
+            return new BoardGamesProgress(storage, GameType.BoardGames);
+        }
+
+        /// <summary>
+        /// A game played online counts among the games, wins and draws. A room plays a rule set, not a level of the
+        /// campaign: nothing to unlock.
+        /// </summary>
+        protected override void RecordOnlineResult(RoomInfo room, RoomMemberInfo me)
+        {
+            int first = 0;
+            foreach (RoomMemberInfo member in Server.Members)
+            {
+                if (member.Place == 1)
+                {
+                    first++;
+                }
+            }
+            bool drawn = first > 1;
+            ((BoardGamesProgress)OnlineProgress).RecordGame(me.Place == 1 && !drawn, drawn);
+        }
+
         public override IReadOnlyList<RoomLevelChoice> LevelChoices
         {
             get

@@ -42,6 +42,32 @@ namespace Portfolio.Heroes
 
         public override int MinPlayersLimit => 2;
 
+        protected override CampaignProgress CreateOnlineProgress(IStorageStrategy storage)
+        {
+            return new HeroesProgress(storage, GameType.Heroes);
+        }
+
+        /// <summary>
+        /// A game played online: a win of a scenario counts like one on the device, a win on a random map only among the
+        /// wins, and a loss among the losses. The skirmish maps a room plays are not a campaign: nothing to unlock.
+        /// </summary>
+        protected override void RecordOnlineResult(RoomInfo room, RoomMemberInfo me)
+        {
+            var progress = (HeroesProgress)OnlineProgress;
+            if (me.Place != 1)
+            {
+                progress.RecordLoss();
+            }
+            else if (room.Level >= 0)
+            {
+                progress.RecordWin(room.Level, 1, (int)System.Math.Min(me.Score, int.MaxValue), 0);
+            }
+            else
+            {
+                progress.SetValue(HeroesProgress.WinsKey, progress.Wins + 1);
+            }
+        }
+
         public override IReadOnlyList<RoomLevelChoice> LevelChoices
         {
             get

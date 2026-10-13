@@ -164,7 +164,7 @@ namespace Portfolio.EndlessRunner
 
         protected override void Start()
         {
-            progress = new CampaignProgress(Disk, Type);
+            progress = new CampaignProgress(Disk, Type) { Avatar = LocalAvatar.Instance };
             if (track != null)
             {
                 track.HintReached += OnHintReached;

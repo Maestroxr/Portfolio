@@ -18,6 +18,9 @@ namespace Portfolio.MemoryCards
     /// </summary>
     public class MemoryCardsUI : GameUI
     {
+        /// <summary>The player's avatar on this device while the menu is up: At the bottom, between the play buttons and the settings.</summary>
+        protected override (Vector2 anchor, Vector2 offset)? AvatarPlace => (new Vector2(1f, 0f), new Vector2(-260f, 24f));
+
         private sealed class Popup
         {
             public TMP_Text text;

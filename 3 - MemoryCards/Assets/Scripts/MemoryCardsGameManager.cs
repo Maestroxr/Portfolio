@@ -228,7 +228,7 @@ namespace Portfolio.MemoryCards
 
         protected override void Start()
         {
-            progress = new MemoryCardsProgress(Disk, Type);
+            progress = new MemoryCardsProgress(Disk, Type) { Avatar = LocalAvatar.Instance };
             look = ThemeAs<MemoryCardsTheme>();
             ApplyLook();
             base.Start();

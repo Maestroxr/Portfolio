@@ -19,6 +19,9 @@ namespace Portfolio.EndlessRunner
     /// </summary>
     public class RunnerUI : GameUI
     {
+        /// <summary>The player's avatar on this device while the menu is up: At the top right, beside the language, above the stars.</summary>
+        protected override (Vector2 anchor, Vector2 offset)? AvatarPlace => (new Vector2(1f, 1f), new Vector2(-120f, -20f));
+
         [Serializable]
         internal class PowerUpSlot
         {

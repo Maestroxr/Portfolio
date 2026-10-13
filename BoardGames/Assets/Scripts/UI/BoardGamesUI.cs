@@ -18,6 +18,9 @@ namespace Portfolio.BoardGames
     /// </summary>
     public sealed class BoardGamesUI : GameUI
     {
+        /// <summary>The player's avatar on this device while the menu is up: In the top left corner, beside the games' tabs.</summary>
+        protected override (Vector2 anchor, Vector2 offset)? AvatarPlace => (new Vector2(0f, 1f), new Vector2(24f, -24f));
+
         [Header("HUD")]
         [SerializeField] private GameObject hud;
         [SerializeField] private SeatPanel[] seatPanels = new SeatPanel[2];

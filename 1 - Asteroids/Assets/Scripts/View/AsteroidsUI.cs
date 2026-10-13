@@ -19,6 +19,9 @@ namespace Portfolio.Asteroids
     /// </summary>
     public class AsteroidsUI : GameUI
     {
+        /// <summary>The player's avatar on this device while the menu is up: At the top, between the title and the stars.</summary>
+        protected override (Vector2 anchor, Vector2 offset)? AvatarPlace => (new Vector2(1f, 1f), new Vector2(-430f, -24f));
+
         [Serializable]
         internal class PowerUpSlot
         {

@@ -48,7 +48,8 @@ namespace Portfolio.MemoryCards
                 for (int i = 0; campaign != null && i < campaign.Count; i++)
                 {
                     MemoryCardsLevel level = campaign.Level(i);
-                    if (level != null && level.IsCampaign && level.Settings != null)
+                    // The boards the player unlocked online, by winning online.
+                    if (level != null && level.IsCampaign && level.Settings != null && IsUnlockedOnline(i))
                     {
                         RoundRules rules = VersusMatch.RulesFor(level.Settings.ToRules());
                         choices.Add(new RoomLevelChoice(i, $"{MemoryCardsText.T(level.Title)} ({rules.Columns}x{rules.Rows})"));
@@ -93,6 +94,11 @@ namespace Portfolio.MemoryCards
             {
                 Client.Connection.Reducers.FlipCard((ushort)card);
             }
+        }
+
+        protected override CampaignProgress CreateOnlineProgress(IStorageStrategy storage)
+        {
+            return new MemoryCardsProgress(storage, GameType.MemoryCards);
         }
 
         protected override void Start()

@@ -90,7 +90,8 @@ namespace Portfolio.Asteroids
                     {
                         number++;
                     }
-                    if (i == 0 || manager.IsUnlocked(i))
+                    // The missions the pilot unlocked online (playing them online), not on the device.
+                    if (IsUnlockedOnline(i))
                     {
                         levelChoices.Add(new RoomLevelChoice(i, CoopRules.LevelTitle(mission, strike ? strikeNumber : number)));
                     }
@@ -143,6 +144,8 @@ namespace Portfolio.Asteroids
         protected override void Start()
         {
             base.Start();
+            // A mission won online unlocks the next: the list is made again.
+            OnlineProgressChanged += levelChoices.Clear;
             if (Asteroids != null)
             {
                 replication = new FieldReplication(Asteroids);
@@ -257,6 +260,11 @@ namespace Portfolio.Asteroids
 
 
         /// <summary>The server ended the mission: the manager plays the end it names, and the results list the places.</summary>
+        protected override CampaignProgress CreateOnlineProgress(IStorageStrategy storage)
+        {
+            return new AsteroidsProgress(storage, GameType.Asteroids);
+        }
+
         protected override void OnRoomFinished(RoomInfo room)
         {
             if (!InCharge || Asteroids == null)

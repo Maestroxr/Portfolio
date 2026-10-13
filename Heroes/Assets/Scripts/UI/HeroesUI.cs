@@ -17,6 +17,9 @@ namespace Portfolio.Heroes.UI
     /// </summary>
     public class HeroesUI : GameUI
     {
+        /// <summary>The player's avatar on this device while the menu is up: In the bottom right corner, over the landscape.</summary>
+        protected override (Vector2 anchor, Vector2 offset)? AvatarPlace => (new Vector2(1f, 0f), new Vector2(-24f, 24f));
+
         /// <summary>The key the manager keeps the level of the last saved scenario under, which Continue takes up.</summary>
 
         /// <summary>The pause menu's way back to the title screen, added to the shared menu by the scene builder.</summary>

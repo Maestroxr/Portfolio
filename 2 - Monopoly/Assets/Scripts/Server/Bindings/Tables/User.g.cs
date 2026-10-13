@@ -50,6 +50,8 @@ namespace Portfolio.Monopoly.Server
         public global::SpacetimeDB.Col<User, SpacetimeDB.Timestamp> LastSeenAt { get; }
         public global::SpacetimeDB.Col<User, uint> Logins { get; }
         public global::SpacetimeDB.Col<User, ulong> SecondsOnline { get; }
+        public global::SpacetimeDB.Col<User, uint> Look { get; }
+        public global::SpacetimeDB.Col<User, uint> Level { get; }
 
         public UserCols(string tableName)
         {
@@ -63,6 +65,8 @@ namespace Portfolio.Monopoly.Server
             LastSeenAt = new global::SpacetimeDB.Col<User, SpacetimeDB.Timestamp>(tableName, "last_seen_at");
             Logins = new global::SpacetimeDB.Col<User, uint>(tableName, "logins");
             SecondsOnline = new global::SpacetimeDB.Col<User, ulong>(tableName, "seconds_online");
+            Look = new global::SpacetimeDB.Col<User, uint>(tableName, "look");
+            Level = new global::SpacetimeDB.Col<User, uint>(tableName, "level");
         }
     }
 

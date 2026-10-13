@@ -56,6 +56,7 @@ namespace Portfolio.Asteroids.Server
         public global::SpacetimeDB.Col<Tournament, SpacetimeDB.Timestamp> CreatedAt { get; }
         public global::SpacetimeDB.Col<Tournament, SpacetimeDB.Timestamp> StartedAt { get; }
         public global::SpacetimeDB.Col<Tournament, SpacetimeDB.Timestamp> FinishedAt { get; }
+        public global::SpacetimeDB.Col<Tournament, bool> Private { get; }
 
         public TournamentCols(string tableName)
         {
@@ -75,6 +76,7 @@ namespace Portfolio.Asteroids.Server
             CreatedAt = new global::SpacetimeDB.Col<Tournament, SpacetimeDB.Timestamp>(tableName, "created_at");
             StartedAt = new global::SpacetimeDB.Col<Tournament, SpacetimeDB.Timestamp>(tableName, "started_at");
             FinishedAt = new global::SpacetimeDB.Col<Tournament, SpacetimeDB.Timestamp>(tableName, "finished_at");
+            Private = new global::SpacetimeDB.Col<Tournament, bool>(tableName, "private");
         }
     }
 

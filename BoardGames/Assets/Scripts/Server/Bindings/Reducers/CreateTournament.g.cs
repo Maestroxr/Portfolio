@@ -13,12 +13,12 @@ namespace Portfolio.BoardGames.Server
 {
     public sealed partial class RemoteReducers : RemoteBase
     {
-        public delegate void CreateTournamentHandler(ReducerEventContext ctx, string name, int level, string options, byte playersPerMatch, byte maxEntrants, uint readySeconds);
+        public delegate void CreateTournamentHandler(ReducerEventContext ctx, string name, int level, string options, byte playersPerMatch, byte maxEntrants, uint readySeconds, bool isPublic);
         public event CreateTournamentHandler? OnCreateTournament;
 
-        public void CreateTournament(string name, int level, string options, byte playersPerMatch, byte maxEntrants, uint readySeconds)
+        public void CreateTournament(string name, int level, string options, byte playersPerMatch, byte maxEntrants, uint readySeconds, bool isPublic)
         {
-            conn.InternalCallReducer(new Reducer.CreateTournament(name, level, options, playersPerMatch, maxEntrants, readySeconds));
+            conn.InternalCallReducer(new Reducer.CreateTournament(name, level, options, playersPerMatch, maxEntrants, readySeconds, isPublic));
         }
 
         public bool InvokeCreateTournament(ReducerEventContext ctx, Reducer.CreateTournament args)
@@ -42,7 +42,8 @@ namespace Portfolio.BoardGames.Server
                 args.Options,
                 args.PlayersPerMatch,
                 args.MaxEntrants,
-                args.ReadySeconds
+                args.ReadySeconds,
+                args.IsPublic
             );
             return true;
         }
@@ -66,6 +67,8 @@ namespace Portfolio.BoardGames.Server
             public byte MaxEntrants;
             [DataMember(Name = "ready_seconds")]
             public uint ReadySeconds;
+            [DataMember(Name = "is_public")]
+            public bool IsPublic;
 
             public CreateTournament(
                 string Name,
@@ -73,7 +76,8 @@ namespace Portfolio.BoardGames.Server
                 string Options,
                 byte PlayersPerMatch,
                 byte MaxEntrants,
-                uint ReadySeconds
+                uint ReadySeconds,
+                bool IsPublic
             )
             {
                 this.Name = Name;
@@ -82,6 +86,7 @@ namespace Portfolio.BoardGames.Server
                 this.PlayersPerMatch = PlayersPerMatch;
                 this.MaxEntrants = MaxEntrants;
                 this.ReadySeconds = ReadySeconds;
+                this.IsPublic = IsPublic;
             }
 
             public CreateTournament()

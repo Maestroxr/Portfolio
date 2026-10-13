@@ -45,7 +45,8 @@ namespace Portfolio.EndlessRunner
                 ICampaign campaign = BaseManager != null ? BaseManager.Campaign : null;
                 for (int i = 0; campaign != null && i < campaign.Count; i++)
                 {
-                    if (campaign[i] is RunnerLevel level)
+                    // The endless runs, and the levels the player unlocked online (finishing the one before first online).
+                    if (campaign[i] is RunnerLevel level && (level.IsEndless || IsUnlockedOnline(i)))
                     {
                         string title = RunnerText.TitleOf(level);
                         levelChoices.Add(new RoomLevelChoice(i, level.IsEndless ? title : RunnerText.F("{0}. {1} ({2:0} m)", i + 1, title, level.Length)));
@@ -117,6 +118,7 @@ namespace Portfolio.EndlessRunner
         protected override void Start()
         {
             base.Start();
+            OnlineProgressChanged += () => levelChoices = null;
             if (Client != null)
             {
                 Client.ConnectionOpened += Bind;
@@ -209,6 +211,11 @@ namespace Portfolio.EndlessRunner
         }
 
         /// <summary>The results of the manager show the standings; the places are the server's.</summary>
+        protected override Gamebox.CampaignProgress CreateOnlineProgress(IStorageStrategy storage)
+        {
+            return new CampaignProgress(storage, GameType.EndlessRunner);
+        }
+
         protected override void OnRoomFinished(RoomInfo room)
         {
             if (!InCharge)

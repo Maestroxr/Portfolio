@@ -65,7 +65,7 @@ namespace Portfolio.BoardGames
 
         public BoardGamesSettings Options => Settings as BoardGamesSettings ?? settings;
 
-        public BoardGamesProgress Progress => progress ??= new BoardGamesProgress(Disk, GameType.BoardGames);
+        public BoardGamesProgress Progress => progress ??= new BoardGamesProgress(Disk, GameType.BoardGames) { Avatar = LocalAvatar.Instance };
 
         public BoardGamesTheme Look => ThemeAs<BoardGamesTheme>();
 
@@ -123,7 +123,7 @@ namespace Portfolio.BoardGames
 
         protected override void Start()
         {
-            progress = new BoardGamesProgress(Disk, GameType.BoardGames);
+            progress = new BoardGamesProgress(Disk, GameType.BoardGames) { Avatar = LocalAvatar.Instance };
             base.Start();
             RecallTitleMode();
             ApplyLook(Look);

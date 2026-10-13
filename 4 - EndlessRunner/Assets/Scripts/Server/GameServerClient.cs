@@ -11,8 +11,8 @@ namespace Portfolio.EndlessRunner.Server
     /// The server client of the bindings next to this file: the component to put in a scene. It ties the shared
     /// <see cref="ServerClient"/> to the tables and the reducers of the base server as these bindings name them
     /// (users, rooms and their members, turns, the action log, the seats of a table, saved games, poses, tournaments with
-    /// their entries and matches), which is all that has to be written per set of bindings; everything else, the same
-    /// whatever the names, is in the base classes.
+    /// their entries, matches and codes, the player's data, the admins), which is all that has to be written per set of
+    /// bindings; everything else, the same whatever the names, is in the base classes.
     ///
     /// The original of this class belongs to BaseGame's bindings of the base server;
     /// <c>Gamebox &gt; Server &gt; Generate Client Bindings</c> and <c>Publish All Games</c> write it into a game, in the
@@ -37,10 +37,16 @@ namespace Portfolio.EndlessRunner.Server
             Watch(db.Tournament, row => NotifyTournamentChanged(ToTournament(row)), row => NotifyTournamentRemoved(row.Id));
             Watch(db.TournamentEntry, row => NotifyEntryChanged(ToEntry(row)), row => NotifyEntryRemoved(row.Id));
             Watch(db.TournamentMatch, row => NotifyMatchChanged(ToMatch(row)), row => NotifyMatchRemoved(row.Id));
+            db.MyTournamentCodes.OnInsert += (context, row) => NotifyTournamentCode(row.TournamentId, row.Code);
+            db.MyTournamentCodes.OnDelete += (context, row) => NotifyTournamentCodeRemoved(row.TournamentId);
+            Watch(db.PlayerData, row => NotifyPlayerDataChanged(row.Owner, row.Key, row.Value), row => NotifyPlayerDataRemoved(row.Owner, row.Key));
+            Watch(db.Admin, row => NotifyAdminChanged(row.Identity, true), row => NotifyAdminChanged(row.Identity, false));
 
             RemoteReducers reducers = connection.Reducers;
             reducers.OnSetName += (context, playerName) => NotifyReducerFinished(SetNameReducer, context.Event.Status);
             reducers.OnSetAvatar += (context, avatar) => NotifyReducerFinished(SetAvatarReducer, context.Event.Status);
+            reducers.OnSetLook += (context, look, level) => NotifyReducerFinished(SetLookReducer, context.Event.Status);
+            reducers.OnSavePlayerData += (context, changes) => NotifyReducerFinished(SavePlayerDataReducer, context.Event.Status);
             reducers.OnDeleteAccount += context => NotifyReducerFinished(DeleteAccountReducer, context.Event.Status);
             reducers.OnCreateRoom += (context, roomName, maxPlayers, level, options) => NotifyReducerFinished(CreateRoomReducer, context.Event.Status);
             reducers.OnJoinRoom += (context, roomId) => NotifyReducerFinished(JoinRoomReducer, context.Event.Status);
@@ -54,9 +60,10 @@ namespace Portfolio.EndlessRunner.Server
             reducers.OnSubmitAction += (context, seat, kind, payload) => NotifyReducerFinished(SubmitActionReducer, context.Event.Status);
             reducers.OnSetRoomSave += (context, saveName, level, data, seats) => NotifyReducerFinished(SetRoomSaveReducer, context.Event.Status);
             reducers.OnClearRoomSave += context => NotifyReducerFinished(ClearRoomSaveReducer, context.Event.Status);
-            reducers.OnCreateTournament += (context, tournamentName, level, options, playersPerMatch, maxEntrants, readySeconds) =>
+            reducers.OnCreateTournament += (context, tournamentName, level, options, playersPerMatch, maxEntrants, readySeconds, isPublic) =>
                 NotifyReducerFinished(CreateTournamentReducer, context.Event.Status);
             reducers.OnJoinTournament += (context, tournamentId) => NotifyReducerFinished(JoinTournamentReducer, context.Event.Status);
+            reducers.OnJoinTournamentByCode += (context, code) => NotifyReducerFinished(JoinTournamentByCodeReducer, context.Event.Status);
             reducers.OnLeaveTournament += context => NotifyReducerFinished(LeaveTournamentReducer, context.Event.Status);
             reducers.OnStartTournament += context => NotifyReducerFinished(StartTournamentReducer, context.Event.Status);
             reducers.OnCloseTournament += context => NotifyReducerFinished(CloseTournamentReducer, context.Event.Status);
@@ -71,6 +78,18 @@ namespace Portfolio.EndlessRunner.Server
         protected override void SendSetName(string playerName) => Connection.Reducers.SetName(playerName);
 
         protected override void SendSetAvatar(uint avatar) => Connection.Reducers.SetAvatar(avatar);
+
+        protected override void SendSetLook(uint look, uint level) => Connection.Reducers.SetLook(look, level);
+
+        protected override void SendSavePlayerData(System.Collections.Generic.IReadOnlyList<Gamebox.Online.PlayerDataChange> changes)
+        {
+            var rows = new System.Collections.Generic.List<PlayerDataChange>();
+            foreach (Gamebox.Online.PlayerDataChange change in changes)
+            {
+                rows.Add(new PlayerDataChange { Key = change.Key, Value = change.Value, Remove = change.Remove });
+            }
+            Connection.Reducers.SavePlayerData(rows);
+        }
 
         protected override void SendDeleteAccount() => Connection.Reducers.DeleteAccount();
 
@@ -111,10 +130,13 @@ namespace Portfolio.EndlessRunner.Server
         protected override void SendUpdatePose(Vector3 position, Vector3 velocity, float heading, uint state, int value) =>
             Connection.Reducers.UpdatePose(position.x, position.y, position.z, velocity.x, velocity.y, velocity.z, heading, state, value);
 
-        protected override void SendCreateTournament(string tournamentName, int level, string options, byte playersPerMatch, byte maxEntrants, uint readySeconds) =>
-            Connection.Reducers.CreateTournament(tournamentName, level, options, playersPerMatch, maxEntrants, readySeconds);
+        protected override void SendCreateTournament(string tournamentName, int level, string options, byte playersPerMatch, byte maxEntrants, uint readySeconds,
+            bool isPublic) =>
+            Connection.Reducers.CreateTournament(tournamentName, level, options, playersPerMatch, maxEntrants, readySeconds, isPublic);
 
         protected override void SendJoinTournament(ulong tournamentId) => Connection.Reducers.JoinTournament(tournamentId);
+
+        protected override void SendJoinTournamentByCode(string code) => Connection.Reducers.JoinTournamentByCode(code);
 
         protected override void SendLeaveTournament() => Connection.Reducers.LeaveTournament();
 
@@ -125,7 +147,7 @@ namespace Portfolio.EndlessRunner.Server
         protected override void SendJoinMatch() => Connection.Reducers.JoinMatch();
 
         private static PlayerProfile ToProfile(User row) => new PlayerProfile(row.Identity, row.Name, row.Guest, row.Avatar, row.Online,
-            row.CreatedAt, row.LastLoginAt, row.LastSeenAt, row.Logins, row.SecondsOnline);
+            row.CreatedAt, row.LastLoginAt, row.LastSeenAt, row.Logins, row.SecondsOnline, row.Look, row.Level);
 
         private static RoomInfo ToRoom(Room row) => new RoomInfo(row.Id, row.Name, row.Host, (RoomPhase)(int)row.State, row.MinPlayers,
             row.MaxPlayers, row.Level, row.Options, row.TurnSeconds, row.Seed, row.Round);
@@ -155,7 +177,7 @@ namespace Portfolio.EndlessRunner.Server
             new Vector3(row.VelocityX, row.VelocityY, row.VelocityZ), row.Heading, row.State, row.Value, row.Sequence);
 
         private static Gamebox.Online.TournamentInfo ToTournament(Tournament row) => new Gamebox.Online.TournamentInfo(row.Id, row.Name, row.Host, (Gamebox.Online.TournamentPhase)(int)row.State,
-            row.Level, row.Options, row.PlayersPerMatch, row.MaxEntrants, row.ReadySeconds, row.Rounds, row.Round, row.Winner, row.HasWinner);
+            row.Level, row.Options, row.PlayersPerMatch, row.MaxEntrants, row.ReadySeconds, row.Rounds, row.Round, row.Winner, row.HasWinner, row.Private);
 
         private static Gamebox.Online.TournamentEntryInfo ToEntry(TournamentEntry row) =>
             new Gamebox.Online.TournamentEntryInfo(row.Id, row.TournamentId, row.Player, row.Name, row.Seed, row.OutInRound, row.Place, row.Wins);

@@ -46,6 +46,8 @@ namespace Portfolio.MemoryCards.Server
         public SpacetimeDB.Timestamp StartedAt;
         [DataMember(Name = "finished_at")]
         public SpacetimeDB.Timestamp FinishedAt;
+        [DataMember(Name = "private")]
+        public bool Private;
 
         public Tournament(
             ulong Id,
@@ -63,7 +65,8 @@ namespace Portfolio.MemoryCards.Server
             bool HasWinner,
             SpacetimeDB.Timestamp CreatedAt,
             SpacetimeDB.Timestamp StartedAt,
-            SpacetimeDB.Timestamp FinishedAt
+            SpacetimeDB.Timestamp FinishedAt,
+            bool Private
         )
         {
             this.Id = Id;
@@ -82,6 +85,7 @@ namespace Portfolio.MemoryCards.Server
             this.CreatedAt = CreatedAt;
             this.StartedAt = StartedAt;
             this.FinishedAt = FinishedAt;
+            this.Private = Private;
         }
 
         public Tournament()

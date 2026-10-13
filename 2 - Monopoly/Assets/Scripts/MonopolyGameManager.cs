@@ -58,7 +58,7 @@ namespace Portfolio.Monopoly
         public MonopolyController MonopolyController => controller;
         public BoardView Board => board;
         public MonopolyCampaign ModeList => campaign;
-        public MonopolyProgress Progress => progress ??= new MonopolyProgress(Disk, GameType.Monopoly);
+        public MonopolyProgress Progress => progress ??= new MonopolyProgress(Disk, GameType.Monopoly) { Avatar = LocalAvatar.Instance };
         public MonopolyLevel CurrentMode => campaign != null ? campaign.Mode(LevelIndex) : null;
         public BotBrain Bots => bots;
 

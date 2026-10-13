@@ -15,6 +15,9 @@ namespace Portfolio.Monopoly
     /// </summary>
     public class MonopolyUI : GameUI
     {
+        /// <summary>The player's avatar on this device while the menu is up: In the bottom left corner, on the board.</summary>
+        protected override (Vector2 anchor, Vector2 offset)? AvatarPlace => (new Vector2(0f, 0f), new Vector2(24f, 24f));
+
         [Header("Screens")]
         [SerializeField] private RectTransform hud;
         [SerializeField] private CanvasGroup hudGroup;

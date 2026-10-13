@@ -308,7 +308,7 @@ namespace Portfolio.Asteroids
 
         protected override void Start()
         {
-            progress = new AsteroidsProgress(Disk, Type);
+            progress = new AsteroidsProgress(Disk, Type) { Avatar = LocalAvatar.Instance };
             ApplySelectedHull();
             base.Start();
             if (isActiveAndEnabled)

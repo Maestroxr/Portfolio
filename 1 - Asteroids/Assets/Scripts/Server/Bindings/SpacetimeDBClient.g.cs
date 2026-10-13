@@ -28,12 +28,15 @@ namespace Portfolio.Asteroids.Server
     {
         public RemoteTables(DbConnection conn)
         {
+            AddTable(Admin = new(conn));
             AddTable(BodyGone = new(conn));
             AddTable(FieldBody = new(conn));
             AddTable(FieldSignals = new(conn));
             AddTable(HitReport = new(conn));
             AddTable(Mission = new(conn));
+            AddTable(MyTournamentCodes = new(conn));
             AddTable(PilotStats = new(conn));
+            AddTable(PlayerData = new(conn));
             AddTable(Room = new(conn));
             AddTable(RoomAction = new(conn));
             AddTable(RoomMember = new(conn));
@@ -543,12 +546,15 @@ namespace Portfolio.Asteroids.Server
 
         internal static string[] AllTablesSqlQueries() => new string[]
         {
+            new QueryBuilder().From.Admin().ToSql(),
             new QueryBuilder().From.BodyGone().ToSql(),
             new QueryBuilder().From.FieldBody().ToSql(),
             new QueryBuilder().From.FieldSignals().ToSql(),
             new QueryBuilder().From.HitReport().ToSql(),
             new QueryBuilder().From.Mission().ToSql(),
+            new QueryBuilder().From.MyTournamentCodes().ToSql(),
             new QueryBuilder().From.PilotStats().ToSql(),
+            new QueryBuilder().From.PlayerData().ToSql(),
             new QueryBuilder().From.Room().ToSql(),
             new QueryBuilder().From.RoomAction().ToSql(),
             new QueryBuilder().From.RoomMember().ToSql(),
@@ -568,12 +574,15 @@ namespace Portfolio.Asteroids.Server
 
     public sealed class From
     {
+        public global::SpacetimeDB.Table<Admin, AdminCols, AdminIxCols> Admin() => new("admin", new AdminCols("admin"), new AdminIxCols("admin"));
         public global::SpacetimeDB.Table<BodyGone, BodyGoneCols, BodyGoneIxCols> BodyGone() => new("body_gone", new BodyGoneCols("body_gone"), new BodyGoneIxCols("body_gone"));
         public global::SpacetimeDB.Table<FieldBody, FieldBodyCols, FieldBodyIxCols> FieldBody() => new("field_body", new FieldBodyCols("field_body"), new FieldBodyIxCols("field_body"));
         public global::SpacetimeDB.Table<FieldSignals, FieldSignalsCols, FieldSignalsIxCols> FieldSignals() => new("field_signals", new FieldSignalsCols("field_signals"), new FieldSignalsIxCols("field_signals"));
         public global::SpacetimeDB.Table<HitReport, HitReportCols, HitReportIxCols> HitReport() => new("hit_report", new HitReportCols("hit_report"), new HitReportIxCols("hit_report"));
         public global::SpacetimeDB.Table<Mission, MissionCols, MissionIxCols> Mission() => new("mission", new MissionCols("mission"), new MissionIxCols("mission"));
+        public global::SpacetimeDB.Table<TournamentCode, MyTournamentCodesCols, MyTournamentCodesIxCols> MyTournamentCodes() => new("my_tournament_codes", new MyTournamentCodesCols("my_tournament_codes"), new MyTournamentCodesIxCols("my_tournament_codes"));
         public global::SpacetimeDB.Table<PilotStats, PilotStatsCols, PilotStatsIxCols> PilotStats() => new("pilot_stats", new PilotStatsCols("pilot_stats"), new PilotStatsIxCols("pilot_stats"));
+        public global::SpacetimeDB.Table<PlayerData, PlayerDataCols, PlayerDataIxCols> PlayerData() => new("player_data", new PlayerDataCols("player_data"), new PlayerDataIxCols("player_data"));
         public global::SpacetimeDB.Table<Room, RoomCols, RoomIxCols> Room() => new("room", new RoomCols("room"), new RoomIxCols("room"));
         public global::SpacetimeDB.Table<RoomAction, RoomActionCols, RoomActionIxCols> RoomAction() => new("room_action", new RoomActionCols("room_action"), new RoomActionIxCols("room_action"));
         public global::SpacetimeDB.Table<RoomMember, RoomMemberCols, RoomMemberIxCols> RoomMember() => new("room_member", new RoomMemberCols("room_member"), new RoomMemberIxCols("room_member"));
@@ -682,12 +691,15 @@ namespace Portfolio.Asteroids.Server
                 Reducer.JoinMatch args => Reducers.InvokeJoinMatch(eventContext, args),
                 Reducer.JoinRoom args => Reducers.InvokeJoinRoom(eventContext, args),
                 Reducer.JoinTournament args => Reducers.InvokeJoinTournament(eventContext, args),
+                Reducer.JoinTournamentByCode args => Reducers.InvokeJoinTournamentByCode(eventContext, args),
                 Reducer.LeaveRoom args => Reducers.InvokeLeaveRoom(eventContext, args),
                 Reducer.LeaveTournament args => Reducers.InvokeLeaveTournament(eventContext, args),
                 Reducer.ReportHits args => Reducers.InvokeReportHits(eventContext, args),
                 Reducer.ReportMission args => Reducers.InvokeReportMission(eventContext, args),
                 Reducer.ReportScore args => Reducers.InvokeReportScore(eventContext, args),
+                Reducer.SavePlayerData args => Reducers.InvokeSavePlayerData(eventContext, args),
                 Reducer.SetAvatar args => Reducers.InvokeSetAvatar(eventContext, args),
+                Reducer.SetLook args => Reducers.InvokeSetLook(eventContext, args),
                 Reducer.SetName args => Reducers.InvokeSetName(eventContext, args),
                 Reducer.SetReady args => Reducers.InvokeSetReady(eventContext, args),
                 Reducer.SetRoomSave args => Reducers.InvokeSetRoomSave(eventContext, args),
