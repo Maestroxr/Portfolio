@@ -68,6 +68,9 @@ namespace Portfolio.Heroes
             }
         }
 
+        /// <summary>Every map is open online, so an admin's tournaments offer the same.</summary>
+        public override IReadOnlyList<RoomLevelChoice> AllLevelChoices => LevelChoices;
+
         public override IReadOnlyList<RoomLevelChoice> LevelChoices
         {
             get

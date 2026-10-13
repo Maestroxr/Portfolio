@@ -39,7 +39,7 @@ namespace Portfolio.MemoryCards
         public override int MinPlayersLimit => VersusMatch.MinPlayers;
 
         /// <summary>The boards of the campaign and free play; the endless run is a game for one.</summary>
-        public override IReadOnlyList<RoomLevelChoice> LevelChoices
+        public override IReadOnlyList<RoomLevelChoice> AllLevelChoices
         {
             get
             {
@@ -48,8 +48,7 @@ namespace Portfolio.MemoryCards
                 for (int i = 0; campaign != null && i < campaign.Count; i++)
                 {
                     MemoryCardsLevel level = campaign.Level(i);
-                    // The boards the player unlocked online, by winning online.
-                    if (level != null && level.IsCampaign && level.Settings != null && IsUnlockedOnline(i))
+                    if (level != null && level.IsCampaign && level.Settings != null)
                     {
                         RoundRules rules = VersusMatch.RulesFor(level.Settings.ToRules());
                         choices.Add(new RoomLevelChoice(i, $"{MemoryCardsText.T(level.Title)} ({rules.Columns}x{rules.Rows})"));

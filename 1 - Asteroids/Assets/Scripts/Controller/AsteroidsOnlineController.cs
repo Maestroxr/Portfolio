@@ -56,11 +56,11 @@ namespace Portfolio.Asteroids
         public override int MinPlayersLimit => CoopRules.MinPilots;
 
         /// <summary>
-        /// The missions the host has unlocked, the endless one included: the asteroid field missions numbered "1.", the
-        /// planet strike missions after them numbered "Strike 1.". The list is made when the lobby first asks and stays as
-        /// it is, because the lobby keeps the names it was built with.
+        /// Every mission, the endless one included: the asteroid field missions numbered "1.", the planet strike missions
+        /// after them numbered "Strike 1." (a room plays those the host unlocked online: <see cref="OnlineGameController.LevelChoices"/>).
+        /// The list is made when the lobby first asks and stays as it is, because the lobby keeps the names it was built with.
         /// </summary>
-        public override IReadOnlyList<RoomLevelChoice> LevelChoices
+        public override IReadOnlyList<RoomLevelChoice> AllLevelChoices
         {
             get
             {
@@ -90,11 +90,7 @@ namespace Portfolio.Asteroids
                     {
                         number++;
                     }
-                    // The missions the pilot unlocked online (playing them online), not on the device.
-                    if (IsUnlockedOnline(i))
-                    {
-                        levelChoices.Add(new RoomLevelChoice(i, CoopRules.LevelTitle(mission, strike ? strikeNumber : number)));
-                    }
+                    levelChoices.Add(new RoomLevelChoice(i, CoopRules.LevelTitle(mission, strike ? strikeNumber : number)));
                 }
                 return levelChoices;
             }
@@ -144,8 +140,6 @@ namespace Portfolio.Asteroids
         protected override void Start()
         {
             base.Start();
-            // A mission won online unlocks the next: the list is made again.
-            OnlineProgressChanged += levelChoices.Clear;
             if (Asteroids != null)
             {
                 replication = new FieldReplication(Asteroids);

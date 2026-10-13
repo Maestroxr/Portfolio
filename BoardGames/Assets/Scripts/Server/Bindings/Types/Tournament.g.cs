@@ -48,6 +48,10 @@ namespace Portfolio.BoardGames.Server
         public SpacetimeDB.Timestamp FinishedAt;
         [DataMember(Name = "private")]
         public bool Private;
+        [DataMember(Name = "starts_at")]
+        public long StartsAt;
+        [DataMember(Name = "min_entrants")]
+        public byte MinEntrants;
 
         public Tournament(
             ulong Id,
@@ -66,7 +70,9 @@ namespace Portfolio.BoardGames.Server
             SpacetimeDB.Timestamp CreatedAt,
             SpacetimeDB.Timestamp StartedAt,
             SpacetimeDB.Timestamp FinishedAt,
-            bool Private
+            bool Private,
+            long StartsAt,
+            byte MinEntrants
         )
         {
             this.Id = Id;
@@ -86,6 +92,8 @@ namespace Portfolio.BoardGames.Server
             this.StartedAt = StartedAt;
             this.FinishedAt = FinishedAt;
             this.Private = Private;
+            this.StartsAt = StartsAt;
+            this.MinEntrants = MinEntrants;
         }
 
         public Tournament()

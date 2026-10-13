@@ -60,13 +60,13 @@ namespace Portfolio.EndlessRunner.Server
             reducers.OnSubmitAction += (context, seat, kind, payload) => NotifyReducerFinished(SubmitActionReducer, context.Event.Status);
             reducers.OnSetRoomSave += (context, saveName, level, data, seats) => NotifyReducerFinished(SetRoomSaveReducer, context.Event.Status);
             reducers.OnClearRoomSave += context => NotifyReducerFinished(ClearRoomSaveReducer, context.Event.Status);
-            reducers.OnCreateTournament += (context, tournamentName, level, options, playersPerMatch, maxEntrants, readySeconds, isPublic) =>
-                NotifyReducerFinished(CreateTournamentReducer, context.Event.Status);
+            reducers.OnCreateTournament += (context, tournamentName, level, options, playersPerMatch, maxEntrants, readySeconds, isPublic, hostPlays,
+                startInSeconds, minEntrants) => NotifyReducerFinished(CreateTournamentReducer, context.Event.Status);
             reducers.OnJoinTournament += (context, tournamentId) => NotifyReducerFinished(JoinTournamentReducer, context.Event.Status);
             reducers.OnJoinTournamentByCode += (context, code) => NotifyReducerFinished(JoinTournamentByCodeReducer, context.Event.Status);
             reducers.OnLeaveTournament += context => NotifyReducerFinished(LeaveTournamentReducer, context.Event.Status);
-            reducers.OnStartTournament += context => NotifyReducerFinished(StartTournamentReducer, context.Event.Status);
-            reducers.OnCloseTournament += context => NotifyReducerFinished(CloseTournamentReducer, context.Event.Status);
+            reducers.OnStartTournament += (context, tournamentId) => NotifyReducerFinished(StartTournamentReducer, context.Event.Status);
+            reducers.OnCloseTournament += (context, tournamentId) => NotifyReducerFinished(CloseTournamentReducer, context.Event.Status);
             reducers.OnJoinMatch += context => NotifyReducerFinished(JoinMatchReducer, context.Event.Status);
             connection.OnUnhandledReducerError += (context, error) => Fail(error.Message);
         }
@@ -131,8 +131,9 @@ namespace Portfolio.EndlessRunner.Server
             Connection.Reducers.UpdatePose(position.x, position.y, position.z, velocity.x, velocity.y, velocity.z, heading, state, value);
 
         protected override void SendCreateTournament(string tournamentName, int level, string options, byte playersPerMatch, byte maxEntrants, uint readySeconds,
-            bool isPublic) =>
-            Connection.Reducers.CreateTournament(tournamentName, level, options, playersPerMatch, maxEntrants, readySeconds, isPublic);
+            bool isPublic, bool hostPlays, uint startInSeconds, byte minEntrants) =>
+            Connection.Reducers.CreateTournament(tournamentName, level, options, playersPerMatch, maxEntrants, readySeconds, isPublic, hostPlays, startInSeconds,
+                minEntrants);
 
         protected override void SendJoinTournament(ulong tournamentId) => Connection.Reducers.JoinTournament(tournamentId);
 
@@ -140,9 +141,9 @@ namespace Portfolio.EndlessRunner.Server
 
         protected override void SendLeaveTournament() => Connection.Reducers.LeaveTournament();
 
-        protected override void SendStartTournament() => Connection.Reducers.StartTournament();
+        protected override void SendStartTournament(ulong tournamentId) => Connection.Reducers.StartTournament(tournamentId);
 
-        protected override void SendCloseTournament() => Connection.Reducers.CloseTournament();
+        protected override void SendCloseTournament(ulong tournamentId) => Connection.Reducers.CloseTournament(tournamentId);
 
         protected override void SendJoinMatch() => Connection.Reducers.JoinMatch();
 
@@ -177,7 +178,8 @@ namespace Portfolio.EndlessRunner.Server
             new Vector3(row.VelocityX, row.VelocityY, row.VelocityZ), row.Heading, row.State, row.Value, row.Sequence);
 
         private static Gamebox.Online.TournamentInfo ToTournament(Tournament row) => new Gamebox.Online.TournamentInfo(row.Id, row.Name, row.Host, (Gamebox.Online.TournamentPhase)(int)row.State,
-            row.Level, row.Options, row.PlayersPerMatch, row.MaxEntrants, row.ReadySeconds, row.Rounds, row.Round, row.Winner, row.HasWinner, row.Private);
+            row.Level, row.Options, row.PlayersPerMatch, row.MaxEntrants, row.ReadySeconds, row.Rounds, row.Round, row.Winner, row.HasWinner, row.Private,
+            row.StartsAt, row.MinEntrants);
 
         private static Gamebox.Online.TournamentEntryInfo ToEntry(TournamentEntry row) =>
             new Gamebox.Online.TournamentEntryInfo(row.Id, row.TournamentId, row.Player, row.Name, row.Seed, row.OutInRound, row.Place, row.Wins);

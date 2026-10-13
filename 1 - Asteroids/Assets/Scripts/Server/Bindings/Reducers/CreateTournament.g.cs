@@ -13,12 +13,12 @@ namespace Portfolio.Asteroids.Server
 {
     public sealed partial class RemoteReducers : RemoteBase
     {
-        public delegate void CreateTournamentHandler(ReducerEventContext ctx, string name, int level, string options, byte playersPerMatch, byte maxEntrants, uint readySeconds, bool isPublic);
+        public delegate void CreateTournamentHandler(ReducerEventContext ctx, string name, int level, string options, byte playersPerMatch, byte maxEntrants, uint readySeconds, bool isPublic, bool hostPlays, uint startInSeconds, byte minEntrants);
         public event CreateTournamentHandler? OnCreateTournament;
 
-        public void CreateTournament(string name, int level, string options, byte playersPerMatch, byte maxEntrants, uint readySeconds, bool isPublic)
+        public void CreateTournament(string name, int level, string options, byte playersPerMatch, byte maxEntrants, uint readySeconds, bool isPublic, bool hostPlays, uint startInSeconds, byte minEntrants)
         {
-            conn.InternalCallReducer(new Reducer.CreateTournament(name, level, options, playersPerMatch, maxEntrants, readySeconds, isPublic));
+            conn.InternalCallReducer(new Reducer.CreateTournament(name, level, options, playersPerMatch, maxEntrants, readySeconds, isPublic, hostPlays, startInSeconds, minEntrants));
         }
 
         public bool InvokeCreateTournament(ReducerEventContext ctx, Reducer.CreateTournament args)
@@ -43,7 +43,10 @@ namespace Portfolio.Asteroids.Server
                 args.PlayersPerMatch,
                 args.MaxEntrants,
                 args.ReadySeconds,
-                args.IsPublic
+                args.IsPublic,
+                args.HostPlays,
+                args.StartInSeconds,
+                args.MinEntrants
             );
             return true;
         }
@@ -69,6 +72,12 @@ namespace Portfolio.Asteroids.Server
             public uint ReadySeconds;
             [DataMember(Name = "is_public")]
             public bool IsPublic;
+            [DataMember(Name = "host_plays")]
+            public bool HostPlays;
+            [DataMember(Name = "start_in_seconds")]
+            public uint StartInSeconds;
+            [DataMember(Name = "min_entrants")]
+            public byte MinEntrants;
 
             public CreateTournament(
                 string Name,
@@ -77,7 +86,10 @@ namespace Portfolio.Asteroids.Server
                 byte PlayersPerMatch,
                 byte MaxEntrants,
                 uint ReadySeconds,
-                bool IsPublic
+                bool IsPublic,
+                bool HostPlays,
+                uint StartInSeconds,
+                byte MinEntrants
             )
             {
                 this.Name = Name;
@@ -87,6 +99,9 @@ namespace Portfolio.Asteroids.Server
                 this.MaxEntrants = MaxEntrants;
                 this.ReadySeconds = ReadySeconds;
                 this.IsPublic = IsPublic;
+                this.HostPlays = HostPlays;
+                this.StartInSeconds = StartInSeconds;
+                this.MinEntrants = MinEntrants;
             }
 
             public CreateTournament()

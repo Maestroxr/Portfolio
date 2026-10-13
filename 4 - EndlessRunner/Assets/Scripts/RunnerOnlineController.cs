@@ -29,8 +29,15 @@ namespace Portfolio.EndlessRunner
 
         private GameServerClient Client => Server as GameServerClient;
 
-        /// <summary>The levels of the campaign and the endless run; everybody may run any of them with friends.</summary>
-        public override IReadOnlyList<RoomLevelChoice> LevelChoices
+        /// <summary>An endless run is open to everybody; a level of the campaign once the one before was finished online.</summary>
+        public override bool IsUnlockedOnline(int level)
+        {
+            ICampaign campaign = BaseManager != null ? BaseManager.Campaign : null;
+            return campaign != null && level >= 0 && level < campaign.Count && campaign[level] is RunnerLevel { IsEndless: true } || base.IsUnlockedOnline(level);
+        }
+
+        /// <summary>The levels of the campaign and the endless runs (a room runs the endless ones and those unlocked online).</summary>
+        public override IReadOnlyList<RoomLevelChoice> AllLevelChoices
         {
             get
             {
@@ -45,8 +52,7 @@ namespace Portfolio.EndlessRunner
                 ICampaign campaign = BaseManager != null ? BaseManager.Campaign : null;
                 for (int i = 0; campaign != null && i < campaign.Count; i++)
                 {
-                    // The endless runs, and the levels the player unlocked online (finishing the one before first online).
-                    if (campaign[i] is RunnerLevel level && (level.IsEndless || IsUnlockedOnline(i)))
+                    if (campaign[i] is RunnerLevel level)
                     {
                         string title = RunnerText.TitleOf(level);
                         levelChoices.Add(new RoomLevelChoice(i, level.IsEndless ? title : RunnerText.F("{0}. {1} ({2:0} m)", i + 1, title, level.Length)));

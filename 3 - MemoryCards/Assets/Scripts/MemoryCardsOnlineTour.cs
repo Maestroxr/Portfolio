@@ -21,7 +21,10 @@ namespace Portfolio.MemoryCards
     /// <c>jointournament</c> play a tournament instead of a room: the host opens one (two a match, as many entrants as
     /// <c>-memorycards-entrants</c>, default 4, with <c>-memorycards-ready</c> seconds to show up for a match, default 30)
     /// and starts it once the others entered, and everybody plays their matches with the autopilot until they are out or
-    /// champion, with a picture of the bracket after every match (<see cref="OnlineTour.PlayTournament"/>).
+    /// champion, with a picture of the bracket after every match (<see cref="OnlineTour.PlayTournament"/>). The role
+    /// <c>organizetournament</c> (an admin) opens one without playing in it, on the last level unless told otherwise, to
+    /// start by itself in <c>-memorycards-startin</c> seconds (default 45) with <c>-memorycards-fewest</c> players at
+    /// least (default 2), and watches it to the end (<see cref="OnlineTour.OrganizeTournament"/>).
     /// </summary>
     public class MemoryCardsOnlineTour : OnlineTour
     {
@@ -31,6 +34,8 @@ namespace Portfolio.MemoryCards
         private const string LevelArgument = "-memorycards-level";
         private const string EntrantsArgument = "-memorycards-entrants";
         private const string ReadyArgument = "-memorycards-ready";
+        private const string StartInArgument = "-memorycards-startin";
+        private const string FewestArgument = "-memorycards-fewest";
         /// <summary>Which of the levels a room can play the host picks unless told otherwise: the third, or the last.</summary>
         private const int LevelChoice = 2;
         private const int TurnSeconds = 10;
@@ -145,6 +150,25 @@ namespace Portfolio.MemoryCards
         private IEnumerator Tournament()
         {
             int entrants = Mathf.Clamp(NumberArgument(EntrantsArgument, 4), 2, 64);
+            uint ready = (uint)Mathf.Clamp(NumberArgument(ReadyArgument, 30), 10, 3600);
+            if (Role.StartsWith("organize", System.StringComparison.Ordinal))
+            {
+                // An admin organizes it without playing: every level is there to pick (the last by default), and it starts by itself.
+                IReadOnlyList<RoomLevelChoice> every = manager.online.TournamentLevelChoices;
+                if (every.Count == 0)
+                {
+                    yield return Fail("no level for a tournament");
+                    yield break;
+                }
+                Note($"levels for a room: {manager.online.LevelChoices.Count}, for the admin's tournament: {every.Count}");
+                int picked = every[Mathf.Clamp(NumberArgument(LevelArgument, every.Count - 1), 0, every.Count - 1)].Index;
+                string chosen = manager.online.ComposeOptions(picked, RoomOptions.Write(RoomOptions.TurnOption, TurnSeconds));
+                yield return OrganizeTournament(manager.online.LobbyUI, "Tour cup", picked, chosen, 2, (byte)entrants, ready,
+                    (uint)Mathf.Clamp(NumberArgument(StartInArgument, 45), 10, 3600), (byte)Mathf.Clamp(NumberArgument(FewestArgument, 2), 2, entrants), 600f);
+                Note("done");
+                Quit();
+                yield break;
+            }
             if (Hosting)
             {
                 IReadOnlyList<RoomLevelChoice> choices = manager.online.LevelChoices;
@@ -155,7 +179,7 @@ namespace Portfolio.MemoryCards
                 }
                 int level = choices[Mathf.Clamp(NumberArgument(LevelArgument, LevelChoice), 0, choices.Count - 1)].Index;
                 string options = manager.online.ComposeOptions(level, RoomOptions.Write(RoomOptions.TurnOption, TurnSeconds));
-                yield return HostTournament("Tour cup", level, options, 2, (byte)entrants, (uint)Mathf.Clamp(NumberArgument(ReadyArgument, 30), 10, 3600));
+                yield return HostTournament("Tour cup", level, options, 2, (byte)entrants, ready);
                 yield return Shot("t0_open");
                 yield return WaitForEntrants(entrants - 1, 180f);
                 yield return new WaitForSeconds(0.5f);

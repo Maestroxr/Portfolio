@@ -34,7 +34,7 @@ namespace Portfolio.Monopoly
         /// The modes with rules of their own. The custom rules are the house rules of one device, which the other
         /// players do not have.
         /// </summary>
-        public override IReadOnlyList<RoomLevelChoice> LevelChoices
+        public override IReadOnlyList<RoomLevelChoice> AllLevelChoices
         {
             get
             {
@@ -43,8 +43,7 @@ namespace Portfolio.Monopoly
                 for (int i = 0; modes != null && i < modes.Count; i++)
                 {
                     MonopolyLevel mode = modes.Mode(i);
-                    // The modes the player unlocked online, by winning online.
-                    if (mode != null && !mode.UsesCustomRules && IsUnlockedOnline(i))
+                    if (mode != null && !mode.UsesCustomRules)
                     {
                         choices.Add(new RoomLevelChoice(i, L.Data(mode.Title)));
                     }
