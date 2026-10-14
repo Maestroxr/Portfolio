@@ -24,7 +24,8 @@ namespace Portfolio.MemoryCards
     /// champion, with a picture of the bracket after every match (<see cref="OnlineTour.PlayTournament"/>). The role
     /// <c>organizetournament</c> (an admin) opens one without playing in it, on the last level unless told otherwise, to
     /// start by itself in <c>-memorycards-startin</c> seconds (default 45) with <c>-memorycards-fewest</c> players at
-    /// least (default 2), and watches it to the end (<see cref="OnlineTour.OrganizeTournament"/>).
+    /// least (default 2), and watches it to the end (<see cref="OnlineTour.OrganizeTournament"/>). The role <c>signin</c>
+    /// signs a guest in to an account the test server stands for (<see cref="OnlineTour.SignInTour"/>).
     /// </summary>
     public class MemoryCardsOnlineTour : OnlineTour
     {
@@ -70,6 +71,13 @@ namespace Portfolio.MemoryCards
                 yield break;
             }
             yield return new WaitForSeconds(0.5f);
+            if (Role == "signin")
+            {
+                yield return SignInTour(manager.online);
+                Note("done");
+                Quit();
+                yield break;
+            }
             if (InTournament)
             {
                 yield return Tournament();

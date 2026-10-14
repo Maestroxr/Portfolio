@@ -677,9 +677,11 @@ namespace Portfolio.Asteroids.Server
             var eventContext = (ReducerEventContext)context;
             return reducer switch
             {
+                Reducer.BeginLink args => Reducers.InvokeBeginLink(eventContext, args),
                 Reducer.ClaimBody args => Reducers.InvokeClaimBody(eventContext, args),
                 Reducer.ClearRoomSave args => Reducers.InvokeClearRoomSave(eventContext, args),
                 Reducer.CloseTournament args => Reducers.InvokeCloseTournament(eventContext, args),
+                Reducer.CompleteLink args => Reducers.InvokeCompleteLink(eventContext, args),
                 Reducer.CompleteMission args => Reducers.InvokeCompleteMission(eventContext, args),
                 Reducer.ConfigureRoomGame args => Reducers.InvokeConfigureRoomGame(eventContext, args),
                 Reducer.CreateRoom args => Reducers.InvokeCreateRoom(eventContext, args),

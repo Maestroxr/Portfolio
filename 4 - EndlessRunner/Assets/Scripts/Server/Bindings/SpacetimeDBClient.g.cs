@@ -659,9 +659,11 @@ namespace Portfolio.EndlessRunner.Server
             var eventContext = (ReducerEventContext)context;
             return reducer switch
             {
+                Reducer.BeginLink args => Reducers.InvokeBeginLink(eventContext, args),
                 Reducer.ClaimPiece args => Reducers.InvokeClaimPiece(eventContext, args),
                 Reducer.ClearRoomSave args => Reducers.InvokeClearRoomSave(eventContext, args),
                 Reducer.CloseTournament args => Reducers.InvokeCloseTournament(eventContext, args),
+                Reducer.CompleteLink args => Reducers.InvokeCompleteLink(eventContext, args),
                 Reducer.ConfigureRoomGame args => Reducers.InvokeConfigureRoomGame(eventContext, args),
                 Reducer.CreateRoom args => Reducers.InvokeCreateRoom(eventContext, args),
                 Reducer.CreateTournament args => Reducers.InvokeCreateTournament(eventContext, args),

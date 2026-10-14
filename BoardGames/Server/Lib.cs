@@ -189,4 +189,34 @@ public static partial class Module
     {
         ctx.Db.BoardGamesStats.Player.Delete(user.Identity);
     }
+
+    /// <summary>A guest who signed in: their stats go to the account (counts add up, bests keep the higher).</summary>
+    static partial void OnUserMerged(ReducerContext ctx, Identity from, Identity to)
+    {
+        if (ctx.Db.BoardGamesStats.Player.Find(from) is not { } guest)
+        {
+            return;
+        }
+        ctx.Db.BoardGamesStats.Player.Delete(from);
+        if (ctx.Db.BoardGamesStats.Player.Find(to) is { } account)
+        {
+            account.Games += guest.Games;
+            account.Wins += guest.Wins;
+            ctx.Db.BoardGamesStats.Player.Update(account);
+        }
+        else
+        {
+            guest.Player = to;
+            ctx.Db.BoardGamesStats.Insert(guest);
+        }
+    }
+
+    /// <summary>Games played, won and drawn are counts: what the guest and the account played adds up.</summary>
+    static partial void MergePlayerValue(ReducerContext ctx, string key, string from, string to, ref string merged)
+    {
+        if (key.EndsWith(".Value.Games", StringComparison.Ordinal) || key.EndsWith(".Value.Wins", StringComparison.Ordinal) || key.EndsWith(".Value.Draws", StringComparison.Ordinal))
+        {
+            merged = SumOfCounts(from, to);
+        }
+    }
 }

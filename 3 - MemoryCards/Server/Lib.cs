@@ -445,6 +445,38 @@ public static partial class Module
         ctx.Db.MemoryStats.Player.Delete(user.Identity);
     }
 
+    /// <summary>A guest who signed in: their stats go to the account (counts add up, bests keep the higher).</summary>
+    static partial void OnUserMerged(ReducerContext ctx, Identity from, Identity to)
+    {
+        if (ctx.Db.MemoryStats.Player.Find(from) is not { } guest)
+        {
+            return;
+        }
+        ctx.Db.MemoryStats.Player.Delete(from);
+        if (ctx.Db.MemoryStats.Player.Find(to) is { } account)
+        {
+            account.Games += guest.Games;
+            account.Wins += guest.Wins;
+            account.Sets += guest.Sets;
+            account.BestScore = Math.Max(account.BestScore, guest.BestScore);
+            ctx.Db.MemoryStats.Player.Update(account);
+        }
+        else
+        {
+            guest.Player = to;
+            ctx.Db.MemoryStats.Insert(guest);
+        }
+    }
+
+    /// <summary>The sets found are counts: what the guest and the account played adds up.</summary>
+    static partial void MergePlayerValue(ReducerContext ctx, string key, string from, string to, ref string merged)
+    {
+        if (key.EndsWith(".Value.SetsFound", StringComparison.Ordinal))
+        {
+            merged = SumOfCounts(from, to);
+        }
+    }
+
     static partial void ValidateAction(ReducerContext ctx, Room room, RoomMember member, ref RoomAction action, ref bool decisive, ref string? error)
     {
         // Every move of this game is a flip the server judges: the action log has no place in it.

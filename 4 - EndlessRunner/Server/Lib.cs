@@ -281,6 +281,30 @@ public static partial class Module
         ctx.Db.RunnerStats.Player.Delete(user.Identity);
     }
 
+    /// <summary>A guest who signed in: their stats go to the account (counts add up, bests keep the higher).</summary>
+    static partial void OnUserMerged(ReducerContext ctx, Identity from, Identity to)
+    {
+        if (ctx.Db.RunnerStats.Player.Find(from) is not { } guest)
+        {
+            return;
+        }
+        ctx.Db.RunnerStats.Player.Delete(from);
+        if (ctx.Db.RunnerStats.Player.Find(to) is { } account)
+        {
+            account.Races += guest.Races;
+            account.Wins += guest.Wins;
+            account.Coins += guest.Coins;
+            account.BestDistance = Math.Max(account.BestDistance, guest.BestDistance);
+            account.BestScore = Math.Max(account.BestScore, guest.BestScore);
+            ctx.Db.RunnerStats.Player.Update(account);
+        }
+        else
+        {
+            guest.Player = to;
+            ctx.Db.RunnerStats.Insert(guest);
+        }
+    }
+
     // ---------------------------------------------------------------------------------------------------
     // Helpers
     // ---------------------------------------------------------------------------------------------------

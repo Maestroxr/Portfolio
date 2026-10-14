@@ -134,6 +134,37 @@ public static partial class Module
         ctx.Db.MonopolyStats.Player.Delete(user.Identity);
     }
 
+    /// <summary>A guest who signed in: their stats go to the account (counts add up, bests keep the higher).</summary>
+    static partial void OnUserMerged(ReducerContext ctx, Identity from, Identity to)
+    {
+        if (ctx.Db.MonopolyStats.Player.Find(from) is not { } guest)
+        {
+            return;
+        }
+        ctx.Db.MonopolyStats.Player.Delete(from);
+        if (ctx.Db.MonopolyStats.Player.Find(to) is { } account)
+        {
+            account.Games += guest.Games;
+            account.Wins += guest.Wins;
+            account.BestNetWorth = Math.Max(account.BestNetWorth, guest.BestNetWorth);
+            ctx.Db.MonopolyStats.Player.Update(account);
+        }
+        else
+        {
+            guest.Player = to;
+            ctx.Db.MonopolyStats.Insert(guest);
+        }
+    }
+
+    /// <summary>Games played and won are counts: what the guest and the account played adds up.</summary>
+    static partial void MergePlayerValue(ReducerContext ctx, string key, string from, string to, ref string merged)
+    {
+        if (key.EndsWith(".Value.Games", StringComparison.Ordinal) || key.EndsWith(".Value.Wins", StringComparison.Ordinal))
+        {
+            merged = SumOfCounts(from, to);
+        }
+    }
+
     // ---------------------------------------------------------------------------------------------------
     // Helpers
     // ---------------------------------------------------------------------------------------------------
