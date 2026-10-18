@@ -109,7 +109,7 @@ namespace Portfolio.Asteroids.EditorTools
                 flare.warningTime = 2.2f;
                 flare.speed = 13f;
                 flare.halfWidth = 1.4f;
-                flare.damage = 22f;
+                flare.damage = 16f;
                 flare.allyDamage = 14f;
                 Save(root, "Hazards/SolarFlare");
             }
@@ -429,7 +429,7 @@ namespace Portfolio.Asteroids.EditorTools
             }
 
             FieldBeamShot("Lance", FM("LanceBeam"), 0f, 1.2f, 0.7f, 30f, 60f);
-            FieldBeamShot("SweepBeam", FM("SweepBeam"), 110f, 0.9f, 1.8f, 26f, 60f);
+            FieldBeamShot("SweepBeam", FM("SweepBeam"), 110f, 0.9f, 1.8f, 26f, 42f);
 
             // Nova orb: a swelling ball of plasma that bursts into a ring.
             {
@@ -506,7 +506,8 @@ namespace Portfolio.Asteroids.EditorTools
         {
             // Slag Titan: the Rock Titan's iron cousin, ringed by iron moonlets; it calls flares when cornered.
             {
-                Boss boss = BossRoot("SlagTitan", "Slag Titan", 3.2f, 140f, 9000, out Transform visual);
+                Boss boss = BossRoot("SlagTitan", "Slag Titan", 3.2f, 120f, 9000, out Transform visual);
+                boss.fieldRules = true;
                 MeshRenderer body = Model(visual, "Body", AsteroidsArtBuilder.Model("TitanRock"), FM("TitanIron"), Vector3.zero, Quaternion.identity, Vector3.one * 3.3f);
                 Transform orbit = Child(boss.transform, "Orbit");
                 for (int i = 0; i < 4; i++)
@@ -526,9 +527,9 @@ namespace Portfolio.Asteroids.EditorTools
                 boss.explosionTint = new Color(1f, 0.55f, 0.25f);
                 boss.attacks = new[]
                 {
-                    Attack(BossAttackType.SpawnMinions, 7f, 2, minion: MinionKind.Asteroid, asteroid: AsteroidKind.Metal),
+                    Attack(BossAttackType.SpawnMinions, 8f, 1, minion: MinionKind.Asteroid, asteroid: AsteroidKind.Metal),
                     Attack(BossAttackType.RingShot, 5f, 14, 7f, 1, shot: EnemyShotKind.Shrapnel),
-                    Attack(BossAttackType.SpawnMinions, 9f, 1, minion: MinionKind.Asteroid, asteroid: AsteroidKind.Magma),
+                    Attack(BossAttackType.SpawnMinions, 12f, 1, minion: MinionKind.Asteroid, asteroid: AsteroidKind.Magma),
                     Attack(BossAttackType.SpreadShot, 3.8f, 8, 8.5f, 2, 70f, EnemyShotKind.Shrapnel),
                     Attack(BossAttackType.SolarFlare, 13f, 1, fromPhase: 2)
                 };
@@ -539,6 +540,8 @@ namespace Portfolio.Asteroids.EditorTools
             // Storm Herald: an ion manta circling the sector in a crown of lightning.
             {
                 Boss boss = BossRoot("StormHerald", "Storm Herald", 2.6f, 170f, 11000, out Transform visual);
+                boss.fieldRules = true;
+                boss.contactDamage = 25f;
                 visual.localRotation = FaceCamera;
                 MeshRenderer body = Model(visual, "Body", FModel("StormHerald"), FM("HeraldPaint"), Vector3.zero, Quaternion.identity, Vector3.one * 1.15f);
                 Transform rings = Spinning(boss.transform, "Rings", FModel("HeraldRings"), FM("HeraldPaint"), 1.1f, 0f, -0.2f);
@@ -547,7 +550,7 @@ namespace Portfolio.Asteroids.EditorTools
                 boss.flashColor = new Color(0.7f, 0.9f, 1f);
                 boss.movement = BossMovement.Orbit;
                 boss.moveSpeed = 3.2f;
-                boss.orbitRadius = 0.55f;
+                boss.orbitRadius = 0.72f;
                 boss.facesShip = true;
                 boss.spinners = new[] { rings };
                 boss.spinSpeed = 50f;
@@ -568,6 +571,7 @@ namespace Portfolio.Asteroids.EditorTools
             // Bastion: a fortress with a turning ring of gun pods, lances and sentries.
             {
                 Boss boss = BossRoot("Bastion", "Bastion", 3f, 230f, 14000, out Transform visual);
+                boss.fieldRules = true;
                 visual.localRotation = FaceCamera;
                 MeshRenderer body = Model(visual, "Body", FModel("BastionFortress"), FM("BastionPaint"), Vector3.zero, Quaternion.identity, Vector3.one * 1.25f);
                 Transform ring = Spinning(boss.transform, "Ring", FModel("BastionRing"), FM("BastionPaint"), 1.2f, 0f, 0.1f);
@@ -582,7 +586,7 @@ namespace Portfolio.Asteroids.EditorTools
                 boss.explosionTint = new Color(1f, 0.65f, 0.3f);
                 boss.attacks = new[]
                 {
-                    Attack(BossAttackType.Lance, 6f, 1),
+                    Attack(BossAttackType.Lance, 8f, 1),
                     Attack(BossAttackType.SpawnMinions, 15f, 1, minion: MinionKind.Sentry),
                     Attack(BossAttackType.DropMines, 10f, 2, fromPhase: 1),
                     Attack(BossAttackType.MissileSalvo, 7f, 3, 7f, 1),
@@ -595,7 +599,11 @@ namespace Portfolio.Asteroids.EditorTools
 
             // Sunbreaker: the warlord's flagship with a sun cannon at its nose.
             {
-                Boss boss = BossRoot("Sunbreaker", "Sunbreaker", 3f, 320f, 18000, out Transform visual);
+                Boss boss = BossRoot("Sunbreaker", "Sunbreaker", 3f, 290f, 18000, out Transform visual);
+                boss.fieldRules = true;
+                boss.contactDamage = 25f;
+                // Its weapons take turns: a breath between two of them, so its sweeps, flares and orbs can each be read.
+                boss.attackGap = 2f;
                 visual.localRotation = FaceCamera;
                 MeshRenderer hull = PackHull(visual, "StarSparrow4", FM("WarlordPaint"), 6.6f);
                 MeshRenderer cannon = Model(visual, "SunCannon", FModel("SunCannon"), FM("GatePaint"), new Vector3(0f, 0.3f, 3.2f), Quaternion.identity, Vector3.one * 1.1f);
@@ -615,9 +623,8 @@ namespace Portfolio.Asteroids.EditorTools
                 boss.attacks = new[]
                 {
                     Attack(BossAttackType.SweepBeam, 6f, 1),
-                    Attack(BossAttackType.SpreadShot, 3.5f, 7, 9f, 0, 60f),
-                    Attack(BossAttackType.SolarFlare, 16f, 1, fromPhase: 1),
-                    Attack(BossAttackType.SpawnMinions, 14f, 1, fromPhase: 1, minion: MinionKind.Corsair),
+                    Attack(BossAttackType.SpreadShot, 5.5f, 4, 9f, 0, 60f),
+                    Attack(BossAttackType.SolarFlare, 20f, 1, fromPhase: 1),
                     Attack(BossAttackType.NovaOrbs, 7f, 3, 3.5f, 1, 60f),
                     Attack(BossAttackType.SweepBeam, 7f, 2, fromPhase: 2),
                     Attack(BossAttackType.MissileSalvo, 8f, 4, 7f, 2)
@@ -629,6 +636,7 @@ namespace Portfolio.Asteroids.EditorTools
             // Scrap Leviathan: a maw of salvage in a cloud of turning wreckage that drags ships toward it.
             {
                 Boss boss = BossRoot("ScrapLeviathan", "Scrap Leviathan", 3f, 240f, 13000, out Transform visual);
+                boss.fieldRules = true;
                 visual.localRotation = FaceCamera;
                 MeshRenderer body = Model(visual, "Maw", FModel("ScrapMaw"), FM("LeviathanPaint"), Vector3.zero, Quaternion.identity, Vector3.one * 1.6f);
                 Transform debris = Child(boss.transform, "Debris");
@@ -663,6 +671,7 @@ namespace Portfolio.Asteroids.EditorTools
             // Wraith Matriarch: blinks from place to place with her stalkers.
             {
                 Boss boss = BossRoot("WraithMatriarch", "Wraith Matriarch", 2.4f, 230f, 14000, out Transform visual);
+                boss.fieldRules = true;
                 visual.localRotation = FaceCamera;
                 MeshRenderer body = Model(visual, "Body", FModel("WraithMatriarch"), FM("MatriarchPaint"), Vector3.zero, Quaternion.identity, Vector3.one * 1.3f);
                 Quad(boss.transform, "Glow", FM("MatriarchGlow"), new Vector3(0f, 0f, 0.8f), Vector2.one * 9f);
@@ -691,6 +700,7 @@ namespace Portfolio.Asteroids.EditorTools
             // The Hydra: three heads, acid and hydra rocks; it heals once wounded.
             {
                 Boss boss = BossRoot("Hydra", "The Hydra", 3f, 240f, 16000, out Transform visual);
+                boss.fieldRules = true;
                 visual.localRotation = FaceCamera;
                 MeshRenderer body = Model(visual, "Body", FModel("Hydra"), FM("HydraHide"), new Vector3(0f, 0f, -0.8f), Quaternion.identity, Vector3.one * 1.6f);
                 Quad(boss.transform, "Glow", FM("HydraGlow"), new Vector3(0f, 0f, 0.8f), Vector2.one * 10f);
@@ -716,7 +726,12 @@ namespace Portfolio.Asteroids.EditorTools
 
             // The Gatekeeper: the gate's eye in two turning rings; four phases and everything the rift has seen.
             {
-                Boss boss = BossRoot("Gatekeeper", "The Gatekeeper", 3.4f, 340f, 25000, out Transform visual);
+                Boss boss = BossRoot("Gatekeeper", "The Gatekeeper", 3.4f, 300f, 25000, out Transform visual);
+                boss.fieldRules = true;
+                // The gate holds the middle: it does not ram, so touching it only grazes.
+                boss.contactDamage = 25f;
+                // Everything the rift has, but one thing at a time: a breath between two attacks.
+                boss.attackGap = 2f;
                 visual.localRotation = FaceCamera;
                 MeshRenderer core = Model(visual, "Core", FModel("GateCore"), FM("GatePaint"), Vector3.zero, Quaternion.identity, Vector3.one * 1.2f);
                 // The two rings of the gate turn against each other on their own spinners.
@@ -733,16 +748,16 @@ namespace Portfolio.Asteroids.EditorTools
                 boss.entrySeconds = 3.5f;
                 boss.attacks = new[]
                 {
-                    Attack(BossAttackType.RingShot, 6f, 12, 6f),
-                    Attack(BossAttackType.Lance, 5f, 1),
+                    Attack(BossAttackType.RingShot, 7f, 6, 6f),
+                    Attack(BossAttackType.Lance, 8f, 1, fromPhase: 2),
                     Attack(BossAttackType.Lightning, 6f, 3, spread: 30f),
                     Attack(BossAttackType.SweepBeam, 8f, 1, fromPhase: 1),
                     Attack(BossAttackType.SpawnMinions, 12f, 1, fromPhase: 1, minion: MinionKind.Stalker),
-                    Attack(BossAttackType.SpawnMinions, 10f, 1, fromPhase: 2, minion: MinionKind.Asteroid, asteroid: AsteroidKind.Hydra),
+                    Attack(BossAttackType.SpawnMinions, 14f, 1, fromPhase: 2, minion: MinionKind.Asteroid, asteroid: AsteroidKind.Hydra),
                     Attack(BossAttackType.NovaOrbs, 7f, 4, 3.5f, 2, 120f),
                     Attack(BossAttackType.SolarFlare, 16f, 1, fromPhase: 2),
-                    Attack(BossAttackType.SweepBeam, 6f, 3, fromPhase: 3),
-                    Attack(BossAttackType.LanceFan, 6f, 5, fromPhase: 3, spread: 70f),
+                    Attack(BossAttackType.SweepBeam, 7f, 2, fromPhase: 3),
+                    Attack(BossAttackType.LanceFan, 8f, 5, fromPhase: 3, spread: 70f),
                     Attack(BossAttackType.SpawnMinions, 12f, 2, fromPhase: 3, minion: MinionKind.Corsair)
                 };
                 boss.phaseCalls = new[] { "The gate opens!", "Something is coming through!", "The gate is collapsing - finish it!" };

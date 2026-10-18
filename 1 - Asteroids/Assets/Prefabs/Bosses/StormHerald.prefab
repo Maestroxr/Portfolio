@@ -226,14 +226,15 @@ MonoBehaviour:
   Spin: {x: 0, y: 0, z: 0}
   maxHealth: 170
   score: 11000
-  contactDamage: 40
+  contactDamage: 25
   invulnerable: 0
   flashRenderers:
   - {fileID: 6973046313443196659}
   flashColor: {r: 0.7, g: 0.9, b: 1, a: 1}
   regeneration: 0
   regenerationBudget: 0.15
-  orbitRadius: 0.55
+  fieldRules: 1
+  orbitRadius: 0.72
   blinkInterval: 5.5
   blinkTime: 1.1
   phaseCalls:

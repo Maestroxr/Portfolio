@@ -94,13 +94,31 @@ namespace Portfolio.Asteroids
         {
             yield return ToMenu();
             StrikeLoadout pilot = manager.Pilot;
+            foreach (string unknown in GiveKit(pilot, items))
+            {
+                Note($"kit: no item named {unknown}");
+            }
+            manager.Progress?.SavePilot(pilot);
+            Note($"kit {items}: pilot {Describe(pilot)}");
+            yield return Strike(number, false);
+        }
+
+
+        /// <summary>
+        /// Gives <paramref name="pilot"/> the items of a kit (<c>RailGun+WingmanDrones</c>, enum names in any case): a special is
+        /// selected and the pilot keeps only the kit's specials, equipment and kits come as many as they hold (at most three),
+        /// and the energy is full. Also used by the online tour (<c>-asteroids-kit</c>). Returns the names it did not know.
+        /// </summary>
+        internal static List<string> GiveKit(StrikeLoadout pilot, string items)
+        {
+            var unknown = new List<string>();
             StrikeItem special = StrikeItem.MachineGun;
             var kit = new HashSet<StrikeItem>();
             foreach (string name in items.Split(new[] { '+' }, StringSplitOptions.RemoveEmptyEntries))
             {
                 if (!Enum.TryParse(name.Trim(), true, out StrikeItem item) || !Enum.IsDefined(typeof(StrikeItem), item))
                 {
-                    Note($"kit: no item named {name}");
+                    unknown.Add(name);
                     continue;
                 }
                 kit.Add(item);
@@ -126,9 +144,7 @@ namespace Portfolio.Asteroids
             }
             pilot.Energy = StrikeRules.MaxEnergy;
             pilot.NotifyChanged();
-            manager.Progress?.SavePilot(pilot);
-            Note($"kit {items}: pilot {Describe(pilot)}");
-            yield return Strike(number, false);
+            return unknown;
         }
 
 

@@ -267,7 +267,7 @@ namespace Portfolio.Asteroids
         public static float ContactDamage(AsteroidKind kind, AsteroidSize size)
         {
             float damage = size == AsteroidSize.Large ? 34f : size == AsteroidSize.Medium ? 24f : 14f;
-            return kind == AsteroidKind.Magma ? damage * 1.25f : kind == AsteroidKind.Metal ? damage * 1.3f : damage;
+            return kind == AsteroidKind.Magma ? damage * 1.25f : damage;
         }
 
         /// <summary>How many fragments one breaks into; <paramref name="roll"/> is a random number in [0, 1).</summary>

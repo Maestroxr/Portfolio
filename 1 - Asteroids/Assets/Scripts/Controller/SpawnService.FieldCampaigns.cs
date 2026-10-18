@@ -109,6 +109,34 @@ namespace Portfolio.Asteroids
         }
 
 
+        /// <summary>The most minions of a kind a boss keeps in play: more only piles them up where nobody can dodge them all.</summary>
+        private bool MinionsAtCap(MinionKind kind)
+        {
+            switch (kind)
+            {
+                case MinionKind.Corsair:
+                    return field.CountTargets(target => target is Corsair) >= 3;
+                case MinionKind.Stalker:
+                    return field.CountTargets(target => target is PhaseStalker) >= 3;
+                case MinionKind.Sentry:
+                    return field.CountTargets(target => target is Sentry) >= 3;
+                case MinionKind.Minelayer:
+                    return field.CountTargets(target => target is Minelayer) >= 2;
+                case MinionKind.IonStorm:
+                {
+                    int storms = 0;
+                    foreach (SpaceBody body in field.Bodies)
+                    {
+                        storms += body is IonStorm && body.InPlay ? 1 : 0;
+                    }
+                    return storms >= 1;
+                }
+                default:
+                    return false;
+            }
+        }
+
+
         private Sentry SpawnSentry(Vector2 position)
         {
             var sentry = Deploy(sentryPool) as Sentry;
@@ -182,6 +210,10 @@ namespace Portfolio.Asteroids
         /// <summary>A boss's minion of the campaigns' kinds near <paramref name="position"/>.</summary>
         private SpaceBody SpawnFieldMinion(MinionKind kind, Vector2 position)
         {
+            if (MinionsAtCap(kind))
+            {
+                return null;
+            }
             switch (kind)
             {
                 case MinionKind.Sentry:

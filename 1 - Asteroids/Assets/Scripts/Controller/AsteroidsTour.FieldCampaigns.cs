@@ -94,6 +94,10 @@ namespace Portfolio.Asteroids
             }
             string name = local ? $"localfly{index}" : $"fly{index}";
             yield return ToMenu();
+            // Every flight on the starter hull: the saved hangar choice is shared with other development players.
+            int hull = manager.Progress != null ? manager.Progress.SelectedShip : 0;
+            manager.SelectShip(0);
+            Note($"{name} hull: was {hull}, flies {(manager.Progress != null ? manager.Progress.SelectedShip : 0)}");
             if (local)
             {
                 BackupLocalPlay();
@@ -132,6 +136,12 @@ namespace Portfolio.Asteroids
             void OnHurt(DamageInfo hit)
             {
                 string key = hit.Shot != null ? hit.Shot.name.Replace("(Clone)", string.Empty) : hit.Source.ToString();
+                if (hit.Source == DamageSource.Collision && manager.Field != null)
+                {
+                    // What it ran into: the nearest body to the point of contact.
+                    Shootable into = manager.Field.NearestTarget(hit.Point, 6f, target => target.IsAlive);
+                    key += into is Asteroid rock ? $"/{rock.Kind}" : into != null ? $"/{into.GetType().Name}" : "/?";
+                }
                 hurt[key] = (hurt.TryGetValue(key, out float sum) ? sum : 0f) + hit.Amount;
             }
             AsteroidsPlayer hurtShip = manager.Ship;

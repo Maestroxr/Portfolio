@@ -184,7 +184,8 @@ namespace Portfolio.Asteroids
             Vector2 aim = offsetToPrey + (prey.Velocity - velocity) * lead;
             float angle = SteerToward(forward, aim.normalized, 1f);
             Fire = Mathf.Abs(angle) < 14f && offsetToPrey.magnitude < 20f;
-            float distanceToPrey = offsetToPrey.magnitude;
+            // A boss's range counts from its hull: it is big, and it rams.
+            float distanceToPrey = offsetToPrey.magnitude - (prey is Boss ? prey.Radius : 0f);
             if (distanceToPrey > preferredRange + 4f && Mathf.Abs(angle) < 30f)
             {
                 Thrust = 0.6f;

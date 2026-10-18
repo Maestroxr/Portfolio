@@ -820,7 +820,7 @@ MonoBehaviour:
   altitude: 1
   Velocity: {x: 0, y: 0}
   Spin: {x: 0, y: 0, z: 0}
-  maxHealth: 140
+  maxHealth: 120
   score: 9000
   contactDamage: 40
   invulnerable: 0
@@ -829,6 +829,7 @@ MonoBehaviour:
   flashColor: {r: 1, g: 0.7, b: 0.45, a: 1}
   regeneration: 0
   regenerationBudget: 0.15
+  fieldRules: 1
   orbitRadius: 0.55
   blinkInterval: 5.5
   blinkTime: 1.1
@@ -842,8 +843,8 @@ MonoBehaviour:
   hoverHeight: 0.55
   attacks:
   - type: 3
-    cooldown: 7
-    count: 2
+    cooldown: 8
+    count: 1
     spread: 50
     speed: 8
     fromPhase: 0
@@ -860,7 +861,7 @@ MonoBehaviour:
     asteroidKind: 0
     shot: 1
   - type: 3
-    cooldown: 9
+    cooldown: 12
     count: 1
     spread: 50
     speed: 8

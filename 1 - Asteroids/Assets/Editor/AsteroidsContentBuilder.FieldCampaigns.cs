@@ -14,7 +14,8 @@ namespace Portfolio.Asteroids.EditorTools
     /// field), so no older index moves; the endless mission adds their sectors and bosses to its rotation.
     /// The numbers live here: ScoreGoal (the third star) is about 55% of what the autopilot scores on a mission, as for the
     /// first campaign (the median of its won flights; for a boss, of the flights it won without god mode, and where it
-    /// never did, a goal set by hand between its neighbours, since a god-mode boss fight runs long and farms its minions);
+    /// never did, a goal set by hand; the Storm Herald, Sunbreaker and Gatekeeper were re-measured from their no-god wins
+    /// after the tuning of 2026-10-18);
     /// re-measure after changing waves, scores or bosses (the tour's fly step logs the scores).
     /// </summary>
     internal static partial class AsteroidsContentBuilder
@@ -122,11 +123,11 @@ namespace Portfolio.Asteroids.EditorTools
                     },
                     new FieldMission
                     {
-                        Title = "Slag Titan", Sector = 0, Objective = LevelObjective.Boss, Boss = "SlagTitan", ScoreGoal = 30500, Speed = 1f, SpawnRate = 6f,
+                        Title = "Slag Titan", Sector = 0, Objective = LevelObjective.Boss, Boss = "SlagTitan", ScoreGoal = 30500, Speed = 1f, SpawnRate = 10f,
                         Description = "A titan of molten iron rolls out of the star's glare, hurling slag. It answers to nothing but heat.",
                         Introduces = "Boss: the Slag Titan.",
                         Hints = new[] { "The Slag Titan throws iron rocks - blasts break them fastest.", "Cornered, it calls the star's flares down on you." },
-                        Waves = new[] { FW(rocks: 3, metal: 2, flares: 1, pods: 1, title: "Heat haze") }
+                        Waves = new[] { FW(rocks: 1, flares: 1, pods: 1, interval: 8f, title: "Heat haze") }
                     },
                     new FieldMission
                     {
@@ -161,12 +162,12 @@ namespace Portfolio.Asteroids.EditorTools
                     },
                     new FieldMission
                     {
-                        Title = "Storm Herald", Sector = 1, Objective = LevelObjective.Boss, Boss = "StormHerald", ScoreGoal = 34000, Speed = 1.05f, SpawnRate = 5.5f,
+                        Title = "Storm Herald", Sector = 1, Objective = LevelObjective.Boss, Boss = "StormHerald", ScoreGoal = 11000, Speed = 1.05f, SpawnRate = 12f,
                         Description = "Something rides the storm: a living manta crackling with ion fire. The raiders call it the Herald.",
                         Introduces = "Boss: the Storm Herald circles the sector.",
                         Hints = new[] { "The Herald circles the sector and calls lightning on you - keep moving.", "It brings storms and corsairs when hurt. Save a nova bomb (B)." },
                         TouchHints = new[] { null, "It brings storms and corsairs when hurt. Save a nova bomb (NOVA)." },
-                        Waves = new[] { FW(rocks: 3, storms: 1, corsairs: 1, pods: 1, title: "Storm front") }
+                        Waves = new[] { FW(corsairs: 1, pods: 1, interval: 9f, title: "Storm front") }
                     },
                     new FieldMission
                     {
@@ -200,7 +201,7 @@ namespace Portfolio.Asteroids.EditorTools
                         Description = "The warlord's fortress guards the way out of the shoals: a ring of guns, lances and mine bays.",
                         Introduces = "Boss: the Bastion fires lances - a thin line warns where the beam will burn.",
                         Hints = new[] { "A thin red line warns of a lance. Get off the line before it burns.", "The Bastion sends out sentries and mines - clear them as you go." },
-                        Waves = new[] { FW(metal: 3, sentries: 2, pods: 1, title: "Outer guns") }
+                        Waves = new[] { FW(sentries: 2, pods: 1, interval: 8f, title: "Outer guns") }
                     },
                     new FieldMission
                     {
@@ -235,7 +236,7 @@ namespace Portfolio.Asteroids.EditorTools
                     },
                     new FieldMission
                     {
-                        Title = "Sunbreaker", Sector = 3, Objective = LevelObjective.Boss, Boss = "Sunbreaker", ScoreGoal = 44000, Speed = 1.15f, SpawnRate = 5.5f,
+                        Title = "Sunbreaker", Sector = 3, Objective = LevelObjective.Boss, Boss = "Sunbreaker", ScoreGoal = 15000, Speed = 1.15f, SpawnRate = 12f,
                         Description = "The warlord himself, aboard the Sunbreaker: a flagship built around a cannon that drinks starlight. End his war before the star ends everything.",
                         Introduces = "The last boss of the Frontier: the Sunbreaker.",
                         Hints = new[]
@@ -243,7 +244,7 @@ namespace Portfolio.Asteroids.EditorTools
                             "Its sun cannon sweeps a beam across the sector - watch the warning line and get behind it.",
                             "Nova orbs burst into rings of fire. Shoot them early or give them room."
                         },
-                        Waves = new[] { FW(metal: 2, corsairs: 1, pods: 1, title: "Flagship escort") }
+                        Waves = new[] { FW(corsairs: 1, pods: 1, interval: 9f, title: "Flagship escort") }
                     }
                 }
             },
@@ -391,11 +392,11 @@ namespace Portfolio.Asteroids.EditorTools
                     },
                     new FieldMission
                     {
-                        Title = "The Gatekeeper", Sector = 3, Objective = LevelObjective.Boss, Boss = "Gatekeeper", ScoreGoal = 52000, Speed = 1.25f, SpawnRate = 5f,
+                        Title = "The Gatekeeper", Sector = 3, Objective = LevelObjective.Boss, Boss = "Gatekeeper", ScoreGoal = 21500, Speed = 1.25f, SpawnRate = 12f,
                         Description = "The gate opens its eye. Whatever built it left a keeper behind - and it has been waiting a very long time.",
                         Introduces = "The last boss: the Gatekeeper, in four phases.",
                         Hints = new[] { "The Gatekeeper holds the middle of the sector - do not fly into it.", "Every phase brings something new. Watch for warning lines and rings." },
-                        Waves = new[] { FW(rocks: 2, wrecks: 2, stalkers: 1, pods: 1, title: "The threshold") }
+                        Waves = new[] { FW(stalkers: 1, pods: 1, interval: 9f, title: "The threshold") }
                     }
                 }
             }

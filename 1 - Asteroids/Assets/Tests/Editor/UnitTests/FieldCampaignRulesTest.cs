@@ -96,7 +96,8 @@ namespace Portfolio.Asteroids.Tests
             Assert.That(AsteroidRules.DamageTaken(AsteroidKind.Rock, DamageSource.PlayerShot, 2f), Is.EqualTo(2f), "Other rocks take every shot in full.");
             Assert.Greater(AsteroidRules.Health(AsteroidKind.Metal, AsteroidSize.Large), AsteroidRules.Health(AsteroidKind.Ore, AsteroidSize.Large));
             Assert.Greater(AsteroidRules.Score(AsteroidKind.Metal, AsteroidSize.Small), AsteroidRules.Score(AsteroidKind.Rock, AsteroidSize.Small));
-            Assert.Greater(AsteroidRules.ContactDamage(AsteroidKind.Metal, AsteroidSize.Large), AsteroidRules.ContactDamage(AsteroidKind.Rock, AsteroidSize.Large));
+            Assert.That(AsteroidRules.ContactDamage(AsteroidKind.Metal, AsteroidSize.Large), Is.EqualTo(AsteroidRules.ContactDamage(AsteroidKind.Rock, AsteroidSize.Large)),
+                "Iron is armour against shots: it rams like any rock.");
         }
 
 

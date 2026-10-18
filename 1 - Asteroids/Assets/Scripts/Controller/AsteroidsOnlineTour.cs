@@ -20,7 +20,10 @@ namespace Portfolio.Asteroids
     /// <c>-asteroids-leave &lt;seconds&gt;</c> makes this pilot leave the match that long after it began. A won strike
     /// mission banks the pilot, and both players share the saved progress: the strike pilot is put back as it was when
     /// the tour ends. Run the players with <c>-gamebox-identity</c> to tell them apart, and <c>-gamebox-server</c> /
-    /// <c>-gamebox-database</c> for a test server.
+    /// <c>-gamebox-database</c> for a test server. For the armory in co-op, <c>-asteroids-kit &lt;item&gt;[+&lt;item&gt;...]</c>
+    /// gives this pilot's strike loadout the items of a kit before the match (in memory only, like the <c>kit:</c> step of
+    /// <see cref="AsteroidsTour"/>), and <c>-asteroids-weapon &lt;type&gt;[:&lt;level&gt;]</c> arms this pilot's ship with that
+    /// field weapon (default the top level) for the whole match.
     /// </summary>
     public class AsteroidsOnlineTour : OnlineTour
     {
@@ -30,6 +33,8 @@ namespace Portfolio.Asteroids
         private const string LeaveArgument = "-asteroids-leave";
         private const string DifficultyArgument = "-asteroids-difficulty";
         private const string SkipToBossArgument = "-asteroids-skip-to-boss";
+        private const string KitArgument = "-asteroids-kit";
+        private const string WeaponArgument = "-asteroids-weapon";
 
         private static readonly float[] ShotTimes = { 4f, 12f, 24f, 40f, 60f, 90f };
 
@@ -58,6 +63,7 @@ namespace Portfolio.Asteroids
             }
             yield return new WaitForSeconds(1f);
             SavePilot();
+            GiveKit();
             if (manager.online == null)
             {
                 yield return Fail("the scene has no online controller");
@@ -106,6 +112,12 @@ namespace Portfolio.Asteroids
             {
                 pilot.enabled = true;
             }
+            (WeaponType type, int level)? weapon = strike ? null : WeaponFromArguments();
+            if (weapon.HasValue)
+            {
+                manager.Ship.Weapons.Set(weapon.Value.type, weapon.Value.level);
+                Note($"weapon {manager.Ship.Weapons.Type} {manager.Ship.Weapons.Level}");
+            }
 
             // The same moments on both clients: seconds since the mission went live.
             float[] times = strike ? StrikeShotTimes : ShotTimes;
@@ -116,6 +128,11 @@ namespace Portfolio.Asteroids
             while (!Ended)
             {
                 float elapsed = Time.realtimeSinceStartup - began;
+                if (weapon.HasValue && manager.Ship.IsAlive && manager.Ship.Weapons.Type != weapon.Value.type)
+                {
+                    // A crate picked up on the way switched weapons: the run is about this one.
+                    manager.Ship.Weapons.Set(weapon.Value.type, weapon.Value.level);
+                }
                 if (shot < times.Length && elapsed >= times[shot])
                 {
                     Note($"t+{times[shot]:0}s {Describe()}");
@@ -179,6 +196,56 @@ namespace Portfolio.Asteroids
         private void OnApplicationQuit()
         {
             RestorePilot();
+        }
+
+
+        /// <summary>Gives the pilot the kit of <c>-asteroids-kit</c>, if any (after <see cref="SavePilot"/>, so the tour puts it back).</summary>
+        private void GiveKit()
+        {
+            string kit = TextArgument(KitArgument);
+            if (string.IsNullOrEmpty(kit))
+            {
+                return;
+            }
+            foreach (string unknown in AsteroidsTour.GiveKit(manager.Pilot, kit))
+            {
+                Note($"kit: no item named {unknown}");
+            }
+            Note($"kit {kit}: pilot {AsteroidsTour.Describe(manager.Pilot)}");
+        }
+
+
+        /// <summary>The field weapon of <c>-asteroids-weapon &lt;type&gt;[:&lt;level&gt;]</c>, or null.</summary>
+        private (WeaponType type, int level)? WeaponFromArguments()
+        {
+            string text = TextArgument(WeaponArgument);
+            if (string.IsNullOrEmpty(text))
+            {
+                return null;
+            }
+            string[] parts = text.Split(':');
+            if (!System.Enum.TryParse(parts[0], true, out WeaponType type) || !System.Enum.IsDefined(typeof(WeaponType), type))
+            {
+                Note($"weapon: no weapon named {parts[0]}");
+                return null;
+            }
+            int level = parts.Length > 1 && int.TryParse(parts[1], out int parsed) ? Mathf.Clamp(parsed, 1, WeaponRules.MaxLevel) : WeaponRules.MaxLevel;
+            return (type, level);
+        }
+
+
+        /// <summary>The text after a command line argument, or null.</summary>
+        private static string TextArgument(string name)
+        {
+            string[] args = System.Environment.GetCommandLineArgs();
+            for (int i = 0; i < args.Length - 1; i++)
+            {
+                if (args[i] == name)
+                {
+                    return args[i + 1];
+                }
+            }
+            return null;
         }
 
 

@@ -17,6 +17,10 @@ namespace Portfolio.Asteroids
         /// <summary>Meters the autopilot keeps between the ship and a boss's hull.</summary>
         private const float BossClearance = 3f;
 
+        /// <summary>Seconds ahead the autopilot watches a boss's course, and how soon a boss on that course counts as hitting.</summary>
+        private const float BossLookAhead = 1.6f;
+        private const float BossUrgency = 0.2f;
+
         /// <summary>
         /// The campaigns' threats to the ship at <paramref name="position"/>: like the field's own, the soonest wins and
         /// <paramref name="escape"/> is the way out of it (for a flare, the way into it: the dash goes through).
@@ -61,19 +65,26 @@ namespace Portfolio.Asteroids
                     }
                 }
             }
-            // A boss rams what flies too close: keep a few meters off its hull.
+            // A boss rams what flies too close: keep a few meters off its hull, and get out of its way when it comes
+            // on (an orbiting or charging boss moves faster than the ship turns). It comes before rocks and shots.
             var targets = field.Targets;
             for (int i = 0; i < targets.Count; i++)
             {
-                if (targets[i] is Boss boss && boss.IsAlive)
+                if (!(targets[i] is Boss boss) || !boss.IsAlive)
                 {
-                    Vector2 offset = playground.Delta(boss.Position, position);
-                    float keep = boss.Radius + player.Radius + BossClearance;
-                    if (offset.sqrMagnitude < keep * keep && 0.5f < soonest)
-                    {
-                        soonest = 0.5f;
-                        escape = offset.sqrMagnitude > 0.01f ? offset.normalized : Vector2.down;
-                    }
+                    continue;
+                }
+                Vector2 offset = playground.Delta(boss.Position, position);
+                Vector2 closing = boss.Velocity - player.Velocity;
+                float keep = boss.Radius + player.Radius + BossClearance;
+                float speed2 = closing.sqrMagnitude;
+                float time = speed2 > 0.0001f ? Mathf.Clamp(Vector2.Dot(offset, closing) / speed2, 0f, BossLookAhead) : 0f;
+                Vector2 nearest = offset - closing * time;
+                if (nearest.sqrMagnitude < keep * keep && BossUrgency < soonest)
+                {
+                    soonest = BossUrgency;
+                    // Away from where it will pass, else straight away from it.
+                    escape = nearest.sqrMagnitude > 0.01f ? nearest.normalized : offset.sqrMagnitude > 0.01f ? offset.normalized : Vector2.down;
                 }
             }
             var shots = field.EnemyShots;

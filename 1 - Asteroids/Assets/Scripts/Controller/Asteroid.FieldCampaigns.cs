@@ -111,6 +111,17 @@ namespace Portfolio.Asteroids
         }
 
 
+        public override void OnRammed(AsteroidsPlayer player, Vector2 direction, bool dashing)
+        {
+            base.OnRammed(player, direction, dashing);
+            if (kind == AsteroidKind.Metal && InPlay && !IsPuppet)
+            {
+                // Iron does not break on a ram: it is knocked clear, so it cannot grind the ship hit after hit.
+                Velocity += direction * 3f;
+            }
+        }
+
+
         protected override void OnDespawned()
         {
             base.OnDespawned();

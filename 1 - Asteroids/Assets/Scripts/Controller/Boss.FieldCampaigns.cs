@@ -17,6 +17,8 @@ namespace Portfolio.Asteroids
         [SerializeField] internal float regeneration;
         [Tooltip("The most a regenerating boss heals within one phase, as a share of its full hull: keeping up the fire pays off in the end.")]
         [SerializeField] internal float regenerationBudget = 0.15f;
+        [Tooltip("A boss of the field campaigns: its minions and mines grow by one from the third phase on (not by a quarter of the call per phase) and its cooldowns shorten gently in later phases.")]
+        [SerializeField] internal bool fieldRules;
         [Tooltip("Orbit: the size of the circle as a share of the playfield's half size.")]
         [SerializeField] internal float orbitRadius = 0.55f;
         [Tooltip("Blink: seconds between two blinks in the first phase (shorter in the later ones).")]
@@ -45,6 +47,39 @@ namespace Portfolio.Asteroids
 
         /// <summary>What the boss shows of the campaign's own states: a blink is a warning.</summary>
         private BodyFlags FieldFlags => blinkClock >= 0f ? BodyFlags.Warning : BodyFlags.None;
+
+        /// <summary>
+        /// How many strikes, lances, beams or orbs an attack of the field campaigns brings: one more from the third phase on
+        /// for strikes, fans and orbs, never more for beams, flares and single lances (a later phase has attacks of its own).
+        /// The base rule grows much faster, and beams that fill the field from every side cannot be dodged.
+        /// </summary>
+        private int FieldAttackCount(BossAttack attack)
+        {
+            switch (attack.type)
+            {
+                case BossAttackType.Lightning:
+                case BossAttackType.LanceFan:
+                case BossAttackType.NovaOrbs:
+                    return Mathf.Max(1, attack.count + (Phase >= 2 ? 1 : 0));
+                default:
+                    return Mathf.Max(1, attack.count);
+            }
+        }
+
+
+        /// <summary>
+        /// A field boss's cooldowns in its later phases: a little shorter, not 40% shorter. Its later phases bring attacks of
+        /// their own, and both at once leave no time to read any of them.
+        /// </summary>
+        private float FieldPhaseFactor => Phase == 0 ? 1f : Phase == 1 ? 0.92f : 0.85f;
+
+
+        /// <summary>How many minions or mines a call of <paramref name="attack"/> brings (<paramref name="count"/> by the base rule).</summary>
+        private int FieldMinionCount(BossAttack attack, int count)
+        {
+            return fieldRules ? Mathf.Max(1, attack.count + (Phase >= 2 ? 1 : 0)) : count;
+        }
+
 
         /// <summary>The call of <paramref name="phase"/> (1 to 3) for the HUD, or empty.</summary>
         public string PhaseCall(int phase)
@@ -242,6 +277,7 @@ namespace Portfolio.Asteroids
         /// <summary>The campaign attacks.</summary>
         private void ExecuteField(BossAttack attack, SpawnService spawner, int count)
         {
+            count = FieldAttackCount(attack);
             switch (attack.type)
             {
                 case BossAttackType.Lightning:

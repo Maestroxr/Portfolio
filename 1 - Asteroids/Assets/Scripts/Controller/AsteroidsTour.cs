@@ -25,6 +25,10 @@ namespace Portfolio.Asteroids
     /// <c>field:c1</c> (the first mission of the second field campaign), <c>field:c1:4</c> (its fourth), <c>field:c1:all</c>,
     /// and the same with <c>strike:</c> and <c>boss:</c>; <c>campaigns</c> pictures the mission select of every campaign of
     /// both modes (switched with the campaign bar's rules).
+    /// <c>-asteroids-tour-pilot &lt;entry&gt;[+&lt;entry&gt;...]</c> starts the tour with a new pilot instead of the saved one (in
+    /// memory; the saved pilot is put back at the end like always), so runs compare whatever other tours left in the
+    /// saves: each entry is a strike item (one more of it; the first special listed is selected) or a difficulty, e.g.
+    /// <c>Veteran+Dumbfire+AirMissiles+GroundMissiles</c>.
     /// </summary>
     public partial class AsteroidsTour : MonoBehaviour
     {
@@ -36,6 +40,7 @@ namespace Portfolio.Asteroids
         public const string SpeedArgument = "-asteroids-tour-speed";
         public const string MoneyArgument = "-asteroids-tour-money";
         public const string TimeoutArgument = "-asteroids-tour-timeout";
+        public const string PilotArgument = "-asteroids-tour-pilot";
 
         private const string DefaultPlan = "menu,shop,strike:1,boss:1,field:0";
 
@@ -112,6 +117,7 @@ namespace Portfolio.Asteroids
             }
             yield return Wait(1.5f);
             Backup();
+            StartWithNewPilot(MobilePlatform.ArgumentValue(PilotArgument));
             if (StrikeMissions().Count == 0)
             {
                 AddTestMission();
@@ -689,7 +695,7 @@ namespace Portfolio.Asteroids
         }
 
 
-        private static string Describe(StrikeLoadout pilot)
+        internal static string Describe(StrikeLoadout pilot)
         {
             if (pilot == null)
             {
@@ -710,6 +716,40 @@ namespace Portfolio.Asteroids
 
 
         /// <summary>Keeps the progress keys of every mission and the pilot, to put them back when the tour ends.</summary>
+        /// <summary>Replaces the pilot (in memory) with a new one holding <paramref name="entries"/> (see the class summary).</summary>
+        private void StartWithNewPilot(string entries)
+        {
+            if (string.IsNullOrEmpty(entries))
+            {
+                return;
+            }
+            StrikeLoadout pilot = StrikeLoadout.NewPilot();
+            foreach (string raw in entries.Split(new[] { '+' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                string name = raw.Trim();
+                if (Enum.TryParse(name, true, out StrikeDifficulty difficulty) && Enum.IsDefined(typeof(StrikeDifficulty), difficulty))
+                {
+                    pilot.Difficulty = difficulty;
+                }
+                else if (Enum.TryParse(name, true, out StrikeItem item) && Enum.IsDefined(typeof(StrikeItem), item))
+                {
+                    pilot.SetCount(item, pilot.Count(item) + 1);
+                    if (StrikeWeaponRules.IsSpecial(item) && pilot.Special == StrikeItem.MachineGun)
+                    {
+                        pilot.Special = item;
+                    }
+                }
+                else
+                {
+                    Note($"pilot: no item or difficulty named {name}");
+                }
+            }
+            manager.Pilot.CopyFrom(pilot);
+            manager.Pilot.NotifyChanged();
+            Note($"pilot: a new one for the tour, {Describe(manager.Pilot)}");
+        }
+
+
         private void Backup()
         {
             hadPilot = manager.Progress.HasPilot;

@@ -270,9 +270,9 @@ MonoBehaviour:
   altitude: 1
   Velocity: {x: 0, y: 0}
   Spin: {x: 0, y: 0, z: 0}
-  maxHealth: 320
+  maxHealth: 290
   score: 18000
-  contactDamage: 40
+  contactDamage: 25
   invulnerable: 0
   flashRenderers:
   - {fileID: 2733410360499416728}
@@ -280,6 +280,7 @@ MonoBehaviour:
   flashColor: {r: 1, g: 0.85, b: 0.6, a: 1}
   regeneration: 0
   regenerationBudget: 0.15
+  fieldRules: 1
   orbitRadius: 0.55
   blinkInterval: 5.5
   blinkTime: 1.1
@@ -302,8 +303,8 @@ MonoBehaviour:
     asteroidKind: 0
     shot: 0
   - type: 1
-    cooldown: 3.5
-    count: 7
+    cooldown: 5.5
+    count: 4
     spread: 60
     speed: 9
     fromPhase: 0
@@ -311,21 +312,12 @@ MonoBehaviour:
     asteroidKind: 0
     shot: 0
   - type: 10
-    cooldown: 16
+    cooldown: 20
     count: 1
     spread: 50
     speed: 8
     fromPhase: 1
     minion: 0
-    asteroidKind: 0
-    shot: 0
-  - type: 3
-    cooldown: 14
-    count: 1
-    spread: 50
-    speed: 8
-    fromPhase: 1
-    minion: 9
     asteroidKind: 0
     shot: 0
   - type: 11
@@ -358,7 +350,7 @@ MonoBehaviour:
   phaseThresholds:
   - 0.66
   - 0.33
-  attackGap: 1.3
+  attackGap: 2
   facesShip: 1
   spinners: []
   spinSpeed: 40

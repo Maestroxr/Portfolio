@@ -167,7 +167,7 @@ namespace Portfolio.Asteroids
         /// <summary>The death sequence finished; the boss is about to leave play.</summary>
         public event Action<Boss> Defeated;
 
-        private float PhaseFactor => Phase == 0 ? 1f : Phase == 1 ? 0.78f : 0.6f;
+        private float PhaseFactor => fieldRules ? FieldPhaseFactor : Phase == 0 ? 1f : Phase == 1 ? 0.78f : 0.6f;
 
         /// <summary>Seconds in the current state.</summary>
         protected float StateTime => stateTime;
@@ -453,14 +453,14 @@ namespace Portfolio.Asteroids
                     break;
                 }
                 case BossAttackType.SpawnMinions:
-                    for (int i = 0; i < count; i++)
+                    for (int i = 0, minions = FieldMinionCount(attack, count); i < minions; i++)
                     {
                         spawner.SpawnMinion(attack.minion, attack.asteroidKind, Position + Random.insideUnitCircle.normalized * (radius + 0.8f));
                     }
                     Field.Sounds?.BossRoar(0.6f);
                     break;
                 case BossAttackType.DropMines:
-                    for (int i = 0; i < count; i++)
+                    for (int i = 0, minions = FieldMinionCount(attack, count); i < minions; i++)
                     {
                         spawner.SpawnMinion(MinionKind.Mine, attack.asteroidKind, Position + Random.insideUnitCircle.normalized * (radius + 1.2f));
                     }
