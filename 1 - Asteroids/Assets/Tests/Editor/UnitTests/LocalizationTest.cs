@@ -91,6 +91,12 @@ namespace Portfolio.Asteroids.Tests
                         words.Add(campaign.GetSector(i).theme.Title);
                     }
                 }
+                // The campaigns of both modes: the campaign bar shows their names and stories.
+                foreach (AsteroidsCampaign.Arc arc in campaign.arcs)
+                {
+                    words.Add(arc.title);
+                    words.Add(arc.description);
+                }
             }
             foreach (AsteroidsLevel level in Assets<AsteroidsLevel>())
             {

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Gamebox;
 using Gamebox.Lockstep;
 using Gamebox.Online;
@@ -6,23 +7,26 @@ using UnityEngine;
 namespace Portfolio.BoardGames
 {
     /// <summary>
-    /// The online half of the manager: a game of any of the three played in step with a player on another device
-    /// (<see cref="BoardGamesOnlineController"/>, Server/Lib.cs). The table is the room's: nothing but the action log of
-    /// the server changes it; the controller takes every action to it and tells the manager
-    /// (<see cref="ILockstepHost{TCommand}"/>), which reacts in <see cref="AfterEntry"/> as it does to a move at this
-    /// device. The director offers a decision only to the person here, and only once the board caught up; the computer
-    /// in the other seat is played by the client of the host, through the log like everybody else. The results lead back to
-    /// the room.
+    /// The online half of the manager: a game of any of the three played in step over the action log of the server
+    /// (<see cref="BoardGamesOnlineController"/>, Server/Lib.cs). The table is the room's: nothing but the log changes
+    /// it; the controller takes every action to it and tells the manager (<see cref="ILockstepHost{TCommand}"/>), which
+    /// reacts in <see cref="AfterEntry"/> as it does to a move at this device. The director offers a decision only to the
+    /// people here, and only once the board caught up; the computer in the other seat is played by the client of the
+    /// host, through the log like everybody else. The seats played at this device are the player's own and those of the
+    /// players who joined at the same device (<see cref="DeviceSeats"/>): with two of them the table is theirs alone, and
+    /// the game treats them as local play treats two people, by name, with the hand-over the party asked for in the lobby
+    /// and the board turning to the one to act when the setting says so. The results lead back to the room.
     /// </summary>
     public partial class BoardGamesManager : ILockstepHost<BoardCommand>
     {
         [SerializeField] private BoardGamesOnlineController online;
 
-        private int onlineSeat = -1;
+        /// <summary>The table seats played at this device in the running online game; none offline.</summary>
+        private DeviceSeats onlineSeats = DeviceSeats.None;
         private TableSetup onlineSetup;
         private SaveData onlineSaved;
         private uint onlineSeed;
-        private int preparedSeat = -1;
+        private DeviceSeats preparedSeats = DeviceSeats.None;
 
         public BoardGamesOnlineController Online => online;
 
@@ -30,11 +34,14 @@ namespace Portfolio.BoardGames
 
         // ------------------------------------------------------------------ starting and ending
 
-        /// <summary>The online controller hands over the table of the game that is about to start, and the saved game it goes on from.</summary>
-        internal void PrepareOnlineTable(TableSetup setup, int localSeat, uint seed, SaveData saved)
+        /// <summary>
+        /// The online controller hands over the table of the game that is about to start, the seats of it played at this
+        /// device (the player's own and their companions'), and the saved game it goes on from.
+        /// </summary>
+        internal void PrepareOnlineTable(TableSetup setup, IReadOnlyList<int> localSeats, uint seed, SaveData saved)
         {
             onlineSetup = setup;
-            preparedSeat = localSeat;
+            preparedSeats = new DeviceSeats(localSeats);
             onlineSeed = seed;
             onlineSaved = saved;
         }
@@ -44,12 +51,12 @@ namespace Portfolio.BoardGames
         {
             TableSetup setup = onlineSetup;
             SaveData saved = onlineSaved;
-            int seat = preparedSeat;
+            DeviceSeats seats = preparedSeats;
             uint seed = onlineSeed;
             onlineSetup = null;
             onlineSaved = null;
-            preparedSeat = -1;
-            if (setup == null || seat < 0 || seat > 1)
+            preparedSeats = DeviceSeats.None;
+            if (setup == null || !seats.Any)
             {
                 UI?.UpdateError(L.T("The table of the online game did not arrive."));
                 return;
@@ -74,32 +81,42 @@ namespace Portfolio.BoardGames
                 EndTable();
                 EndLocalMatch();
             }
-            onlineSeat = seat;
+            onlineSeats = seats;
             BeginTable(setup, seed, game);
         }
 
         /// <summary>The session is over (the results were left, the room was, the connection dropped): the table is cleared.</summary>
         protected override void OnSessionChanged()
         {
-            if (InSession || (onlineSeat < 0 && onlineSetup == null))
+            if (InSession || (!onlineSeats.Any && onlineSetup == null))
             {
                 return;
             }
             onlineSetup = null;
             onlineSaved = null;
-            preparedSeat = -1;
-            onlineSeat = -1;
+            preparedSeats = DeviceSeats.None;
+            onlineSeats = DeviceSeats.None;
             if (table != null)
             {
                 EndTable();
             }
         }
 
-        /// <summary>The place of the member at this device in the room that finished (0 while it has none).</summary>
-        private int LocalPlace()
+        /// <summary>Whether a player at this device (the player, or one who joined here) came first in the room that finished.</summary>
+        private bool PlacedFirstHere()
         {
-            RoomMemberInfo me = online != null && online.ServerClient != null ? online.ServerClient.LocalMember : null;
-            return me != null ? (int)me.Place : 0;
+            if (online == null)
+            {
+                return false;
+            }
+            foreach (RoomMemberInfo member in online.LocalMembers)
+            {
+                if (member.Place == 1)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         /// <summary>
@@ -120,7 +137,8 @@ namespace Portfolio.BoardGames
 
         /// <summary>
         /// The rules ended the game: the room learns who won (a drawn tournament match: who goes on, see
-        /// <see cref="BracketSeatOfDraw"/>) and where the player here came. Returns the seat reported as the winner, -1 for none.
+        /// <see cref="BracketSeatOfDraw"/>) and where every player at this device came, each for the seat they played.
+        /// Returns the seat reported as the winner, -1 for none.
         /// </summary>
         private int ReportFinished(int winnerSeat)
         {
@@ -129,23 +147,32 @@ namespace Portfolio.BoardGames
                 return winnerSeat;
             }
             int reported = winnerSeat >= 0 ? winnerSeat : BracketSeatOfDraw();
-            int place = reported < 0 || reported == onlineSeat ? 1 : 2;
-            online.ReportTableFinished(reported, place, table.Game.Material(Setup.SideOf(onlineSeat)));
+            foreach (int seat in onlineSeats.All)
+            {
+                int place = reported < 0 || reported == seat ? 1 : 2;
+                online.ReportTableFinished(seat, reported, place, table.Game.Material(Setup.SideOf(seat)));
+            }
             return reported;
         }
 
-        /// <summary>What the player at this device is worth as the game goes: the score the members are ranked by should the room end early.</summary>
+        /// <summary>
+        /// What every player at this device is worth as the game goes: the score the members are ranked by should the room
+        /// end early, reported for each seat played here when it changes.
+        /// </summary>
         private void ReportToRoom()
         {
             if (online == null || table == null || table.IsOver)
             {
                 return;
             }
-            int worth = table.Game.Material(Setup.SideOf(onlineSeat));
-            if (worth != reportedWorth)
+            foreach (int seat in onlineSeats.All)
             {
-                reportedWorth = worth;
-                online.ReportScore(worth);
+                int worth = table.Game.Material(Setup.SideOf(seat));
+                if (worth != reportedWorth[seat])
+                {
+                    reportedWorth[seat] = worth;
+                    online.ReportSeatScore(seat, worth);
+                }
             }
         }
 
@@ -153,7 +180,8 @@ namespace Portfolio.BoardGames
 
         LockstepTable<BoardCommand> ILockstepHost<BoardCommand>.Table => IsOnlineGame ? table : null;
 
-        int ILockstepHost<BoardCommand>.TableSeat => onlineSeat;
+        /// <summary>The seat the people here act for now: the local seat to act, else the first played here (<see cref="LocalSeat"/>).</summary>
+        int ILockstepHost<BoardCommand>.TableSeat => LocalSeat;
 
         string ILockstepHost<BoardCommand>.TurnCaption => OnlineCaption();
 

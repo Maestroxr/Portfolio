@@ -26,11 +26,15 @@ are built by code (see "Building").
 - **The title screen** stands in front of a small valley with a town, a rider, soldiers and a dragon, seen by a slowly
   drifting camera. Its buttons: Continue (the scenario left last, where it was left), Campaign, Skirmish, Hot Seat,
   Play Online, Settings, Credits and Exit.
-- **The campaign screen** lists the eight chapters of *The Shattered Crown* as cards, each with the stars it was won
-  with and locked until the one before it is won, or, on its other page, the four skirmish maps, which can be played
-  straight away. The story of the one picked is on parchment beside them, with the realms that play it. A skirmish is
+- **The campaign screen** has a tab for each of the three campaigns (the town of the realm it is played as, and a
+  short name: The Crown, The Coven, The Clans) and one for the skirmish maps. Under the tabs are what the campaign is
+  about and the stars won in it, and its chapters as cards, each with the stars it was won with and locked until the
+  one before it in its campaign is won; the skirmish maps can be played straight away. The story of the one picked is
+  on parchment beside them: the intro, the task, and in a line of its own ("Beware") how the chapter is lost besides
+  losing everything; then the realms that play it (a computer realm on your side says it is an ally). A skirmish is
   shown as the settings shape it: its size, how much treasure and how many wandering armies it holds, and how well each
-  computer player plays. Along the bottom are Back, the choice of where battles are fought, and Begin.
+  computer player plays. Along the bottom are Back, the choice of where battles are fought, and Begin. The screen opens
+  on the campaign of the chapter begun last.
 - **The map**: click a hero to pick him up, then a cell to send him there. The trail of arrows shows the road, white for
   as far as today's movement carries him and red for the days after. Clicking a hero again opens his book; a town of
   yours opens its screen. The bar along the top holds the treasury, the turn and the date. The column down the right
@@ -74,7 +78,61 @@ are built by code (see "Building").
   itself there), and the lobby's From a saved game opens a room that plays a save: each realm goes to the member who
   played it by the same name, the others take the realms people played, the rest are the computer's, and every device
   goes on from the same save. A game saved online with several people loads at one device as a hot seat. Winning earns stars: three for winning inside the chapter's quick day count, two inside the slower one,
-  one for winning at all.
+  one for winning at all. The end of a chapter tells how its story goes on and offers the next chapter of its campaign
+  (or, lost, to try it again). On the map, the date on the top bar tells the task when the pointer rests on it, and the
+  banner of a new day counts down the days of a chapter that has a deadline.
+
+## Campaigns
+
+Three campaigns, each a story told in chapters and played as one realm, all open from the start. The chapters of a
+campaign open one after the other; stars are counted per campaign and all together. The campaign asset
+(`Content/HeroesCampaign.asset`, a `HeroesCampaign`) holds every scenario in one list, the chapters and the skirmish
+maps, and the list of campaigns (`HeroesCampaign.Arc`: title, tab, description, realm); a chapter names its campaign
+(`HeroesLevel.Arc`) and says how it is lost (`HeroesLevel.Loss`). A scenario keeps its place in the list for good, since
+saved games and the progress know it by it: the first campaign is at 0-7, the skirmish maps at 8-11 and the new
+chapters after them. The chapters are built by `Editor/HeroesContentBuilder.cs` (the first campaign and the skirmish
+maps) and `Editor/HeroesContentBuilder.Campaigns.cs` (the other two).
+
+- **The Shattered Crown** (Castle, chapters 0-7): a lord driven from his lands wins them back, and finds the crown of
+  the realm in pieces.
+- **The Pale Coven** (Necropolis, Ysolde, 12-18): the knights burned the coven's tower, but its mistress lived.
+
+  | | Chapter | Map | Won by | Lost by |
+  | --- | --- | --- | --- | --- |
+  | I | Still Waters | 34 x 38, a fen of lakes | taking the witch hunters' town | Ysolde falling |
+  | II | The Scattered Covens | 44 x 48 wastes, two hidden coven towns | holding three towns at once | day 70 passing |
+  | III | The Saint's Amulet | 44 x 48 hills, three realms | finding the Amulet of the Grave (crusaders guard it) | losing everything |
+  | IV | The Long Night | 44 x 48 snow, your walled town against two crusade armies | holding out for four weeks | your town falling |
+  | V | The Hunter's Oath | 46 x 50, many zones and woods | beating Sir Gawen | losing everything |
+  | VI | The Mosswood Wyrm | 48 x 52 deep forest | slaying the green wyrm | losing everything |
+  | VII | The Pale Crown | 54 x 60, four realms, the king's capital in the middle | defeating every realm | Ysolde falling |
+
+- **The Ironjaw Oath** (Stronghold, Grom, 19-25): the clans lost the war for the crown; Grom swears the old oath.
+
+  | | Chapter | Map | Won by | Lost by |
+  | --- | --- | --- | --- | --- |
+  | I | Trial of Chiefs | 32 x 36 open ash plains | beating Harald Axe | Grom falling |
+  | II | The Iron Tribute | 42 x 46 farmland, two guarded gold mines | gathering 40,000 gold | day 84 passing |
+  | III | The Seven Halls | 50 x 54 hills, seven clan halls | holding five towns at once | losing everything |
+  | IV | The Red Waste | 46 x 50 bare desert, three realms | finding the Runed Axe (red dragons guard it) | losing everything |
+  | V | Fire on the Walls | 46 x 50, your walled town against the king and the coven | holding out for five weeks | your town falling |
+  | VI | The Kingsgate | 48 x 54 snowy mountains, the walled Kingsgate in the middle | taking the Kingsgate | day 75 passing |
+  | VII | One Horde | 56 x 62, Harald's clan your ally | defeating the king and the coven | losing everything |
+
+How a scenario is won and lost is part of its rules (`ScenarioRules`, saved with a game): won by defeating everyone,
+taking a town (a tagged one, or "player:N" for the first town of seat N), slaying a tagged monster, gathering gold,
+finding an artifact, holding out until a day begins (`Survive`), beating a named hero, the starting hero of a seat
+(`DefeatHero`: he is off the map, beaten, fled or his realm fallen), or holding a number of towns at once
+(`HoldTowns`); lost by losing everything, losing the named hero (the person's starting hero), a day limit, or the
+person's first town falling (`LoseTown`). In a scenario lost with the town, the computer players march on it from the
+second week, fighting their way through what bars the road, and storm it once a hero of theirs is a little stronger
+than what defends it. The two kinds of each are only ever appended to, so saved games of every version load.
+
+A chapter's map says more than a skirmish map: where each home lies (`PlayerSpec.homeX`, `homeY`), which land covers the
+wilds and how much of them (`MapSpec.theme`, `themeTerrain`, `themeShare`), how wooded the land is (`woods`), the
+buildings a realm starts with, its hero, and what the story puts in its places (`SpecialSpec`: a monster, an artifact
+or a chest with its guards, a mine, a building to visit, a town of the wilds or one a seat holds from the start). A
+recipe that says none of it lays out the same map as before.
 
 ## Battles
 
@@ -163,8 +221,10 @@ game on every device.
   own and map cells on the map. BattleStarted and BattleEnded carry a copy of the battle as it was deployed and as it
   ended, and the view builds the battle from those copies and the events alone, never from the live rules, which online
   may be several moves ahead.
-- **Victory** is set per scenario: defeat everyone, take a town, slay a monster, gather gold or find an artifact. When
-  every person at the table has lost, a computer player has won.
+- **Victory** is set per scenario: defeat everyone, take a town, slay a monster, gather gold, find an artifact, hold
+  out until a day, beat a named hero or hold a number of towns; so is how it is lost besides losing everything (the
+  named hero, a day limit, the first town; see "Campaigns"). When every person at the table has lost, a computer player
+  has won.
 
 ## Hot seat
 
@@ -195,7 +255,26 @@ or the computer (Easy, Normal or Hard) plays it, at least two people; each realm
 **Play Online** on the title screen opens the lobby shared by all Gamebox games (`BaseGameManager.OpenOnline`). A room
 plays a random map or one of the skirmish maps, with the options Map size, Battles (on the map or on a battlefield),
 Turn clock (none, 1, 2, 4 or 8 minutes; 2 by default), Computer players (up to three), Computer skill, Treasure and
-Wandering armies.
+Wandering armies. A room may also be private (the lobby's "Who can join"): it is not listed, and the others enter it with
+its code; nothing of the game changes.
+
+**Several people at one device.** Players who sign in at the device in the lobby, or join it there as guests, play
+realms of their own in the room through the device's connection, against the players of the other devices. They share
+the screen the way a hot seat does (the hot seat's machinery in `HeroesGameManager.HotSeat.cs`, run by
+`HeroesGameManager.Online.cs`): it belongs to one of them at a time, and shows their fog, treasury, heroes, towns and
+chronicle; it goes to another of them for their turn, a question for them or a battle they are in, and while the
+players of the other devices take their turns, to the one of them who plays next, who watches those moves as their own
+realm sees the map. Who holds the device is the hot seat's rule over the seats played here (`HotSeat.HandOverTo` with
+the local seats, tested outside Unity); since the rules run ahead of the screen online, a battle about to come onto the
+screen asks once more (`HotSeat.ToBattle`), so it always opens on the screen of one who fights it. With the lobby's
+"Hand the device over between turns" the hand-over screen covers the map between them, as in a hot seat; without it the
+map changes realm at once. Two of them who fight each other do it at one screen. They are called by name, never "you",
+on the bars, the tips, the towns and the battle bar; every realm played here reports its own score and place to the
+room; and the end shows the standings of all the realms in the order the room ranks them, with Back to the Room (a
+victory when a realm played here won, or, when the host called the game off, when the room ranked one of them first,
+`WonHere`). The game's online progress (the
+scenarios won online) is the device's player's; the others' avatars earn experience of their own. A party alone cannot
+start a room: it needs a player of another device. One player at a device plays exactly as before.
 
 An online game is played in step, which is what the deterministic rules are for. Everybody in the room lays out the
 same map from the room's seed, and every client runs the same rules over the same commands: what a player does is sent
@@ -246,8 +325,8 @@ faster until it catches up. There is no saving and no pausing online: the menu i
 | `Scripts` | The manager (`HeroesGameManager.cs`, which directs a game; `.Events.cs` plays the events out, `.Battle.cs` opens and closes battles, `.Online.cs` is the online half, `.HotSeat.cs` the hot seat with `HeroesHotSeatRules.cs`), the controllers, the settings, the art and sound assets, and the development tours (`HeroesTour.cs`, `HeroesUITour.cs`, `HeroesOnlineTour.cs`). |
 | `Scripts/Server` | The generated bindings of the game's server and the client stamped for them. |
 | `Scenes` | `Heroes.unity`, and `HeroesBattle.unity` with the prefabs of a town's gatehouse, the ruin of a tower, loose stones and the banners of the five colours, and its colour grading (`Scenes/HeroesBattle/`). |
-| `Editor` | The builders: the art (`HeroesArtBuilder.cs`, with `HeroesObjectArt`, `HeroesBattleArt`, `HeroesPortraits` and `HeroesUIArt` for the interface, its fonts and its pointers; for a theme made of the textured kits `HeroesKitArt` for their materials, `HeroesRealmCharacters` for the people, `HeroesRealmArt` for the creatures, heroes and land, `HeroesRealmObjects` and `HeroesRealmVillage` for the map objects and towns, `HeroesRealmBattle` for the battlefield), the themes' specs (`HeroesThemeSpec.cs`), the scenarios (`HeroesContentBuilder.cs`), the two scenes (`HeroesSceneBuilder.cs`), contact sheets, and the menu that runs them all. |
-| `Tests/Editor` | The rules under test: the grid, the generator and skirmish settings, paths, turns, battles in both styles, sieges, the event contract, the damage estimate, the protocol of the log, and that the same commands always give the same game. |
+| `Editor` | The builders: the art (`HeroesArtBuilder.cs`, with `HeroesObjectArt`, `HeroesBattleArt`, `HeroesPortraits` and `HeroesUIArt` for the interface, its fonts and its pointers; for a theme made of the textured kits `HeroesKitArt` for their materials, `HeroesRealmCharacters` for the people, `HeroesRealmArt` for the creatures, heroes and land, `HeroesRealmObjects` and `HeroesRealmVillage` for the map objects and towns, `HeroesRealmBattle` for the battlefield), the themes' specs (`HeroesThemeSpec.cs`), the scenarios and the campaigns (`HeroesContentBuilder.cs`, `.Campaigns.cs`), the two scenes (`HeroesSceneBuilder.cs`), contact sheets, and the menu that runs them all. |
+| `Tests/Editor` | The rules under test: the grid, the generator and skirmish settings, paths, turns, battles in both styles, sieges, the event contract, the damage estimate, the protocol of the log, that the same commands always give the same game, and how scenarios are won and lost (`ScenarioRulesTests.cs`). The subfolders need the engine and run in the editor only: the campaigns as shipped (`Campaigns`: unlocks, every chapter's map and goal, a few days of each new chapter played by the computer), the hot seat setup, the words and their Hebrew, saved games and the themes. |
 | `Server` | The server module: the seats of a room, the checks around the action log and the statistics, on top of the Gamebox base server. |
 
 ## Building
@@ -289,12 +368,15 @@ without these arguments, and in a release player, nothing of it runs:
   default: a battle on a battlefield of its own, the same on the map, a siege, a close look at a town's wall with a
   tower shot down, a battle taken up again from a copy of the game made in the middle of it, and a scenario left for
   the title while its battle loads, is up and shows its results. `skirmish`, only when asked for, starts a skirmish on
-  a large, rich and hard setting. The tour changes a copy of the settings, never the defaults or the player's own.
+  a large, rich and hard setting. `chapters`, only when asked for, begins every chapter of the second and third
+  campaigns and shoots each on its first day, with the banner of the day and with the tooltip of the date that tells
+  the task (`chapters:N` the chapters of campaign N, `chapters:all` every chapter). The tour changes a copy of the
+  settings, never the defaults or the player's own.
 - `-heroes-hotseat <folder>` (`HeroesHotSeatTour.cs`) sets up a hot seat of two people and a computer, and shoots the
   setup, the hand-over screens, each person's view, the pause menu over a hand-over, both sides of a battle between the
   people, the results and the title's Continue of a saved hot seat.
 - `-heroes-ui-tour <folder>` walks through every screen outside the battles: the title, the credits, the settings,
-  the campaign and the skirmish maps, the adventure screen and its tooltips, the hero's book, the town with its market
+  the page of every campaign and the skirmish maps, the adventure screen and its tooltips, the hero's book, the town with its market
   and tavern, the questions, the next day, the pause menu and the results of a game, and at last the title switched to
   the next look the game lists (redrawn without a reload) and back. It looks at the lobby only when `-gamebox-server`
   is given; `-heroes-ui-tour-views 1` also shoots the title from its other camera views. Either tour runs in another
@@ -308,7 +390,12 @@ without these arguments, and in a release player, nothing of it runs:
   --data-dir <folder>`, then from a folder without a `spacetime.json`, `spacetime publish <database> --server
   http://127.0.0.1:3917 --no-config --bin-path Server/bin/Release/net8.0/wasi-wasm/AppBundle/StdbModule.wasm` (after
   `spacetime build --module-path Server` in this folder), and start both players with
-  `-gamebox-server http://127.0.0.1:3917 -gamebox-database <database>`.
+  `-gamebox-server http://127.0.0.1:3917 -gamebox-database <database>`. `hostprivate` and `joinprivate` play the same
+  game in a private room, entered with its code; `hostparty` and `joinparty` first bring other players to the device
+  (`-gamebox-companions <n>`, one by default, and `-gamebox-guests <n>`), and the tour then plays whichever realm of the
+  device the game waits for and writes down whenever the screen changes hands; `-heroes-online-handover` asks for the
+  hand-over screen between them, which the tour lifts. The host's room takes two players and the host's own party; a
+  plain `host` that waits for a `joinparty` is given the size with `-gamebox-room-players <n>`.
 
 ## Art
 

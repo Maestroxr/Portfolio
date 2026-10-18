@@ -1,0 +1,115 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25edec1141714089bb4a39576791ecca, type: 3}
+  m_Name: Mission10
+  m_EditorClassIdentifier: Skinnerboxes.Asteroids::Portfolio.Asteroids.AsteroidsLevel
+  <Index>k__BackingField: 43
+  <Title>k__BackingField: Threshold
+  quarry: 
+  quarryShare: 1
+  allyHull: 450
+  crossing: 45
+  scoutChance: 0.66
+  <Settings>k__BackingField: {fileID: 11400000, guid: abedf6f82c27e2a428a5ff68d4397a03, type: 2}
+  description: Engineers have reached the gate with a station that can seal it. They need time - and everything in the rift is coming for them.
+  introduces: Defend the sealing station at the gate.
+  hints:
+  - Corsairs go for the station first. Stay close to it.
+  - Lightning and flares burn the station too.
+  touchHints: []
+  sector: 14
+  theme: {fileID: 11400000, guid: 047de15e2ce6dae458b44c5a1ff01391, type: 2}
+  themeRotation: []
+  wavesPerTheme: 5
+  objective: 6
+  objectiveTarget: 130
+  waves:
+  - metal: 0
+    hydra: 0
+    wrecks: 2
+    flares: 0
+    storms: 0
+    sentries: 1
+    minelayers: 0
+    stalkers: 0
+    corsairs: 3
+    title: 
+    rocks: 2
+    ores: 0
+    magma: 0
+    ice: 0
+    crystals: 0
+    mines: 0
+    bombs: 0
+    comets: 0
+    wells: 0
+    saucers: 0
+    wasps: 0
+    pods: 0
+    hazardInterval: 5
+    duration: 35
+  - metal: 2
+    hydra: 2
+    wrecks: 0
+    flares: 0
+    storms: 1
+    sentries: 0
+    minelayers: 1
+    stalkers: 0
+    corsairs: 3
+    title: 
+    rocks: 0
+    ores: 0
+    magma: 0
+    ice: 0
+    crystals: 0
+    mines: 0
+    bombs: 0
+    comets: 0
+    wells: 0
+    saucers: 0
+    wasps: 0
+    pods: 1
+    hazardInterval: 4.5
+    duration: 40
+  - metal: 0
+    hydra: 2
+    wrecks: 2
+    flares: 1
+    storms: 0
+    sentries: 0
+    minelayers: 0
+    stalkers: 2
+    corsairs: 4
+    title: 
+    rocks: 0
+    ores: 0
+    magma: 0
+    ice: 0
+    crystals: 0
+    mines: 0
+    bombs: 0
+    comets: 0
+    wells: 0
+    saucers: 0
+    wasps: 0
+    pods: 1
+    hazardInterval: 4
+    duration: 45
+  boss: {fileID: 0}
+  bossRotation: []
+  bossEvery: 10
+  asteroidLoot: {fileID: 11400000, guid: d97fcdd2a3a75674385a17321d39a9e3, type: 2}
+  lootChance: 0.085
+  podLoot: {fileID: 11400000, guid: 6aa5cf7fbe5df214f8581b42bbdd8913, type: 2}
+  scoreGoal: 90000
+  speedMultiplier: 1

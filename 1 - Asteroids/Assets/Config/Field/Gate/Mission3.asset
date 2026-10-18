@@ -1,0 +1,67 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25edec1141714089bb4a39576791ecca, type: 3}
+  m_Name: Mission3
+  m_EditorClassIdentifier: Skinnerboxes.Asteroids::Portfolio.Asteroids.AsteroidsLevel
+  <Index>k__BackingField: 36
+  <Title>k__BackingField: Scrap Leviathan
+  quarry: 
+  quarryShare: 1
+  allyHull: 120
+  crossing: 45
+  scoutChance: 0.3
+  <Settings>k__BackingField: {fileID: 11400000, guid: 815c3dfac6f8afc4c99b397e944104ad, type: 2}
+  description: 'The graveyard has a keeper: a leviathan of welded wrecks, with a maw that drags whole ships in.'
+  introduces: 'Boss: the Scrap Leviathan. Its maw pulls like a black hole.'
+  hints:
+  - When its maw opens, thrust away from the pull.
+  - It hurls wreckage - the pieces with tanks explode.
+  touchHints: []
+  sector: 11
+  theme: {fileID: 11400000, guid: ebcc84aeca9b35745b1d5c6835106a92, type: 2}
+  themeRotation: []
+  wavesPerTheme: 5
+  objective: 3
+  objectiveTarget: 0
+  waves:
+  - metal: 0
+    hydra: 0
+    wrecks: 3
+    flares: 0
+    storms: 0
+    sentries: 0
+    minelayers: 0
+    stalkers: 0
+    corsairs: 2
+    title: Debris field
+    rocks: 0
+    ores: 0
+    magma: 0
+    ice: 0
+    crystals: 0
+    mines: 0
+    bombs: 0
+    comets: 0
+    wells: 0
+    saucers: 0
+    wasps: 0
+    pods: 1
+    hazardInterval: 6
+    duration: 30
+  boss: {fileID: 6637751911913342210, guid: 5fbef5327e3d0c945877e09edb3bcead, type: 3}
+  bossRotation: []
+  bossEvery: 10
+  asteroidLoot: {fileID: 11400000, guid: ae2e44e40fb2301449a293851694d743, type: 2}
+  lootChance: 0.07
+  podLoot: {fileID: 11400000, guid: c39c1b6b8a28537429b1308ba8bea601, type: 2}
+  scoreGoal: 40500
+  speedMultiplier: 1

@@ -14,6 +14,9 @@ namespace Portfolio.EndlessRunner
     /// level of the campaign or the endless run, whose length and coins the host's client writes into the options of
     /// the room for the server (Server/Lib.cs), which hands out the coins of the track: a claim row says who got one.
     /// The manager runs the race itself (RunnerGameManager.Online.cs); this class passes on what arrives and what goes.
+    /// Several people may race from this device (the companions of the base: players who signed in here, or guests, and
+    /// play through its connection): every call for a runner names its seat, and the manager runs each of them in a part
+    /// of the screen on a set of controls of their own (<see cref="OnlineGameController.ControlsOf"/>).
     /// </summary>
     public class RunnerOnlineController : OnlineGameController
     {
@@ -29,8 +32,15 @@ namespace Portfolio.EndlessRunner
 
         private GameServerClient Client => Server as GameServerClient;
 
-        /// <summary>The levels of the campaign and the endless run; everybody may run any of them with friends.</summary>
-        public override IReadOnlyList<RoomLevelChoice> LevelChoices
+        /// <summary>An endless run is open to everybody; a level of the campaign once the one before was finished online.</summary>
+        public override bool IsUnlockedOnline(int level)
+        {
+            ICampaign campaign = BaseManager != null ? BaseManager.Campaign : null;
+            return campaign != null && level >= 0 && level < campaign.Count && campaign[level] is RunnerLevel { IsEndless: true } || base.IsUnlockedOnline(level);
+        }
+
+        /// <summary>The levels of the campaign and the endless runs (a room runs the endless ones and those unlocked online).</summary>
+        public override IReadOnlyList<RoomLevelChoice> AllLevelChoices
         {
             get
             {
@@ -81,42 +91,53 @@ namespace Portfolio.EndlessRunner
             return coins > 0 ? RunnerText.SayF("{0}, {1} coins", base.DescribeRoom(room), coins) : base.DescribeRoom(room);
         }
 
-        /// <summary>The local runner touched a coin: the server says who gets it, with a claim row for everybody.</summary>
-        public void Claim(int piece, int value)
+        /// <summary>The runner at this device at <paramref name="seat"/> touched a coin: the server says who gets it, with a claim row for everybody.</summary>
+        public void Claim(int seat, int piece, int value)
         {
             if (IsPlaying && Client != null && Client.Connection != null)
             {
-                Client.Connection.Reducers.ClaimPiece((uint)piece, (byte)value);
+                Client.Connection.Reducers.ClaimPiece(SeatArgument(seat), (uint)piece, (byte)value);
             }
         }
 
-        /// <summary>The pose of the local runner, every frame of a race; the base class sends it at the pose rate.</summary>
-        public void SendRunnerPose(Vector3 position, Vector3 velocity, RunnerPoseState state, int hearts)
+        /// <summary>
+        /// The pose of the runner at this device at <paramref name="seat"/>, every frame of a race; the base class sends it
+        /// at the pose rate of each seat.
+        /// </summary>
+        public void SendRunnerPose(int seat, Vector3 position, Vector3 velocity, RunnerPoseState state, int hearts)
         {
-            SendPose(position, velocity, 0f, state.Pack(), hearts);
+            SendPose(SeatArgument(seat), position, velocity, 0f, state.Pack(), hearts);
         }
 
-        /// <summary>The score of the local runner so far, for the scoreboards of the others.</summary>
-        public void ReportScore(long score)
+        /// <summary>The score so far of the runner at this device at <paramref name="seat"/>, for the scoreboards of the others.</summary>
+        public void ReportScore(int seat, long score)
         {
-            if (IsPlaying)
-            {
-                Server.ReportScore(score);
-            }
+            base.ReportScore(SeatArgument(seat), score);
         }
 
-        /// <summary>The local run is over: the race finishes when the last runner says so.</summary>
-        public void FinishRun(float distance, long score)
+        /// <summary>The run of the runner at this device at <paramref name="seat"/> is over: the race finishes when the last runner says so.</summary>
+        public void FinishRun(int seat, float distance, long score)
         {
             if (IsPlaying && Client != null && Client.Connection != null)
             {
-                Client.Connection.Reducers.FinishRun((uint)Mathf.Max(0, Mathf.FloorToInt(distance)), score);
+                Client.Connection.Reducers.FinishRun(SeatArgument(seat), (uint)Mathf.Max(0, Mathf.FloorToInt(distance)), score);
             }
+        }
+
+        /// <summary>
+        /// The seat a call for the runner at <paramref name="seat"/> names: none for the device's own runner, who is the
+        /// caller (<see cref="RoomTurnInfo.NoSeat"/>, as a race with one runner here always said it), else the seat of the
+        /// companion it is for.
+        /// </summary>
+        private byte SeatArgument(int seat)
+        {
+            return seat < 0 || seat >= RoomTurnInfo.NoSeat || seat == LocalSeat ? RoomTurnInfo.NoSeat : (byte)seat;
         }
 
         protected override void Start()
         {
             base.Start();
+            OnlineProgressChanged += () => levelChoices = null;
             if (Client != null)
             {
                 Client.ConnectionOpened += Bind;
@@ -147,7 +168,11 @@ namespace Portfolio.EndlessRunner
             yield return $"SELECT * FROM coin_claim WHERE room_id = {room.Id}";
         }
 
-        /// <summary>The host started the race: the manager gets the runners and the seed, then loads the level and starts.</summary>
+        /// <summary>
+        /// The host started the race: the manager gets the runners and the seed, then loads the level and starts. The
+        /// runners at this device come with their seats, the device's own first; when several run here, each with the
+        /// controls the local play of the game binds for them (the device's player on the first set).
+        /// </summary>
         protected override void OnRoomStarted(RoomInfo room)
         {
             RunnerGameManager manager = Runner;
@@ -167,6 +192,16 @@ namespace Portfolio.EndlessRunner
             {
                 seats[member.Identity] = member.Seat;
                 setup.Racers.Add(new Racer { Seat = member.Seat, Name = NameOf(member), Local = Server.IsLocal(member) });
+            }
+            var local = new List<byte>(LocalSeats);
+            local.Sort((a, b) => LocalIndexOf(a).CompareTo(LocalIndexOf(b)));
+            foreach (byte seat in local)
+            {
+                setup.LocalSeats.Add(seat);
+                if (local.Count > 1)
+                {
+                    setup.Controls[seat] = ControlsOf(seat);
+                }
             }
             manager.PrepareRace(setup);
             base.OnRoomStarted(room);
@@ -209,6 +244,11 @@ namespace Portfolio.EndlessRunner
         }
 
         /// <summary>The results of the manager show the standings; the places are the server's.</summary>
+        protected override Gamebox.CampaignProgress CreateOnlineProgress(IStorageStrategy storage)
+        {
+            return new CampaignProgress(storage, GameType.EndlessRunner);
+        }
+
         protected override void OnRoomFinished(RoomInfo room)
         {
             if (!InCharge)

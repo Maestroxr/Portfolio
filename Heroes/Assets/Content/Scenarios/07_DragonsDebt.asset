@@ -27,6 +27,8 @@ MonoBehaviour:
       hero: -1
       buildings: 
       name: You
+      homeX: -1
+      homeY: -1
     - faction: 2
       human: 0
       aiLevel: 2
@@ -34,13 +36,16 @@ MonoBehaviour:
       hero: -1
       buildings: 
       name: Dragon Cliffs
+      homeX: -1
+      homeY: -1
     zonesPerPlayer: 1
     neutralTowns: 1
     treasure: 3
     monsters: 3
     water: 1
     theme: 5
-    themeTerrain: 0
+    themeTerrain: 5
+    themeShare: 70
     rules:
       victory: 2
       victoryValue: 0
@@ -62,11 +67,15 @@ MonoBehaviour:
       tag: wyrm
       guard: -1
       guardCount: 0
+      owner: -1
     startingGold: 10000
+    woods: 0
   <Intro>k__BackingField: The clans keep a wyrm, and the wyrm keeps the cliffs. Both debts come due today.
   <Outro>k__BackingField: The wyrm is dead. Its hoard pays for the last march.
   <Goal>k__BackingField: Slay the red wyrm of the cliffs.
+  <Loss>k__BackingField: 
   <ThreeStarDays>k__BackingField: 52
   <TwoStarDays>k__BackingField: 75
   <IsSkirmish>k__BackingField: 0
   <MapPosition>k__BackingField: {x: 1080, y: 500}
+  <Arc>k__BackingField: 0

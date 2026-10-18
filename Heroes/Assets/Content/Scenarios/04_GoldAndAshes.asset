@@ -27,6 +27,8 @@ MonoBehaviour:
       hero: -1
       buildings: 
       name: You
+      homeX: -1
+      homeY: -1
     - faction: 2
       human: 0
       aiLevel: 2
@@ -34,13 +36,16 @@ MonoBehaviour:
       hero: -1
       buildings: 
       name: The Ironjaw Clan
+      homeX: -1
+      homeY: -1
     zonesPerPlayer: 1
     neutralTowns: 1
     treasure: 3
     monsters: 2
     water: 1
     theme: 1
-    themeTerrain: 0
+    themeTerrain: 1
+    themeShare: 70
     rules:
       victory: 3
       victoryValue: 60000
@@ -51,10 +56,13 @@ MonoBehaviour:
       battleStyle: 0
     specials: []
     startingGold: 4000
+    woods: 0
   <Intro>k__BackingField: An army costs gold, and the mines of the east are held by the clans. Take them, work them, and pay your men.
   <Outro>k__BackingField: The chests are full. The mercenaries will follow you south.
   <Goal>k__BackingField: Raise 60,000 gold to pay an army.
+  <Loss>k__BackingField: 
   <ThreeStarDays>k__BackingField: 45
   <TwoStarDays>k__BackingField: 65
   <IsSkirmish>k__BackingField: 0
   <MapPosition>k__BackingField: {x: 700, y: 540}
+  <Arc>k__BackingField: 0

@@ -170,6 +170,24 @@ the standings go by score, then by sets found (equal on both is a draw).
   scores reported by a client, actions for the log and an early end by the host, so a game plays to the last set. A
   player who leaves is skipped and charged a game not won, and a game with one player left is over. Online games do not
   pause (the pause button opens the match menu), are not saved, and the next game of a room starts from the lobby.
+- **Private rooms** are the lobby's ("Who can join": players I give the code to): the room is not listed, and the others
+  enter it with its six character code. Nothing of the game changes.
+- **Several people at one device online** sign in at the device in the lobby ("Players at this device", BaseGame's
+  companions) and play through its connection against the players of other devices: each has a seat of the room, a
+  name, an avatar and stats of their own. The board takes the clicks of whichever of them has the turn, and the flip
+  goes out for that seat (`FlipCard(seat, index)`; the server lets a device flip for the seats of its companions).
+  `OnlineSeats` maps the board's seats to the room's both ways and knows which are played here. With one player at the
+  device everything reads as before ("YOUR TURN!", "YOU WIN!"); with several, the banners and the winner name the
+  player, and the scoreboard and the results mark the device's own player "(you)" and the others at the device
+  "(here)", as the lobby does. When the party turns on "Hand the device over between turns", a turn that passes from
+  one of them to another starts behind BaseGame's hand-over screen (the server's turn clock runs on meanwhile); a set
+  lets the same player go on without it. The lifetime counts of the device (sets, best combo) take what every player
+  at it found; the online progress is the device's alone.
+- The online tour (`MemoryCardsOnlineTour`, `-memorycards-online <role>`) plays every role of BaseGame's tours: `host`
+  / `join`, `hostprivate` / `joinprivate` and `hostparty` / `joinparty` (with `-gamebox-companions` and
+  `-gamebox-guests`). A host that waits for a party from another device opens a bigger room with
+  `-memorycards-players <n>`, and `-memorycards-handover` has the parties hand the device over (the tour lifts the
+  screen, with a picture of the first).
 
 ## Phones and tablets
 
@@ -279,7 +297,7 @@ the model uses of UnityEngine, so there is one rule set for the client and the s
 | `FlipEvent` (public event table) | What a flip did (revealed, a set, a mistake, a bomb, a peek, cards turning back, time up, the board shown for memorizing), with the faces it is about. Sent, never stored. |
 | `MismatchTimer`, `PlayTimer` (scheduled) | Turn a mistake back after a moment; begin the first turn once the clients dealt the board. |
 | `MemoryStats` (public) | Games, wins, sets and the best score of a player. |
-| `FlipCard(index)` | The player whose turn it is flips a card: the round is rebuilt from the tables, `MemoryRound.Flip` and `VersusMatch.Judge` say what happened, and it goes back into the tables and out as a `FlipEvent`. |
+| `FlipCard(seat, index)` | The player whose turn it is flips a card: the round is rebuilt from the tables, `MemoryRound.Flip` and `VersusMatch.Judge` say what happened, and it goes back into the tables and out as a `FlipEvent`. The seat is the caller's own (`NoSeat`) or that of a player at the caller's device (`RequirePlayingActor`). |
 | `ConfigureRoom`, `OnRoomStarted`, `OnTurnTimedOut`, `OnMemberLeft`, `OnRoomFinished`, `OnRoomCleared`, `OnUserDeleted` | The base server's extension points: check the board of a room (`BoardOptions`, `RoundRules.IsValid`), deal it (`Dealer`), take the cards back from a player who ran out of time or left (and charge the one who left a game not won), rank the players by score and sets and keep the stats, clean up. |
 | `ValidateAction`, `ValidateScore`, `ValidateEndRoom` | Refused: the game has no action log, the server keeps the score, and a game plays to the last set. |
 

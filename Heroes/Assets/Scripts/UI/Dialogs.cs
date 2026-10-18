@@ -370,7 +370,8 @@ namespace Portfolio.Heroes.UI
 
     /// <summary>
     /// What the scenario came to: won or lost, in how many days, and at one device how many stars of the chapter that is
-    /// worth. Online it says how the realm of the player at this device fared and leads back to the room.
+    /// worth, how its story goes on, and the way on to the next chapter of its campaign (or to try a lost one again).
+    /// Online it says how the realm of the player at this device fared and leads back to the room.
     /// </summary>
     public sealed class ResultsBox : Dialog
     {
@@ -398,7 +399,8 @@ namespace Portfolio.Heroes.UI
         /// <summary>
         /// The end of a hot seat: who won (a person by name, or the computer), and the standings of every realm in its
         /// colour, with their towns, battles and the creatures they slew. Play Again starts the same setup over; nothing
-        /// counts toward the campaign.
+        /// counts toward the campaign. An online game several people played at this device ends the same way, a victory
+        /// when one of them won, and leads back to the room.
         /// </summary>
         public void ShowHotSeat(GameState state, int days)
         {
@@ -406,8 +408,9 @@ namespace Portfolio.Heroes.UI
             shownHotSeat = (state, days);
             ClearBody();
             ClearButtons();
+            bool online = Manager.IsOnlineGame;
             PlayerState winner = state.Player(state.winner);
-            bool personWon = winner != null && winner.human;
+            bool personWon = online ? Manager.WonHere(state) : winner != null && winner.human;
             Heading.text = Words.T(personWon ? "Victory" : "Defeat");
 
             TextMeshProUGUI verdict = UIKit.Heading(Body, "Verdict",
@@ -423,7 +426,10 @@ namespace Portfolio.Heroes.UI
             y -= 42f;
 
             Image plate = UIKit.Card(Body, "Standings");
-            List<PlayerState> standings = HotSeat.Standings(state);
+            // Online the realms stand in the order the room ranks its members.
+            List<PlayerState> standings = online && Manager.Game != null && Manager.Game.State == state
+                ? Manager.TableStandings()
+                : HotSeat.Standings(state);
             float height = 22f + (standings.Count + 1) * 40f;
             UIKit.Pin((RectTransform)plate.transform, new Vector2(0.5f, 1f), new Vector2(0f, y), new Vector2(780f, height));
             RectTransform rows = UIKit.Content(plate, 8f);
@@ -436,13 +442,16 @@ namespace Portfolio.Heroes.UI
             y -= height + 14f;
             Window.sizeDelta = new Vector2(Window.sizeDelta.x, Mathf.Max(400f, 70f - y + 24f + ButtonRow + 40f));
 
-            Button again = Answer("Play Again", () =>
+            if (!online)
             {
-                Close();
-                Manager.PlayHotSeatAgain();
-            });
-            UIKit.Fit((RectTransform)again.transform, 260f, ButtonRow - 4f);
-            Button leave = Answer("Back to the Title", Leave);
+                Button again = Answer("Play Again", () =>
+                {
+                    Close();
+                    Manager.PlayHotSeatAgain();
+                });
+                UIKit.Fit((RectTransform)again.transform, 260f, ButtonRow - 4f);
+            }
+            Button leave = Answer(online ? "Back to the Room" : "Back to the Title", Leave);
             UIKit.Fit((RectTransform)leave.transform, 300f, ButtonRow - 4f);
             Open();
         }
@@ -515,6 +524,19 @@ namespace Portfolio.Heroes.UI
                 UIKit.Pin(starRow, new Vector2(0.5f, 1f), new Vector2(0f, y), starRow.sizeDelta);
                 y -= 108f;
             }
+            if (chapter && won && !string.IsNullOrEmpty(scenario.Outro))
+            {
+                // How the story goes on, as the chapter tells it.
+                // Room for three lines, the words made smaller should they need more (the window is not up yet, so
+                // they cannot be measured).
+                TextMeshProUGUI outro = UIKit.Label(Body, "Outro", scenario.Outro.Trim(), 23f, UIKit.Ink, TextAlignmentOptions.Center);
+                outro.fontStyle = FontStyles.Italic;
+                outro.enableAutoSizing = true;
+                outro.fontSizeMax = 23f;
+                outro.fontSizeMin = 16f;
+                UIKit.Pin((RectTransform)outro.transform, new Vector2(0.5f, 1f), new Vector2(0f, y), new Vector2(740f, 92f));
+                y -= 92f + 12f;
+            }
 
             Image plate = UIKit.Card(Body, "Record");
             var plateRect = UIKit.Pin((RectTransform)plate.transform, new Vector2(0.5f, 1f), new Vector2(0f, y), new Vector2(560f, 150f));
@@ -545,12 +567,31 @@ namespace Portfolio.Heroes.UI
 
             Button leave = Answer(online ? "Back to the Room" : "Back to the Title", Leave);
             UIKit.Fit((RectTransform)leave.transform, 300f, ButtonRow - 4f);
+            // A chapter won leads on to the next of its campaign; one lost can be tried again.
+            HeroesCampaign campaign = Manager.Campaign as HeroesCampaign;
+            int next = chapter && won && campaign != null ? campaign.NextChapter(Manager.LevelIndex) : -1;
+            int again = chapter && !won ? Manager.LevelIndex : -1;
+            if (next >= 0 || again >= 0)
+            {
+                Button onward = Answer(next >= 0 ? "Next Chapter" : "Try Again", () => Begin(next >= 0 ? next : again));
+                UIKit.Fit((RectTransform)onward.transform, 300f, ButtonRow - 4f);
+                UIKit.Look(onward.GetComponentInChildren<TextMeshProUGUI>(), TextLook.Gold);
+            }
             Open();
             if (starRow != null)
             {
                 // Only once the window is open: a coroutine cannot start on an object that is off.
                 StartCoroutine(PopStars(starRow));
             }
+        }
+
+        /// <summary>Leaves the finished chapter for the title and begins the chapter <paramref name="level"/> from there, as the campaign screen would.</summary>
+        private void Begin(int level)
+        {
+            Close();
+            Manager.ReturnToTitle();
+            Manager.Progress.RememberChapter(level);
+            Manager.BeginScenario(null, level);
         }
 
         /// <summary>The way out of a finished game: to the room of an online game, else to the title screen.</summary>

@@ -48,6 +48,39 @@ namespace Portfolio.EndlessRunner.Tests
         }
 
         [Test]
+        public void ACoinOfAnotherRunnerAtThisDeviceCountsForThatRunner()
+        {
+            // A party: the companion at seat 2 touched the gem with double coins, and the server gave it to that seat.
+            const int Companion = 2;
+            var claims = new CoinClaims();
+            Assert.IsTrue(claims.Request(30, 5, 2));
+            Assert.IsFalse(claims.Request(30, 5, 1), "the first runner here to touch a piece asks for it, the others do not");
+            ClaimResult result = claims.Settle(30, Companion, 5, true);
+            Assert.AreEqual(ClaimOutcome.Awarded, result.Outcome);
+            Assert.AreEqual(10, result.Coins);
+            Assert.AreEqual(5, claims.CoinsOf(Companion));
+            Assert.AreEqual(0, claims.CoinsOf(Me));
+            Assert.AreEqual(Companion, claims.OwnerOf(30));
+
+            ClaimResult unasked = claims.Settle(31, Me, 1, true);
+            Assert.AreEqual(ClaimOutcome.Awarded, unasked.Outcome, "a piece the server gave a runner here counts for that runner");
+            Assert.AreEqual(1, unasked.Coins);
+        }
+
+        [Test]
+        public void ACoinARunnerHereTouchedIsLostToARunnerElsewhere()
+        {
+            var claims = new CoinClaims();
+            claims.Request(8, 1, 2);
+            ClaimResult result = claims.Settle(8, Rival, 1, false);
+            Assert.AreEqual(ClaimOutcome.Lost, result.Outcome);
+            Assert.AreEqual(0, result.Coins);
+            Assert.AreEqual(0, claims.PendingCount);
+            Assert.AreEqual(ClaimOutcome.Remote, claims.Settle(9, Rival, 1, false).Outcome);
+            Assert.AreEqual(2, claims.CoinsOf(Rival), "both pieces are the rival's");
+        }
+
+        [Test]
         public void ACoinOfAnotherRunnerIsJustGone()
         {
             var claims = new CoinClaims();

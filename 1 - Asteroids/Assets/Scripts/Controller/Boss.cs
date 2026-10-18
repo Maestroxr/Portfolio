@@ -11,7 +11,13 @@ namespace Portfolio.Asteroids
         /// <summary>Patrols along the top of the playfield.</summary>
         HoverTop = 1,
         /// <summary>Roams between random points.</summary>
-        Wander = 2
+        Wander = 2,
+        /// <summary>Circles the middle of the playfield.</summary>
+        Orbit = 3,
+        /// <summary>Roams slowly and every few seconds blinks out and in somewhere else, away from the ships.</summary>
+        Blink = 4,
+        /// <summary>Holds its place in the middle of the playfield.</summary>
+        Anchor = 5
     }
 
 
@@ -23,7 +29,19 @@ namespace Portfolio.Asteroids
         SpawnMinions = 3,
         MissileSalvo = 4,
         DropMines = 5,
-        Charge = 6
+        Charge = 6,
+        /// <summary>Lightning strikes on and around the ships (warned by rings).</summary>
+        Lightning = 7,
+        /// <summary>Lances at the nearest ship: a warning line, then a burning beam; the boss holds still while it fires.</summary>
+        Lance = 8,
+        /// <summary>Beams that sweep an arc across the nearest ship (several turn like the spokes of a wheel).</summary>
+        SweepBeam = 9,
+        /// <summary>Calls a solar flare across the sector.</summary>
+        SolarFlare = 10,
+        /// <summary>Slow orbs that burst into rings of plasma.</summary>
+        NovaOrbs = 11,
+        /// <summary>A fan of lances around the nearest ship.</summary>
+        LanceFan = 12
     }
 
 
@@ -32,7 +50,14 @@ namespace Portfolio.Asteroids
         Asteroid = 0,
         Wasp = 1,
         Saucer = 2,
-        Mine = 3
+        Mine = 3,
+        Sentry = 4,
+        Stalker = 5,
+        IonStorm = 6,
+        /// <summary>A black hole at the boss (its tractor maw).</summary>
+        Well = 7,
+        Minelayer = 8,
+        Corsair = 9
     }
 
 
@@ -62,7 +87,7 @@ namespace Portfolio.Asteroids
     /// one third of its hull it enters a new phase: it shields up for a moment, roars, and attacks faster with more
     /// of its repertoire. It goes down in a chain of explosions.
     /// </summary>
-    public class Boss : Shootable
+    public partial class Boss : Shootable
     {
         protected enum State
         {
@@ -132,7 +157,7 @@ namespace Portfolio.Asteroids
                 {
                     flags |= BodyFlags.Shielded;
                 }
-                return BodyCodec.WithPhase(flags, Phase);
+                return BodyCodec.WithPhase(flags | FieldFlags, Phase);
             }
         }
 
@@ -142,7 +167,7 @@ namespace Portfolio.Asteroids
         /// <summary>The death sequence finished; the boss is about to leave play.</summary>
         public event Action<Boss> Defeated;
 
-        private float PhaseFactor => Phase == 0 ? 1f : Phase == 1 ? 0.78f : 0.6f;
+        private float PhaseFactor => fieldRules ? FieldPhaseFactor : Phase == 0 ? 1f : Phase == 1 ? 0.78f : 0.6f;
 
         /// <summary>Seconds in the current state.</summary>
         protected float StateTime => stateTime;
@@ -181,6 +206,7 @@ namespace Portfolio.Asteroids
         public override void Tick(float deltaTime)
         {
             stateTime += deltaTime;
+            TickField(deltaTime);
             foreach (Transform spinner in spinners)
             {
                 if (spinner != null)
@@ -228,6 +254,7 @@ namespace Portfolio.Asteroids
                     Dying(deltaTime);
                     break;
             }
+            HoldField();
             if (shieldTime > 0f)
             {
                 shieldTime -= deltaTime;
@@ -300,6 +327,11 @@ namespace Portfolio.Asteroids
                         wanderTarget = new Vector2(Random.Range(-half.x + radius + 1f, half.x - radius - 1f), Random.Range(-half.y + radius + 1f, half.y - radius - 1f));
                     }
                     Velocity = Vector2.MoveTowards(Velocity, (wanderTarget - Position).normalized * moveSpeed, 3f * deltaTime);
+                    break;
+                case BossMovement.Orbit:
+                case BossMovement.Blink:
+                case BossMovement.Anchor:
+                    MoveField(deltaTime, half);
                     break;
                 default:
                     if (Velocity.sqrMagnitude < moveSpeed * moveSpeed * 0.25f)
@@ -421,14 +453,14 @@ namespace Portfolio.Asteroids
                     break;
                 }
                 case BossAttackType.SpawnMinions:
-                    for (int i = 0; i < count; i++)
+                    for (int i = 0, minions = FieldMinionCount(attack, count); i < minions; i++)
                     {
                         spawner.SpawnMinion(attack.minion, attack.asteroidKind, Position + Random.insideUnitCircle.normalized * (radius + 0.8f));
                     }
                     Field.Sounds?.BossRoar(0.6f);
                     break;
                 case BossAttackType.DropMines:
-                    for (int i = 0; i < count; i++)
+                    for (int i = 0, minions = FieldMinionCount(attack, count); i < minions; i++)
                     {
                         spawner.SpawnMinion(MinionKind.Mine, attack.asteroidKind, Position + Random.insideUnitCircle.normalized * (radius + 1.2f));
                     }
@@ -439,6 +471,9 @@ namespace Portfolio.Asteroids
                     chargeDirection = AimAtShip(0f);
                     Field.Sounds?.BossRoar(0.8f);
                     Field.Effects?.Telegraph(Position, radius, explosionTint);
+                    break;
+                default:
+                    ExecuteField(attack, spawner, count);
                     break;
             }
         }
@@ -555,6 +590,7 @@ namespace Portfolio.Asteroids
                 Field?.Effects?.Shockwave(Position, radius * 3f, explosionTint);
                 PhaseChanged?.Invoke(this, Phase);
             }
+            ShowFieldState(flags);
         }
 
 

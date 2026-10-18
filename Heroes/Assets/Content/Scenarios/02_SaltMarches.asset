@@ -27,6 +27,8 @@ MonoBehaviour:
       hero: -1
       buildings: 
       name: You
+      homeX: -1
+      homeY: -1
     - faction: 1
       human: 0
       aiLevel: 1
@@ -34,27 +36,33 @@ MonoBehaviour:
       hero: -1
       buildings: 
       name: The Pale Coven
+      homeX: -1
+      homeY: -1
     zonesPerPlayer: 1
     neutralTowns: 1
     treasure: 2
     monsters: 2
     water: 2
     theme: 4
-    themeTerrain: 0
+    themeTerrain: 4
+    themeShare: 70
     rules:
       victory: 1
       victoryValue: 0
-      victoryTag: 
+      victoryTag: player:1
       loss: 0
       lossValue: 0
       dayLimit: 0
       battleStyle: 0
     specials: []
     startingGold: 10000
+    woods: 0
   <Intro>k__BackingField: Something in the marshes raises the drowned. Follow the road east and put an end to whoever is calling them.
   <Outro>k__BackingField: The coven's tower falls. In its cellar you find a map of the old barrows.
   <Goal>k__BackingField: Take the coven's town in the marshes.
+  <Loss>k__BackingField: 
   <ThreeStarDays>k__BackingField: 34
   <TwoStarDays>k__BackingField: 52
   <IsSkirmish>k__BackingField: 0
   <MapPosition>k__BackingField: {x: 400, y: 560}
+  <Arc>k__BackingField: 0

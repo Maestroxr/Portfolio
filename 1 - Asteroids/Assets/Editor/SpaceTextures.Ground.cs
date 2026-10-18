@@ -16,7 +16,11 @@ namespace Portfolio.Asteroids.EditorTools
         EnemyRedDark, Navy, BoatGrey, Solar, Pipe, PipeDark, Cactus, Crop,
         GlowRed, GlowOrange, GlowYellow, GlowCyan, GlowWhite, GlowGreen, Window, Lamp,
         Rubber, Gold, Mud, LeafDeep, Flower, Teal, Plate, PlateDark,
-        Mare, ObsidianGlow, Lava, Coolant
+        Mare, ObsidianGlow, Lava, Coolant,
+        // The worlds and units of the Iron Tide and Hive Fall campaigns.
+        Snow, SnowShade, IceBlue, IceDeep, Pine, Coral, Chitin, ChitinDark,
+        Flesh, Resin, Ichor, CrystalRose, CrystalCyan, CrystalWhite, Salt, CorpOrange,
+        CorpSteel, CorpWhite
     }
 
 
@@ -69,7 +73,13 @@ namespace Portfolio.Asteroids.EditorTools
             { GroundSwatch.LeafDeep, ("1D3B1A", 0f) }, { GroundSwatch.Flower, ("C75A7A", 0f) }, { GroundSwatch.Teal, ("2F7F7A", 0f) },
             { GroundSwatch.Plate, ("7C8490", 0f) }, { GroundSwatch.PlateDark, ("4B525C", 0f) },
             { GroundSwatch.Mare, ("4E4D4C", 0f) }, { GroundSwatch.ObsidianGlow, ("FF5A1A", 0.6f) }, { GroundSwatch.Lava, ("FF7A20", 1f) },
-            { GroundSwatch.Coolant, ("40E0FF", 0.7f) }
+            { GroundSwatch.Coolant, ("40E0FF", 0.7f) },
+            { GroundSwatch.Snow, ("DCE6EE", 0f) }, { GroundSwatch.SnowShade, ("AFC0D0", 0f) }, { GroundSwatch.IceBlue, ("98CDE6", 0f) },
+            { GroundSwatch.IceDeep, ("4A86B0", 0f) }, { GroundSwatch.Pine, ("2C4636", 0f) }, { GroundSwatch.Coral, ("D9765E", 0f) },
+            { GroundSwatch.Chitin, ("3C2C42", 0f) }, { GroundSwatch.ChitinDark, ("1E1424", 0f) }, { GroundSwatch.Flesh, ("8C4A5E", 0f) },
+            { GroundSwatch.Resin, ("C4923A", 0f) }, { GroundSwatch.Ichor, ("9CFF4A", 0.9f) }, { GroundSwatch.CrystalRose, ("FF7AD9", 0.7f) },
+            { GroundSwatch.CrystalCyan, ("6AF0FF", 0.8f) }, { GroundSwatch.CrystalWhite, ("E4DCFA", 0.15f) }, { GroundSwatch.Salt, ("D4CEDE", 0f) },
+            { GroundSwatch.CorpOrange, ("F2771E", 0f) }, { GroundSwatch.CorpSteel, ("566270", 0f) }, { GroundSwatch.CorpWhite, ("D8DCE0", 0f) }
         };
 
 

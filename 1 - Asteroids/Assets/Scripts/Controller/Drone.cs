@@ -46,6 +46,11 @@ namespace Portfolio.Asteroids
             {
                 return;
             }
+            if (ship.Mode == MissionMode.Strike)
+            {
+                FireStrike(ship, field, position);
+                return;
+            }
             Shootable target = field.NearestTarget(position, range);
             if (target == null)
             {
@@ -58,6 +63,32 @@ namespace Portfolio.Asteroids
             transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90f);
             field.Spawner.FireDroneShot(position + direction * 0.3f, direction, ship);
             field.Sounds?.DroneShot();
+        }
+
+
+        /// <summary>
+        /// Strike (the wingman drones of the pilot's equipment): a strike round at the nearest enemy ahead of the drone, air
+        /// or ground, led by where it is going (a ground unit rides the scroll).
+        /// </summary>
+        private void FireStrike(AsteroidsPlayer ship, SpaceField field, Vector2 position)
+        {
+            Shootable target = field.NearestTarget(position, StrikeArmory.WingmanRange, candidate => candidate.Position.y > position.y - 1f);
+            if (target == null)
+            {
+                cooldown = 0.1f;
+                return;
+            }
+            cooldown = StrikeArmory.WingmanInterval;
+            Vector2 velocity = target is GroundUnit ? target.Velocity + field.ScrollVelocity : target.Velocity;
+            Vector2 lead = target.Position + velocity * ((target.Position - position).magnitude / StrikeArmory.WingmanShotSpeed);
+            Vector2 direction = (lead - position).sqrMagnitude > 0.0001f ? (lead - position).normalized : Vector2.up;
+            transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90f);
+            Shot shot = field.Spawner.FireStrikeShot(StrikeShotKind.Bullet, position + direction * 0.3f, direction * StrikeArmory.WingmanShotSpeed,
+                StrikeArmory.WingmanDamage, Altitude.Both, ship);
+            if (shot != null)
+            {
+                field.Sounds?.DroneShot();
+            }
         }
     }
 }

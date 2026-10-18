@@ -13,12 +13,12 @@ namespace Portfolio.Heroes.Server
 {
     public sealed partial class RemoteReducers : RemoteBase
     {
-        public delegate void CreateRoomHandler(ReducerEventContext ctx, string name, byte maxPlayers, int level, string options);
+        public delegate void CreateRoomHandler(ReducerEventContext ctx, string name, byte maxPlayers, int level, string options, bool isPrivate);
         public event CreateRoomHandler? OnCreateRoom;
 
-        public void CreateRoom(string name, byte maxPlayers, int level, string options)
+        public void CreateRoom(string name, byte maxPlayers, int level, string options, bool isPrivate)
         {
-            conn.InternalCallReducer(new Reducer.CreateRoom(name, maxPlayers, level, options));
+            conn.InternalCallReducer(new Reducer.CreateRoom(name, maxPlayers, level, options, isPrivate));
         }
 
         public bool InvokeCreateRoom(ReducerEventContext ctx, Reducer.CreateRoom args)
@@ -40,7 +40,8 @@ namespace Portfolio.Heroes.Server
                 args.Name,
                 args.MaxPlayers,
                 args.Level,
-                args.Options
+                args.Options,
+                args.IsPrivate
             );
             return true;
         }
@@ -60,18 +61,22 @@ namespace Portfolio.Heroes.Server
             public int Level;
             [DataMember(Name = "options")]
             public string Options;
+            [DataMember(Name = "is_private")]
+            public bool IsPrivate;
 
             public CreateRoom(
                 string Name,
                 byte MaxPlayers,
                 int Level,
-                string Options
+                string Options,
+                bool IsPrivate
             )
             {
                 this.Name = Name;
                 this.MaxPlayers = MaxPlayers;
                 this.Level = Level;
                 this.Options = Options;
+                this.IsPrivate = IsPrivate;
             }
 
             public CreateRoom()

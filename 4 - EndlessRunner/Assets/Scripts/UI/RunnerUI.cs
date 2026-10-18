@@ -19,6 +19,9 @@ namespace Portfolio.EndlessRunner
     /// </summary>
     public class RunnerUI : GameUI
     {
+        /// <summary>The player's avatar on this device while the menu is up: At the top right, beside the language, above the stars.</summary>
+        protected override (Vector2 anchor, Vector2 offset)? AvatarPlace => (new Vector2(1f, 1f), new Vector2(-120f, -20f));
+
         [Serializable]
         internal class PowerUpSlot
         {
@@ -840,6 +843,15 @@ namespace Portfolio.EndlessRunner
                 SetLabel(resultSubtitle, RunnerText.F("{0} - local race of {1}", levelTitle, result.Runners));
                 SetLabel(resultStats, result.Standings);
                 SetLabel(resultGoals, RunnerText.T("Retry races again with the same players."));
+                resultStarCount = 0;
+            }
+            else if (result.Online && result.Party)
+            {
+                // A race of several runners at this device and others: the winner by name, as a race at one device says it.
+                SetLabel(resultTitle, result.Winner != null ? RunnerText.F("{0} WINS!", result.Winner) : RunnerText.T("IT'S A TIE!"));
+                SetLabel(resultSubtitle, RunnerText.F("{0} - race of {1}", levelTitle, result.Runners));
+                SetLabel(resultStats, result.Standings);
+                SetLabel(resultGoals, RunnerText.T("The host starts the next race from the room."));
                 resultStarCount = 0;
             }
             else if (result.Online)

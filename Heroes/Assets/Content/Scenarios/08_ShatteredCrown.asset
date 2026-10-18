@@ -27,6 +27,8 @@ MonoBehaviour:
       hero: -1
       buildings: 
       name: You
+      homeX: -1
+      homeY: -1
     - faction: 1
       human: 0
       aiLevel: 2
@@ -34,6 +36,8 @@ MonoBehaviour:
       hero: -1
       buildings: 
       name: The Pale Coven
+      homeX: -1
+      homeY: -1
     - faction: 2
       human: 0
       aiLevel: 2
@@ -41,6 +45,8 @@ MonoBehaviour:
       hero: -1
       buildings: 
       name: The Ironjaw Clan
+      homeX: -1
+      homeY: -1
     - faction: 0
       human: 0
       aiLevel: 2
@@ -48,6 +54,8 @@ MonoBehaviour:
       hero: -1
       buildings: 
       name: The Pretender
+      homeX: -1
+      homeY: -1
     zonesPerPlayer: 1
     neutralTowns: 2
     treasure: 3
@@ -55,6 +63,7 @@ MonoBehaviour:
     water: 1
     theme: 0
     themeTerrain: 0
+    themeShare: 70
     rules:
       victory: 0
       victoryValue: 0
@@ -65,10 +74,13 @@ MonoBehaviour:
       battleStyle: 0
     specials: []
     startingGold: 15000
+    woods: 0
   <Intro>k__BackingField: Three claimants, one capital, and a crown in pieces. Whoever is left standing at the end of it wears them all.
   <Outro>k__BackingField: The crown is whole, and heavy, and yours.
   <Goal>k__BackingField: Defeat everyone who claims the crown.
+  <Loss>k__BackingField: 
   <ThreeStarDays>k__BackingField: 60
   <TwoStarDays>k__BackingField: 90
   <IsSkirmish>k__BackingField: 0
   <MapPosition>k__BackingField: {x: 1200, y: 560}
+  <Arc>k__BackingField: 0

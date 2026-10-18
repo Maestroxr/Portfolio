@@ -36,6 +36,7 @@ namespace Portfolio.Monopoly
         private MonopolySettings customSettings;
         private MonopolySettings activeSettings;
         private MonopolySettings matchSettings;
+        private LocalPlayRules localPlay;
         private MonopolyProgress progress;
         private BotBrain bots;
         private IRandom random;
@@ -58,7 +59,7 @@ namespace Portfolio.Monopoly
         public MonopolyController MonopolyController => controller;
         public BoardView Board => board;
         public MonopolyCampaign ModeList => campaign;
-        public MonopolyProgress Progress => progress ??= new MonopolyProgress(Disk, GameType.Monopoly);
+        public MonopolyProgress Progress => progress ??= new MonopolyProgress(Disk, GameType.Monopoly) { Avatar = LocalAvatar.Instance };
         public MonopolyLevel CurrentMode => campaign != null ? campaign.Mode(LevelIndex) : null;
         public BotBrain Bots => bots;
 
@@ -78,6 +79,29 @@ namespace Portfolio.Monopoly
         }
 
         protected override bool UsesTimer => false;
+
+        /// <summary>
+        /// Several people at one device: Monopoly seats them on its own new game screen (<see cref="SetupUI"/>,
+        /// <see cref="MatchSetup"/>), so these rules only describe the table to the shared parts that ask. The online lobby
+        /// reads from them that the game takes turns and can hand the device over between the turns of the players who
+        /// signed in at one device (<see cref="Gamebox.Online.OnlineGameController.HandOver"/>).
+        /// </summary>
+        public override LocalPlayRules LocalPlay => localPlay ??= new LocalPlayRules
+        {
+            Title = "Monopoly",
+            MinPlayers = 2,
+            MaxPlayers = 4,
+            DefaultPlayers = 2,
+            AllowComputers = true,
+            OffersHandOver = true,
+            Game = GameType.Monopoly
+        };
+
+        /// <summary>The local play of the shared menu is the game's own new game screen, where people and computer players are seated.</summary>
+        public override void OpenLocalPlay()
+        {
+            ui.ShowSetup();
+        }
 
         private MonopolySettings CreateCustomSettings()
         {

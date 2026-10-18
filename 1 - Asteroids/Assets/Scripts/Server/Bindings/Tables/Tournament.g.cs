@@ -18,6 +18,15 @@ namespace Portfolio.Asteroids.Server
         {
             public override string RemoteTableName => "tournament";
 
+            public sealed class HostIndex : BTreeIndexBase<SpacetimeDB.Identity>
+            {
+                protected override SpacetimeDB.Identity GetKey(Tournament row) => row.Host;
+
+                public HostIndex(TournamentHandle table) : base(table) { }
+            }
+
+            public readonly HostIndex Host;
+
             public sealed class IdUniqueIndex : UniqueIndexBase<ulong>
             {
                 protected override ulong GetKey(Tournament row) => row.Id;
@@ -29,6 +38,7 @@ namespace Portfolio.Asteroids.Server
 
             internal TournamentHandle(DbConnection conn) : base(conn)
             {
+                Host = new(this);
                 Id = new(this);
             }
 
@@ -56,6 +66,9 @@ namespace Portfolio.Asteroids.Server
         public global::SpacetimeDB.Col<Tournament, SpacetimeDB.Timestamp> CreatedAt { get; }
         public global::SpacetimeDB.Col<Tournament, SpacetimeDB.Timestamp> StartedAt { get; }
         public global::SpacetimeDB.Col<Tournament, SpacetimeDB.Timestamp> FinishedAt { get; }
+        public global::SpacetimeDB.Col<Tournament, bool> Private { get; }
+        public global::SpacetimeDB.Col<Tournament, long> StartsAt { get; }
+        public global::SpacetimeDB.Col<Tournament, byte> MinEntrants { get; }
 
         public TournamentCols(string tableName)
         {
@@ -75,16 +88,21 @@ namespace Portfolio.Asteroids.Server
             CreatedAt = new global::SpacetimeDB.Col<Tournament, SpacetimeDB.Timestamp>(tableName, "created_at");
             StartedAt = new global::SpacetimeDB.Col<Tournament, SpacetimeDB.Timestamp>(tableName, "started_at");
             FinishedAt = new global::SpacetimeDB.Col<Tournament, SpacetimeDB.Timestamp>(tableName, "finished_at");
+            Private = new global::SpacetimeDB.Col<Tournament, bool>(tableName, "private");
+            StartsAt = new global::SpacetimeDB.Col<Tournament, long>(tableName, "starts_at");
+            MinEntrants = new global::SpacetimeDB.Col<Tournament, byte>(tableName, "min_entrants");
         }
     }
 
     public sealed class TournamentIxCols
     {
         public global::SpacetimeDB.IxCol<Tournament, ulong> Id { get; }
+        public global::SpacetimeDB.IxCol<Tournament, SpacetimeDB.Identity> Host { get; }
 
         public TournamentIxCols(string tableName)
         {
             Id = new global::SpacetimeDB.IxCol<Tournament, ulong>(tableName, "id");
+            Host = new global::SpacetimeDB.IxCol<Tournament, SpacetimeDB.Identity>(tableName, "host");
         }
     }
 }

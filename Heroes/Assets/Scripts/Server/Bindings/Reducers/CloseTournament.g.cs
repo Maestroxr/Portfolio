@@ -13,12 +13,12 @@ namespace Portfolio.Heroes.Server
 {
     public sealed partial class RemoteReducers : RemoteBase
     {
-        public delegate void CloseTournamentHandler(ReducerEventContext ctx);
+        public delegate void CloseTournamentHandler(ReducerEventContext ctx, ulong tournamentId);
         public event CloseTournamentHandler? OnCloseTournament;
 
-        public void CloseTournament()
+        public void CloseTournament(ulong tournamentId)
         {
-            conn.InternalCallReducer(new Reducer.CloseTournament());
+            conn.InternalCallReducer(new Reducer.CloseTournament(tournamentId));
         }
 
         public bool InvokeCloseTournament(ReducerEventContext ctx, Reducer.CloseTournament args)
@@ -36,7 +36,8 @@ namespace Portfolio.Heroes.Server
                 return false;
             }
             OnCloseTournament(
-                ctx
+                ctx,
+                args.TournamentId
             );
             return true;
         }
@@ -48,6 +49,18 @@ namespace Portfolio.Heroes.Server
         [DataContract]
         public sealed partial class CloseTournament : Reducer, IReducerArgs
         {
+            [DataMember(Name = "tournament_id")]
+            public ulong TournamentId;
+
+            public CloseTournament(ulong TournamentId)
+            {
+                this.TournamentId = TournamentId;
+            }
+
+            public CloseTournament()
+            {
+            }
+
             string IReducerArgs.ReducerName => "close_tournament";
         }
     }

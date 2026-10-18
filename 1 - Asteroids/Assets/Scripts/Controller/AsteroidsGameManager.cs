@@ -308,7 +308,7 @@ namespace Portfolio.Asteroids
 
         protected override void Start()
         {
-            progress = new AsteroidsProgress(Disk, Type);
+            progress = new AsteroidsProgress(Disk, Type) { Avatar = LocalAvatar.Instance };
             ApplySelectedHull();
             base.Start();
             if (isActiveAndEnabled)
@@ -469,24 +469,14 @@ namespace Portfolio.Asteroids
         }
 
 
-        /// <summary>The first open mission without stars, or the last open one.</summary>
+        /// <summary>
+        /// The first open mission without stars of the field campaign the device remembers, or its last open one
+        /// (AsteroidsGameManager.Campaigns.cs).
+        /// </summary>
         private int SuggestedMission()
         {
-            int suggested = 0;
-            for (int i = 0; i < LevelCount; i++)
-            {
-                AsteroidsLevel mission = MissionAt(i);
-                if (mission == null || mission.IsEndless || mission.Mode != MissionMode.Field || !IsUnlocked(i))
-                {
-                    continue;
-                }
-                suggested = i;
-                if (progress == null || progress.Stars(i) == 0)
-                {
-                    break;
-                }
-            }
-            return suggested;
+            int suggested = CampaignSelect.Suggested(AsteroidsCampaign, MissionMode.Field, RememberedArc(MissionMode.Field), progress);
+            return suggested >= 0 ? suggested : 0;
         }
 
 
@@ -518,6 +508,7 @@ namespace Portfolio.Asteroids
             }
             menuMode = MissionMode.Field;
             fieldMenuMission = LevelIndex;
+            RememberCampaign(LevelIndex);
             EndStrikePreview();
             if (mission != null && backdrop != null)
             {
@@ -699,11 +690,17 @@ namespace Portfolio.Asteroids
             {
                 return T("Beat the first sector's boss to unlock the endless mission.");
             }
+            // The gates count the stars of the mission's own campaign; its first mission waits for the campaign to open.
+            int arc = sectors != null ? sectors.ArcOf(index) : 0;
+            if (sectors != null && index == sectors.FirstMission(mission.Mode, arc) && !sectors.IsArcOpen(mission.Mode, arc, progress))
+            {
+                return CampaignLockReason(mission.Mode, arc);
+            }
             int required = sectors != null ? sectors.StarsRequired(index) : 0;
-            int stars = sectors != null && progress != null ? sectors.TotalStars(progress, mission.Mode) : TotalStars;
+            int stars = sectors != null && progress != null ? sectors.TotalStars(progress, mission.Mode, arc) : TotalStars;
             if (required > stars)
             {
-                return F("Collect {0} stars to enter this sector ({1} so far).", required, stars);
+                return F("Collect {0} stars of {1} to enter this sector ({2} so far).", required, T(CampaignTitle(sectors, mission.Mode, arc)), stars);
             }
             return T("Complete the previous mission to unlock this one.");
         }
@@ -713,16 +710,21 @@ namespace Portfolio.Asteroids
 
         private int MaxStars => campaign != null ? campaign.MaxStars : 0;
 
-        /// <summary>Stars of the asteroid field missions (the field mission select and its sector gates count only these).</summary>
-        private int FieldStars => AsteroidsCampaign != null && progress != null ? AsteroidsCampaign.TotalStars(progress, MissionMode.Field) : TotalStars;
+        /// <summary>
+        /// Stars of the asteroid field campaign the field tab shows (its star counter and its sector gates count only these;
+        /// AsteroidsGameManager.Campaigns.cs).
+        /// </summary>
+        private int FieldStars => ShownCampaignStars(MissionMode.Field);
 
-        private int FieldMaxStars => AsteroidsCampaign != null ? AsteroidsCampaign.MaxStarsOf(MissionMode.Field) : MaxStars;
+        private int FieldMaxStars => ShownCampaignMaxStars(MissionMode.Field);
 
 
+        /// <summary>The missions of the field campaign the field tab shows (the endless one with the first campaign).</summary>
         private List<MissionSummary> BuildSummaries()
         {
             var summaries = new List<MissionSummary>();
             AsteroidsCampaign sectors = AsteroidsCampaign;
+            int arc = ShownArc(MissionMode.Field);
             int number = 0;
             for (int i = 0; i < LevelCount; i++)
             {
@@ -732,12 +734,18 @@ namespace Portfolio.Asteroids
                     // The strike missions have their own tab (StrikeUI).
                     continue;
                 }
+                if (sectors != null && (mission.IsEndless ? arc != 0 : sectors.ArcOf(i) != arc))
+                {
+                    // One campaign at a time: the others are a click on the campaign bar away.
+                    continue;
+                }
                 if (!mission.IsEndless)
                 {
                     number++;
                 }
                 AsteroidsCampaign.Sector sector = sectors != null ? sectors.SectorOf(i) : null;
                 SectorTheme theme = mission.Theme;
+                (int sectorSlot, int sectorPosition) = CampaignSelect.Place(sectors, i);
                 var objectiveInfo = new MissionObjective(mission.Objective, mission.ObjectiveTarget, mission.Waves.Length,
                     mission.BossPrefab != null ? mission.BossPrefab.DisplayName : null);
                 summaries.Add(new MissionSummary
@@ -758,7 +766,12 @@ namespace Portfolio.Asteroids
                     ScoreGoal = mission.ScoreGoal,
                     Endless = mission.IsEndless,
                     BestWave = progress != null ? progress.EndlessBestWave : 0,
-                    Boss = mission.Objective == LevelObjective.Boss
+                    Boss = mission.Objective == LevelObjective.Boss,
+                    CampaignTitle = mission.IsEndless ? null : T(CampaignTitle(sectors, MissionMode.Field, arc)),
+                    SectorSlot = sectorSlot,
+                    SectorPosition = sectorPosition,
+                    SectorStars = sector != null ? sector.starsRequired : 0,
+                    SectorAccent = sector != null && sector.theme != null ? AsteroidsThemes.Accent(sector.theme, Color.cyan) : AsteroidsThemes.Accent(theme, Color.cyan)
                 });
             }
             return summaries;
@@ -942,7 +955,7 @@ namespace Portfolio.Asteroids
                     lives = Mathf.Clamp(coop.Lives, 1, AsteroidSettings.LivesLimit);
                 }
             }
-            if (IsLocal)
+            if (FliesSquad)
             {
                 // The wingmen, the pilots' scores and ships, the starts (AsteroidsGameManager.Local.cs).
                 PrepareLocalMission(strike);
@@ -971,7 +984,8 @@ namespace Portfolio.Asteroids
             }
 
             sounds?.PlayMusic(strike ? sounds.StrikeMusic : sounds.BattleMusic);
-            ui?.BeginMission(mission, objective.Briefing, lives, SectorTitleOf(mission));
+            PrepareFieldCampaign();
+            ui?.BeginMission(mission, objective.Briefing, lives, SectorTitleOf(mission), CampaignTitleOf(LevelIndex), CampaignSelect.Number(AsteroidsCampaign, LevelIndex));
             return true;
         }
 
@@ -1040,7 +1054,7 @@ namespace Portfolio.Asteroids
             {
                 lastMultiplier = score.Multiplier;
             }
-            if (IsLocal)
+            if (FliesSquad)
             {
                 UpdateLocalPilots(deltaTime);
             }
@@ -1048,6 +1062,7 @@ namespace Portfolio.Asteroids
             {
                 objective.Survive(deltaTime);
             }
+            UpdateFieldCampaign(deltaTime);
             UpdateHints(deltaTime);
 
             if (phase == MissionPhase.Respawning && phaseTime >= respawnDelay)
@@ -1071,8 +1086,8 @@ namespace Portfolio.Asteroids
         private void UpdateHints(float deltaTime)
         {
             AsteroidsLevel mission = Mission;
-            // The hints name the keys of the single player game: the pilots of a local mission have keys of their own.
-            if (mission == null || hintIndex >= mission.HintCount || IsLocal)
+            // The hints name the keys of the single player game: several pilots at this device have keys of their own.
+            if (mission == null || hintIndex >= mission.HintCount || FliesSquad)
             {
                 return;
             }
@@ -1102,8 +1117,9 @@ namespace Portfolio.Asteroids
                 }
                 return;
             }
-            // In local co-op the HUD shows the squad's score; every pilot's own is on the pilots list.
-            bool local = IsLocal;
+            // With several pilots at this device the HUD shows the squad's score; every pilot's own is on the pilots list
+            // (a party's comes from the online controller with the other pilots of the room).
+            bool local = FliesSquad;
             var hud = new HudState
             {
                 Score = local ? squad.TeamScore : score.Score,
@@ -1128,7 +1144,7 @@ namespace Portfolio.Asteroids
                 ui.SetPowerUp(type, ship.PowerUpTime(type) / PowerUps.Duration(type));
             }
             ui.UpdateHud(hud);
-            if (local)
+            if (IsLocal)
             {
                 ShowLocalPilots();
             }
@@ -1148,7 +1164,7 @@ namespace Portfolio.Asteroids
             else
             {
                 int bonus = lives * lifeBonus;
-                if (IsLocal)
+                if (FliesSquad)
                 {
                     // Every pilot still flying scores the bonus for the ships they have left.
                     localLifeBonus = Mission != null && !Mission.IsEndless ? squad.Victory(lifeBonus) : 0;
@@ -1315,7 +1331,7 @@ namespace Portfolio.Asteroids
         {
             objective?.WaveCleared();
             int bonus = Mathf.RoundToInt(waveBonus * wave);
-            if (IsLocal)
+            if (FliesSquad)
             {
                 squad.WaveCleared(bonus);
             }
@@ -1403,12 +1419,13 @@ namespace Portfolio.Asteroids
                 StrikeTargetDestroyed(target, hit);
                 return;
             }
+            CountQuarry(target);
             if (!hit.ByPlayer || !IsMissionActiveOrEnding)
             {
                 return;
             }
             // The kill of a pilot on another device scores on their device; what it drops is the same for everybody.
-            if (IsLocal)
+            if (FliesSquad)
             {
                 ScoreLocalKill(target, LocalPilotOf(hit));
             }
@@ -1453,16 +1470,16 @@ namespace Portfolio.Asteroids
 
         private void OnShotLanded(Shot shot)
         {
-            (IsLocal ? LocalScoreOf(shot.FiredBy) : score).ShotLanded();
+            (FliesSquad ? LocalScoreOf(shot.FiredBy) : score).ShotLanded();
         }
 
 
-        // The scene ship's own handlers below stand aside in local co-op, where every pilot's ship is heard on its own
-        // (AsteroidsGameManager.Local.cs).
+        // The scene ship's own handlers below stand aside while several pilots fly at this device (local co-op, a party of
+        // a room), where every pilot's ship is heard on its own (AsteroidsGameManager.Local.cs).
 
         private void OnVolleyFired(int count)
         {
-            if (!IsLocal)
+            if (!FliesSquad)
             {
                 score.ShotFired(count);
             }
@@ -1482,7 +1499,7 @@ namespace Portfolio.Asteroids
 
         private void OnCrystalCollected(PointReward crystal)
         {
-            if (IsLocal)
+            if (FliesSquad)
             {
                 return;
             }
@@ -1496,7 +1513,7 @@ namespace Portfolio.Asteroids
 
         private void OnLifeAwarded()
         {
-            if (IsLocal)
+            if (FliesSquad)
             {
                 return;
             }
@@ -1515,7 +1532,7 @@ namespace Portfolio.Asteroids
 
         private void OnWeaponChanged()
         {
-            if (!IsMissionActive || ship == null || IsLocal)
+            if (!IsMissionActive || ship == null || FliesSquad)
             {
                 return;
             }
@@ -1525,7 +1542,7 @@ namespace Portfolio.Asteroids
 
         private void OnShipDamaged(DamageInfo hit)
         {
-            if (IsLocal)
+            if (FliesSquad)
             {
                 return;
             }
@@ -1543,7 +1560,7 @@ namespace Portfolio.Asteroids
 
         private void OnShipDestroyed(AsteroidsPlayer lost)
         {
-            if (!IsMissionActive || IsLocal)
+            if (!IsMissionActive || FliesSquad)
             {
                 return;
             }
@@ -1640,13 +1657,16 @@ namespace Portfolio.Asteroids
                 case HazardKind.SupplyPod:
                     ui?.Toast(T("SUPPLY POD - shoot it open"), new Color(0.45f, 1f, 0.6f));
                     break;
+                default:
+                    AnnounceFieldHazard(kind);
+                    break;
             }
         }
 
 
         private void SyncScore()
         {
-            if (IsLocal && squad != null)
+            if (FliesSquad && squad != null)
             {
                 // The squad's score is the game's; every ship carries its own pilot's.
                 PlayerScore = squad.TeamScore;
@@ -1747,6 +1767,7 @@ namespace Portfolio.Asteroids
                 disk.SetFloat(key + "Health", asteroid.Health);
                 disk.SetBool(key + "Wave", asteroid.CountsForWave);
             }
+            SaveFieldCampaign(disk);
             if (!PersistSavedGame())
             {
                 return;
@@ -1788,6 +1809,7 @@ namespace Portfolio.Asteroids
             livesLost = disk.GetInt(SaveKey("LivesLost"));
             missionTime = disk.GetFloat(SaveKey("Time"));
             objective.Restore(disk.GetInt(SaveKey("WavesCleared")), disk.GetInt(SaveKey("Crystals")), disk.GetFloat(SaveKey("Survived")));
+            LoadFieldCampaign(disk);
             ship.Weapons.Set((WeaponType)disk.GetInt(SaveKey("Weapon")), disk.GetInt(SaveKey("WeaponLevel")));
             ship.Health = Mathf.Max(1f, disk.GetFloat(SaveKey("Hull")));
             ship.RestoreShield(disk.GetFloat(SaveKey("Shield")) - ship.Shield);

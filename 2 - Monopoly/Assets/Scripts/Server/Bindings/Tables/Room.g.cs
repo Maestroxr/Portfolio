@@ -53,6 +53,7 @@ namespace Portfolio.Monopoly.Server
         public global::SpacetimeDB.Col<Room, uint> Round { get; }
         public global::SpacetimeDB.Col<Room, SpacetimeDB.Timestamp> CreatedAt { get; }
         public global::SpacetimeDB.Col<Room, SpacetimeDB.Timestamp> StartedAt { get; }
+        public global::SpacetimeDB.Col<Room, bool> Private { get; }
 
         public RoomCols(string tableName)
         {
@@ -69,6 +70,7 @@ namespace Portfolio.Monopoly.Server
             Round = new global::SpacetimeDB.Col<Room, uint>(tableName, "round");
             CreatedAt = new global::SpacetimeDB.Col<Room, SpacetimeDB.Timestamp>(tableName, "created_at");
             StartedAt = new global::SpacetimeDB.Col<Room, SpacetimeDB.Timestamp>(tableName, "started_at");
+            Private = new global::SpacetimeDB.Col<Room, bool>(tableName, "private");
         }
     }
 

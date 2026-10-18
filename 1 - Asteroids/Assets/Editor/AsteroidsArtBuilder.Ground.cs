@@ -53,6 +53,8 @@ namespace Portfolio.Asteroids.EditorTools
         public Action<TilePlan, System.Random, float> Scatter;
         /// <summary>Buildings beside a base pad.</summary>
         public Action<TilePlan, System.Random> BaseDressing;
+        /// <summary>The prop that grows along a coast (palms; pines on a cold world).</summary>
+        public PropKind CoastProp = PropKind.Palm;
         /// <summary>The generated theme this is the neon grid world of: no detail layers, no props, tiles on the NeonGround shader.</summary>
         public ThemeSpec Neon;
 
@@ -567,7 +569,10 @@ namespace Portfolio.Asteroids.EditorTools
                 Stone = GroundSwatch.PlateDark, Stone2 = GroundSwatch.SteelDark, Walls = GroundSwatch.Plate, Roof = GroundSwatch.PlateDark,
                 Plant = GroundSwatch.PipeDark, Plant2 = GroundSwatch.Pipe, Scatter = StationScatter, BaseDressing = StationBase
             };
-            return new[] { desert, jungle, city, moon, volcanic, station };
+            var worlds = new List<GroundTheme> { desert, jungle, city, moon, volcanic, station };
+            // The worlds of the Iron Tide and Hive Fall campaigns come after these (AsteroidsArtBuilder.StrikeCampaigns.cs).
+            worlds.AddRange(StrikeCampaignWorlds());
+            return worlds.ToArray();
         }
 
 
@@ -614,6 +619,7 @@ namespace Portfolio.Asteroids.EditorTools
                 case TerrainKind.Base: BaseTile(plan, random); break;
                 case TerrainKind.City: CityTile(plan, random); break;
                 case TerrainKind.Field: FieldTile(plan, random); break;
+                default: CampaignTile(plan, random); break;
             }
             return plan;
         }
@@ -883,7 +889,7 @@ namespace Portfolio.Asteroids.EditorTools
             };
             plan.Blocked = (p, r) => (seaUp ? p.y - Shore(p.x) : Shore(p.x) - p.y) > -2f - r;
             theme.Scatter?.Invoke(plan, random, 0.7f);
-            plan.Sprinkle(random, 8, 2f, 30f, r => (PropKind.Palm, new Vector3(2.4f, 0.85f, 2.4f) * (0.8f + (float)r.NextDouble() * 0.3f), theme.Plant, theme.Plant2));
+            plan.Sprinkle(random, 8, 2f, 30f, r => (theme.CoastProp, new Vector3(2.4f, 0.85f, 2.4f) * (0.8f + (float)r.NextDouble() * 0.3f), theme.Plant, theme.Plant2));
             for (int i = 0; i < 5; i++)
             {
                 float x = ((float)random.NextDouble() - 0.5f) * 56f;
@@ -1300,7 +1306,9 @@ namespace Portfolio.Asteroids.EditorTools
         public static readonly StrikeUnit[] GroundUnits =
         {
             StrikeUnit.Turret, StrikeUnit.Flak, StrikeUnit.Tank, StrikeUnit.Truck, StrikeUnit.Bunker, StrikeUnit.FuelTank, StrikeUnit.Radar,
-            StrikeUnit.Gunboat, StrikeUnit.Hut, StrikeUnit.LaserTower, StrikeUnit.Depot, StrikeUnit.Crate
+            StrikeUnit.Gunboat, StrikeUnit.Hut, StrikeUnit.LaserTower, StrikeUnit.Depot, StrikeUnit.Crate,
+            StrikeUnit.SamSite, StrikeUnit.Artillery, StrikeUnit.Walker, StrikeUnit.ShieldGenerator, StrikeUnit.Destroyer, StrikeUnit.HiveSpawner,
+            StrikeUnit.Spitter, StrikeUnit.Prism
         };
 
 

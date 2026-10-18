@@ -17,6 +17,9 @@ namespace Portfolio.Heroes.UI
     /// </summary>
     public class HeroesUI : GameUI
     {
+        /// <summary>The player's avatar on this device while the menu is up: In the bottom right corner, over the landscape.</summary>
+        protected override (Vector2 anchor, Vector2 offset)? AvatarPlace => (new Vector2(1f, 0f), new Vector2(-24f, 24f));
+
         /// <summary>The key the manager keeps the level of the last saved scenario under, which Continue takes up.</summary>
 
         /// <summary>The pause menu's way back to the title screen, added to the shared menu by the scene builder.</summary>
@@ -555,7 +558,7 @@ namespace Portfolio.Heroes.UI
             {
                 return;
             }
-            if (manager != null && manager.IsHotSeat)
+            if (manager != null && manager.SharesDevice)
             {
                 Chronicle(chronicleOf).Add((text, player));
             }
@@ -575,8 +578,8 @@ namespace Portfolio.Heroes.UI
         private const int ChronicleLines = 60;
 
         /// <summary>
-        /// The lines of the log of each person of a hot seat, by seat; -1 holds what was written before anybody had the
-        /// device (the goal of the map), which every chronicle begins with.
+        /// The lines of the log of each person of a hot seat (or of an online game several people play here), by seat; -1
+        /// holds what was written before anybody had the device (the goal of the map), which every chronicle begins with.
         /// </summary>
         private readonly Dictionary<int, List<(string text, int player)>> chronicles =
             new Dictionary<int, List<(string text, int player)>>();
@@ -665,7 +668,7 @@ namespace Portfolio.Heroes.UI
 
         /// <summary>
         /// A new day is announced with the name of the realm whose turn it is: the banner says it as a turn, "Your turn"
-        /// for the player at this device. Any other line is shown as it is.
+        /// for the player at this device, with the days a scenario of a deadline has left. Any other line is shown as it is.
         /// </summary>
         private string TurnLine(string body)
         {
@@ -678,11 +681,60 @@ namespace Portfolio.Heroes.UI
             {
                 if (player.name == body)
                 {
-                    // In a hot seat every person is called by name.
-                    return player.index == manager.Viewer && !manager.IsHotSeat ? Words.T("Your turn") : Words.F("{0}'s turn", Words.Name(player.name));
+                    if (player.index != manager.Viewer || manager.SharesDevice)
+                    {
+                        // In a hot seat (and online with several people here) every person is called by name.
+                        return Words.F("{0}'s turn", Words.Name(player.name));
+                    }
+                    string left = DaysLeft(false);
+                    return left.Length > 0 ? $"{Words.T("Your turn")}  -  {left}" : Words.T("Your turn");
                 }
             }
             return Words.Sentence(body);
+        }
+
+        /// <summary>
+        /// What the scenario asks of the player at this device, for the tooltip of the date: the task, what loses it
+        /// besides losing everything, and the days left when it has a deadline.
+        /// </summary>
+        public string TaskText()
+        {
+            HeroesLevel scenario = manager != null && !manager.IsOnlineGame ? manager.Scenario : null;
+            string text = scenario != null ? Words.T(scenario.Goal) : Words.T("Take the land.");
+            if (scenario != null && !string.IsNullOrEmpty(scenario.Loss))
+            {
+                text += "\n" + $"{Words.T("Beware")}: {Words.T(scenario.Loss)}";
+            }
+            string left = DaysLeft(true);
+            return left.Length > 0 ? text + "\n" + left : text;
+        }
+
+        /// <summary>
+        /// The days left to a scenario's deadline, as a line: the days to hold out until a day that wins it, or (always,
+        /// or in its last two weeks) the days left to win before a day limit; empty without a deadline.
+        /// </summary>
+        private string DaysLeft(bool always)
+        {
+            GameState state = Game?.State;
+            if (state == null || manager.IsOnlineGame)
+            {
+                return "";
+            }
+            ScenarioRules rules = state.rules;
+            if (rules.victory == VictoryKind.Survive && rules.victoryValue > state.day)
+            {
+                int days = rules.victoryValue - state.day;
+                return days == 1 ? Words.T("One more day to hold out.") : Words.F("{0} more days to hold out.", days);
+            }
+            if (rules.loss == LossKind.TimeLimit && rules.dayLimit > 0)
+            {
+                int days = rules.dayLimit - state.day + 1;
+                if (days > 0 && (always || days <= 14))
+                {
+                    return days == 1 ? Words.T("The last day to win.") : Words.F("{0} days left to win.", days);
+                }
+            }
+            return "";
         }
 
         public void ShowTurn(int who)
@@ -724,7 +776,7 @@ namespace Portfolio.Heroes.UI
             results.Show(won, stars, days);
         }
 
-        /// <summary>The end of a hot seat: who won, and how every realm stood.</summary>
+        /// <summary>The end of a hot seat (or of an online game several people played here): who won, and how every realm stood.</summary>
         public void ShowHotSeatEnd(GameState state, int days)
         {
             CloseAll();

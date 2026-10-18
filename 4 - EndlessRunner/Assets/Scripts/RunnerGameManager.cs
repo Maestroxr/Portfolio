@@ -42,15 +42,20 @@ namespace Portfolio.EndlessRunner
 
         /// <summary>The run was a race against the runners of a room: the results are the standings.</summary>
         public bool Online;
-        /// <summary>The place of the local runner in the race, from 1.</summary>
+        /// <summary>The place of the local runner in the race (the best of a party), from 1.</summary>
         public int Place;
         public int Runners;
         /// <summary>The runners of the race by place, a line each.</summary>
         public string Standings;
+        /// <summary>Several runners at this device raced online (a party): the results name the winner.</summary>
+        public bool Party;
 
         /// <summary>The run was a race of several runners at this device: the results are the standings.</summary>
         public bool Local;
-        /// <summary>The name of the winner of a local race in the colour of the seat, or null when the first place is shared.</summary>
+        /// <summary>
+        /// The name of the winner of a local race (or of the race of a party) in the colour of the runner, or null when the
+        /// first place is shared.
+        /// </summary>
         public string Winner;
     }
 
@@ -60,7 +65,8 @@ namespace Portfolio.EndlessRunner
     /// hearts), the finish and the results, and keeps the campaign progress. The menu, pause and state flow come from
     /// <see cref="BaseGameManager"/>. What belongs to the runner (hearts, coins, power-ups, distance) is its
     /// <see cref="RunnerRun"/>. Races against the runners of an online room are in RunnerGameManager.Online.cs, races of
-    /// several runners at this device in split screen in RunnerGameManager.Local.cs.
+    /// several runners at this device in split screen in RunnerGameManager.Local.cs (whose split screen also serves the
+    /// runners at this device of an online race, when several people play here).
     /// </summary>
     public partial class RunnerGameManager : BaseGameManager
     {
@@ -164,7 +170,7 @@ namespace Portfolio.EndlessRunner
 
         protected override void Start()
         {
-            progress = new CampaignProgress(Disk, Type);
+            progress = new CampaignProgress(Disk, Type) { Avatar = LocalAvatar.Instance };
             if (track != null)
             {
                 track.HintReached += OnHintReached;
@@ -934,12 +940,15 @@ namespace Portfolio.EndlessRunner
 
         internal void CollectCoin(Coin coin, RunnerPlayer player)
         {
+            RunnerRun run = RunOf(player);
             if (race != null)
             {
-                ClaimCoin(coin);
+                if (run != null)
+                {
+                    ClaimCoin(coin, run);
+                }
                 return;
             }
-            RunnerRun run = RunOf(player);
             if (run == null)
             {
                 return;
@@ -955,6 +964,14 @@ namespace Portfolio.EndlessRunner
                 effects?.Coin(position);
             }
             sounds?.Coin(coin.IsGem);
+            PunchCoins(run);
+            track.Recycle(coin);
+        }
+
+
+        /// <summary>The coin counter of <paramref name="run"/> jumps: over its own view in a local race (or a party).</summary>
+        private void PunchCoins(RunnerRun run)
+        {
             if (run.Hud != null)
             {
                 run.Hud.PunchCoins();
@@ -963,7 +980,6 @@ namespace Portfolio.EndlessRunner
             {
                 ui?.PunchCoins();
             }
-            track.Recycle(coin);
         }
 
 

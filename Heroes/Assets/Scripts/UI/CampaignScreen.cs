@@ -7,20 +7,26 @@ using UnityEngine.UI;
 namespace Portfolio.Heroes.UI
 {
     /// <summary>
-    /// Where a game is chosen: the chapters of the campaign as cards, each with the stars it was won with and locked
-    /// until the one before it is won, or the skirmish maps; the story of the one picked on a page of parchment; and at
-    /// the bottom where its battles are to be fought and the way in. It opens from the title screen and goes back to it.
+    /// Where a game is chosen: a tab for each campaign (the town of the realm it is played as, and its short name) and
+    /// one for the skirmish maps; under them what the campaign is about and the stars won in it, and its chapters as
+    /// cards, each with the stars it was won with and locked until the one before it is won, or the skirmish maps; the
+    /// story of the one picked on a page of parchment; and at the bottom where its battles are to be fought and the way
+    /// in. It opens from the title screen and goes back to it.
     /// </summary>
     public sealed class CampaignScreen : Dialog
     {
         private const float CardHeight = 96f;
+        private const float TabHeight = 92f;
+        private const float BlurbHeight = 86f;
         private static readonly string[] Numerals = { "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII" };
         private static readonly string[] BattleLabels = { "On the map", "On a battlefield" };
 
         private RectTransform list;
         private ScrollRect scroll;
-        private Image chaptersTab;
+        private readonly List<Image> arcTabs = new List<Image>();
         private Image skirmishTab;
+        private TextMeshProUGUI blurb;
+        private TextMeshProUGUI arcStars;
         private TextMeshProUGUI pageTitle;
         private TextMeshProUGUI story;
         private ScrollRect storyScroll;
@@ -30,6 +36,7 @@ namespace Portfolio.Heroes.UI
         private ChoiceSelector battles;
         private Button play;
         private bool skirmish;
+        private int arc;
         private int picked = -1;
         private readonly Dictionary<int, Image> cards = new Dictionary<int, Image>();
 
@@ -38,7 +45,7 @@ namespace Portfolio.Heroes.UI
             CampaignScreen screen = Build<CampaignScreen>(parent, manager, "Campaign", new Vector2(1500f, 880f), "The Shattered Crown");
             RectTransform body = screen.Body;
 
-            // The list on the left: two tabs over a column of cards.
+            // The list on the left: the tabs, what the campaign is about, and a column of cards.
             Image left = UIKit.Panel(body, "List");
             RectTransform leftRect = (RectTransform)left.transform;
             leftRect.anchorMin = new Vector2(0f, 0f);
@@ -52,16 +59,53 @@ namespace Portfolio.Heroes.UI
             tabs.anchorMin = new Vector2(0f, 1f);
             tabs.anchorMax = new Vector2(1f, 1f);
             tabs.pivot = new Vector2(0.5f, 1f);
-            tabs.offsetMin = new Vector2(0f, -50f);
+            tabs.offsetMin = new Vector2(0f, -TabHeight);
             tabs.offsetMax = Vector2.zero;
-            HorizontalLayoutGroup tabRow = UIKit.Layout<HorizontalLayoutGroup>(tabs, 10f);
+            HorizontalLayoutGroup tabRow = UIKit.Layout<HorizontalLayoutGroup>(tabs, 8f);
             tabRow.childForceExpandWidth = true;
             tabRow.childForceExpandHeight = true;
-            screen.chaptersTab = Tab(tabs, "Chapters", "The Campaign", () => screen.Switch(false));
-            screen.skirmishTab = Tab(tabs, "Skirmish", "Skirmish Maps", () => screen.Switch(true));
+            var campaign = manager.Campaign as HeroesCampaign;
+            int count = campaign != null ? campaign.ArcCount : 1;
+            for (int i = 0; i < count; i++)
+            {
+                int which = i;
+                HeroesCampaign.Arc story = campaign != null ? campaign.GetArc(i) : null;
+                Sprite town = manager.Art != null ? manager.Art.TownPortrait(story != null ? story.faction : Faction.Castle, 4) : null;
+                Image tab = Tab(tabs, $"Campaign{i}", story != null && !string.IsNullOrEmpty(story.tab) ? story.tab : "The Campaign", town,
+                    () => screen.Switch(false, which));
+                Tooltip.Attach(tab.gameObject, story != null ? story.title : "The Campaign", story != null ? story.description : "");
+                screen.arcTabs.Add(tab);
+            }
+            // The map is a white shape: it is drawn in the gold of the interface.
+            screen.skirmishTab = Tab(tabs, "Skirmish", "Skirmish", manager.Art != null ? manager.Art.Icon("map") : null,
+                () => screen.Switch(true, screen.arc), UIKit.Gold);
+            Tooltip.Attach(screen.skirmishTab.gameObject, "Skirmish Maps", "Single maps against the computer, as large, rich and dangerous as the settings make them.");
+
+            // What the campaign is about, and the stars won in it.
+            RectTransform about = UIKit.Rect(leftContent, "About");
+            about.anchorMin = new Vector2(0f, 1f);
+            about.anchorMax = new Vector2(1f, 1f);
+            about.pivot = new Vector2(0.5f, 1f);
+            about.offsetMin = new Vector2(8f, -(TabHeight + 8f + BlurbHeight));
+            about.offsetMax = new Vector2(-8f, -(TabHeight + 8f));
+            screen.blurb = UIKit.Label(about, "Blurb", "", 19f, UIKit.Dim, TextAlignmentOptions.MidlineLeft);
+            screen.blurb.fontStyle = FontStyles.Italic;
+            screen.blurb.enableAutoSizing = true;
+            screen.blurb.fontSizeMax = 19f;
+            screen.blurb.fontSizeMin = 14f;
+            UIKit.Stretch((RectTransform)screen.blurb.transform, 0f, 0f, 150f, 0f);
+            screen.arcStars = UIKit.Label(about, "Stars", "", 26f, UIKit.Gold, TextAlignmentOptions.MidlineRight, true);
+            RectTransform starsRect = (RectTransform)screen.arcStars.transform;
+            starsRect.anchorMin = new Vector2(1f, 0f);
+            starsRect.anchorMax = new Vector2(1f, 1f);
+            starsRect.pivot = new Vector2(1f, 0.5f);
+            starsRect.offsetMin = new Vector2(-140f, 0f);
+            starsRect.offsetMax = Vector2.zero;
+            UIKit.FitLine(screen.arcStars, 26f, 16f);
+            UIKit.Look(screen.arcStars, TextLook.Gold);
 
             screen.list = UIKit.Scroll(leftContent, "Cards", out screen.scroll);
-            UIKit.Stretch((RectTransform)screen.scroll.transform, 0f, 0f, 0f, 60f);
+            UIKit.Stretch((RectTransform)screen.scroll.transform, 0f, 0f, 0f, TabHeight + BlurbHeight + 16f);
             VerticalLayoutGroup layout = UIKit.Layout<VerticalLayoutGroup>(screen.list, 8f, new RectOffset(2, 2, 2, 2));
             layout.childForceExpandWidth = true;
 
@@ -151,24 +195,56 @@ namespace Portfolio.Heroes.UI
             return screen;
         }
 
-        /// <summary>A tab over the list: a card with a title, bright while it is the one shown.</summary>
-        private static Image Tab(RectTransform parent, string name, string text, System.Action onClick)
+        /// <summary>A tab over the list: a card with a picture over a short name, bright while it is the one shown.</summary>
+        private static Image Tab(RectTransform parent, string name, string text, Sprite picture, System.Action onClick, Color? tint = null)
         {
             Button button = UIKit.CardButton(parent, name, onClick);
             var card = (Image)button.targetGraphic;
-            TextMeshProUGUI label = UIKit.Title(card.transform, "Label", text, 22f, UIKit.Ink);
-            UIKit.Stretch((RectTransform)label.transform, 12f, 2f, 12f, 2f);
+            RectTransform content = UIKit.Content(card, 0f);
+            Image portrait = UIKit.PortraitFrame(content, "Picture", picture);
+            portrait.color = tint ?? Color.white;
+            UIKit.Pin((RectTransform)portrait.transform.parent.parent, new Vector2(0.5f, 1f), new Vector2(0f, -1f), new Vector2(46f, 46f));
+            TextMeshProUGUI label = UIKit.Title(content, "Label", text, 22f, UIKit.Ink);
+            RectTransform labelRect = (RectTransform)label.transform;
+            labelRect.anchorMin = new Vector2(0f, 0f);
+            labelRect.anchorMax = new Vector2(1f, 0f);
+            labelRect.pivot = new Vector2(0.5f, 0f);
+            labelRect.offsetMin = new Vector2(2f, 0f);
+            labelRect.offsetMax = new Vector2(-2f, 28f);
             UIKit.FitLine(label, 22f, 14f);
-            label.characterSpacing = 2f;
+            label.characterSpacing = 1f;
             return card;
         }
 
         private HeroesCampaign Campaign => Manager.Campaign as HeroesCampaign;
 
-        /// <summary>Opens on the chapters or the skirmish maps, with the next chapter to play already picked.</summary>
+        /// <summary>
+        /// Opens on the skirmish maps, or on the campaign of the chapter begun last, with its next chapter to play already
+        /// picked.
+        /// </summary>
         public void Show(bool skirmishMaps = false)
         {
+            HeroesCampaign campaign = Campaign;
+            ShowPage(skirmishMaps, campaign != null ? campaign.ArcOf(Manager.Progress.LastChapter) : 0);
+        }
+
+        /// <summary>
+        /// Opens on the campaign <paramref name="campaignArc"/> (a tab of the screen), its next chapter picked, or the
+        /// chapter <paramref name="chapter"/> of it when one is given (the tours look at a locked one that way).
+        /// </summary>
+        public void ShowCampaign(int campaignArc, int chapter = -1)
+        {
+            ShowPage(false, campaignArc);
+            if (chapter >= 0 && cards.ContainsKey(chapter))
+            {
+                Pick(chapter);
+            }
+        }
+
+        private void ShowPage(bool skirmishMaps, int campaignArc)
+        {
             skirmish = skirmishMaps;
+            arc = Mathf.Clamp(campaignArc, 0, Mathf.Max(0, arcTabs.Count - 1));
             picked = -1;
             Open();
             HeroesSettings options = Manager.Options;
@@ -187,25 +263,30 @@ namespace Portfolio.Heroes.UI
             }
         }
 
-        private void Switch(bool toSkirmish)
+        private void Switch(bool toSkirmish, int toArc)
         {
-            if (skirmish == toSkirmish)
+            if (skirmish == toSkirmish && (toSkirmish || arc == toArc))
             {
                 return;
             }
             skirmish = toSkirmish;
+            arc = toArc;
             picked = -1;
             Fill();
         }
 
-        /// <summary>Lists the chapters in their order, or the maps that can be played on their own.</summary>
+        /// <summary>Lists the chapters of the campaign shown in their order, or the maps that can be played on their own.</summary>
         private void Fill()
         {
             HeroesCampaign campaign = Campaign;
-            Heading.text = Words.T(skirmish ? "Skirmish" : campaign != null ? campaign.Title : "Campaign");
-            UIKit.Select(chaptersTab, !skirmish);
+            HeroesCampaign.Arc story = campaign != null ? campaign.GetArc(arc) : null;
+            Heading.text = Words.T(skirmish ? "Skirmish" : story != null ? story.title : "Campaign");
+            for (int i = 0; i < arcTabs.Count; i++)
+            {
+                UIKit.Select(arcTabs[i], !skirmish && i == arc);
+                SetTabInk(arcTabs[i], !skirmish && i == arc);
+            }
             UIKit.Select(skirmishTab, skirmish);
-            SetTabInk(chaptersTab, !skirmish);
             SetTabInk(skirmishTab, skirmish);
             UIKit.Clear(list);
             cards.Clear();
@@ -214,7 +295,9 @@ namespace Portfolio.Heroes.UI
                 return;
             }
             HeroesProgress progress = Manager.Progress;
-            List<int> indices = skirmish ? campaign.Skirmishes : campaign.Chapters;
+            UIKit.Written(blurb, skirmish ? "Single maps against the computer, as large, rich and dangerous as the settings make them." : story.description);
+            arcStars.text = skirmish ? "" : $"{UIKit.Glyph("star")} {campaign.StarsOf(arc, progress)} / {campaign.MaxStarsOf(arc)}";
+            List<int> indices = skirmish ? campaign.Skirmishes : campaign.ChaptersOf(arc);
             for (int i = 0; i < indices.Count; i++)
             {
                 int index = indices[i];
@@ -225,19 +308,7 @@ namespace Portfolio.Heroes.UI
                 }
             }
             // The first chapter still to be won is the one offered.
-            int offer = -1;
-            foreach (int index in indices)
-            {
-                if (skirmish || campaign.IsUnlocked(index, progress) && progress.Stars(index) == 0)
-                {
-                    offer = index;
-                    break;
-                }
-            }
-            if (offer < 0 && indices.Count > 0)
-            {
-                offer = indices[0];
-            }
+            int offer = skirmish ? indices.Count > 0 ? indices[0] : -1 : campaign.ChapterToPlay(arc, progress);
             if (offer >= 0)
             {
                 Pick(offer);
@@ -248,7 +319,7 @@ namespace Portfolio.Heroes.UI
         private static void SetTabInk(Image tab, bool on)
         {
             TextMeshProUGUI label = tab.GetComponentInChildren<TextMeshProUGUI>();
-            label.color = on ? UIKit.Gold : UIKit.Dim;
+            label.color = on ? UIKit.Gold : UIKit.Ink;
         }
 
         /// <summary>
@@ -371,7 +442,9 @@ namespace Portfolio.Heroes.UI
                                  map.players.Count, Words.T(Amount(map.treasure, "treasure|scarce", "treasure|fair", "treasure|rich")),
                                  Words.T(Amount(map.monsters, "armies|few", "armies|some", "armies|many", "armies|hordes of"))) + "\n\n"
                 : "";
-            story.text = $"{intro}<b>{Words.T(skirmish ? "To win" : "Your task")}:</b> {Words.T(level.Goal)}";
+            // What loses the chapter, besides losing everything, under the task.
+            string beware = !string.IsNullOrEmpty(level.Loss) ? $"\n<b>{Words.T("Beware")}:</b> {Words.T(level.Loss)}" : "";
+            story.text = $"{intro}<b>{Words.T(skirmish ? "To win" : "Your task")}:</b> {Words.T(level.Goal)}{beware}";
             storyScroll.verticalNormalizedPosition = 1f;
 
             Realms(map);
@@ -404,11 +477,15 @@ namespace Portfolio.Heroes.UI
             UIKit.Enable(play, true);
         }
 
-        /// <summary>The realms of a map as chips: the picture of each one's town, its name, and who plays it.</summary>
+        /// <summary>
+        /// The realms of a map as chips: the picture of each one's town, its name, and who plays it (a computer realm
+        /// on the player's side says it is an ally).
+        /// </summary>
         private void Realms(MapSpec map)
         {
             UIKit.Clear(realms);
             int count = map.players.Count;
+            int team = map.players.Find(seat => seat.human)?.team ?? -1;
             float width = Mathf.Min(250f, (realms.rect.width > 0f ? realms.rect.width : 640f) / Mathf.Max(1, count) - 10f);
             for (int i = 0; i < count; i++)
             {
@@ -426,9 +503,10 @@ namespace Portfolio.Heroes.UI
                 titleRect.offsetMin = new Vector2(58f, 0f);
                 titleRect.offsetMax = new Vector2(-2f, -2f);
                 UIKit.FitLine(title, 18f, 11f);
+                bool ally = !player.human && player.team == team;
                 string who = player.human ? Words.T(Land.FactionName(player.faction))
-                    : $"{Words.T(Land.FactionName(player.faction))}, {Words.T(Skill(player.aiLevel))}";
-                TextMeshProUGUI line = UIKit.Label(content, "Who", who, 15f, UIKit.Dim, TextAlignmentOptions.TopLeft);
+                    : $"{Words.T(Land.FactionName(player.faction))}, {Words.T(ally ? "ally" : Skill(player.aiLevel))}";
+                TextMeshProUGUI line = UIKit.Label(content, "Who", who, 15f, ally ? UIKit.Good : UIKit.Dim, TextAlignmentOptions.TopLeft);
                 RectTransform lineRect = (RectTransform)line.transform;
                 lineRect.anchorMin = new Vector2(0f, 0f);
                 lineRect.anchorMax = new Vector2(1f, 0.5f);
@@ -466,6 +544,11 @@ namespace Portfolio.Heroes.UI
             }
             int level = picked;
             base.Close();
+            if (!skirmish)
+            {
+                // The campaign screen opens on this chapter's campaign next time.
+                Manager.Progress.RememberChapter(level);
+            }
             // A game alone: whatever hot seat there was is over.
             Manager.EndLocalMatch();
             Manager.BeginScenario(null, level);

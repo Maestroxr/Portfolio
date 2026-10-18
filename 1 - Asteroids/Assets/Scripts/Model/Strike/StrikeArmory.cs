@@ -37,6 +37,35 @@ namespace Portfolio.Asteroids
         public const int EnergySellAmount = 25;
         public const int EnergySellPrice = 5000;
 
+        // ------------------------------------------------------------------ the armory's equipment
+
+        /// <summary>Share of every hit (shields and energy alike) one plate of armor takes off.</summary>
+        public const float ArmorPerPlate = 0.1f;
+
+        /// <summary>Seconds the repair drone takes for one point of energy (firing or not, on every difficulty).</summary>
+        public const float RepairDroneInterval = 2.5f;
+
+        /// <summary>A repair kit is used by itself when the energy drops below this (and is above 0).</summary>
+        public const float RepairKitThreshold = 25f;
+
+        /// <summary>Energy one repair kit restores.</summary>
+        public const int RepairKitEnergy = 40;
+
+        /// <summary>Multiplier of the ship's top speed with the afterburner.</summary>
+        public const float AfterburnerSpeed = 1.15f;
+
+        /// <summary>Range (m) from which pickups drift to a ship with the salvage magnet.</summary>
+        public const float SalvageMagnetRange = 14f;
+
+        /// <summary>The wingman drones: seconds between two rounds of each, a round's damage and speed, and how far a drone looks for a target.</summary>
+        public const float WingmanInterval = 0.2f;
+        public const float WingmanDamage = 1.5f;
+        public const float WingmanShotSpeed = 30f;
+        public const float WingmanRange = 16f;
+
+        /// <summary>How many values <see cref="StrikeItem"/> has (the largest plus one): the size of every per-item table.</summary>
+        public static readonly int ItemCount = CountItems();
+
         private static StrikeItemInfo[] catalog;
 
         /// <summary>Every item in enum order.</summary>
@@ -261,8 +290,36 @@ namespace Portfolio.Asteroids
                 Item(StrikeItem.MegaBomb, "CBU-80 Guillotine Megabomb", "Clears every enemy shot and hits everything on screen.", 32250, 5),
                 Item(StrikeItem.EnergyModule, "Energy Module", "Restores up to 25 energy. Priced per point.", 400, 0),
                 Item(StrikeItem.PhaseShield, "SA17 Ares Phase Shield", "Absorbs 100 damage before the energy is touched.", 78500, 5),
-                Item(StrikeItem.IonScanner, "Ion Scanner", "Shows the health of the boss.", 10000, 1)
+                Item(StrikeItem.IonScanner, "Ion Scanner", "Shows the health of the boss.", 10000, 1),
+                Item(StrikeItem.FlakCannon, "FK-7 Hailstorm Flak Cannon", "Shells that burst into shrapnel when aircraft come close. Air only.", 135000, 20),
+                Item(StrikeItem.ClusterBombs, "CBU-24 Scatterfall Cluster Bombs", "A canister that scatters six bomblets over the ground. Ground only.", 236000, 20),
+                Item(StrikeItem.Napalm, "NP-4 Inferno Napalm", "Canisters that set the ground ablaze for three seconds. Ground only.", 298000, 20),
+                Item(StrikeItem.SwarmRockets, "SR-12 Locust Swarm Rockets", "Six small rockets that find their own targets. Air and ground.", 465000, 20),
+                Item(StrikeItem.ArcLightning, "ZX-5 Tempest Arc Lightning", "A spark whose lightning jumps to four more targets. Air and ground.", 640000, 20),
+                Item(StrikeItem.RailGun, "HV-88 Vindicator Rail Gun", "A slug that goes through everything in its line. Air and ground.", 1180000, 20),
+                Item(StrikeItem.ArmorPlating, "Ceramite Armor Plating", "Each plate takes 10% off every hit. Up to three.", 120000, 3),
+                Item(StrikeItem.RepairDrone, "MR-2 Nanite Repair Drone", "Repairs 1 energy every 2.5 seconds, firing or not, on every difficulty.", 380000, 1),
+                Item(StrikeItem.Afterburner, "AB-6 Afterburner", "The ship flies 15% faster.", 88000, 1),
+                Item(StrikeItem.SalvageMagnet, "Salvage Magnet", "Pickups and credits drift to the ship from far away.", 55000, 1),
+                Item(StrikeItem.WingmanDrones, "WD-2 Wingman Drones", "Two drones circle the ship and fire at the nearest enemy.", 470000, 1),
+                Item(StrikeItem.RepairKit, "Emergency Repair Kit", "Restores 40 energy by itself when the energy drops below 25.", 42000, 3)
             };
+        }
+
+        private static int CountItems()
+        {
+            int largest = 0;
+            foreach (StrikeItem item in (StrikeItem[])Enum.GetValues(typeof(StrikeItem)))
+            {
+                largest = Math.Max(largest, (int)item);
+            }
+            return largest + 1;
+        }
+
+        /// <summary>The multiplier of every hit taken by a ship with <paramref name="plates"/> plates of armor (10% off each, 3 at most).</summary>
+        public static float ArmorFactor(int plates)
+        {
+            return 1f - ArmorPerPlate * Math.Max(0, Math.Min(plates, Info(StrikeItem.ArmorPlating).Max));
         }
 
         private static StrikeItemInfo Item(StrikeItem item, string title, string description, int price, int max, bool notForSale = false)
@@ -290,7 +347,7 @@ namespace Portfolio.Asteroids
     /// </summary>
     public class StrikeLoadout
     {
-        private readonly int[] counts = new int[(int)StrikeItem.IonScanner + 1];
+        private readonly int[] counts = new int[StrikeArmory.ItemCount];
 
         /// <summary>Anything of the loadout changed (raised by the rules after a change, and by <see cref="NotifyChanged"/>).</summary>
         public event Action Changed;
@@ -379,18 +436,43 @@ namespace Portfolio.Asteroids
         }
 
 
-        /// <summary>The special weapons owned, in cycling (enum) order.</summary>
+        /// <summary>The special weapons owned, in cycling order (<see cref="StrikeWeaponRules.Specials"/>: enum order).</summary>
         public List<StrikeItem> OwnedSpecials()
         {
             var specials = new List<StrikeItem>();
-            for (var item = StrikeWeaponRules.FirstSpecial; item <= StrikeWeaponRules.LastSpecial; item++)
+            foreach (StrikeItem item in StrikeWeaponRules.Specials)
             {
-                if (StrikeWeaponRules.IsSpecial(item) && Count(item) > 0)
+                if (Count(item) > 0)
                 {
                     specials.Add(item);
                 }
             }
             return specials;
+        }
+
+
+        /// <summary>The multiplier of every hit the pilot takes with the armor plating owned.</summary>
+        public float ArmorFactor => StrikeArmory.ArmorFactor(Count(StrikeItem.ArmorPlating));
+
+
+        /// <summary>
+        /// Whether a repair kit should be used now: one is left and the energy is above 0 but below
+        /// <see cref="StrikeArmory.RepairKitThreshold"/>.
+        /// </summary>
+        public bool WantsRepairKit => Count(StrikeItem.RepairKit) > 0 && Energy > 0f && Energy < StrikeArmory.RepairKitThreshold;
+
+
+        /// <summary>Uses one repair kit: +<see cref="StrikeArmory.RepairKitEnergy"/> energy (up to full). False when none is left.</summary>
+        public bool UseRepairKit()
+        {
+            if (Count(StrikeItem.RepairKit) <= 0)
+            {
+                return false;
+            }
+            RemoveItem(StrikeItem.RepairKit);
+            Energy = Math.Min(StrikeRules.MaxEnergy, Energy + StrikeArmory.RepairKitEnergy);
+            NotifyChanged();
+            return true;
         }
 
 

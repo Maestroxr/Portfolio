@@ -90,7 +90,7 @@ namespace Portfolio.Asteroids.Tests
                 }
             }
             Assert.That(air, Is.EqualTo(StrikeUnitRules.AirCount));
-            Assert.That(ground, Is.EqualTo(StrikeUnitRules.GroundCount), "The eleven ground units of the table plus the crate.");
+            Assert.That(ground, Is.EqualTo(StrikeUnitRules.GroundCount), "Every ground unit of the table (the crate included).");
             StrikeUnitInfo dart = StrikeUnitRules.Info(StrikeUnit.Dart);
             Assert.That((dart.Health, dart.Radius, dart.Bounty, dart.Speed), Is.EqualTo((4f, 0.9f, 150, 11f)));
             StrikeUnitInfo depot = StrikeUnitRules.Info(StrikeUnit.Depot);

@@ -13,8 +13,12 @@ namespace Portfolio.BoardGames
     /// backgammon), against a clock, with the computer in the second seat when the host asks for an opponent, and for
     /// backgammon with or without the doubling cube. The server seats the table (Server/Lib.cs), every client starts
     /// the same game from it (BoardGamesManager.Online.cs), and from then on the table changes only by the actions of
-    /// the log: the decisions of the person here are sent there instead of into the rules (<see cref="IBoardCommands"/>),
+    /// the log: the decisions of the people here are sent there instead of into the rules (<see cref="IBoardCommands"/>),
     /// the host's client sends the computer's, and every action is applied when it arrives, in the order of the server.
+    /// The people here are the player and whoever joined at the same device (the base's companions): each plays a seat
+    /// of their own (<see cref="LockstepOnlineController{TCommand}.TableSeats"/>), and a command may be sent for whichever
+    /// of their seats the table waits for. With two seats a party of two would fill the table, and two people at one
+    /// device playing each other is local play: the server does not start such a room (Server/Lib.cs).
     /// </summary>
     public sealed class BoardGamesOnlineController : LockstepOnlineController<BoardCommand>, IBoardCommands
     {
@@ -25,6 +29,9 @@ namespace Portfolio.BoardGames
 
         private RoomOptionSpec[] optionSpecs;
 
+        /// <summary>The table seat of the player at this device themselves in the game that started last, or -1.</summary>
+        private int ownTableSeat = -1;
+
         public BoardGamesManager Games => BaseManager as BoardGamesManager;
 
         public override int MaxPlayersLimit => 2;
@@ -32,6 +39,39 @@ namespace Portfolio.BoardGames
         public override int MinPlayersLimit => 2;
 
         /// <summary>The rule sets a room can play: one level per rule set (the number is the <see cref="RuleSet"/>).</summary>
+        protected override CampaignProgress CreateOnlineProgress(IStorageStrategy storage)
+        {
+            return new BoardGamesProgress(storage, GameType.BoardGames);
+        }
+
+        /// <summary>
+        /// A game played online counts among the games, wins and draws. A room plays a rule set, not a level of the
+        /// campaign: nothing to unlock. A draw by the rules is the table's to say: the room places nobody first then (every
+        /// member is second), so the places tell it only of a game ended early, ranked by worth, where equal worth shares
+        /// the first place. The table is still there when the room finishes.
+        /// </summary>
+        protected override void RecordOnlineResult(RoomInfo room, RoomMemberInfo me)
+        {
+            BoardTable table = Games != null ? Games.Table : null;
+            bool drawn = table != null && table.IsOver && table.WinnerSeat < 0 && table.Game.Reason != EndReason.CalledOff;
+            if (!drawn)
+            {
+                int first = 0;
+                foreach (RoomMemberInfo member in Server.Members)
+                {
+                    if (member.Place == 1)
+                    {
+                        first++;
+                    }
+                }
+                drawn = first > 1;
+            }
+            ((BoardGamesProgress)OnlineProgress).RecordGame(me.Place == 1 && !drawn, drawn);
+        }
+
+        /// <summary>Every rule set is open online, so an admin's tournaments offer the same.</summary>
+        public override IReadOnlyList<RoomLevelChoice> AllLevelChoices => LevelChoices;
+
         public override IReadOnlyList<RoomLevelChoice> LevelChoices
         {
             get
@@ -62,9 +102,9 @@ namespace Portfolio.BoardGames
         // ------------------------------------------------------------------ the room
 
         /// <summary>
-        /// The server seated the table: the manager gets it, then loads the rule set of the room and starts the game.
-        /// Every new game of a room swaps who plays the side that moves first (White in chess and backgammon, where the
-        /// opening roll then decides who starts).
+        /// The server seated the table: the manager gets it with the seats played at this device, then loads the rule set
+        /// of the room and starts the game. Every new game of a room swaps who plays the side that moves first (White in
+        /// chess and backgammon, where the opening roll then decides who starts).
         /// </summary>
         protected override bool PrepareTable(LockstepSetup setup)
         {
@@ -72,6 +112,14 @@ namespace Portfolio.BoardGames
             if (manager == null || setup.Seats.Count < 2)
             {
                 return false;
+            }
+            ownTableSeat = -1;
+            for (int i = 0; i < setup.Seats.Count; i++)
+            {
+                if (setup.Seats[i].IsHuman && Server.Identity.HasValue && setup.Seats[i].Player == Server.Identity.Value)
+                {
+                    ownTableSeat = i;
+                }
             }
             var table = new TableSetup
             {
@@ -92,8 +140,28 @@ namespace Portfolio.BoardGames
                 };
             }
             SaveData saved = setup.Save != null ? setup.Save.Read<SaveData>() : null;
-            manager.PrepareOnlineTable(table, setup.TableSeat, setup.Seed, saved);
+            manager.PrepareOnlineTable(table, setup.TableSeats, setup.Seed, saved);
             return true;
+        }
+
+        /// <summary>
+        /// Whether table seat <paramref name="tableSeat"/> is played by the player at this device themselves, and not by a
+        /// player who joined at this device (whose seat <see cref="LockstepOnlineController{TCommand}.IsLocalTableSeat"/> knows
+        /// too). It is read when the table is seated, so the results still know it once the room let its seats go.
+        /// </summary>
+        public bool IsOwnTableSeat(int tableSeat)
+        {
+            return tableSeat >= 0 && tableSeat == ownTableSeat;
+        }
+
+        /// <summary>
+        /// Before a player at this device acts for table seat <paramref name="tableSeat"/> after another player here did: the
+        /// base shows the hand-over screen when the party asked for one in the lobby, else it calls <paramref name="ready"/>
+        /// at once (<see cref="OnlineGameController.HandOver"/>).
+        /// </summary>
+        public void HandOverSeat(int tableSeat, System.Action ready, string detail = null)
+        {
+            HandOver(RoomSeatOf(tableSeat), ready, detail);
         }
 
         /// <summary>The two seats of a saved game of any of the three games, for a room opened from it (null when it is no whole game).</summary>
@@ -131,11 +199,12 @@ namespace Portfolio.BoardGames
             payload = command.Payload();
         }
 
-        // ------------------------------------------------------------------ what the player may do
+        // ------------------------------------------------------------------ what the players here may do
 
+        /// <summary>Whether a command for <paramref name="seat"/>, a seat played at this device, may go to the log now.</summary>
         private bool MaySend(int seat)
         {
-            return IsPlaying && seat == TableSeat && !AwaitingEcho && Games != null && Games.Table != null && !Games.Table.IsOver;
+            return IsPlaying && IsLocalTableSeat(seat) && !AwaitingEcho && Games != null && Games.Table != null && !Games.Table.IsOver;
         }
 
         public bool Send(BoardCommand command)

@@ -1,0 +1,72 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: River1
+  m_Shader: {fileID: 4800000, guid: 2d5402e88d8d00b4ba6bf238c7b558db, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _AltTex:
+        m_Texture: {fileID: 2800000, guid: e127b55938927944e852a11aa2bf0655, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _BaseTex:
+        m_Texture: {fileID: 2800000, guid: 84d6fd933edbbe246920d760fde77030, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _ColorMap:
+        m_Texture: {fileID: 2800000, guid: a85470f0260ab28499cb38950b2221fb, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _LiquidTex:
+        m_Texture: {fileID: 2800000, guid: a10cd1ef9d90a43479891e349c5b372f, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Masks:
+        m_Texture: {fileID: 2800000, guid: fba591382f4ce0b449456657249fd8e4, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _PavedTex:
+        m_Texture: {fileID: 2800000, guid: bc81e45c21473354787e3bfc6c3d2d19, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _RoadTex:
+        m_Texture: {fileID: 2800000, guid: 5ce10e9c27b843c4f8163c00fb91b2d7, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _RockTex:
+        m_Texture: {fileID: 2800000, guid: 2318f9ef9c26a2248b13e20b5a91fc10, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _DetailSize: 5
+    - _Gloss: 0.5
+    - _Waves: 0.5
+    m_Colors:
+    - _CrackEmission: {r: 1.5, g: 0.35, b: 1.9, a: 1}
+    - _DeepColor: {r: 0.07058824, g: 0.15686275, b: 0.039215688, a: 1}
+    - _Edges: {r: 0.3, g: 0.25, b: 0.7, a: 0.6}
+    - _FoamColor: {r: 0.8, g: 1, b: 0.45, a: 0.5}
+    - _LiquidEmission: {r: 0.45, g: 1.3, b: 0.15, a: 1}
+    - _Ranges: {r: 1.5, g: 6, b: 3, a: 3}
+    - _ShallowColor: {r: 0.29803923, g: 0.5411765, b: 0.11764706, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

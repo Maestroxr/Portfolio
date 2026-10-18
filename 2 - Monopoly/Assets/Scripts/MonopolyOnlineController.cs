@@ -14,7 +14,9 @@ namespace Portfolio.Monopoly
     /// (MonopolyGameManager.Online.cs), and from then on the match changes only by the actions of the log: the commands of
     /// the interface are sent there instead of into the rules engine (<see cref="IMonopolyCommands"/>), the host's client
     /// sends the moves of the computer players, and every action is applied when it arrives, in the order and with the
-    /// dice of the server.
+    /// dice of the server. Several people may play at this device (the companions who signed in here hold seats of
+    /// their own, <see cref="LockstepOnlineController{TCommand}.TableSeats"/>): the commands of every seat played here go
+    /// through this one connection, and the manager says which of them acts.
     /// </summary>
     public class MonopolyOnlineController : LockstepOnlineController<MatchCommand>, IMonopolyCommands
     {
@@ -34,7 +36,7 @@ namespace Portfolio.Monopoly
         /// The modes with rules of their own. The custom rules are the house rules of one device, which the other
         /// players do not have.
         /// </summary>
-        public override IReadOnlyList<RoomLevelChoice> LevelChoices
+        public override IReadOnlyList<RoomLevelChoice> AllLevelChoices
         {
             get
             {
@@ -63,6 +65,18 @@ namespace Portfolio.Monopoly
         {
             int computers = room.Option(RoomOptions.ComputersOption, 0);
             return computers > 0 ? L.F("{0}, computer players", base.DescribeRoom(room)) : base.DescribeRoom(room);
+        }
+
+        protected override CampaignProgress CreateOnlineProgress(IStorageStrategy storage)
+        {
+            return new MonopolyProgress(storage, GameType.Monopoly);
+        }
+
+        /// <summary>A game played online: counted, and a win of the mode with its richest net worth, like a game on the device.</summary>
+        protected override void RecordOnlineResult(RoomInfo room, RoomMemberInfo me)
+        {
+            bool won = me.Place == 1;
+            ((MonopolyProgress)OnlineProgress).RecordMatch(room.Level, won, won ? 1 : 0, (int)System.Math.Min(me.Score, int.MaxValue));
         }
 
         protected override void Start()
@@ -109,7 +123,7 @@ namespace Portfolio.Monopoly
             var table = new MonopolyGameManager.OnlineTable
             {
                 Setup = new MatchSetup(),
-                LocalSeat = setup.TableSeat,
+                LocalSeats = setup.TableSeats,
                 Seed = setup.Seed,
                 Saved = setup.Save
             };
@@ -153,13 +167,24 @@ namespace Portfolio.Monopoly
             payload = command.Payload();
         }
 
-        /// <summary>The local player answers the offer on the table.</summary>
+        /// <summary>The player at this device the offer on the table was made to answers it.</summary>
         internal void AnswerTrade(int seat, bool accept)
         {
             if (Monopoly != null && Monopoly.OnlineAnswering(seat) && !AwaitingEcho)
             {
                 Submit(MatchCommand.Answer(seat, accept), true);
             }
+        }
+
+        /// <summary>
+        /// Hands the device over to the player here who plays table seat <paramref name="seat"/> before they act, then
+        /// calls <paramref name="ready"/>: the base's hand-over screen in the colour of the seat's token and panel
+        /// (<paramref name="color"/>), which does nothing unless several people play here and the party asked for it
+        /// (<see cref="OnlineGameController.HandOver"/>).
+        /// </summary>
+        internal void HandOverTo(int seat, Color color, System.Action ready)
+        {
+            HandOver(RoomSeatOf(seat), ready, null, color);
         }
 
         private bool Deciding(int seat)
@@ -294,11 +319,14 @@ namespace Portfolio.Monopoly
             if (Managing(seat) && Match.ActiveCount > 1)
             {
                 Monopoly.MonopolyUI.Manage.Close();
-                Monopoly.MonopolyUI.Trade.Show(Match, seat, this, Monopoly.MonopolyUI.TokenSprite, true);
+                Monopoly.MonopolyUI.Trade.Show(Match, seat, this, Monopoly.MonopolyUI.TokenSprite, other => !Monopoly.IsLocalSeat(other));
             }
         }
 
-        /// <summary>The local player puts an offer on the table: the other side answers on their device, the host for a computer player.</summary>
+        /// <summary>
+        /// A player here puts an offer on the table: the other side answers on their device (here too, when they sit at
+        /// this one), the host for a computer player.
+        /// </summary>
         public void ProposeTrade(TradeOffer offer)
         {
             if (offer == null || !Managing(offer.from) || !Match.CanTrade(offer, out _))

@@ -13,12 +13,12 @@ namespace Portfolio.Asteroids.Server
 {
     public sealed partial class RemoteReducers : RemoteBase
     {
-        public delegate void StartTournamentHandler(ReducerEventContext ctx);
+        public delegate void StartTournamentHandler(ReducerEventContext ctx, ulong tournamentId);
         public event StartTournamentHandler? OnStartTournament;
 
-        public void StartTournament()
+        public void StartTournament(ulong tournamentId)
         {
-            conn.InternalCallReducer(new Reducer.StartTournament());
+            conn.InternalCallReducer(new Reducer.StartTournament(tournamentId));
         }
 
         public bool InvokeStartTournament(ReducerEventContext ctx, Reducer.StartTournament args)
@@ -36,7 +36,8 @@ namespace Portfolio.Asteroids.Server
                 return false;
             }
             OnStartTournament(
-                ctx
+                ctx,
+                args.TournamentId
             );
             return true;
         }
@@ -48,6 +49,18 @@ namespace Portfolio.Asteroids.Server
         [DataContract]
         public sealed partial class StartTournament : Reducer, IReducerArgs
         {
+            [DataMember(Name = "tournament_id")]
+            public ulong TournamentId;
+
+            public StartTournament(ulong TournamentId)
+            {
+                this.TournamentId = TournamentId;
+            }
+
+            public StartTournament()
+            {
+            }
+
             string IReducerArgs.ReducerName => "start_tournament";
         }
     }

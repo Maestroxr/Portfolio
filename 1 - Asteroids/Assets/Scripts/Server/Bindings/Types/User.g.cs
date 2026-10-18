@@ -34,6 +34,10 @@ namespace Portfolio.Asteroids.Server
         public uint Logins;
         [DataMember(Name = "seconds_online")]
         public ulong SecondsOnline;
+        [DataMember(Name = "look")]
+        public uint Look;
+        [DataMember(Name = "level")]
+        public uint Level;
 
         public User(
             SpacetimeDB.Identity Identity,
@@ -45,7 +49,9 @@ namespace Portfolio.Asteroids.Server
             SpacetimeDB.Timestamp LastLoginAt,
             SpacetimeDB.Timestamp LastSeenAt,
             uint Logins,
-            ulong SecondsOnline
+            ulong SecondsOnline,
+            uint Look,
+            uint Level
         )
         {
             this.Identity = Identity;
@@ -58,6 +64,8 @@ namespace Portfolio.Asteroids.Server
             this.LastSeenAt = LastSeenAt;
             this.Logins = Logins;
             this.SecondsOnline = SecondsOnline;
+            this.Look = Look;
+            this.Level = Level;
         }
 
         public User()

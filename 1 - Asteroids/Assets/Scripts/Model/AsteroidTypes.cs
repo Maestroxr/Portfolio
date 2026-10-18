@@ -14,7 +14,13 @@ namespace Portfolio.Asteroids
         /// <summary>Ice: shatters into a spray of fast shards.</summary>
         Ice = 3,
         /// <summary>Void crystal: releases shards that hunt the ship.</summary>
-        Crystal = 4
+        Crystal = 4,
+        /// <summary>Armoured iron: shots do half damage, blasts crack it.</summary>
+        Metal = 5,
+        /// <summary>Living rock: splits in three, and its small fragments grow back when left alone.</summary>
+        Hydra = 6,
+        /// <summary>Wreckage of dead ships: holds salvage; a wreck with a fuel tank explodes.</summary>
+        Wreck = 7
     }
 
 
@@ -31,7 +37,15 @@ namespace Portfolio.Asteroids
         Blaster = 0,
         Laser = 1,
         Scatter = 2,
-        Missiles = 3
+        Missiles = 3,
+        /// <summary>The Arc Caster: a spark that chains lightning to the targets around the one it hits.</summary>
+        Arc = 4,
+        /// <summary>The Rail Driver: a slow, very fast slug that goes through everything in its line.</summary>
+        Rail = 5,
+        /// <summary>The Flak Burster: shells that burst into shrapnel near a target or at the end of their range.</summary>
+        Flak = 6,
+        /// <summary>The Ion Wave: a slow crescent that grows as it flies and passes through what it hits.</summary>
+        Wave = 7
     }
 
 
@@ -45,7 +59,11 @@ namespace Portfolio.Asteroids
         /// <summary>Slows everything but the ship.</summary>
         Chrono = 2,
         /// <summary>Two drones orbit the ship and fire at the nearest target.</summary>
-        Drones = 3
+        Drones = 3,
+        /// <summary>Phase Rounds: every projectile passes through two more targets.</summary>
+        Piercing = 4,
+        /// <summary>Aegis Barrier: the shield takes every hit and the hull none.</summary>
+        Aegis = 5
     }
 
 
@@ -61,7 +79,13 @@ namespace Portfolio.Asteroids
         /// <summary>Destroy the sector's boss.</summary>
         Boss = 3,
         /// <summary>Waves without end; the score and the wave reached are the result.</summary>
-        Endless = 4
+        Endless = 4,
+        /// <summary>Bring a number of freighters across the sector, one after the other; losing one fails the mission.</summary>
+        Escort = 5,
+        /// <summary>Keep a station standing until the timer runs out.</summary>
+        Defend = 6,
+        /// <summary>Destroy a number of marked enemies.</summary>
+        Hunt = 7
     }
 
 
@@ -74,7 +98,19 @@ namespace Portfolio.Asteroids
         GravityWell = 3,
         Saucer = 4,
         Wasp = 5,
-        SupplyPod = 6
+        SupplyPod = 6,
+        /// <summary>A wall of fire from the dying star sweeps across the sector after a warning.</summary>
+        SolarFlare = 7,
+        /// <summary>A drifting ion cloud: it slows the ship, drains its shield and calls lightning.</summary>
+        IonStorm = 8,
+        /// <summary>An armoured gun platform.</summary>
+        Sentry = 9,
+        /// <summary>A heavy ship that crosses the sector sowing mines.</summary>
+        Minelayer = 10,
+        /// <summary>An enemy that blinks out and in around its prey.</summary>
+        Stalker = 11,
+        /// <summary>A raider fighter that goes for freighters and stations first.</summary>
+        Corsair = 12
     }
 
 
@@ -95,7 +131,23 @@ namespace Portfolio.Asteroids
         /// <summary>Strike: a laser tower's beam (<see cref="EnemyBeam"/>).</summary>
         Beam = 8,
         /// <summary>Strike: a mine that drifts down with a wobble (a shot: not shootable, the megabomb clears it).</summary>
-        SkyMine = 9
+        SkyMine = 9,
+        /// <summary>A lightning strike: a ring warns where it lands, then it burns what stands there (<see cref="ZoneShot"/>).</summary>
+        Lightning = 10,
+        /// <summary>A straight laser that warns with a thin line, then burns along it (<see cref="FieldBeam"/>).</summary>
+        Lance = 11,
+        /// <summary>A laser that warns, then sweeps an arc as it burns (<see cref="FieldBeam"/>).</summary>
+        SweepBeam = 12,
+        /// <summary>A slow orb that bursts into a ring of plasma when its time runs out (<see cref="NovaOrb"/>).</summary>
+        NovaOrb = 13,
+        /// <summary>Strike: an artillery shell that bursts where it was aimed, its landing spot marked (<see cref="EnemyShell"/>).</summary>
+        Shell = 14,
+        /// <summary>Strike: a slow spore of the Hive that drifts after the nearest pilot for a while.</summary>
+        Spore = 15,
+        /// <summary>Strike: a thin crystal needle that speeds up.</summary>
+        Needle = 16,
+        /// <summary>Strike: a rocket that turns after the nearest pilot for a while.</summary>
+        Seeker = 17
     }
 
 
@@ -152,7 +204,7 @@ namespace Portfolio.Asteroids
 
 
     /// <summary>The numbers behind every kind and size of asteroid.</summary>
-    public static class AsteroidRules
+    public static partial class AsteroidRules
     {
         public static float Radius(AsteroidKind kind, AsteroidSize size)
         {
@@ -161,6 +213,7 @@ namespace Portfolio.Asteroids
             {
                 case AsteroidKind.Ice: return radius * 1.05f;
                 case AsteroidKind.Crystal: return radius * 1.1f;
+                case AsteroidKind.Hydra: return radius * 1.05f;
                 default: return radius;
             }
         }
@@ -173,6 +226,9 @@ namespace Portfolio.Asteroids
                 case AsteroidKind.Ore: return new[] { 2f, 4f, 7f }[index];
                 case AsteroidKind.Ice: return new[] { 1f, 2f, 3f }[index];
                 case AsteroidKind.Crystal: return new[] { 2f, 3f, 6f }[index];
+                case AsteroidKind.Metal: return new[] { 3f, 6f, 10f }[index];
+                case AsteroidKind.Hydra: return new[] { 1f, 2f, 3f }[index];
+                case AsteroidKind.Wreck: return new[] { 2f, 3f, 5f }[index];
                 default: return new[] { 1f, 2f, 4f }[index];
             }
         }
@@ -188,6 +244,9 @@ namespace Portfolio.Asteroids
                 case AsteroidKind.Magma: factor = 1.5f; break;
                 case AsteroidKind.Ice: factor = 1.2f; break;
                 case AsteroidKind.Crystal: factor = 2f; break;
+                case AsteroidKind.Metal: factor = 2f; break;
+                case AsteroidKind.Hydra: factor = 1.4f; break;
+                case AsteroidKind.Wreck: factor = 1.3f; break;
                 default: factor = 1f; break;
             }
             return Mathf.RoundToInt(points * factor / 5f) * 5;
@@ -222,6 +281,10 @@ namespace Portfolio.Asteroids
             {
                 return size == AsteroidSize.Large ? 4 : 3;
             }
+            if (kind == AsteroidKind.Hydra)
+            {
+                return size == AsteroidSize.Large ? 3 : roll < 0.3f ? 3 : 2;
+            }
             if (size == AsteroidSize.Large && roll < 0.3f)
             {
                 return 3;
@@ -246,6 +309,11 @@ namespace Portfolio.Asteroids
             {
                 return (int)size + 1;
             }
+            if (kind == AsteroidKind.Wreck)
+            {
+                // Salvage: the big pieces of a wreck hold some.
+                return (int)size;
+            }
             return 0;
         }
 
@@ -267,6 +335,9 @@ namespace Portfolio.Asteroids
                 case AsteroidKind.Magma: return "Magma Rock";
                 case AsteroidKind.Ice: return "Ice Rock";
                 case AsteroidKind.Crystal: return "Void Crystal";
+                case AsteroidKind.Metal: return "Iron Rock";
+                case AsteroidKind.Hydra: return "Hydra Rock";
+                case AsteroidKind.Wreck: return "Wreckage";
                 default: return "Rock";
             }
         }
@@ -280,6 +351,9 @@ namespace Portfolio.Asteroids
                 case AsteroidKind.Magma: return new Color(1f, 0.45f, 0.12f);
                 case AsteroidKind.Ice: return new Color(0.55f, 0.9f, 1f);
                 case AsteroidKind.Crystal: return new Color(0.85f, 0.35f, 1f);
+                case AsteroidKind.Metal: return new Color(0.75f, 0.82f, 0.95f);
+                case AsteroidKind.Hydra: return new Color(0.45f, 1f, 0.35f);
+                case AsteroidKind.Wreck: return new Color(1f, 0.6f, 0.3f);
                 default: return new Color(1f, 0.7f, 0.4f);
             }
         }

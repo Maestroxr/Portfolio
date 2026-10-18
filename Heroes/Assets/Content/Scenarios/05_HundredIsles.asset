@@ -27,6 +27,8 @@ MonoBehaviour:
       hero: -1
       buildings: 
       name: You
+      homeX: -1
+      homeY: -1
     - faction: 1
       human: 0
       aiLevel: 2
@@ -34,6 +36,8 @@ MonoBehaviour:
       hero: -1
       buildings: 
       name: The Drowned
+      homeX: -1
+      homeY: -1
     - faction: 2
       human: 0
       aiLevel: 1
@@ -41,13 +45,16 @@ MonoBehaviour:
       hero: -1
       buildings: 
       name: Reavers
+      homeX: -1
+      homeY: -1
     zonesPerPlayer: 1
     neutralTowns: 2
     treasure: 3
     monsters: 3
     water: 3
     theme: 2
-    themeTerrain: 0
+    themeTerrain: 2
+    themeShare: 70
     rules:
       victory: 0
       victoryValue: 0
@@ -58,10 +65,13 @@ MonoBehaviour:
       battleStyle: 0
     specials: []
     startingGold: 10000
+    woods: 0
   <Intro>k__BackingField: Two fleets and one narrow sea. Whoever holds the isles holds the road to the capital.
   <Outro>k__BackingField: The isles are quiet. The road to the capital lies open.
   <Goal>k__BackingField: Clear the isles of both claimants.
+  <Loss>k__BackingField: 
   <ThreeStarDays>k__BackingField: 48
   <TwoStarDays>k__BackingField: 70
   <IsSkirmish>k__BackingField: 0
   <MapPosition>k__BackingField: {x: 840, y: 480}
+  <Arc>k__BackingField: 0

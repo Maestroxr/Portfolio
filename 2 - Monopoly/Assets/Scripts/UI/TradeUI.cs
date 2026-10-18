@@ -11,7 +11,7 @@ namespace Portfolio.Monopoly
     /// Puts a trade together: pick another player, tick the properties going each way, add cash and Get Out of Jail
     /// Free cards, and propose. The rules (no buildings on a traded set, enough cash for the mortgage interest) are
     /// checked as the offer changes; a computer player answers at once, a human one is asked on the same screen (in an
-    /// online match on their own).
+    /// online match on their own device, unless they sit at this one).
     /// </summary>
     public class TradeUI : Popup
     {
@@ -50,11 +50,14 @@ namespace Portfolio.Monopoly
         private MonopolyMatch match;
         private IMonopolyCommands controller;
         private Func<int, Sprite> tokens;
+        private Func<int, bool> elsewhere;
         private int seat;
         private int partner = -1;
-        private bool online;
         private int giveCash;
         private int getCash;
+
+        /// <summary>The seat of the player who puts the trade together, while the window is open.</summary>
+        public int Seat => IsOpen ? seat : -1;
 
         private void Awake()
         {
@@ -95,14 +98,17 @@ namespace Portfolio.Monopoly
             }
         }
 
-        /// <summary>Opens the window for <paramref name="proposer"/>; <paramref name="remote"/> when the other people play on devices of their own.</summary>
-        public void Show(MonopolyMatch value, int proposer, IMonopolyCommands owner, Func<int, Sprite> tokenSprites, bool remote = false)
+        /// <summary>
+        /// Opens the window for <paramref name="proposer"/>. <paramref name="playsElsewhere"/> says which seats answer on a
+        /// device of their own (an online match); without it everybody is at this one.
+        /// </summary>
+        public void Show(MonopolyMatch value, int proposer, IMonopolyCommands owner, Func<int, Sprite> tokenSprites, Func<int, bool> playsElsewhere = null)
         {
             match = value;
             seat = proposer;
             controller = owner;
             tokens = tokenSprites;
-            online = remote;
+            elsewhere = playsElsewhere;
             partnerSeats.Clear();
             partnerSeats.AddRange(match.players.Where(p => !p.bankrupt && p.index != seat).Select(p => p.index));
             for (int i = 0; i < partners.Length; i++)
@@ -228,8 +234,9 @@ namespace Portfolio.Monopoly
             if (status != null)
             {
                 string name = MonopolyStyle.NameOf(match.players[partner]);
+                bool remote = elsewhere != null && elsewhere(partner);
                 status.text = ok ? (match.players[partner].bot ? L.F("{0} weighs every deal by the sets it makes.", name)
-                    : online ? L.F("{0} answers on their own device.", name) : L.T("Hand the device over for an answer.")) : Reason(reason);
+                    : remote ? L.F("{0} answers on their own device.", name) : L.T("Hand the device over for an answer.")) : Reason(reason);
                 status.color = ok ? MonopolyStyle.Muted : MonopolyStyle.Red;
             }
         }

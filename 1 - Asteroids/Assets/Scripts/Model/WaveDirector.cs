@@ -44,7 +44,10 @@ namespace Portfolio.Asteroids
         public const float BreakTime = 2.6f;
         public const int DrifterCap = 16;
 
-        private static readonly HazardKind[] Enemies = { HazardKind.Saucer, HazardKind.Wasp };
+        private static readonly HazardKind[] Enemies =
+        {
+            HazardKind.Saucer, HazardKind.Wasp, HazardKind.Sentry, HazardKind.Minelayer, HazardKind.Stalker, HazardKind.Corsair
+        };
 
         private readonly AsteroidsLevel level;
         private readonly AsteroidSettings settings;
@@ -93,7 +96,8 @@ namespace Portfolio.Asteroids
 
         private LevelObjective Objective => level != null ? level.Objective : LevelObjective.ClearWaves;
 
-        private bool TimedWaves => Objective == LevelObjective.Survive;
+        /// <summary>The waves of a survival or defence mission last their time; the others end when cleared.</summary>
+        private bool TimedWaves => Objective == LevelObjective.Survive || Objective == LevelObjective.Defend;
 
 
         /// <summary>Starts with wave <paramref name="firstWave"/> after a short pause (none when <paramref name="immediately"/>).</summary>
@@ -333,7 +337,8 @@ namespace Portfolio.Asteroids
                 return;
             }
             bool trickles = Objective == LevelObjective.Survive || Objective == LevelObjective.Collect ||
-                            Objective == LevelObjective.Endless || State == Stage.Boss;
+                            Objective == LevelObjective.Endless || State == Stage.Boss || Objective == LevelObjective.Escort ||
+                            Objective == LevelObjective.Defend || Objective == LevelObjective.Hunt;
             if (!trickles)
             {
                 return;

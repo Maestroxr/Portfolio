@@ -22,6 +22,10 @@ namespace Portfolio.Heroes
     /// People are called by their names, never "you". A hot seat game is saved in a slot of its own next to the solo
     /// save of its map and goes on from Continue with its people and names; it earns no stars, records or campaign
     /// progress, and ends with the standings of the realms.
+    ///
+    /// The same machinery shares the screen between several people who play online at one device against the others
+    /// (<see cref="IsOnlineParty"/>, HeroesGameManager.Online.cs): the holder is one of the seats played here, the turns
+    /// and battles of the others hand nothing over, and the hand-over screen is the party's choice.
     /// </summary>
     public partial class HeroesGameManager
     {
@@ -65,8 +69,29 @@ namespace Portfolio.Heroes
         /// <summary>Whether the game is a hot seat: several people take turns at this device.</summary>
         public bool IsHotSeat => InLocalMatch && !InSession;
 
-        /// <summary>The person who has the device in a hot seat, or -1.</summary>
-        public int HotSeatHolder => IsHotSeat ? holder : -1;
+        /// <summary>
+        /// Whether several people share this device's screen: a hot seat, or an online game several people play at this
+        /// device (<see cref="IsOnlineParty"/>). The screen then belongs to one of them at a time, and everybody is called
+        /// by name.
+        /// </summary>
+        public bool SharesDevice => IsHotSeat || IsOnlineParty;
+
+        /// <summary>The person who has the device in a hot seat or an online game of several people here, or -1.</summary>
+        public int HotSeatHolder => SharesDevice ? holder : -1;
+
+        /// <summary>
+        /// Whether a person at this device plays <paramref name="player"/>: online one of the seats played here, at one
+        /// device any realm a person plays.
+        /// </summary>
+        public bool PlaysHere(int player)
+        {
+            if (IsOnlineGame)
+            {
+                return IsLocalSeat(player);
+            }
+            PlayerState seat = Game != null ? Game.State.Player(player) : null;
+            return seat != null && seat.human;
+        }
 
         /// <summary>Whether the hand-over screen waits for the next person, or has only just let them in (this frame).</summary>
         public bool IsPassing => passing || passedFrame == Time.frameCount;
@@ -133,18 +158,20 @@ namespace Portfolio.Heroes
 
         /// <summary>
         /// Called by the director before it goes on: covers the screen for the person who has to hold the device next
-        /// (<see cref="HotSeat.HandOverTo"/>), unless a battle is on the screen (its end is told to those who fought it).
-        /// True while the game waits for them.
+        /// (<see cref="HotSeat.HandOverTo(GameState, int, int)"/>; online among the people at this device only), unless a
+        /// battle is on the screen (its end is told to those who fought it). True while the game waits for them.
         /// </summary>
         private bool HandOverIfDue()
         {
-            if (!IsHotSeat || Game == null)
+            if (!SharesDevice || Game == null)
             {
                 return false;
             }
             if (!passing && !battleShown)
             {
-                int to = HotSeat.HandOverTo(Game.State, holder, Game.WaitingPlayer);
+                int to = IsOnlineGame
+                    ? HotSeat.HandOverTo(Game.State, holder, Game.WaitingPlayer, localSeats)
+                    : HotSeat.HandOverTo(Game.State, holder, Game.WaitingPlayer);
                 if (to >= 0)
                 {
                     PassTo(to);
@@ -155,13 +182,15 @@ namespace Portfolio.Heroes
 
         /// <summary>
         /// Covers the map for <paramref name="who"/> and, once they are ready, shows it as they see it. The screens the
-        /// last person had open are closed first; nothing of theirs shows behind the cover or after it.
+        /// last person had open are closed first; nothing of theirs shows behind the cover or after it. Online the cover
+        /// is the party's choice (<see cref="OnlineGameController.HandOver"/>): without it the map changes realm at once.
         /// </summary>
         private void PassTo(int who)
         {
             PlayerState player = Game.State.Player(who);
             LocalMatch match = LocalMatch;
-            if (player == null || match == null || who >= match.AllSeats.Count)
+            bool party = IsOnlineGame;
+            if (player == null || !party && (match == null || who >= match.AllSeats.Count))
             {
                 return;
             }
@@ -171,12 +200,10 @@ namespace Portfolio.Heroes
             // The cover steps aside for the pause menu: behind it the map shows nobody's land and no panels.
             ui.ShowAdventureHud(false);
             Map.Fog.Show(Nobody);
-            LocalSeat seat = match[who];
-            seat.Name = player.name;
-            seat.Color = HeroesArt.PlayerColor((int)player.color);
             passing = true;
             HeroesGame game = Game;
-            HandOver(seat, () =>
+            Color color = HeroesArt.PlayerColor((int)player.color);
+            System.Action ready = () =>
             {
                 if (Game != game)
                 {
@@ -186,7 +213,23 @@ namespace Portfolio.Heroes
                 passedFrame = Time.frameCount;
                 holder = who;
                 ShowViewOf(who);
-            }, PassDetail(who));
+            };
+            if (party)
+            {
+                if (online != null)
+                {
+                    online.HandOverSeat(who, ready, PassDetail(who), color);
+                }
+                else
+                {
+                    ready();
+                }
+                return;
+            }
+            LocalSeat seat = match[who];
+            seat.Name = player.name;
+            seat.Color = color;
+            HandOver(seat, ready, PassDetail(who));
         }
 
         /// <summary>The line under the name on the hand-over screen: why the device comes to them.</summary>
@@ -224,11 +267,18 @@ namespace Portfolio.Heroes
             };
         }
 
-        /// <summary>The map as <paramref name="who"/> sees it: their fog, panels and chronicle, their hero in hand.</summary>
+        /// <summary>
+        /// The map as <paramref name="who"/> sees it: their fog, panels and chronicle, their hero in hand. Online the seat
+        /// the screen belongs to is theirs from now on.
+        /// </summary>
         private void ShowViewOf(int who)
         {
             PlayerState player = Game.State.Player(who);
             Viewer = who;
+            if (IsOnlineGame)
+            {
+                localSeat = who;
+            }
             Map.Fog.Show(player);
             ui.SwitchChronicle(who);
             ui.ShowAdventureHud(!Battle.Running);
@@ -270,13 +320,14 @@ namespace Portfolio.Heroes
         // ------------------------------------------------------------------ names
 
         /// <summary>
-        /// The name a person of a hot seat is called by, in the colour of their realm (rich text), or null when the game is
-        /// no hot seat or <paramref name="player"/> is no person: the interface then says "you" as it always does.
+        /// The name a person of a hot seat (or a player of an online game several people play at this device) is called
+        /// by, in the colour of their realm (rich text), or null when the game is neither, or <paramref name="player"/> is
+        /// no person here: the interface then says "you" or "the enemy" as it always does.
         /// </summary>
         public string HotSeatName(int player)
         {
-            PlayerState seat = IsHotSeat && Game != null ? Game.State.Player(player) : null;
-            if (seat == null || !seat.human)
+            PlayerState seat = SharesDevice && Game != null ? Game.State.Player(player) : null;
+            if (seat == null || !seat.human || IsOnlineGame && !IsLocalSeat(player))
             {
                 return null;
             }

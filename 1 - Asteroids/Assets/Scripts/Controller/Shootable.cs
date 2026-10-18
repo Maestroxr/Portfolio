@@ -133,13 +133,14 @@ namespace Portfolio.Asteroids
 
 
         /// <summary>
-        /// A hit on a puppet. What the local ship did to it goes to the simulator, which decides what comes of it; here it
-        /// only shows, and the hull is counted down ahead of the answer, so a puppet that should be gone stops taking
-        /// shots. The simulator's next report of the body puts a wrong guess right.
+        /// A hit on a puppet. What a ship flown at this device did to it (the player's, or a wingman's of a party) goes to the
+        /// simulator, which decides what comes of it; here it only shows, and the hull is counted down ahead of the answer,
+        /// so a puppet that should be gone stops taking shots. The simulator's next report of the body puts a wrong guess
+        /// right. A hit with the seat of anybody else is not this device's to report.
         /// </summary>
         private void HitPuppet(DamageInfo hit)
         {
-            if (!hit.ByPlayer || hit.Seat.HasValue || Field == null || Field.Link == null)
+            if (!hit.ByPlayer || Field == null || Field.Link == null || hit.Seat.HasValue && !Field.IsWingmanSeat(hit.Seat.Value))
             {
                 return;
             }

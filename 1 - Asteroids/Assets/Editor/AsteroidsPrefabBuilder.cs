@@ -54,9 +54,22 @@ namespace Portfolio.Asteroids.EditorTools
             BuildGroundPrefabs();
             Progress("Strike units", 0.98f);
             BuildStrikePrefabs();
+            Progress("Campaigns and armory", 0.99f);
+            BuildFieldCampaignPrefabs();
+            BuildStrikeCampaignPrefabs();
+            BuildArmoryPrefabs();
             AssetDatabase.SaveAssets();
             EditorUtility.ClearProgressBar();
         }
+
+        /// <summary>The enemies, hazards, rocks, shots, effects and bosses of the second and third asteroid field campaigns (AsteroidsPrefabBuilder.FieldCampaigns.cs).</summary>
+        static partial void BuildFieldCampaignPrefabs();
+
+        /// <summary>The units, terrain, props, shots, effects and bosses of the second and third planet strike campaigns (AsteroidsPrefabBuilder.StrikeCampaigns.cs).</summary>
+        static partial void BuildStrikeCampaignPrefabs();
+
+        /// <summary>The shots, pickups and effects of the new weapons of both modes and the new Supply Room items (AsteroidsPrefabBuilder.Armory.cs).</summary>
+        static partial void BuildArmoryPrefabs();
 
         /// <summary>Ground units, terrain tiles, props and decals (AsteroidsPrefabBuilder.Ground.cs).</summary>
         static partial void BuildGroundPrefabs();

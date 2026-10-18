@@ -46,6 +46,28 @@ namespace Portfolio.Monopoly
         /// <summary>The seat the table waits for: the recipient of the offer on the table, else the one the match waits for; -1 for nobody.</summary>
         public int Waiting => Match.IsOver ? -1 : PendingOffer != null ? PendingOffer.to : Match.Decider;
 
+        /// <summary>
+        /// The seat a device acts for now among <paramref name="localSeats"/>, the seats of the people at that device in
+        /// seat order: the one the table waits for when it is one of them (the next decision, or the answer to an offer
+        /// made to a player sitting there), else the first of them. -1 when nobody plays there.
+        /// </summary>
+        public int ActingSeat(IReadOnlyList<int> localSeats)
+        {
+            if (localSeats == null || localSeats.Count == 0)
+            {
+                return -1;
+            }
+            int waiting = Waiting;
+            foreach (int seat in localSeats)
+            {
+                if (seat == waiting)
+                {
+                    return seat;
+                }
+            }
+            return localSeats[0];
+        }
+
         /// <summary>Whether <paramref name="seat"/> may build, sell, mortgage or propose a trade now.</summary>
         public bool CanManage(int seat)
         {

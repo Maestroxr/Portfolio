@@ -396,7 +396,7 @@ namespace Portfolio.Asteroids
                     {
                         continue;
                     }
-                    bool first = shot.HitCount == 0 && !shot.IsGhost;
+                    bool first = shot.HitCount == 0 && !shot.IsGhost && !shot.IsFragment;
                     shot.Hit(target);
                     if (first)
                     {
@@ -469,7 +469,7 @@ namespace Portfolio.Asteroids
                     DamageSource.Collision, false));
                 if ((hurt || dashing) && target.IsPuppet)
                 {
-                    Link?.PuppetRammed(target, -away, dashing);
+                    Link?.PuppetRammed(target, ship, -away, dashing);
                 }
                 else if (hurt || dashing)
                 {
@@ -537,7 +537,7 @@ namespace Portfolio.Asteroids
                 {
                     if (target.IsPuppet)
                     {
-                        Link?.PuppetRammed(target, -away, false);
+                        Link?.PuppetRammed(target, ship, -away, false);
                     }
                     else
                     {
@@ -577,7 +577,7 @@ namespace Portfolio.Asteroids
                     if (!reward.Claimed)
                     {
                         reward.Claimed = true;
-                        Link.RewardTouched(reward);
+                        Link.RewardTouched(reward, ship);
                     }
                     continue;
                 }
@@ -587,14 +587,18 @@ namespace Portfolio.Asteroids
         }
 
 
-        /// <summary>The server gave a pickup of a shared mission to the local ship.</summary>
-        public void GrantReward(Reward reward)
+        /// <summary>
+        /// The server gave a pickup of a shared mission to a ship flown at this device: <paramref name="ship"/>, or the
+        /// player's own when it is null.
+        /// </summary>
+        public void GrantReward(Reward reward, AsteroidsPlayer ship = null)
         {
-            if (reward == null || !reward.InPlay || Player == null)
+            AsteroidsPlayer taker = ship != null ? ship : Player;
+            if (reward == null || !reward.InPlay || taker == null)
             {
                 return;
             }
-            reward.Collect(Player);
+            reward.Collect(taker);
             RewardCollected?.Invoke(reward);
         }
 
@@ -702,13 +706,14 @@ namespace Portfolio.Asteroids
 
         /// <summary>
         /// A new ship at <paramref name="center"/> gets a little room: a harmless shockwave pushes what is around it away.
-        /// On a replica the simulator is asked to do it.
+        /// On a replica the simulator is asked to do it, for the pilot at <paramref name="seat"/> (a wingman's; null for the
+        /// player's own ship).
         /// </summary>
         public void MakeRoom(Vector2 center, int? seat = null)
         {
             if (IsReplica)
             {
-                Link.RoomWanted(center);
+                Link.RoomWanted(center, seat);
                 return;
             }
             Explode(new Blast { Center = center, Radius = 3.5f, Damage = 0f, PlayerDamage = 0f, Push = 5f, Seat = seat, Tint = new Color(0.4f, 0.8f, 1f) });
@@ -717,16 +722,17 @@ namespace Portfolio.Asteroids
 
         /// <summary>
         /// The ship's nova bomb: a shockwave over the whole playfield that damages everything shootable, wipes out enemy
-        /// fire and pushes the rocks away from <paramref name="center"/>. In a shared mission the other clients hear of
-        /// the local ship's nova, and the simulator's field takes the damage: there <paramref name="seat"/> names the pilot
-        /// on another device who set it off. In a strike mission (the playground does not wrap) it is the megabomb: it hits
-        /// only what is on screen and pushes nothing.
+        /// fire and pushes the rocks away from <paramref name="center"/>. <paramref name="seat"/> names the pilot who set it
+        /// off when that is not the player of this device (a wingman, or a pilot on another device). In a shared mission
+        /// the other clients hear of a nova set off <paramref name="here"/> (by a ship flown at this device), and the
+        /// simulator's field takes the damage. In a strike mission (the playground does not wrap) it is the megabomb: it
+        /// hits only what is on screen and pushes nothing.
         /// </summary>
-        public void Nova(Vector2 center, float damage, float bossDamage, int? seat = null)
+        public void Nova(Vector2 center, float damage, float bossDamage, int? seat = null, bool here = true)
         {
-            if (!seat.HasValue)
+            if (here)
             {
-                Link?.NovaFired(center, damage, bossDamage);
+                Link?.NovaFired(center, damage, bossDamage, seat);
             }
             if (IsReplica)
             {
@@ -810,6 +816,23 @@ namespace Portfolio.Asteroids
 
 
         /// <summary>
+        /// Whether <paramref name="seat"/> is the seat of a wingman's pilot (<see cref="AsteroidsPlayer.HitSeat"/>): a ship
+        /// flown at this device, whose hits on puppets are this device's to report like the player's own.
+        /// </summary>
+        public bool IsWingmanSeat(int seat)
+        {
+            foreach (AsteroidsPlayer wingman in wingmen)
+            {
+                if (wingman != null && wingman.HitSeat == seat)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+
+        /// <summary>
         /// The living ship closest to <paramref name="from"/> across the wrapping edges: the one enemies hunt, mines arm for
         /// and pickups drift to. Null when no ship is alive.
         /// </summary>
@@ -884,6 +907,19 @@ namespace Portfolio.Asteroids
         internal void NoteEntered(SpaceBody body)
         {
             HostileEntered?.Invoke(body);
+        }
+
+
+        /// <summary>
+        /// A shot found its mark outside the field's own collisions (a slug's swept hit, a flak shell's fuse): it counts as a
+        /// shot that landed, once, like the first hit of any other.
+        /// </summary>
+        internal void NoteLanded(Shot shot)
+        {
+            if (shot != null && !shot.IsGhost && !shot.IsFragment)
+            {
+                ShotLanded?.Invoke(shot);
+            }
         }
 
 

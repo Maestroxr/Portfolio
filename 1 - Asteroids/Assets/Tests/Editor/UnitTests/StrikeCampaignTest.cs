@@ -147,6 +147,88 @@ namespace Portfolio.Asteroids.Tests
 
 
         [Test]
+        public void ASecondStrikeCampaignIsCountedApart()
+        {
+            AddStrikeCampaign(0);
+            Assert.That(campaign.ArcCount(MissionMode.Strike), Is.EqualTo(2));
+            Assert.That(campaign.ArcCount(MissionMode.Field), Is.EqualTo(1), "The field keeps its one campaign.");
+            Assert.That(campaign.GetArc(MissionMode.Strike, 1).title, Is.EqualTo("Tide"), "Strike campaigns are numbered among themselves.");
+            Assert.That(campaign.MissionsOf(MissionMode.Strike, 0), Is.EqualTo(new[] { 5, 6, 7 }));
+            Assert.That(campaign.MissionsOf(MissionMode.Strike, 1), Is.EqualTo(new[] { 8, 9, 10 }));
+            Assert.That(campaign.FirstMission(MissionMode.Strike, 1), Is.EqualTo(8));
+            Assert.That(campaign.MaxStarsOf(MissionMode.Strike, 1), Is.EqualTo(9));
+            Assert.That(campaign.MaxStarsOf(MissionMode.Strike), Is.EqualTo(18));
+            Assert.IsTrue(campaign.IsUnlocked(8, progress), "The second strike campaign is open from the start.");
+            Assert.IsFalse(campaign.IsUnlocked(9, progress));
+            Assert.That(campaign.NextMission(7), Is.EqualTo(-1), "The first strike campaign's last mission leads nowhere.");
+            Assert.That(campaign.NextMission(9), Is.EqualTo(10));
+        }
+
+
+        [Test]
+        public void StrikeGatesCountTheirOwnCampaign()
+        {
+            AddStrikeCampaign(0);
+            for (int i = 5; i < 8; i++)
+            {
+                progress.RecordLevel(i, 3, 100);
+            }
+            progress.RecordLevel(8, 1, 100);
+            progress.RecordLevel(9, 1, 100);
+            Assert.That(campaign.StarsRequired(10), Is.EqualTo(3));
+            Assert.IsFalse(campaign.IsUnlocked(10, progress), "The first strike campaign's 9 stars do not open the second one's gate.");
+            progress.RecordLevel(9, 2, 100);
+            Assert.IsTrue(campaign.IsUnlocked(10, progress));
+        }
+
+
+        [Test]
+        public void AClosedStrikeCampaignOpensWithStrikeStarsOnly()
+        {
+            AddStrikeCampaign(4);
+            for (int i = 0; i < 4; i++)
+            {
+                progress.RecordLevel(i, 3, 100);
+            }
+            Assert.IsFalse(campaign.IsArcOpen(MissionMode.Strike, 1, progress), "Field stars do not open a strike campaign.");
+            Assert.IsFalse(campaign.IsUnlocked(8, progress));
+            progress.RecordLevel(5, 3, 100);
+            progress.RecordLevel(6, 1, 100);
+            Assert.IsTrue(campaign.IsArcOpen(MissionMode.Strike, 1, progress));
+            Assert.IsTrue(campaign.IsUnlocked(8, progress));
+            Assert.IsTrue(campaign.IsArcOpen(MissionMode.Strike, 0, new AsteroidsProgress(new TransientStrategy(), GameType.Asteroids)),
+                "The first strike campaign is open from the start.");
+        }
+
+
+        /// <summary>
+        /// A second strike campaign "Tide" (opened by <paramref name="stars"/> strike stars) after the first: missions 8 and 9
+        /// in sector "Tundra", 10 in sector "Reef" behind 3 stars of the campaign.
+        /// </summary>
+        private void AddStrikeCampaign(int stars)
+        {
+            var sectors = new System.Collections.Generic.List<AsteroidsCampaign.Sector>(campaign.sectors)
+            {
+                new AsteroidsCampaign.Sector { title = "Tundra", starsRequired = 0, mode = MissionMode.Strike, arc = 1 },
+                new AsteroidsCampaign.Sector { title = "Reef", starsRequired = 3, mode = MissionMode.Strike, arc = 1 }
+            };
+            campaign.sectors = sectors.ToArray();
+            campaign.arcs = new[]
+            {
+                new AsteroidsCampaign.Arc { title = "Field", mode = MissionMode.Field },
+                new AsteroidsCampaign.Arc { title = "Shadow", mode = MissionMode.Strike },
+                new AsteroidsCampaign.Arc { title = "Tide", mode = MissionMode.Strike, starsRequired = stars }
+            };
+            foreach (int sector in new[] { 4, 4, 5 })
+            {
+                StrikeLevel level = objects.Asset<StrikeLevel>();
+                level.sector = sector;
+                campaign.LevelList.Add(level);
+            }
+        }
+
+
+        [Test]
         public void ThePilotRoundTripsThroughTheProgress()
         {
             Assert.IsFalse(progress.HasPilot);

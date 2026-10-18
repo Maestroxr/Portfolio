@@ -21,6 +21,12 @@ namespace Portfolio.Asteroids
     /// (<see cref="RemoteShip"/>).
     /// The manager plays the mission in its co-op mode (AsteroidsGameManager.Coop.cs) and hears from here how far the
     /// simulator got and how the server says the mission ended.
+    ///
+    /// Players at this device may hold seats of their own in the room (the base's companions, see
+    /// <see cref="OnlineGameController.LocalSeats"/>): then the manager flies them as a party (AsteroidsGameManager.Local.cs),
+    /// each pilot with the controls the lobby gave their seat (<see cref="OnlineGameController.ControlsOf"/>), and this
+    /// controller sends every local ship's pose, score and end under its pilot's seat. Stand-ins are made only for the
+    /// pilots of other devices.
     /// </summary>
     public class AsteroidsOnlineController : OnlineGameController
     {
@@ -31,6 +37,7 @@ namespace Portfolio.Asteroids
         [SerializeField] internal AsteroidsPlayer shipPrefab;
 
         private readonly Dictionary<Identity, RemoteShip> ships = new Dictionary<Identity, RemoteShip>();
+        private readonly Dictionary<byte, long> reportedScores = new Dictionary<byte, long>();
         private readonly List<RoomLevelChoice> levelChoices = new List<RoomLevelChoice>();
         private string choicesLanguage;
         private FieldReplication replication;
@@ -38,7 +45,6 @@ namespace Portfolio.Asteroids
         private bool missionChanged;
         private float nextStatus;
         private float nextScore;
-        private long reportedScore = -1;
         private string reportedStatus;
         private int reportedWave = -1;
         private int reportedCleared = -1;
@@ -56,11 +62,13 @@ namespace Portfolio.Asteroids
         public override int MinPlayersLimit => CoopRules.MinPilots;
 
         /// <summary>
-        /// The missions the host has unlocked, the endless one included: the asteroid field missions numbered "1.", the
-        /// planet strike missions after them numbered "Strike 1.". The list is made when the lobby first asks and stays as
-        /// it is, because the lobby keeps the names it was built with.
+        /// Every mission, the endless one included, campaign by campaign: the asteroid field campaigns first (the endless
+        /// mission after the first of them), then the planet strike campaigns, each mission named with its campaign and its
+        /// number in it ("The Raider War 3. Titan", "Strike: Shadow Strike 2. Refinery Row"; a room plays those the host
+        /// unlocked online: <see cref="OnlineGameController.LevelChoices"/>). The list is made when the lobby first asks and
+        /// stays as it is, because the lobby keeps the names it was built with.
         /// </summary>
-        public override IReadOnlyList<RoomLevelChoice> LevelChoices
+        public override IReadOnlyList<RoomLevelChoice> AllLevelChoices
         {
             get
             {
@@ -72,31 +80,58 @@ namespace Portfolio.Asteroids
                 // The titles are in the language shown: a new language lists them again.
                 levelChoices.Clear();
                 choicesLanguage = GameLanguages.Code;
-                int number = 0;
-                int strikeNumber = 0;
+                AsteroidsCampaign campaign = manager.AsteroidsCampaign;
+                if (campaign == null)
+                {
+                    return levelChoices;
+                }
+                var listed = new HashSet<int>();
+                foreach (MissionMode mode in new[] { MissionMode.Field, MissionMode.Strike })
+                {
+                    for (int arc = 0; arc < campaign.ArcCount(mode); arc++)
+                    {
+                        foreach (int index in campaign.MissionsOf(mode, arc))
+                        {
+                            AddChoice(index, listed);
+                        }
+                        if (mode == MissionMode.Field && arc == 0 && campaign.EndlessIndex >= 0)
+                        {
+                            AddChoice(campaign.EndlessIndex, listed);
+                        }
+                    }
+                }
+                // A mission outside every campaign still gets a place, after them.
                 for (int i = 0; i < manager.LevelCount; i++)
                 {
-                    AsteroidsLevel mission = manager.AsteroidsCampaign != null ? manager.AsteroidsCampaign.Mission(i) : null;
-                    if (mission == null)
-                    {
-                        continue;
-                    }
-                    bool strike = mission.Mode == MissionMode.Strike;
-                    if (strike)
-                    {
-                        strikeNumber++;
-                    }
-                    else if (!mission.IsEndless)
-                    {
-                        number++;
-                    }
-                    if (i == 0 || manager.IsUnlocked(i))
-                    {
-                        levelChoices.Add(new RoomLevelChoice(i, CoopRules.LevelTitle(mission, strike ? strikeNumber : number)));
-                    }
+                    AddChoice(i, listed);
                 }
                 return levelChoices;
             }
+        }
+
+
+        /// <summary>Lists the mission at <paramref name="index"/> by its lobby name, once.</summary>
+        private void AddChoice(int index, HashSet<int> listed)
+        {
+            if (Asteroids.AsteroidsCampaign.Mission(index) != null && listed.Add(index))
+            {
+                levelChoices.Add(new RoomLevelChoice(index, LevelName(index)));
+            }
+        }
+
+
+        /// <summary>What the lobby and the room list call the mission at <paramref name="index"/> (with its campaign and number in it).</summary>
+        private string LevelName(int index)
+        {
+            AsteroidsGameManager manager = Asteroids;
+            AsteroidsCampaign campaign = manager != null ? manager.AsteroidsCampaign : null;
+            AsteroidsLevel mission = campaign != null ? campaign.Mission(index) : null;
+            if (mission == null)
+            {
+                return F("Mission {0}", index + 1);
+            }
+            string title = mission.IsEndless ? null : T(AsteroidsGameManager.CampaignTitle(campaign, mission.Mode, campaign.ArcOf(index)));
+            return CoopRules.LevelTitle(mission, CampaignSelect.Number(campaign, index), title);
         }
 
         /// <summary>
@@ -130,10 +165,11 @@ namespace Portfolio.Asteroids
         {
             AsteroidsGameManager manager = Asteroids;
             AsteroidsLevel mission = manager != null && manager.AsteroidsCampaign != null ? manager.AsteroidsCampaign.Mission(room.Level) : null;
-            string title = mission != null ? T(mission.Title) : F("Mission {0}", room.Level + 1);
+            // The mission as the level list names it: its campaign and its number in it ("Strike: ..." for a strike mission).
+            string title = LevelName(room.Level);
             if (mission != null && mission.Mode == MissionMode.Strike)
             {
-                return F("Strike: {0}, {1}", title, T(CoopRules.DifficultyTitle(CoopRules.Difficulty(room.Options))));
+                return F("{0}, {1}", title, T(CoopRules.DifficultyTitle(CoopRules.Difficulty(room.Options))));
             }
             int lives = CoopRules.Lives(room.Options);
             return lives == 1 ? F("{0}, 1 ship each", title) : F("{0}, {1} ships each", title, lives);
@@ -211,7 +247,10 @@ namespace Portfolio.Asteroids
         // The mission of the room
         // ------------------------------------------------------------------------------------------------
 
-        /// <summary>The host started the mission: the manager gets its co-op setup, then loads the level and starts; the other pilots get their stand-ins.</summary>
+        /// <summary>
+        /// The host started the mission: the manager gets its co-op setup (with the party at this device, when more than one
+        /// pilot plays here), then loads the level and starts; the pilots of other devices get their stand-ins.
+        /// </summary>
         protected override void OnRoomStarted(RoomInfo room)
         {
             AsteroidsGameManager manager = Asteroids;
@@ -223,28 +262,45 @@ namespace Portfolio.Asteroids
                 return;
             }
             bool simulates = mission.Simulator == Server.Identity.Value;
+            IReadOnlyList<RoomMemberInfo> members = Server.Members;
             int slot = 0;
-            for (int i = 0; i < Server.Members.Count; i++)
+            for (int i = 0; i < members.Count; i++)
             {
-                if (Server.IsLocal(Server.Members[i]))
+                if (Server.IsMe(members[i]))
                 {
                     slot = i;
                 }
             }
-            replication.Begin(connection, room.Id, LocalSeat, simulates);
-            manager.PrepareCoop(new AsteroidsGameManager.CoopSetup
+            List<byte> seats = PartySeats();
+            var setup = new AsteroidsGameManager.CoopSetup
             {
                 Simulates = simulates,
                 LocalSeat = LocalSeat,
                 Slot = slot,
-                Pilots = Server.Members.Count,
+                Pilots = members.Count,
                 HalfSize = new Vector2(mission.HalfWidth, mission.HalfHeight),
                 Lives = (int)mission.Lives,
                 Difficulty = CoopRules.Difficulty(room.Options)
-            });
+            };
+            if (seats.Count > 1)
+            {
+                // Several pilots at this device: each flies with the controls of their seat.
+                foreach (byte seat in seats)
+                {
+                    for (int i = 0; i < members.Count; i++)
+                    {
+                        if (members[i].Seat == seat)
+                        {
+                            setup.Party.Add(new AsteroidsGameManager.CoopPilot { Seat = seat, Name = NameOf(members[i]), Slot = i, Controls = ControlsOf(seat) });
+                        }
+                    }
+                }
+            }
+            replication.Begin(connection, room.Id, seats, simulates);
+            manager.PrepareCoop(setup);
             missionChanged = false;
             victoryPending = false;
-            reportedScore = -1;
+            reportedScores.Clear();
             reportedStatus = null;
             reportedWave = -1;
             reportedCleared = -1;
@@ -257,6 +313,11 @@ namespace Portfolio.Asteroids
 
 
         /// <summary>The server ended the mission: the manager plays the end it names, and the results list the places.</summary>
+        protected override CampaignProgress CreateOnlineProgress(IStorageStrategy storage)
+        {
+            return new AsteroidsProgress(storage, GameType.Asteroids);
+        }
+
         protected override void OnRoomFinished(RoomInfo room)
         {
             if (!InCharge || Asteroids == null)
@@ -330,7 +391,7 @@ namespace Portfolio.Asteroids
                 replication.Flush();
                 CompleteMission();
             }
-            SendLocalPose(manager);
+            SendLocalPoses(manager);
             float now = Time.unscaledTime;
             if (now >= nextStatus)
             {
@@ -340,9 +401,9 @@ namespace Portfolio.Asteroids
             }
             // The money of the victory window of a strike mission goes out at once: the room finishes two seconds after the win.
             bool due = now >= nextScore || manager.InCoopVictoryWindow;
-            if (due && IsPlaying && manager.Scoring.Score != reportedScore && Server.LocalMember != null && Server.LocalMember.Playing)
+            if (due && IsPlaying)
             {
-                ReportScoreNow(manager.Scoring.Score);
+                ReportScores(false);
             }
         }
 
@@ -382,13 +443,34 @@ namespace Portfolio.Asteroids
         }
 
 
-        private void SendLocalPose(AsteroidsGameManager manager)
+        /// <summary>
+        /// The pose of every ship flown at this device: the device's own ship as its player's, and the wingmen of a party
+        /// under the seats of their pilots.
+        /// </summary>
+        private void SendLocalPoses(AsteroidsGameManager manager)
         {
-            AsteroidsPlayer ship = manager.Ship;
-            if (ship == null)
+            if (manager.Ship == null)
             {
                 return;
             }
+            SendShipPose(manager, manager.Ship, RoomTurnInfo.NoSeat);
+            if (!manager.IsParty)
+            {
+                return;
+            }
+            foreach (AsteroidsGameManager.LocalPilot pilot in manager.LocalPilots)
+            {
+                if (pilot.Wingman && pilot.Ship != null)
+                {
+                    SendShipPose(manager, pilot.Ship, (byte)pilot.Seat.Index);
+                }
+            }
+        }
+
+
+        /// <summary>The pose of <paramref name="ship"/> for the pilot at <paramref name="seat"/> (<see cref="RoomTurnInfo.NoSeat"/> for the device's own).</summary>
+        private void SendShipPose(AsteroidsGameManager manager, AsteroidsPlayer ship, byte seat)
+        {
             StrikeGunnery gunnery = ship.Mode == MissionMode.Strike ? ship.Strike : null;
             var pose = new ShipPose
             {
@@ -397,15 +479,15 @@ namespace Portfolio.Asteroids
                 Thrusting = ship.IsAlive && (ship.Mode == MissionMode.Strike || ship.Simulation.IsThrusting),
                 Dashing = ship.IsAlive && ship.IsDashing,
                 Invulnerable = ship.IsAlive && ship.InvulnerableTime > 0f,
-                Magnet = ship.IsAlive && ship.IsPowerUpActive(PowerUpType.Magnet),
-                Drones = ship.IsAlive && ship.IsPowerUpActive(PowerUpType.Drones),
+                Magnet = ship.IsAlive && (ship.IsPowerUpActive(PowerUpType.Magnet) || ship.HasSalvageMagnet),
+                Drones = ship.IsAlive && (ship.IsPowerUpActive(PowerUpType.Drones) || ship.HasStrikeDrones),
                 Hull = manager.LocalHullIndex,
                 Health = ship.MaxHealth > 0f ? Mathf.Clamp01(ship.Health / ship.MaxHealth) : 0f,
                 Shield = ship.MaxShield > 0f ? Mathf.Clamp01(ship.Shield / ship.MaxShield) : 0f,
                 Beam = ship.IsAlive && gunnery != null && gunnery.BeamHeld,
                 BeamKind = gunnery != null ? gunnery.BeamKind : 0
             };
-            SendPose(ship.Position, ship.Velocity, ship.transform.eulerAngles.z, pose.PackState(), pose.PackValue());
+            SendPose(seat, ship.Position, ship.Velocity, ship.transform.eulerAngles.z, pose.PackState(), pose.PackValue());
         }
 
 
@@ -438,26 +520,66 @@ namespace Portfolio.Asteroids
         }
 
 
-        /// <summary>The local pilot is out of ships: the others fly on, and the mission ends when nobody does.</summary>
-        internal void PilotOut(long score)
+        /// <summary>
+        /// The pilot at this device who flies room seat <paramref name="seat"/> is out of ships: their seat is done with
+        /// <paramref name="score"/>, the others fly on, and the mission ends when nobody does.
+        /// </summary>
+        internal void PilotOut(byte seat, long score)
         {
-            if (IsPlaying)
+            if (!IsPlaying)
             {
-                reportedScore = score;
-                Server.FinishPlaying(score);
+                return;
+            }
+            reportedScores[seat] = score;
+            FinishPlaying(SeatArgument(seat), score);
+        }
+
+
+        /// <summary>The score of every pilot at this device who still flies goes to the server now (the mission was just won).</summary>
+        internal void ReportScoresNow()
+        {
+            ReportScores(true);
+        }
+
+
+        /// <summary>
+        /// The score of every pilot at this device who still flies, when it changed (or <paramref name="always"/>), under
+        /// their seat; the next regular report is due <see cref="ScoreInterval"/> after one went.
+        /// </summary>
+        private void ReportScores(bool always)
+        {
+            AsteroidsGameManager manager = Asteroids;
+            if (!IsPlaying || manager == null)
+            {
+                return;
+            }
+            bool sent = false;
+            foreach (RoomMemberInfo member in LocalMembers)
+            {
+                if (!member.Playing)
+                {
+                    continue;
+                }
+                long score = manager.CoopScoreOf(member.Seat);
+                if (!always && reportedScores.TryGetValue(member.Seat, out long reported) && reported == score)
+                {
+                    continue;
+                }
+                reportedScores[member.Seat] = score;
+                ReportScore(SeatArgument(member.Seat), score);
+                sent = true;
+            }
+            if (sent)
+            {
+                nextScore = Time.unscaledTime + ScoreInterval;
             }
         }
 
 
-        internal void ReportScoreNow(long score)
+        /// <summary>What a reducer for room seat <paramref name="seat"/> is called with: <see cref="RoomTurnInfo.NoSeat"/> for the device's own seat.</summary>
+        private byte SeatArgument(byte seat)
         {
-            if (!IsPlaying || Server.LocalMember == null || !Server.LocalMember.Playing)
-            {
-                return;
-            }
-            reportedScore = score;
-            nextScore = Time.unscaledTime + ScoreInterval;
-            Server.ReportScore(score);
+            return seat == LocalSeat ? RoomTurnInfo.NoSeat : seat;
         }
 
 
@@ -465,7 +587,7 @@ namespace Portfolio.Asteroids
         internal string DescribeStandings()
         {
             var members = new List<RoomMemberInfo>(Server.Members);
-            long Score(RoomMemberInfo member) => Server.IsLocal(member) && Asteroids != null && member.Place == 0 ? Asteroids.Scoring.Score : member.Score;
+            long Score(RoomMemberInfo member) => Server.IsLocal(member) && Asteroids != null && member.Place == 0 ? Asteroids.CoopScoreOf(member.Seat) : member.Score;
             int[] places;
             if (members.TrueForAll(member => member.Place > 0))
             {
@@ -480,10 +602,28 @@ namespace Portfolio.Asteroids
             for (int i = 0; i < members.Count; i++)
             {
                 RoomMemberInfo member = members[i];
-                text.Append(i > 0 ? "\n" : string.Empty).Append(Standings.Line(places[i], NameOf(member), Server.IsLocal(member),
+                text.Append(i > 0 ? "\n" : string.Empty).Append(Standings.Line(places[i], PilotName(member), Server.IsMe(member),
                     Score(member).ToString("N0", CultureInfo.InvariantCulture), CoopRules.SeatColor(member.Seat)));
             }
             return text.ToString();
+        }
+
+
+        /// <summary>
+        /// The name of a pilot in the pilots list and the results: a companion who flies at this device says "(here)", as the
+        /// lobby does (the device's own player gets "(you)" from the list itself).
+        /// </summary>
+        private string PilotName(RoomMemberInfo member)
+        {
+            string name = NameOf(member);
+            return Server.IsLocal(member) && !Server.IsMe(member) ? $"{name} {Loc.T(Loc.Shared, "(here)")}" : name;
+        }
+
+
+        /// <summary>The seats of the pilots at this device: the device's own first, then its companions' by seat.</summary>
+        internal List<byte> PartySeats()
+        {
+            return DeviceSeats.Order(LocalSeat, LocalSeats);
         }
 
 
@@ -543,6 +683,10 @@ namespace Portfolio.Asteroids
         }
 
 
+        /// <summary>
+        /// The pilots list of the HUD: every pilot of the room with their score; the pilots of a party at this device with
+        /// their ships left and their hull (or energy) too, as the manager knows them.
+        /// </summary>
         private void ShowPilots()
         {
             AsteroidsGameManager manager = Asteroids;
@@ -554,14 +698,19 @@ namespace Portfolio.Asteroids
             foreach (RoomMemberInfo member in Server.Members)
             {
                 bool local = Server.IsLocal(member);
-                pilots.Add(new AsteroidsGameManager.PilotStatus
+                var status = new AsteroidsGameManager.PilotStatus
                 {
                     Seat = member.Seat,
-                    Name = NameOf(member),
-                    Score = local ? manager.Scoring.Score : member.Score,
+                    Name = PilotName(member),
+                    Score = local ? manager.CoopScoreOf(member.Seat) : member.Score,
                     Flying = member.Playing || (Room != null && !Room.IsPlaying),
-                    Local = local
-                });
+                    Local = Server.IsMe(member)
+                };
+                if (local)
+                {
+                    manager.PartyPilotStatus(member.Seat, ref status);
+                }
+                pilots.Add(status);
             }
             manager.ShowPilots(pilots);
         }

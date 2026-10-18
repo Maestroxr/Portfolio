@@ -82,14 +82,17 @@ namespace Portfolio.Asteroids
                 StrikeUnit.Dart, StrikeUnit.Hornet, StrikeUnit.Bomber, StrikeUnit.Gunship, StrikeUnit.Interceptor, StrikeUnit.Kamikaze,
                 StrikeUnit.Transport, StrikeUnit.Turret, StrikeUnit.Flak, StrikeUnit.Tank, StrikeUnit.Truck, StrikeUnit.Bunker,
                 StrikeUnit.FuelTank, StrikeUnit.Radar, StrikeUnit.Gunboat, StrikeUnit.Hut, StrikeUnit.LaserTower, StrikeUnit.Depot,
-                StrikeUnit.Crate
+                StrikeUnit.Crate,
+                // The units the Iron Tide and Hive Fall campaigns brought.
+                StrikeUnit.Drone, StrikeUnit.Cruiser, StrikeUnit.Stinger, StrikeUnit.Mite, StrikeUnit.SamSite, StrikeUnit.Artillery, StrikeUnit.Walker,
+                StrikeUnit.ShieldGenerator, StrikeUnit.Destroyer, StrikeUnit.HiveSpawner, StrikeUnit.Spitter, StrikeUnit.Prism
             };
 
         /// <summary>Number of air units (their pool indices are 0 to AirCount - 1).</summary>
-        public const int AirCount = 7;
+        public const int AirCount = 11;
 
         /// <summary>Number of ground units (their pool indices are unit - 16, 0 to GroundCount - 1).</summary>
-        public const int GroundCount = 12;
+        public const int GroundCount = 20;
 
         /// <summary>The value of the first ground unit.</summary>
         public const int FirstGround = 16;
@@ -130,6 +133,9 @@ namespace Portfolio.Asteroids
             {
                 case StrikeUnit.FuelTank: return "Fuel Tank";
                 case StrikeUnit.LaserTower: return "Laser Tower";
+                case StrikeUnit.SamSite: return "SAM Site";
+                case StrikeUnit.ShieldGenerator: return "Shield Generator";
+                case StrikeUnit.HiveSpawner: return "Hive Spawner";
                 default: return unit.ToString();
             }
         }
@@ -151,6 +157,15 @@ namespace Portfolio.Asteroids
                     return new EnemyShotInfo { Kind = kind, Damage = 40f, Lifetime = 0.17f };
                 case EnemyShotKind.SkyMine:
                     return new EnemyShotInfo { Kind = kind, Damage = 16f, Speed = 2.3f, MaxSpeed = 2.3f, Lifetime = 6.4f, Wobble = 0.6f };
+                case EnemyShotKind.Shell:
+                    // Flies for exactly its lifetime to the spot it was aimed at (its speed follows the distance); the damage is its burst's.
+                    return new EnemyShotInfo { Kind = kind, Damage = 8f, Speed = 10f, MaxSpeed = 10f, Lifetime = StrikeCampaignRules.ShellFlightTime };
+                case EnemyShotKind.Spore:
+                    return new EnemyShotInfo { Kind = kind, Damage = 5f, Speed = 4f, MaxSpeed = 6.5f, Acceleration = 1.5f, Lifetime = 6.5f, Wobble = 0.35f };
+                case EnemyShotKind.Needle:
+                    return new EnemyShotInfo { Kind = kind, Damage = 3f, Speed = 5f, MaxSpeed = 17f, Acceleration = 18f };
+                case EnemyShotKind.Seeker:
+                    return new EnemyShotInfo { Kind = kind, Damage = 6f, Speed = 4f, MaxSpeed = 12.5f, Acceleration = 8f, Lifetime = 5f, Smoke = true };
                 default:
                     return new EnemyShotInfo { Kind = kind, Damage = 10f, Speed = 9f, MaxSpeed = 9f };
             }
@@ -187,7 +202,28 @@ namespace Portfolio.Asteroids
                     info => { info.Telegraph = 0.6f; return info; }),
                 With(Ground(StrikeUnit.Depot, 80f, 2.6f, 2000, AttackPattern.None, 0, 0f, 0f, 0, EnemyShotKind.Flak),
                     info => { info.Explodes = true; info.BlastRadius = 4.5f; info.BlastDamage = 20f; info.AlwaysDrops = true; return info; }),
-                Ground(StrikeUnit.Crate, 3f, 0.8f, 50, AttackPattern.None, 0, 0f, 0f, 0, EnemyShotKind.Flak)
+                Ground(StrikeUnit.Crate, 3f, 0.8f, 50, AttackPattern.None, 0, 0f, 0f, 0, EnemyShotKind.Flak),
+
+                // The Iron Tide and Hive Fall campaigns (StrikeCampaignRules holds the numbers of their new mechanics).
+                Air(StrikeUnit.Drone, 2.5f, 0.6f, 100, 13f, AttackPattern.Aimed, 1, 0f, 3f, 1, EnemyShotKind.Flak),
+                With(Air(StrikeUnit.Cruiser, 150f, 2.6f, 3500, 3.6f, AttackPattern.Rockets, 1, 0f, 3.2f, 2, EnemyShotKind.Seeker),
+                    info => { info.AlternatePattern = AttackPattern.Spread; info.AlternateShotKind = EnemyShotKind.Bolt; return info; }),
+                Air(StrikeUnit.Stinger, 7f, 0.9f, 250, 10f, AttackPattern.Aimed, 1, 0f, 2.2f, 1, EnemyShotKind.Spore),
+                Air(StrikeUnit.Mite, 2f, 0.55f, 80, 12f, AttackPattern.None, 0, 0f, 0f, 0, EnemyShotKind.Flak),
+                With(Ground(StrikeUnit.SamSite, 30f, 1.3f, 900, AttackPattern.Rockets, 2, 0.5f, 3.4f, 1, EnemyShotKind.Seeker),
+                    info => { info.AimsTurret = true; return info; }),
+                With(Ground(StrikeUnit.Artillery, 35f, 1.4f, 1100, AttackPattern.Barrage, 1, 0f, 3.6f, 1, EnemyShotKind.Shell),
+                    info => { info.AimsTurret = true; return info; }),
+                With(Ground(StrikeUnit.Walker, 45f, 1.3f, 1300, AttackPattern.AimedBurst, 3, 0.12f, 2.4f, 2, EnemyShotKind.Flak),
+                    info => { info.AimsTurret = true; return info; }),
+                Ground(StrikeUnit.ShieldGenerator, 40f, 1.4f, 1500, AttackPattern.None, 0, 0f, 0f, 0, EnemyShotKind.Flak),
+                With(Ground(StrikeUnit.Destroyer, 110f, 2.4f, 3000, AttackPattern.AimedBurst, 2, 0.2f, 2.2f, 2, EnemyShotKind.Flak),
+                    info => { info.AimsTurret = true; info.AlternatePattern = AttackPattern.Rockets; info.AlternateShotKind = EnemyShotKind.Rocket; return info; }),
+                Ground(StrikeUnit.HiveSpawner, 60f, 1.8f, 2000, AttackPattern.Launch, 1, 0f, StrikeCampaignRules.SpawnerInterval, 2, EnemyShotKind.Spore),
+                With(Ground(StrikeUnit.Spitter, 18f, 1.1f, 600, AttackPattern.AimedBurst, 3, 0.2f, 2.8f, 1, EnemyShotKind.Spore),
+                    info => { info.AimsTurret = true; return info; }),
+                With(Ground(StrikeUnit.Prism, 30f, 1.2f, 1000, AttackPattern.Ring, 1, 0f, 3.4f, 8, EnemyShotKind.Needle),
+                    info => { info.Telegraph = 0.5f; return info; })
             };
         }
 

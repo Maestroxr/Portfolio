@@ -5,6 +5,7 @@ using System.Linq;
 using Gamebox;
 using Gamebox.Lockstep;
 using Gamebox.Online;
+using Gamebox.UI;
 using UnityEngine;
 
 namespace Portfolio.BoardGames
@@ -16,7 +17,13 @@ namespace Portfolio.BoardGames
     /// 4 backgammon; English draughts by default; a short clock) and starts it once somebody joined and is ready; <c>join</c> joins the first room it sees
     /// and leaves its first move to the clock of the room. Both play their seats with the computer's Normal choice,
     /// through the same path a click takes. <c>joinquits</c> leaves the game after a while: the server hands its seat to
-    /// the computer and the host plays on. <c>hosttournament</c> opens a cup of <c>-boardgames-entrants</c> players
+    /// the computer and the host plays on. <c>hostprivate</c> and <c>joinprivate</c> play a private room, entered with the
+    /// code the host leaves in the folder. <c>hostparty</c> brings another player to the host's device first
+    /// (<c>-gamebox-companions</c>, or a guest with <c>-gamebox-guests</c>): the two fill the table, and two people at one
+    /// device have local play, so the start is refused, in the room as it is and again with a computer opponent; the tour
+    /// writes both refusals down, photographs them in the lobby and leaves. A party of two cannot join a room with a host
+    /// in it either (<c>joinparty</c>: the room is full, the tour says so and quits). The pilot acts for whichever seat of
+    /// this device the table waits for, so the tour would play several seats here as well. <c>hosttournament</c> opens a cup of <c>-boardgames-entrants</c> players
     /// (four by default) that start a match <c>-boardgames-ready</c> seconds after it is drawn, and <c>jointournament</c>
     /// enters the first open one; everybody plays their matches and the bracket is photographed after each. Every action
     /// of the log is written down with the checksum of the table after it, so the logs of the players show whether they
@@ -45,6 +52,9 @@ namespace Portfolio.BoardGames
         private bool pilotRunning;
         private int sleepy;
         private bool timeoutShot;
+        private bool handOverShot;
+        /// <summary>The seat the pilot acted for last, so the log says when it changes.</summary>
+        private int pilotSeat = -1;
         private readonly IRandom random = new SystemRandom(11);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -96,10 +106,33 @@ namespace Portfolio.BoardGames
 
             if (Hosting)
             {
+                // A table has two seats whatever the party brings: a party of three is refused by the server, and the tour says so.
                 yield return HostRoom("Tour room", Level(), RoomOptions.Write(RoomOptions.TurnOption, TurnSeconds), 2);
+                if (!Server.InRoom)
+                {
+                    yield return Fail("the room was not opened");
+                    yield break;
+                }
+                if (InParty)
+                {
+                    // The players at this device enter the room with its host.
+                    yield return WaitFor(() => Server.LocalMembers.Count > Server.LocalCompanions.Count, 10f, "the players at this device in the room");
+                }
                 yield return new WaitForSeconds(0.5f);
                 yield return Shot("01_room");
-                yield return WaitForGuests(1, 120f);
+                // The seats the players at this device leave for players on other devices: none when a party of two fills the table.
+                int others = DeviceSeats.TableSize - Server.LocalMembers.Count;
+                if (others <= 0)
+                {
+                    yield return PartyStartRefused();
+                    yield break;
+                }
+                yield return WaitForGuests(others, 120f);
+                if (Server.Members.Count(member => !Server.IsLocal(member)) < others)
+                {
+                    yield return Fail("nobody from another device joined the room");
+                    yield break;
+                }
                 yield return new WaitForSeconds(0.5f);
                 yield return Shot("02_everybody_ready");
                 StartRoom();
@@ -107,6 +140,12 @@ namespace Portfolio.BoardGames
             else
             {
                 yield return JoinFirstRoom(120f);
+                if (!Server.InRoom)
+                {
+                    // A party of two does not fit a table with the host already in it: the server said why (noted above).
+                    yield return Fail("did not get into the room");
+                    yield break;
+                }
                 yield return new WaitForSeconds(0.7f);
                 yield return Shot("02_room");
                 // The first move is left to the clock of the room.
@@ -119,7 +158,7 @@ namespace Portfolio.BoardGames
                 yield return Fail("the game did not start");
                 yield break;
             }
-            Note($"playing seat {manager.LocalSeat} ({manager.Setup.SideOf(manager.LocalSeat)}) of {Seats()}");
+            Note($"playing {SeatsHere()} of {Seats()}");
             piloting = true;
             StartCoroutine(Pilot());
             StartCoroutine(ShotWhen("04_the_clock_runs_down", () => WaitingForSomebodyElse && Server.Turn != null && Server.Turn.Remaining < 6f));
@@ -199,6 +238,71 @@ namespace Portfolio.BoardGames
             return string.Join(", ", setup.seats.Select((seat, i) => $"{i}: {seat.name}{(seat.computer ? $" (computer {seat.level})" : "")}"));
         }
 
+        /// <summary>The seats played at this device with their sides: "seat 0 (Light, you), seat 1 (Dark, here)".</summary>
+        private string SeatsHere()
+        {
+            TableSetup setup = manager.Setup;
+            if (setup == null || manager.LocalSeats.Count == 0)
+            {
+                return "no seat";
+            }
+            return string.Join(", ", manager.LocalSeats.Select(seat => $"seat {seat} ({setup.SideOf(seat)}, {(manager.IsOwnSeat(seat) ? "you" : "here")})"));
+        }
+
+        /// <summary>The members of the room by seat, those at this device marked.</summary>
+        private string Players()
+        {
+            return string.Join(", ", Server.Members.Select(member => $"{member.Seat}: {Server.NameOf(member.Identity)}{(Server.IsMe(member) ? " (you)" : Server.IsLocal(member) ? " (here)" : "")}"));
+        }
+
+        /// <summary>
+        /// A party of two filled the table: the two would play each other through the server, which local play does at the
+        /// device, so the start is refused: by the base server in a room that needs two players, and by the game's module in
+        /// a room with a computer opponent (which needs one player, but finds no seat left for the computer). Both refusals
+        /// are written down and photographed in the lobby, which shows them; then the party leaves the room and the tour ends.
+        /// </summary>
+        private IEnumerator PartyStartRefused()
+        {
+            Note($"the players at this device fill the table: {Players()}");
+            string answer = null;
+            yield return TryToStart(made => answer = made);
+            yield return Shot("02_start_refused");
+            if (answer == "ok")
+            {
+                yield return Fail("two people at one device started an online game");
+                yield break;
+            }
+            string configured = null;
+            Server.ConfigureRoom(Level(), RoomOptions.Write(RoomOptions.TurnOption, TurnSeconds, RoomOptions.ComputersOption, 1), 2,
+                error => configured = error ?? "ok");
+            yield return WaitFor(() => configured != null, 15f, "the computer opponent");
+            Note("computer opponent: " + configured);
+            yield return WaitFor(() => Server.CurrentRoom != null && Server.CurrentRoom.MinPlayers == 1, 10f, "the room to need one player");
+            yield return TryToStart(made => answer = made);
+            yield return Shot("03_start_refused_with_a_computer");
+            if (answer == "ok")
+            {
+                yield return Fail("two people at one device started an online game with the computer option");
+                yield break;
+            }
+            Note($"the start was refused both times; the room is {(Server.CurrentRoom != null ? Server.CurrentRoom.Phase.ToString() : "gone")}, {Players()}");
+            Server.LeaveRoom(error => Note("leave room: " + (error ?? "ok")));
+            yield return WaitFor(() => !Server.InRoom, 10f, "leaving the room");
+            Note("done");
+            Quit();
+        }
+
+        /// <summary>The host starts the room and waits for the server's answer ("ok", or why not), which the lobby shows a moment.</summary>
+        private IEnumerator TryToStart(Action<string> answered)
+        {
+            string answer = null;
+            Server.StartRoom(error => answer = error ?? "ok");
+            yield return WaitFor(() => answer != null, 15f, "the answer to the start");
+            Note("start room: " + (answer ?? "no answer"));
+            yield return new WaitForSeconds(1f);
+            answered(answer ?? "no answer");
+        }
+
         /// <summary>A tournament: the host opens and starts it, everybody plays their matches with the pilot.</summary>
         private IEnumerator Tournament()
         {
@@ -229,7 +333,7 @@ namespace Portfolio.BoardGames
         /// <summary>One match of the tournament, with the pilot, until the game is over and the result showed.</summary>
         private IEnumerator PlayMatch(int number)
         {
-            Note($"playing match {number}: seat {manager.LocalSeat} of {Seats()}");
+            Note($"playing match {number}: {SeatsHere()} of {Seats()}");
             piloting = true;
             if (!pilotRunning)
             {
@@ -277,7 +381,7 @@ namespace Portfolio.BoardGames
                     return false;
                 }
                 int seat = table.SeatToMove;
-                return seat >= 0 && seat != manager.LocalSeat && !table.IsComputer(seat);
+                return seat >= 0 && !manager.PlayedHere(seat) && !table.IsComputer(seat);
             }
         }
 
@@ -297,14 +401,33 @@ namespace Portfolio.BoardGames
             Quit();
         }
 
-        /// <summary>Plays the seat of this player with the computer's choice, through the same path a click takes.</summary>
+        /// <summary>
+        /// Plays every seat of the players at this device with the computer's choice, through the same path a click
+        /// takes: whichever of their seats the table waits for. Lifts the hand-over screen when the party has it on, after
+        /// a picture of it.
+        /// </summary>
         private IEnumerator Pilot()
         {
             pilotRunning = true;
             while (true)
             {
                 yield return new WaitForSeconds(0.45f);
-                if (!piloting || manager.Table == null || !manager.IsOnlineGame || !manager.WaitingForHuman)
+                if (!piloting || manager.Table == null || !manager.IsOnlineGame)
+                {
+                    continue;
+                }
+                if (manager.IsHandingOver)
+                {
+                    if (!handOverShot)
+                    {
+                        handOverShot = true;
+                        yield return Shot("07_hand_over");
+                    }
+                    Note($"the device is handed over to seat {manager.Table.SeatToAct} ({manager.NameOf(manager.Table.SeatToAct)})");
+                    TurnCurtain.For(manager).Lift();
+                    continue;
+                }
+                if (!manager.WaitingForHuman)
                 {
                     continue;
                 }
@@ -316,7 +439,13 @@ namespace Portfolio.BoardGames
                     yield return WaitFor(() => manager.Table == null || manager.Table.Applied != applied, TurnSeconds + 20f, "the clock");
                     continue;
                 }
-                BoardCommand command = Game != null ? BoardAI.Choose(Game.CloneGame(), manager.Table.SeatToAct, PilotLevel, random) : null;
+                int seat = manager.Table.SeatToAct;
+                if (seat != pilotSeat)
+                {
+                    pilotSeat = seat;
+                    Note($"the pilot acts for seat {seat} ({manager.NameOf(seat)}), the board from {manager.BottomSide}'s side");
+                }
+                BoardCommand command = Game != null ? BoardAI.Choose(Game.CloneGame(), seat, PilotLevel, random) : null;
                 if (command == null)
                 {
                     continue;

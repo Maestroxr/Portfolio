@@ -18,6 +18,9 @@ namespace Portfolio.BoardGames
     /// </summary>
     public sealed class BoardGamesUI : GameUI
     {
+        /// <summary>The player's avatar on this device while the menu is up: In the top left corner, beside the games' tabs.</summary>
+        protected override (Vector2 anchor, Vector2 offset)? AvatarPlace => (new Vector2(0f, 1f), new Vector2(24f, -24f));
+
         [Header("HUD")]
         [SerializeField] private GameObject hud;
         [SerializeField] private SeatPanel[] seatPanels = new SeatPanel[2];
@@ -321,8 +324,10 @@ namespace Portfolio.BoardGames
                     name = L.T("Computer");
                 }
                 Color color = look != null ? look.ColorOf(side) : side == Side.Light ? Color.white : new Color(0.2f, 0.2f, 0.2f);
-                bool you = manager.IsOnlineGame && manager.LocalSeat == seat;
-                panel.Bind(name, color, manager.SideName(seat), you);
+                // Online, the player at this device is "(you)" and a player who joined at this device is "(here)".
+                bool you = manager.IsOwnSeat(seat);
+                bool here = !you && manager.IsOnlineGame && manager.PlayedHere(seat);
+                panel.Bind(name, color, manager.SideName(seat), you, here);
                 panel.SetLine(manager.SeatLine(seat));
                 panel.SetTurn(!game.IsOver && table.SeatToAct == seat);
             }

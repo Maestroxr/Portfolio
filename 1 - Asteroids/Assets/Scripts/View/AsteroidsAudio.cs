@@ -8,7 +8,7 @@ namespace Portfolio.Asteroids
     /// often one clip can restart, so a chain reaction does not turn into noise) and two music sources that crossfade
     /// between the menu, battle and boss themes. The music ducks while the game is paused.
     /// </summary>
-    public class AsteroidsAudio : MonoBehaviour
+    public partial class AsteroidsAudio : MonoBehaviour
     {
         [Header("Weapons")]
         [SerializeField] internal AudioClip blaster;
@@ -225,6 +225,10 @@ namespace Portfolio.Asteroids
 
         public void Fire(WeaponType type)
         {
+            if (FireArmory(type))
+            {
+                return;
+            }
             switch (type)
             {
                 case WeaponType.Laser: Play(laser, 0.55f, 1f, 0.04f); break;

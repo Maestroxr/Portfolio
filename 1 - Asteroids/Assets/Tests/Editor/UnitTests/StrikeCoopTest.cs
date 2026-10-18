@@ -164,6 +164,12 @@ namespace Portfolio.Asteroids.Tests
             Assert.That(CoopRules.LevelTitle(field, 3), Is.EqualTo("3. Debris Belt"));
             Assert.That(CoopRules.LevelTitle(endless, 12), Is.EqualTo("Deep Space (endless)"));
             Assert.That(CoopRules.LevelTitle(strike, 1), Is.EqualTo("Strike 1. Dust Devil"));
+
+            // With several campaigns per mode, the lobby names the campaign and numbers the mission within it.
+            Assert.That(CoopRules.LevelTitle(field, 3, "The Raider War"), Is.EqualTo("The Raider War 3. Debris Belt"));
+            Assert.That(CoopRules.LevelTitle(strike, 2, "Shadow Strike"), Is.EqualTo("Strike: Shadow Strike 2. Dust Devil"));
+            Assert.That(CoopRules.LevelTitle(endless, 0, "The Raider War"), Is.EqualTo("Deep Space (endless)"), "The endless mission stands on its own.");
+            Assert.That(CoopRules.LevelTitle(field, 3, null), Is.EqualTo("3. Debris Belt"), "Without a campaign, as before.");
         }
 
         private static void Name(AsteroidsLevel level, string title)

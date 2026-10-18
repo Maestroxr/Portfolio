@@ -254,6 +254,156 @@ namespace Portfolio.Heroes.Tests
                 "the device changes hands at least twice a day between two people");
         }
 
+        // ------------------------------------------------------------------ several people at one device, online
+
+        [Test]
+        public void OnlineOnlyThePeopleHereHoldTheDevice()
+        {
+            // Alice and Bob play at this device, a rival at another one: the rival is a person, but not one of theirs.
+            GameState state = Table(true, true, true);
+            var here = new List<int> { 0, 2 };
+            state.currentPlayer = 0;
+            Assert.That(HotSeat.HandOverTo(state, -1, 0, here), Is.EqualTo(0), "Alice is asked for first");
+            Assert.That(HotSeat.HandOverTo(state, 0, 0, here), Is.EqualTo(-1), "and plays her own turn");
+            state.currentPlayer = 1;
+            Assert.That(HotSeat.HandOverTo(state, 0, 1, here), Is.EqualTo(2),
+                "Bob takes the device while the rival plays: he plays next here");
+            Assert.That(HotSeat.HandOverTo(state, 2, 1, here), Is.EqualTo(-1), "Bob watches the rival's turn");
+            state.currentPlayer = 2;
+            Assert.That(HotSeat.HandOverTo(state, 2, 2, here), Is.EqualTo(-1), "and plays on without another hand-over");
+            state.currentPlayer = 0;
+            Assert.That(HotSeat.HandOverTo(state, 2, 0, here), Is.EqualTo(0), "then back to Alice");
+            Assert.That(HotSeat.HandOverTo(state, 0, 0), Is.EqualTo(-1), "a hot seat counts every person, as ever");
+
+            state.currentPlayer = 1;
+            state.pending.Add(new PendingChoice { kind = ChoiceKind.LevelUp, player = 1, hero = 0 });
+            Assert.That(HotSeat.HandOverTo(state, 2, 1, here), Is.EqualTo(-1), "the rival's question is asked on the rival's device");
+            Assert.That(HotSeat.HandOverTo(state, 2, 1), Is.EqualTo(1), "while a hot seat would have handed it over");
+        }
+
+        [Test]
+        public void OnlineOnlyTheBattlesOfThePeopleHereHandTheDeviceOver()
+        {
+            // Alice and Bob here, two rivals elsewhere.
+            GameState state = Table(true, true, true, true);
+            var here = new List<int> { 0, 2 };
+            state.currentPlayer = 1;
+            state.battle = new BattleState { active = true, attackerPlayer = 1, defenderPlayer = 3 };
+            Assert.That(HotSeat.HandOverTo(state, 2, 1, here), Is.EqualTo(-1), "the rivals fight it out among themselves");
+            state.battle = new BattleState { active = true, attackerPlayer = 1, defenderPlayer = 0 };
+            Assert.That(HotSeat.HandOverTo(state, 2, 1, here), Is.EqualTo(0), "Alice is attacked on the rival's turn: she fights it");
+            Assert.That(HotSeat.HandOverTo(state, 0, 1, here), Is.EqualTo(-1));
+            state.battle.active = false;
+            Assert.That(HotSeat.HandOverTo(state, 0, 1, here), Is.EqualTo(2), "after it Bob, who plays next here, watches again");
+
+            state.currentPlayer = 0;
+            state.battle = new BattleState { active = true, attackerPlayer = 0, defenderPlayer = 2 };
+            Assert.That(HotSeat.HandOverTo(state, 0, 2, here), Is.EqualTo(-1), "Alice and Bob fight their battle at one screen");
+
+            // A battle about to come onto the screen, which the rules (ahead of the screen online) may have left already.
+            Assert.That(HotSeat.ToBattle(state, 2, -1, 1, 0, here), Is.EqualTo(0), "the one who fights it takes the device");
+            Assert.That(HotSeat.ToBattle(state, 0, -1, 0, 1, here), Is.EqualTo(-1), "the one who holds it fights it");
+            Assert.That(HotSeat.ToBattle(state, 2, -1, 1, 3, here), Is.EqualTo(-1), "nobody here fights it");
+            Assert.That(HotSeat.ToBattle(state, 2, -1, 1, -1, here), Is.EqualTo(-1), "a rival against the wilds");
+        }
+
+        [Test]
+        public void OnlineThoseHereWhoFellOrLeftAreSkipped()
+        {
+            GameState state = Table(true, true, true, false);
+            var here = new List<int> { 0, 2 };
+            Assert.That(HotSeat.NextPerson(state, 1, here), Is.EqualTo(2));
+            state.players[2].alive = false;
+            Assert.That(HotSeat.NextPerson(state, 1, here), Is.EqualTo(0), "past Bob, knocked out, and the computer");
+            state.players[0].human = false;
+            Assert.That(HotSeat.NextPerson(state, 1, here), Is.EqualTo(-1), "Alice left: the computer plays her realm");
+            Assert.That(HotSeat.NextPerson(state, 1, null), Is.EqualTo(1), "without the seats here, every person counts");
+        }
+
+        [Test]
+        public void OnlineAPlayerAloneAtTheDeviceKeepsIt()
+        {
+            GameState state = Table(true, true);
+            var here = new List<int> { 1 };
+            state.currentPlayer = 0;
+            Assert.That(HotSeat.HandOverTo(state, -1, 0, here), Is.EqualTo(1), "the screen is the player's from the start");
+            Assert.That(HotSeat.HandOverTo(state, 1, 0, here), Is.EqualTo(-1));
+            state.currentPlayer = 1;
+            Assert.That(HotSeat.HandOverTo(state, 1, 1, here), Is.EqualTo(-1));
+            state.battle = new BattleState { active = true, attackerPlayer = 0, defenderPlayer = -1 };
+            Assert.That(HotSeat.HandOverTo(state, 1, 0, here), Is.EqualTo(-1));
+            state.battle = new BattleState { active = true, attackerPlayer = 0, defenderPlayer = 1 };
+            Assert.That(HotSeat.HandOverTo(state, 1, 0, here), Is.EqualTo(-1));
+        }
+
+        /// <summary>
+        /// An online game played out by the computer's brains on every seat: Alice and Bob at this device, a rival at
+        /// another, all three people. The device is handed over as the director does it online: only ever to Alice or Bob,
+        /// who never decide anything on the other's screen (but in a battle they fight together), and the rival's turns are
+        /// watched by the one of them who plays next.
+        /// </summary>
+        [Test]
+        public void OnlineThePeopleHereNeverPlayOnEachOthersScreens()
+        {
+            MapSpec spec = HotSeat.Spec(ThreeRealms(), Seats(Person("Alice"), Person("Rival"), Person("Bob")), 0, 2, 2);
+            GameState state = MapGenerator.Generate(spec);
+            var game = new HeroesGame(state, new SeededRandom(spec.seed ^ 0x5bd1e995u));
+            game.Begin();
+            var here = new List<int> { 0, 2 };
+            var brain = new AdventureAI();
+            int holder = -1;
+            var handedTo = new List<int>();
+            int refused = 0;
+            for (int step = 0; step < 40000 && !game.IsOver && game.State.day <= 8; step++)
+            {
+                game.TakeEvents();
+                int to = HotSeat.HandOverTo(game.State, holder, game.WaitingPlayer, here);
+                if (to >= 0)
+                {
+                    Assert.That(here, Does.Contain(to), $"day {game.State.day}: the device went to a player of another device");
+                    Assert.That(to, Is.Not.EqualTo(holder));
+                    holder = to;
+                    handedTo.Add(to);
+                }
+                int who = game.WaitingPlayer;
+                if (who < -1)
+                {
+                    break;
+                }
+                if (game.InBattle)
+                {
+                    BattleState battle = game.Battle;
+                    bool fights = holder == battle.attackerPlayer || holder == battle.defenderPlayer;
+                    bool hereFight = here.Contains(battle.attackerPlayer) || here.Contains(battle.defenderPlayer);
+                    Assert.That(!hereFight || fights, Is.True, $"day {game.State.day}: a battle of a player here shown to {holder}");
+                }
+                else if (here.Contains(who))
+                {
+                    Assert.That(holder, Is.EqualTo(who), $"day {game.State.day}: seat {who} decides on the screen of {holder}");
+                }
+                else
+                {
+                    Assert.That(holder, Is.EqualTo(HotSeat.NextPerson(game.State, game.State.currentPlayer, here)),
+                        $"day {game.State.day}: the rival's turn is watched by the wrong person");
+                }
+                GameCommand command = game.State.pending.Count > 0 ? GameCommand.Of(CommandKind.Choose, who, 0)
+                    : game.InBattle ? BattleAI.Next(game) : brain.Next(game, who);
+                command ??= game.InBattle ? GameCommand.BattleDefend(who, game.Battle.current) : GameCommand.EndTurn(who);
+                if (game.Apply(command))
+                {
+                    refused = 0;
+                    continue;
+                }
+                brain.Refused(command);
+                refused++;
+                Assert.That(refused, Is.LessThan(20), $"the rules keep refusing {command.kind}");
+            }
+            Assert.That(game.State.day, Is.GreaterThan(4), "the game barely started");
+            Assert.That(handedTo[0], Is.EqualTo(0), "Alice is asked for first");
+            Assert.That(handedTo.Count, Is.GreaterThanOrEqualTo(2 * (game.State.day - 1)),
+                "the device changes hands at least twice a day between the two people here");
+        }
+
         // ------------------------------------------------------------------ the end
 
         [Test]

@@ -24,6 +24,9 @@ namespace Portfolio.Asteroids
         /// </summary>
         public bool IsGhost { get; internal set; }
 
+        /// <summary>A fragment of a burst shell (<see cref="BurstShot"/>): its hits do not count as shots that landed.</summary>
+        public bool IsFragment { get; internal set; }
+
         /// <summary>Kept from the original: seconds the shot flies.</summary>
         public float TimeAlive
         {
@@ -266,7 +269,7 @@ namespace Portfolio.Asteroids
 
 
         /// <summary>Hits <paramref name="target"/>: damages it, bursts if the shot carries a blast, and ends when spent.</summary>
-        public void Hit(Shootable target)
+        public virtual void Hit(Shootable target)
         {
             hits.Add(target);
             Vector2 direction = Velocity.sqrMagnitude > 0.01f ? Velocity.normalized : Vector2.up;
@@ -380,6 +383,7 @@ namespace Portfolio.Asteroids
             ShotHitEvent = null;
             FiredBy = null;
             IsGhost = false;
+            IsFragment = false;
             homingTarget = null;
             Reach = reach;
             wobbleOffset = 0f;

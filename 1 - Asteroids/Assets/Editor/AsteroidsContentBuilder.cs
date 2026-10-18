@@ -51,12 +51,15 @@ namespace Portfolio.Asteroids.EditorTools
             BuildHulls();
             Progress("Sectors", 0.2f);
             BuildThemes();
+            BuildFieldCampaignThemes();
             foreach (ThemeSpec spec in AsteroidsArtBuilder.GeneratedThemes)
             {
                 BuildThemeSectors(spec);
+                BuildFieldCampaignThemeSectors(spec);
             }
             Progress("Drop tables", 0.35f);
             BuildLoot();
+            BuildFieldCampaignLoot();
             Progress("Missions", 0.5f);
             BuildMissions();
             Progress("Post-processing", 0.85f);
@@ -301,10 +304,13 @@ namespace Portfolio.Asteroids.EditorTools
             Table("Pods2", ("WeaponScatter", 3), ("WeaponBlaster", 2), ("Shield", 2), ("PowerUpOverdrive", 2), ("PowerUpMagnet", 1), ("NovaBomb", 1));
             Table("Pods3", ("WeaponLaser", 3), ("Shield", 2), ("PowerUpChrono", 2), ("PowerUpOverdrive", 1), ("NovaBomb", 2), ("Repair", 1));
             Table("Pods4", ("WeaponMissiles", 3), ("PowerUpDrones", 2), ("Shield", 2), ("WeaponLaser", 1), ("NovaBomb", 1), ("ExtraShip", 1));
-            Table("RocksEndless", ("Repair", 3), ("Shield", 3), ("WeaponBlaster", 1), ("WeaponScatter", 1), ("WeaponLaser", 1), ("WeaponMissiles", 1),
-                ("PowerUpOverdrive", 1), ("PowerUpMagnet", 1), ("PowerUpChrono", 1), ("PowerUpDrones", 1), ("NovaBomb", 1));
+            // The endless mode deals out every weapon and power-up, the armory's included.
+            Table("RocksEndless", ("Repair", 4), ("Shield", 4), ("WeaponBlaster", 1), ("WeaponScatter", 1), ("WeaponLaser", 1), ("WeaponMissiles", 1),
+                ("PowerUpOverdrive", 1), ("PowerUpMagnet", 1), ("PowerUpChrono", 1), ("PowerUpDrones", 1), ("NovaBomb", 1),
+                ("WeaponArc", 1), ("WeaponRail", 1), ("WeaponFlak", 1), ("WeaponWave", 1), ("PowerUpPiercing", 1), ("PowerUpAegis", 1));
             Table("PodsEndless", ("WeaponBlaster", 1), ("WeaponScatter", 1), ("WeaponLaser", 1), ("WeaponMissiles", 1), ("Shield", 2), ("PowerUpDrones", 1),
-                ("PowerUpChrono", 1), ("NovaBomb", 2), ("ExtraShip", 1));
+                ("PowerUpChrono", 1), ("NovaBomb", 2), ("ExtraShip", 1),
+                ("WeaponArc", 1), ("WeaponRail", 1), ("WeaponFlak", 1), ("WeaponWave", 1), ("PowerUpPiercing", 1), ("PowerUpAegis", 1));
         }
 
         private static void Table(string name, params (string reward, int weight)[] entries)
@@ -556,10 +562,33 @@ namespace Portfolio.Asteroids.EditorTools
                 title = sector.title,
                 theme = Theme(sector.theme),
                 starsRequired = sector.stars,
-                mode = MissionMode.Field
+                mode = MissionMode.Field,
+                arc = 0
             }).ToList();
+            // The first campaign of each mode; the campaigns of a mode are numbered in the order they are listed.
+            var arcs = new List<AsteroidsCampaign.Arc>
+            {
+                new AsteroidsCampaign.Arc
+                {
+                    title = FieldCampaignTitle,
+                    description = "Four sectors, twelve missions: break the raiders' hold on the Kepler Belt and hunt their Dreadnought into the Void Core.",
+                    mode = MissionMode.Field,
+                    starsRequired = 0
+                },
+                new AsteroidsCampaign.Arc
+                {
+                    title = StrikeCampaignTitle,
+                    description = "Nine missions over three worlds: take the war down to the Shadow's planets and end it at the Shadow Station.",
+                    mode = MissionMode.Strike,
+                    starsRequired = 0
+                }
+            };
             // The strike missions and sectors come after the field ones, so no field index moves.
             AppendStrikeContent(levels, sectors);
+            // The later campaigns come after everything that was there before them, so no older index moves either: the
+            // field campaigns first, then the strike campaigns, each with its own sectors (arc 1 and 2 of its mode).
+            AppendFieldCampaigns(levels, sectors, arcs);
+            AppendStrikeCampaigns(levels, sectors, arcs);
 
             AsteroidsAssets.SaveScriptable<AsteroidsCampaign>(CampaignPath, campaign =>
             {
@@ -572,15 +601,46 @@ namespace Portfolio.Asteroids.EditorTools
                     }
                 });
                 campaign.sectors = sectors.ToArray();
+                campaign.arcs = arcs.ToArray();
                 campaign.endlessAfter = 3;
             });
         }
+
+        /// <summary>The name of the first asteroid field campaign (the twelve missions the game started with).</summary>
+        public const string FieldCampaignTitle = "The Raider War";
+
+        /// <summary>The name of the first planet strike campaign.</summary>
+        public const string StrikeCampaignTitle = "Shadow Strike";
 
         /// <summary>
         /// Appends the strike missions (after the endless one) and the strike sectors (after the field sectors), with their
         /// themes and loot (AsteroidsContentBuilder.Strike.cs).
         /// </summary>
         static partial void AppendStrikeContent(List<GameLevel> levels, List<AsteroidsCampaign.Sector> sectors);
+
+        /// <summary>The Classic sector themes of the field campaigns' new sectors (AsteroidsContentBuilder.FieldCampaigns.cs).</summary>
+        static partial void BuildFieldCampaignThemes();
+
+        /// <summary>The field campaigns' new sectors in the look of a generated theme (named like the Classic ones, so a mission finds its sector).</summary>
+        static partial void BuildFieldCampaignThemeSectors(ThemeSpec spec);
+
+        /// <summary>The drop tables of the field campaigns' missions (AsteroidsContentBuilder.FieldCampaigns.cs).</summary>
+        static partial void BuildFieldCampaignLoot();
+
+        /// <summary>
+        /// Appends the second and third asteroid field campaigns: their two <see cref="AsteroidsCampaign.Arc"/>s (mode Field,
+        /// numbered 1 and 2), their sectors (<see cref="AsteroidsCampaign.Sector.arc"/> 1 and 2) and their missions, with the
+        /// sector themes and loot they use (AsteroidsContentBuilder.FieldCampaigns.cs). A mission's <see cref="GameLevel.Index"/>
+        /// is its place in <paramref name="levels"/> and its sector its place in <paramref name="sectors"/>, both at the time
+        /// it is appended: never assume fixed numbers.
+        /// </summary>
+        static partial void AppendFieldCampaigns(List<GameLevel> levels, List<AsteroidsCampaign.Sector> sectors, List<AsteroidsCampaign.Arc> arcs);
+
+        /// <summary>
+        /// Appends the second and third planet strike campaigns the same way (mode Strike, arcs 1 and 2), after the field
+        /// campaigns (AsteroidsContentBuilder.StrikeCampaigns.cs).
+        /// </summary>
+        static partial void AppendStrikeCampaigns(List<GameLevel> levels, List<AsteroidsCampaign.Sector> sectors, List<AsteroidsCampaign.Arc> arcs);
 
         private static AsteroidSettings BuildSettings(string path, float speed, float spawnRate, float explosion)
         {
@@ -661,9 +721,10 @@ namespace Portfolio.Asteroids.EditorTools
             }
             AsteroidsAssets.Set(definition, "displayName", p => p.stringValue = "Asteroids");
             AsteroidsAssets.Set(definition, "description", p => p.stringValue =
-                "Fly through four sectors of space: split asteroids, dodge mines, comets and black holes, fight saucers, wasps and " +
-                "four bosses, and upgrade your guns. Then take the war to the planets in SHADOW STRIKE: nine missions of vertical " +
-                "scrolling air and ground combat, a Supply Room to spend your earnings in, and nine bosses. Co-op for up to four pilots.");
+                "Three asteroid field campaigns: split asteroids, dodge mines, comets and black holes, fight saucers, wasps and " +
+                "bosses, upgrade your guns, then see how long you last in the endless Deep Field. Then take the war to the planets in " +
+                "three Planet Strike campaigns of vertical scrolling air and ground combat, with a Supply Room to spend your earnings " +
+                "in and a boss at the end of every mission. Co-op for up to four pilots.");
             AsteroidsAssets.SetObject(definition, "icon", AsteroidsArtBuilder.Icon("GameIcon"));
         }
     }

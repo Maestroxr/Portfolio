@@ -13,7 +13,7 @@ namespace Portfolio.Asteroids.Tests
         public void EveryPathIsDeterministicAndStartsOffScreen()
         {
             Vector2 half = StrikeRules.HalfSize;
-            Assert.That(FlightPaths.All.Length, Is.EqualTo(12));
+            Assert.That(FlightPaths.All.Length, Is.EqualTo(15));
             foreach (FlightPath path in FlightPaths.All)
             {
                 Vector2[] first = FlightPaths.Waypoints(path, false);

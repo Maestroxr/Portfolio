@@ -36,6 +36,7 @@ namespace Portfolio.Heroes.UI
         private readonly int[] amountTargets = new int[ResourceSet.Kinds];
         private readonly Tooltip[] amountTips = new Tooltip[ResourceSet.Kinds];
         private TextMeshProUGUI date;
+        private Tooltip dateTip;
         private TextMeshProUGUI turn;
         private TextMeshProUGUI clock;
         private int clockShown = -1;
@@ -133,6 +134,9 @@ namespace Portfolio.Heroes.UI
             UIKit.Stretch((RectTransform)date.transform, 10f, 0f, 10f, 0f);
             UIKit.FitLine(date, 21f, 14f);
             date.characterSpacing = 1f;
+            // The date tells what the scenario asks for, and how long is left of it.
+            dateBox.raycastTarget = true;
+            dateTip = Tooltip.Attach(dateBox.gameObject, "Your task", "");
 
             Image turnBox = UIKit.Recess(content, "Turn");
             UIKit.Pin((RectTransform)turnBox.transform, new Vector2(1f, 0.5f), new Vector2(-346f, 0f), new Vector2(270f, 42f));
@@ -303,12 +307,13 @@ namespace Portfolio.Heroes.UI
                 }
             }
             date.text = Words.F("Month {0}, Week {1}, Day {2}", state.Month, state.WeekOfMonth, state.DayOfWeek);
+            dateTip.Text = ui.TaskText();
             PlayerState current = state.Player(state.currentPlayer);
             bool mine = current != null && current.index == manager.Viewer;
             turnPennant.color = HeroesArt.PlayerColor(current != null ? (int)current.color : 4);
-            // In a hot seat every person is called by name, the one at the device too.
+            // In a hot seat (and online with several people here) every person is called by name, the one at the device too.
             turn.text = current == null ? ""
-                : mine ? manager.IsHotSeat ? Words.F("{0}'s turn", Words.Name(current.name)) : Words.T("Your turn")
+                : mine ? manager.SharesDevice ? Words.F("{0}'s turn", Words.Name(current.name)) : Words.T("Your turn")
                 : Words.F(busy ? "{0} moves" : "{0} thinks", Words.Name(current.name));
             turn.color = mine ? UIKit.Good : UIKit.Ink;
 

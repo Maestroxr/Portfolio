@@ -152,4 +152,35 @@ public static partial class Module
     {
         ctx.Db.HeroesStats.Player.Delete(user.Identity);
     }
+
+    /// <summary>A guest who signed in: their stats go to the account (counts add up, bests keep the higher).</summary>
+    static partial void OnUserMerged(ReducerContext ctx, Identity from, Identity to)
+    {
+        if (ctx.Db.HeroesStats.Player.Find(from) is not { } guest)
+        {
+            return;
+        }
+        ctx.Db.HeroesStats.Player.Delete(from);
+        if (ctx.Db.HeroesStats.Player.Find(to) is { } account)
+        {
+            account.Games += guest.Games;
+            account.Wins += guest.Wins;
+            account.BestRealm = Math.Max(account.BestRealm, guest.BestRealm);
+            ctx.Db.HeroesStats.Player.Update(account);
+        }
+        else
+        {
+            guest.Player = to;
+            ctx.Db.HeroesStats.Insert(guest);
+        }
+    }
+
+    /// <summary>Battles won and lost are counts: what the guest and the account played adds up.</summary>
+    static partial void MergePlayerValue(ReducerContext ctx, string key, string from, string to, ref string merged)
+    {
+        if (key.EndsWith(".Value.Wins", StringComparison.Ordinal) || key.EndsWith(".Value.Losses", StringComparison.Ordinal))
+        {
+            merged = SumOfCounts(from, to);
+        }
+    }
 }

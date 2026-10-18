@@ -104,7 +104,8 @@ namespace Portfolio.Asteroids
                 hasTurretRest = true;
             }
             StrikeUnitInfo info = StrikeUnitRules.Info(unit);
-            float warning = pattern == AttackPattern.Laser ? (info.Telegraph > 0f ? info.Telegraph : LaserTelegraph) : 0f;
+            // A laser always warns; another pattern warns when the unit table gives it a warning (the prism's glow).
+            float warning = pattern == AttackPattern.Laser ? (info.Telegraph > 0f ? info.Telegraph : LaserTelegraph) : info.Telegraph;
             gun.Configure(pattern, shotKind, burst, burstGap, interval, info.AlternatePattern, info.AlternateShotKind, warning);
             gun.Restart(interval * Random.Range(0.3f, 0.8f));
             ShowTelegraph(false);

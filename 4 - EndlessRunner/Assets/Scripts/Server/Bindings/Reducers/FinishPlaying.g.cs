@@ -13,12 +13,12 @@ namespace Portfolio.EndlessRunner.Server
 {
     public sealed partial class RemoteReducers : RemoteBase
     {
-        public delegate void FinishPlayingHandler(ReducerEventContext ctx, long score);
+        public delegate void FinishPlayingHandler(ReducerEventContext ctx, byte seat, long score);
         public event FinishPlayingHandler? OnFinishPlaying;
 
-        public void FinishPlaying(long score)
+        public void FinishPlaying(byte seat, long score)
         {
-            conn.InternalCallReducer(new Reducer.FinishPlaying(score));
+            conn.InternalCallReducer(new Reducer.FinishPlaying(seat, score));
         }
 
         public bool InvokeFinishPlaying(ReducerEventContext ctx, Reducer.FinishPlaying args)
@@ -37,6 +37,7 @@ namespace Portfolio.EndlessRunner.Server
             }
             OnFinishPlaying(
                 ctx,
+                args.Seat,
                 args.Score
             );
             return true;
@@ -49,11 +50,17 @@ namespace Portfolio.EndlessRunner.Server
         [DataContract]
         public sealed partial class FinishPlaying : Reducer, IReducerArgs
         {
+            [DataMember(Name = "seat")]
+            public byte Seat;
             [DataMember(Name = "score")]
             public long Score;
 
-            public FinishPlaying(long Score)
+            public FinishPlaying(
+                byte Seat,
+                long Score
+            )
             {
+                this.Seat = Seat;
                 this.Score = Score;
             }
 

@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using Gamebox;
 using Gamebox.Online;
+using Gamebox.UI;
 using Portfolio.MemoryCards.Server;
 using UnityEngine;
 
@@ -16,7 +18,10 @@ namespace Portfolio.MemoryCards
     /// (Server/Lib.cs compiles the model in), so the faces of the cards stay on the server until they turn; the flips
     /// come back as events, which the manager plays like the flips of a local game (MemoryCardsGameManager.Versus.cs).
     /// A turn the server begins reaches the manager after the flips of the same moment, so the flip that ended a turn
-    /// is shown before the next turn is announced.
+    /// is shown before the next turn is announced. Several people may play at this device (the companions of the base
+    /// controller): each holds a seat of the room, the manager plays every one of them (<see cref="OnlineSeats"/>), a
+    /// flip goes out for the seat whose turn it is (<see cref="Flip"/>), and the device is handed over between its seats
+    /// when the party asked for that (<see cref="HandOverTo"/>).
     /// </summary>
     public class MemoryCardsOnlineController : OnlineGameController
     {
@@ -25,10 +30,13 @@ namespace Portfolio.MemoryCards
         private const int DefaultTurnChoice = 2;
 
         private readonly List<MemoryCardsGameManager.OnlineFlip> arrived = new List<MemoryCardsGameManager.OnlineFlip>();
-        private readonly Dictionary<byte, int> seatIndex = new Dictionary<byte, int>();
+        /// <summary>The seats of the running game: board seats against room seats, and which of them are played here.</summary>
+        private OnlineSeats seats;
         private RoomOptionSpec[] optionSpecs;
         /// <summary>A turn the server began, handed to the manager after the flips that came with it.</summary>
         private RoomTurnInfo pendingTurn;
+        /// <summary>The board seat of the player at this device who had the board last, so a turn of theirs needs no hand-over.</summary>
+        private int lastHandOverSeat = -1;
 
         public MemoryCardsGameManager MemoryCards => BaseManager as MemoryCardsGameManager;
 
@@ -39,7 +47,7 @@ namespace Portfolio.MemoryCards
         public override int MinPlayersLimit => VersusMatch.MinPlayers;
 
         /// <summary>The boards of the campaign and free play; the endless run is a game for one.</summary>
-        public override IReadOnlyList<RoomLevelChoice> LevelChoices
+        public override IReadOnlyList<RoomLevelChoice> AllLevelChoices
         {
             get
             {
@@ -86,13 +94,45 @@ namespace Portfolio.MemoryCards
             return $"{base.DescribeRoom(room)}, {set}";
         }
 
-        /// <summary>The local player flips a card: the server checks the turn and answers with a flip event.</summary>
-        public void Flip(int card)
+        /// <summary>
+        /// The player at this device who plays board seat <paramref name="seat"/> flips a card: the server checks the turn
+        /// and answers with a flip event.
+        /// </summary>
+        public void Flip(int seat, int card)
         {
-            if (IsPlaying && Client != null && Client.Connection != null)
+            int roomSeat = seats != null ? seats.RoomSeatOf(seat) : -1;
+            if (IsPlaying && roomSeat >= 0 && Client != null && Client.Connection != null)
             {
-                Client.Connection.Reducers.FlipCard((ushort)card);
+                Client.Connection.Reducers.FlipCard((byte)roomSeat, (ushort)card);
             }
+        }
+
+        /// <summary>
+        /// Covers the board until the player at this device who plays board seat <paramref name="seat"/> is ready to take
+        /// the device, then calls <paramref name="ready"/>, by the rules of <see cref="OnlineGameController.HandOver"/>: at
+        /// once when the party does not hand the device over (<see cref="OnlineGameController.HandOverLocalSeats"/>), when
+        /// one player sits here, when the seat is played elsewhere, or when the same player had the board last. The curtain
+        /// wears <paramref name="color"/>, the colour of the seat on the scoreboard, as the hand-over of local play does
+        /// (the base's would wear the colour of the player's place in the party, which is another one here).
+        /// </summary>
+        public void HandOverTo(int seat, Color color, Action ready, string detail = null)
+        {
+            int roomSeat = seats != null ? seats.RoomSeatOf(seat) : -1;
+            RoomMemberInfo member = roomSeat >= 0 && Server != null ? Server.LocalMemberAt((byte)roomSeat) : null;
+            if (!HandOverLocalSeats || member == null || LocalMembers.Count < 2 || BaseManager == null || lastHandOverSeat == seat)
+            {
+                lastHandOverSeat = member != null ? seat : lastHandOverSeat;
+                ready?.Invoke();
+                return;
+            }
+            lastHandOverSeat = seat;
+            var local = new LocalSeat(Mathf.Max(0, LocalIndexOf((byte)roomSeat))) { Name = NameOf(member), Color = color };
+            TurnCurtain.For(BaseManager).Show(local, detail, ready);
+        }
+
+        protected override CampaignProgress CreateOnlineProgress(IStorageStrategy storage)
+        {
+            return new MemoryCardsProgress(storage, GameType.MemoryCards);
         }
 
         protected override void Start()
@@ -158,24 +198,32 @@ namespace Portfolio.MemoryCards
                 return;
             }
 
-            seatIndex.Clear();
+            // The board seats follow the members by room seat; the seats played here are the device's and its companions'.
             var names = new List<string>();
-            int localSeat = -1;
+            var roomSeats = new List<int>();
+            var localSeats = new List<int>();
+            int deviceSeat = -1;
             foreach (RoomMemberInfo member in Server.Members)
             {
+                roomSeats.Add(member.Seat);
+                names.Add(NameOf(member));
                 if (Server.IsLocal(member))
                 {
-                    localSeat = names.Count;
+                    localSeats.Add(member.Seat);
                 }
-                seatIndex[member.Seat] = names.Count;
-                names.Add(NameOf(member));
+                if (Server.IsMe(member))
+                {
+                    deviceSeat = member.Seat;
+                }
             }
-            if (names.Count < VersusMatch.MinPlayers || localSeat < 0)
+            if (names.Count < VersusMatch.MinPlayers || localSeats.Count == 0)
             {
                 // The other player dropped between the start and its arrival here; the server is ending the game already.
                 Report(MemoryCardsText.T("The other player left before the game began."));
                 return;
             }
+            seats = new OnlineSeats(roomSeats, localSeats, deviceSeat);
+            lastHandOverSeat = -1;
             var frozen = new bool[dealt.Cards];
             foreach (BoardCard card in connection.Db.BoardCard.RoomId.Filter(room.Id))
             {
@@ -197,7 +245,7 @@ namespace Portfolio.MemoryCards
                 PreviewSeconds = dealt.PreviewSeconds,
                 Frozen = frozen,
                 Names = names.ToArray(),
-                LocalSeat = localSeat,
+                Seats = seats,
                 Preview = shown != null ? shown.Cards : null
             });
             base.OnRoomStarted(room);
@@ -208,7 +256,7 @@ namespace Portfolio.MemoryCards
         protected override void OnServerTick()
         {
             MemoryCardsGameManager manager = MemoryCards;
-            if (manager == null || !manager.IsOnlineVersus)
+            if (manager == null || !manager.IsOnlineVersus || seats == null)
             {
                 // The preview of a game that is about to start waits for OnRoomStarted; anything else is stale.
                 arrived.RemoveAll(flip => flip.Outcome != FlipOutcome.Preview);
@@ -221,7 +269,7 @@ namespace Portfolio.MemoryCards
                 {
                     continue;
                 }
-                flip.Seat = seatIndex.TryGetValue((byte)flip.Seat, out int seat) ? seat : -1;
+                flip.Seat = seats.BoardSeatOf(flip.Seat);
                 manager.OnlineFlipArrived(flip);
             }
             arrived.Clear();
@@ -229,7 +277,8 @@ namespace Portfolio.MemoryCards
             {
                 RoomTurnInfo turn = pendingTurn;
                 pendingTurn = null;
-                if (seatIndex.TryGetValue(turn.Seat, out int turnSeat))
+                int turnSeat = seats.BoardSeatOf(turn.Seat);
+                if (turnSeat >= 0)
                 {
                     manager.OnlineTurn(turnSeat, (int)turn.Number);
                 }
@@ -261,14 +310,15 @@ namespace Portfolio.MemoryCards
         private void PassScores()
         {
             MemoryCardsGameManager manager = MemoryCards;
-            if (manager == null || !manager.IsOnlineVersus)
+            if (manager == null || !manager.IsOnlineVersus || seats == null)
             {
                 return;
             }
             var present = new HashSet<int>();
             foreach (RoomMemberInfo member in Server.Members)
             {
-                if (seatIndex.TryGetValue(member.Seat, out int seat))
+                int seat = seats.BoardSeatOf(member.Seat);
+                if (seat >= 0)
                 {
                     present.Add(seat);
                     manager.OnlineSeat(seat, (int)member.Score, true);

@@ -37,6 +37,7 @@ namespace Portfolio.Monopoly
         private Coroutine rolling;
         private bool isTurn;
         private bool isLocal;
+        private bool localAlone = true;
         private int seat = -1;
 
         public int Seat => seat;
@@ -96,10 +97,14 @@ namespace Portfolio.Monopoly
             }
         }
 
-        /// <summary>Marks the panel of the player at this device, in an online match where the others sit elsewhere.</summary>
-        public void MarkAsLocal()
+        /// <summary>
+        /// Marks the panel of a player at this device, in an online match where the others sit elsewhere: "You" when they
+        /// are the only person here (<paramref name="alone"/>), "Here" when several people play at this device.
+        /// </summary>
+        public void MarkAsLocal(bool alone = true)
         {
             isLocal = true;
+            localAlone = alone;
         }
 
         private void PaintComputerTag(PlayerState player)
@@ -132,7 +137,7 @@ namespace Portfolio.Monopoly
             if (worthText != null)
             {
                 string worth = player.bankrupt ? L.T("Out of the game") : L.F("Net worth {0}", MonopolyStyle.Money(match.NetWorth(seat)));
-                worthText.text = isLocal ? $"<b>{L.T("name|You")}</b>  •  {worth}" : worth;
+                worthText.text = isLocal ? $"<b>{(localAlone ? L.T("name|You") : L.T("Here"))}</b>  •  {worth}" : worth;
             }
             if (jailTag != null)
             {

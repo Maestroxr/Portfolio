@@ -27,6 +27,8 @@ MonoBehaviour:
       hero: -1
       buildings: 
       name: You
+      homeX: -1
+      homeY: -1
     - faction: 1
       human: 0
       aiLevel: 1
@@ -34,6 +36,8 @@ MonoBehaviour:
       hero: -1
       buildings: 
       name: Necropolis
+      homeX: -1
+      homeY: -1
     - faction: 2
       human: 0
       aiLevel: 1
@@ -41,6 +45,8 @@ MonoBehaviour:
       hero: -1
       buildings: 
       name: Stronghold
+      homeX: -1
+      homeY: -1
     - faction: 0
       human: 0
       aiLevel: 1
@@ -48,13 +54,16 @@ MonoBehaviour:
       hero: -1
       buildings: 
       name: Castle
+      homeX: -1
+      homeY: -1
     zonesPerPlayer: 1
     neutralTowns: 2
     treasure: 3
     monsters: 3
     water: 2
     theme: 2
-    themeTerrain: 0
+    themeTerrain: 2
+    themeShare: 70
     rules:
       victory: 0
       victoryValue: 0
@@ -65,10 +74,13 @@ MonoBehaviour:
       battleStyle: 0
     specials: []
     startingGold: 10000
+    woods: 0
   <Intro>k__BackingField: 
   <Outro>k__BackingField: 
   <Goal>k__BackingField: Be the last to hold a town.
+  <Loss>k__BackingField: 
   <ThreeStarDays>k__BackingField: 45
   <TwoStarDays>k__BackingField: 70
   <IsSkirmish>k__BackingField: 1
   <MapPosition>k__BackingField: {x: 900, y: 300}
+  <Arc>k__BackingField: 0

@@ -1,7 +1,7 @@
 key,en,he
 "# Game, themes and launcher card",,
 Asteroids,,אסטרואידים
-"Fly through four sectors of space: split asteroids, dodge mines, comets and black holes, fight saucers, wasps and four bosses, and upgrade your guns. Then take the war to the planets in SHADOW STRIKE: nine missions of vertical scrolling air and ground combat, a Supply Room to spend your earnings in, and nine bosses. Co-op for up to four pilots.",,"טוסו דרך ארבע גזרות בחלל: פצלו אסטרואידים, התחמקו ממוקשים, שביטים וחורים שחורים, הילחמו בצלחות מעופפות, בצרעות ובארבעה בוסים, ושדרגו את התותחים. אחר כך קחו את המלחמה אל כוכבי הלכת במבצע ""מכת הצל"": תשע משימות גלילה אנכית של קרבות אוויר וקרקע, חדר אספקה לבזבז בו את הרווחים, ותשעה בוסים. משחק שיתופי לעד ארבעה טייסים."
+"Three asteroid field campaigns: split asteroids, dodge mines, comets and black holes, fight saucers, wasps and bosses, upgrade your guns, then see how long you last in the endless Deep Field. Then take the war to the planets in three Planet Strike campaigns of vertical scrolling air and ground combat, with a Supply Room to spend your earnings in and a boss at the end of every mission. Co-op for up to four pilots.",,"שלוש מערכות בשדות האסטרואידים: פצלו אסטרואידים, התחמקו ממוקשים, שביטים וחורים שחורים, הילחמו בצלחות מעופפות, בצרעות ובבוסים, שדרגו את התותחים ובדקו כמה זמן תחזיקו מעמד בחלל העמוק האינסופי. אחר כך קחו את המלחמה אל כוכבי הלכת בשלוש מערכות של תקיפה פלנטרית: קרבות אוויר וקרקע בגלילה אנכית, חדר אספקה לבזבז בו את הרווחים ובוס בסוף כל משימה. משחק שיתופי לעד ארבעה טייסים."
 Classic,,קלאסי
 "The game as built: painted hulls, textured rocks, nebulae and planets, the six worlds of the strike mode.",,"המשחק כפי שנבנה: גופי ספינות צבועים, סלעים מרקמיים, ערפיליות וכוכבי לכת, ששת העולמות של מצב התקיפה."
 Arcade 80s,,ארקייד שנות ה־80
@@ -491,3 +491,382 @@ Skyhammer,,פטיש השמיים
 Dome Fortress,,מבצר הכיפה
 Foundry Crawler,,זחלן היציקה
 The Shadow,,הצל
+"# Campaigns: the names of the campaigns of both modes",,
+The Raider War,,מלחמת השודדים
+"Four sectors, twelve missions: break the raiders' hold on the Kepler Belt and hunt their Dreadnought into the Void Core.",,"ארבע גזרות, שתים עשרה משימות: שברו את אחיזת השודדים בחגורת קפלר ורדפו אחרי הדרדנוט שלהם עד ליבת הריק."
+Shadow Strike,,מכת הצל
+"Nine missions over three worlds: take the war down to the Shadow's planets and end it at the Shadow Station.",,"תשע משימות מעל שלושה עולמות: הורידו את המלחמה אל כוכבי הלכת של הצל וסיימו אותה בתחנת הצל."
+"# Campaign switcher (A1): the campaign bar of the mission select, lock reasons, the lobby's mission names",,
+CAMPAIGN,,מערכה
+CAMPAIGN {0} / {1},,מערכה {0} מתוך {1}
+{0}  -  {1}  -  MISSION {2},,{0}  -  {1}  -  משימה {2}
+Collect {0} stars of {1} to enter this sector ({2} so far).,,אספו {0} כוכבים ב{1} כדי להיכנס לגזרה הזו ({2} עד כה).
+Collect {0} asteroid field stars to open this campaign ({1} so far).,,אספו {0} כוכבי שדה אסטרואידים כדי לפתוח את המערכה הזו ({1} עד כה).
+Collect {0} planet strike stars to open this campaign ({1} so far).,,אספו {0} כוכבי תקיפה פלנטרית כדי לפתוח את המערכה הזו ({1} עד כה).
+{0} {1}. {2},,{0} {1}. {2}
+Strike: {0} {1}. {2},,תקיפה: {0} {1}. {2}
+"{0}, {1}",,"{0}, {1}"
+"# Armory: new field weapons, power-ups, strike items and the Supply Room's pages",,
+Arc Caster,,משגר קשתות
+Rail Driver,,מאיץ מסילה
+Flak Burster,,תותח רסס
+Ion Wave,,גל יונים
+ARC,,קשת
+RAIL,,מסילה
+FLAK,,רסס
+WAVE,,גל
+Phase Rounds,,תחמושת פאזה
+Aegis Barrier,,מחסום אגיס
+Every shot passes through two more targets,,כל ירייה עוברת דרך שתי מטרות נוספות
+Nothing gets through your shield,,שום דבר לא עובר את המגן שלך
+FK-7 Hailstorm Flak Cannon,,"תותח נ""מ FK-7 סופת ברד"
+Shells that burst into shrapnel when aircraft come close. Air only.,,פגזים שמתפוצצים לרסיסים כשכלי טיס מתקרבים. אוויר בלבד.
+CBU-24 Scatterfall Cluster Bombs,,פצצות מצרר CBU-24 מטר
+A canister that scatters six bomblets over the ground. Ground only.,,מכל שמפזר שישה פצצונים על הקרקע. קרקע בלבד.
+NP-4 Inferno Napalm,,נפאלם NP-4 תופת
+Canisters that set the ground ablaze for three seconds. Ground only.,,מכלים שמציתים את הקרקע לשלוש שניות. קרקע בלבד.
+SR-12 Locust Swarm Rockets,,רקטות נחיל SR-12 ארבה
+Six small rockets that find their own targets. Air and ground.,,שש רקטות קטנות שמוצאות את המטרות שלהן בעצמן. אוויר וקרקע.
+ZX-5 Tempest Arc Lightning,,ברק קשת ZX-5 סערה
+A spark whose lightning jumps to four more targets. Air and ground.,,ניצוץ שהברק שלו קופץ לעוד ארבע מטרות. אוויר וקרקע.
+HV-88 Vindicator Rail Gun,,תותח מסילה HV-88 נוקם
+A slug that goes through everything in its line. Air and ground.,,קליע שחודר את כל מה שעומד בדרכו. אוויר וקרקע.
+Ceramite Armor Plating,,לוחות שריון קרמיים
+Each plate takes 10% off every hit. Up to three.,,כל לוח מפחית 10% מכל פגיעה. עד שלושה.
+MR-2 Nanite Repair Drone,,רחפן תיקון ננו MR-2
+"Repairs 1 energy every 2.5 seconds, firing or not, on every difficulty.",,"משקם נקודת אנרגיה אחת כל 2.5 שניות, בירי ובלעדיו, בכל רמות הקושי."
+AB-6 Afterburner,,מבער אחורי AB-6
+The ship flies 15% faster.,,הספינה טסה מהר יותר ב-15%.
+Salvage Magnet,,מגנט איסוף
+Pickups and credits drift to the ship from far away.,,פריטים וקרדיטים נמשכים אל הספינה ממרחק רב.
+WD-2 Wingman Drones,,רחפני אגף WD-2
+Two drones circle the ship and fire at the nearest enemy.,,שני רחפנים מקיפים את הספינה ויורים באויב הקרוב ביותר.
+Emergency Repair Kit,,ערכת תיקון חירום
+Restores 40 energy by itself when the energy drops below 25.,,משחזרת 40 אנרגיה מעצמה כשהאנרגיה יורדת מתחת ל-25.
+FLAK CANNON,,"תותח נ""מ"
+CLUSTER BOMBS,,פצצות מצרר
+NAPALM,,נפאלם
+SWARM ROCKETS,,רקטות נחיל
+ARC LIGHTNING,,ברק קשת
+RAIL GUN,,תותח מסילה
+ARMOR PLATING,,לוחות שריון
+REPAIR DRONE,,רחפן תיקון
+AFTERBURNER,,מבער אחורי
+SALVAGE MAGNET,,מגנט איסוף
+WINGMAN DRONES,,רחפני אגף
+REPAIR KIT,,ערכת תיקון
+REPAIR KIT  +{0},,ערכת תיקון  +{0}
+WEAPONS,,כלי נשק
+GEAR,,ציוד
+# Strike campaigns: Iron Tide and Hive Fall (A3),,
+Iron Tide,,גאות הברזל
+"Nine missions over an ice world and an ocean of islands: the Kranemark Consortium sends its war fleet, the Iron Tide, to take the free worlds for itself. Turn the tide.",,"תשע משימות מעל עולם של קרח ואוקיינוס של איים: תאגיד קראנמארק שולח את צי המלחמה שלו, גאות הברזל, לקחת לעצמו את העולמות החופשיים. הפכו את הגאות."
+Hive Fall,,נפילת הכוורת
+"Nine missions into the Hive: burn its brood on its living world, cross the crystal wastes where it grows its weapons, take back the orbital Halo and kill the Hive Mother.",,"תשע משימות אל תוך הכוורת: שרפו את הדגירה שלה על העולם החי שלה, חצו את שממות הגביש שבהן היא מגדלת את נשקיה, החזירו לעצמכם את ההילה שבמסלול והרגו את אם הכוורת."
+BOREAS SHELF,,מדף בוריאס
+THALASSA REACH,,מרחבי תלסה
+THE IRON DEEP,,מעמקי הברזל
+THE BROODLANDS,,אדמות הדגירה
+SHARD WASTES,,שממות הרסיסים
+THE HALO,,ההילה
+GLACIER,,קרחון
+REEF,,שונית
+HIVE,,כוורת
+CRYSTAL,,גביש
+HALO,,הילה
+Glacier Hauler,,מוביל הקרחונים
+Frost Battery,,סוללת הכפור
+Icebreaker,,שוברת הקרח
+Gale Carrier,,נושאת הסערה
+Reef Bastion,,מבצר השונית
+Sea Wolves,,זאבי הים
+Drydock,,המבדוק
+Battleship,,ספינת המערכה
+Leviathan,,לוויתן
+Brood Mound,,תל הדגירה
+Spore Towers,,מגדלי הנבגים
+Burrow Wyrm,,תולעת המחילות
+Shard Colossus,,ענק הרסיסים
+Prism Array,,מערך המנסרות
+Resonator,,המהדהד
+Halo Gate,,שער ההילה
+Brood Ship,,ספינת הדגירה
+Hive Mother,,אם הכוורת
+Cold Open,,פתיחה קפואה
+"The Shadow is gone, and the Kranemark Consortium's war fleet has come to take what it left. Its convoys are stripping the ice of Boreas: stop the Glacier Hauler before it reaches the coast.",,"הצל איננו, וצי המלחמה של תאגיד קראנמארק בא לקחת את מה שהשאיר. השיירות שלו מפשיטות את הקרח של בוריאס: עצרו את מוביל הקרחונים לפני שיגיע לחוף."
+"The Iron Tide: swarms of attack drones, and SAM sites whose rockets turn after you.",,"גאות הברזל: נחילים של רחפני תקיפה, ואתרי טילי קרקע-אוויר שהרקטות שלהם מסתובבות אחריכם."
+A drone swarm flies loop after loop: sweep it with the machine gun.,,נחיל רחפנים טס לולאה אחרי לולאה: טאטאו אותו במקלע.
+"Seeker rockets turn after you only for a moment: draw them aside, then dodge.",,"רקטות מבייתות מסתובבות אחריכם רק לרגע: משכו אותן הצידה, ואז התחמקו."
+The hauler's reactor is armoured until its turrets and racks fall.,,הכור של המוביל משוריין עד שהצריחים והמשגרים שלו נופלים.
+Whiteout,,סופת לובן
+"In the blizzard belt the Consortium has dug in its guns. Artillery shells the sky over the ice fields, and walkers patrol the roads to the Frost Battery.",,"בחגורת הסופות התאגיד התבצר עם התותחים שלו. ארטילריה מפגיזה את השמיים מעל שדות הקרח, והולכנים מסיירים בדרכים אל סוללת הכפור."
+Artillery shells burst where you were: a red ring marks the spot. Walkers stride along the roads.,,פגזי ארטילריה מתפוצצים איפה שהייתם: טבעת אדומה מסמנת את המקום. הולכנים צועדים לאורך הדרכים.
+"When a red ring opens under you, move: the shell lands as it closes.",,"כשנפתחת מתחתיכם טבעת אדומה, זוזו: הפגז נוחת כשהיא נסגרת."
+Ground missiles and bombs make short work of artillery.,,טילי קרקע ופצצות מחסלים ארטילריה במהירות.
+The battery's radome is armoured until its howitzers and racks fall.,,"כיפת המכ""ם של הסוללה משוריינת עד שההוביצרים והמשגרים שלה נופלים."
+Pack Ice,,קרח סחף
+The fleet's icebreaker is cutting a channel to the open sea. Destroyers hold the leads between the floes and missile cruisers circle overhead. Sink the Icebreaker.,,שוברת הקרח של הצי חוצבת תעלה אל הים הפתוח. משחתות שולטות במעברים שבין גושי הקרח וסיירות טילים חגות מעליהן. הטביעו את שוברת הקרח.
+"Pack ice: destroyers sail the leads, guns stand on the floes. Missile cruisers fire seeker rockets.",,"קרח סחף: משחתות שטות במעברים, ותותחים עומדים על גושי הקרח. סיירות טילים יורות רקטות מבייתות."
+Destroyers are tough: hit them with everything that reaches the ground.,,משחתות קשוחות: פגעו בהן בכל מה שמגיע לקרקע.
+A cruiser hovers for a while before it leaves: bring it down for a fortune.,,סיירת מרחפת זמן מה לפני שהיא עוזבת: הפילו אותה בשביל הון.
+Coral Strand,,חוף האלמוגים
+"Thalassa's islands are the Consortium's harbour in the south. Its batteries hide under shield domes, and the Gale Carrier launches drone swarms from the clouds.",,"האיים של תלסה הם הנמל של התאגיד בדרום. הסוללות שלו מסתתרות תחת כיפות מגן, ונושאת הסערה משגרת נחילי רחפנים מתוך העננים."
+Shield generators: nothing under their dome can be hurt while they stand. Shoot the generator first.,,מחוללי מגן: שום דבר מתחת לכיפה שלהם לא נפגע כל עוד הם עומדים. ירו קודם במחולל.
+Shots only spark on what a dome covers: find its generator.,,יריות רק מתיזות ניצוצות על מה שכיפה מכסה: מצאו את המחולל שלה.
+The carrier's hangars launch swarms until they are destroyed.,,ההאנגרים של הנושאת משגרים נחילים עד שהם מושמדים.
+Lagoon Run,,מרוץ הלגונה
+"Convoys run the lagoon between the reefs, destroyers escorting fat transports. Take their cargo and storm the Reef Bastion.",,"שיירות חוצות את הלגונה בין השוניות, משחתות מלוות מטוסי תובלה עמוסים. קחו את המטען שלהם והסתערו על מבצר השונית."
+Convoys: transports under destroyer escort. The Reef Bastion's towers shell the whole lagoon.,,שיירות: מטוסי תובלה בליווי משחתות. המגדלים של מבצר השונית מפגיזים את כל הלגונה.
+The bastion's keep opens when its towers and guns are gone.,,המצודה של המבצר נפתחת כשהמגדלים והתותחים שלו נעלמים.
+Twin Wakes,,שובלים תאומים
+"Two hunter boats, the Sea Wolves, have sunk every ship that came to Thalassa's aid. Fly out over the open sea and send them to the bottom.",,"שתי סירות צייד, זאבי הים, הטביעו כל ספינה שבאה לעזרת תלסה. טוסו אל הים הפתוח ושלחו אותן לקרקעית."
+The Sea Wolves: a pack of two boats without a core. Sink both.,,זאבי הים: להקה של שתי סירות בלי ליבה. הטביעו את שתיהן.
+The pack goes down with its last gun.,,הלהקה שוקעת עם התותח האחרון שלה.
+Interceptors climb from behind over the open water too.,,מיירטים מטפסים מאחור גם מעל המים הפתוחים.
+Harbour Lights,,אורות הנמל
+"Night over Port Kranemark, where the Iron Tide refits. Shield domes guard the batteries along the docks, and the fleet's new warship waits in the Drydock.",,"לילה מעל נמל קראנמארק, שבו גאות הברזל מתחמשת מחדש. כיפות מגן שומרות על הסוללות לאורך הרציפים, וספינת המלחמה החדשה של הצי ממתינה במבדוק."
+"A night raid on the Consortium's port: shield generators in the streets, walkers and SAM nests.",,"פשיטת לילה על הנמל של התאגיד: מחוללי מגן ברחובות, הולכנים וקני טילי קרקע-אוויר."
+Walkers stride along the streets: fire down the street lanes.,,הולכנים צועדים לאורך הרחובות: ירו לאורך נתיבי הרחוב.
+Take out a dome's generator before you waste fire on what it covers.,,חסלו את המחולל של כיפה לפני שאתם מבזבזים אש על מה שהיא מכסה.
+Armada,,ארמדה
+"The Iron Tide sails at last: line after line of destroyers, cruisers above, and at its heart the Battleship. Break the armada before it reaches the free worlds.",,"גאות הברזל סוף סוף מפליגה: שורה אחרי שורה של משחתות, סיירות מעליהן, ובליבה ספינת המערכה. שברו את הארמדה לפני שתגיע לעולמות החופשיים."
+"Destroyer lines and the Battleship: three rings of guns, three phases.",,"שורות משחתות וספינת המערכה: שלוש טבעות של תותחים, שלושה שלבים."
+The Battleship's main turrets shell the sky: keep moving.,,הצריחים הראשיים של ספינת המערכה מפגיזים את השמיים: המשיכו לזוז.
+Save megabombs for its last phase.,,שמרו מגה-פצצות לשלב האחרון שלה.
+"The Consortium's flagship rises over the deep ocean of Thalassa: the Leviathan, a flying fortress with a fleet in its hangars. End the Iron Tide.",,"ספינת הדגל של התאגיד עולה מעל האוקיינוס העמוק של תלסה: הלוויתן, מבצר מעופף עם צי שלם בהאנגרים שלו. שימו קץ לגאות הברזל."
+"The final battle of the Iron Tide: the Leviathan's wings, hangars and reactor crown.",,"הקרב האחרון של גאות הברזל: הכנפיים, ההאנגרים וכתר הכור של הלוויתן."
+Its hangars launch drones until they fall: take them early in the second phase.,,ההאנגרים שלו משגרים רחפנים עד שהם נופלים: חסלו אותם מוקדם בשלב השני.
+The reactor crown opens last: keep a shield for it.,,כתר הכור נפתח אחרון: שמרו מגן בשבילו.
+First Contact,,מגע ראשון
+"Something has eaten the colony of Mireth from the ground up. Fly over the Broodlands, burn what crawls and flies, and kill the Brood Mound that feeds it.",,"משהו אכל את המושבה מירת מהקרקע ומעלה. טוסו מעל אדמות הדגירה, שרפו את מה שזוחל ועף, והרגו את תל הדגירה שמזין אותו."
+"The Hive: stingers spit spores that drift after you, and spitters burst them from the ground.",,"הכוורת: עוקצים יורקים נבגים שנסחפים אחריכם, ויורקים יורים אותם בצרורות מהקרקע."
+Spores are slow but follow you for a while: keep moving and they fall behind.,,נבגים איטיים אבל עוקבים אחריכם זמן מה: המשיכו לזוז והם יישארו מאחור.
+The mound's heart is armoured until its maws and sac are gone.,,הלב של התל משוריין עד שהלועות והשק שלו נעלמים.
+Hatchery,,המדגרה
+"The Hive breeds in pits of acid. Its spawners launch stingers while they live: hit them first, then the Spore Towers.",,"הכוורת מתרבה בבורות של חומצה. המולידים שלה משגרים עוקצים כל עוד הם חיים: פגעו בהם קודם, ואז במגדלי הנבגים."
+Hive spawners launch stingers a few times: destroy them before they empty.,,מולידי הכוורת משגרים עוקצים כמה פעמים: השמידו אותם לפני שהם מתרוקנים.
+"A spawner falls silent when it is destroyed, or spent.",,"מוליד משתתק כשהוא מושמד, או כשהוא מתרוקן."
+The Spore Towers have no core: bring both down.,,למגדלי הנבגים אין ליבה: הפילו את שניהם.
+Burrows,,המחילות
+"The nests run deep. Mites swarm out of every burrow, and the Burrow Wyrm rises to meet you.",,"הקנים יורדים עמוק. קרדיות נוחלות מכל מחילה, ותולעת המחילות עולה לקראתכם."
+"Mite swarms dive at you. The Burrow Wyrm: tail, neck and head, three phases.",,"נחילי קרדיות צוללים אליכם. תולעת המחילות: זנב, צוואר וראש, שלושה שלבים."
+"Mites have no guns, but they ram: sweep them before they dive.",,"לקרדיות אין נשק, אבל הן מתנגשות: טאטאו אותן לפני שהן צוללות."
+The wyrm's head is armoured until its segments fall.,,הראש של התולעת משוריין עד שהחוליות שלה נופלות.
+Glass Desert,,מדבר הזכוכית
+"Beyond the Broodlands the Hive grows crystal. Prism pylons sing rings of needles across the wastes, and something huge sleeps among them.",,"מעבר לאדמות הדגירה הכוורת מגדלת גבישים. עמודי מנסרות שרים טבעות של מחטים על פני השממה, ומשהו ענק ישן ביניהם."
+"Prism pylons glow, then fire a ring of crystal needles.",,"עמודי מנסרות זוהרים, ואז יורים טבעת של מחטי גביש."
+"When a prism glows, back away: its ring spreads out.",,"כשמנסרה זוהרת, התרחקו: הטבעת שלה מתפשטת."
+The Shard Colossus's arms fire lasers down their columns.,,הזרועות של ענק הרסיסים יורות לייזרים לאורך הטורים שלהן.
+Prism Lanes,,נתיבי המנסרות
+Crystal forests leave only narrow lanes to fly along. At their end the Hive has grown a Prism Array.,,יערות גביש משאירים רק נתיבים צרים לטוס לאורכם. בקצה שלהם הכוורת גידלה מערך מנסרות.
+Crystal fields: the units hold the lanes. The Prism Array has no core.,,שדות גביש: היחידות מחזיקות בנתיבים. למערך המנסרות אין ליבה.
+Line up on a lane to hit everything on it.,,התיישרו על נתיב כדי לפגוע בכל מה שעליו.
+Stand between the array's beams when they fire.,,עמדו בין הקרניים של המערך כשהן יורות.
+Singing Spires,,הצריחים השרים
+The crystals' song grows louder: the Resonator at the heart of the wastes turns a ring of emitters round its core.,,השירה של הגבישים מתחזקת: המהדהד בלב השממה מסובב טבעת של פולטים סביב הליבה שלו.
+The Resonator: a turning ring of crystal emitters.,,המהדהד: טבעת מסתובבת של פולטי גביש.
+The emitters turn with the ring: shoot the ones swinging into your line.,,הפולטים מסתובבים עם הטבעת: ירו באלה שנכנסים לקו שלכם.
+The core fires a beam once the ring is gone.,,הליבה יורה קרן ברגע שהטבעת נעלמת.
+Ring Breach,,פריצה לטבעת
+"The Hive has climbed into orbit: the Halo, the colonies' great ring station, is crawling with it. Breach the ring and take back its gate.",,"הכוורת טיפסה אל המסלול: ההילה, תחנת הטבעת הגדולה של המושבות, שורצת בה. פרצו אל הטבעת והחזירו לעצמכם את השער שלה."
+"The Halo: the Hive grows over the deck, and breaches open onto space.",,"ההילה: הכוורת צומחת על הסיפון, ופרצות נפתחות אל החלל."
+The gate's sacs launch stingers as its ring turns: kill them first.,,השקים של השער משגרים עוקצים בזמן שהטבעת שלו מסתובבת: הרגו אותם קודם.
+Spawners on the deck launch stingers: take them on the way.,,מולידים על הסיפון משגרים עוקצים: חסלו אותם בדרך.
+"A living ship has docked on the Halo, carrying the next brood to the free worlds. Kill it before it casts off.",,"ספינה חיה עגנה בהילה, ונושאת את הדגירה הבאה אל העולמות החופשיים. הרגו אותה לפני שהיא מפליגה."
+"The Brood Ship: maws, stinger sacs and sweeping spines.",,"ספינת הדגירה: לועות, שקי עוקצים וקוצים מטאטאים."
+The spines sweep spores from side to side: wait for the gap.,,הקוצים מטאטאים נבגים מצד לצד: חכו לפרצה.
+A megabomb clears the spores of a crowded sky.,,מגה-פצצה מנקה את הנבגים משמיים צפופים.
+Heart of the Hive,,לב הכוורת
+"With the Halo free, the way to the Hive's heart lies open. Fly down into the oldest nest of the Broodlands and kill the Hive Mother.",,"כשההילה חופשית, הדרך אל לב הכוורת פתוחה. רדו אל הקן העתיק ביותר של אדמות הדגירה והרגו את אם הכוורת."
+The final battle: the Hive Mother and her two turning rings.,,הקרב האחרון: אם הכוורת ושתי הטבעות המסתובבות שלה.
+"Her outer ring of sacs shields the inner ring, and the inner ring her heart.",,"טבעת השקים החיצונית שלה מגינה על הטבעת הפנימית, והפנימית על הלב שלה."
+Save megabombs and shields for her last phase.,,שמרו מגה-פצצות ומגנים לשלב האחרון שלה.
+# Field campaigns: NOVA FRONTIER and THE LAST GATE (A2),,
+Nova Frontier,,גבול הנובה
+"Beyond the Void Core a dying star is about to go nova. Escort the colony convoys out through its flares and storms, and break the warlord who hunts them.",,"מעבר לליבת הריק כוכב גוסס עומד להפוך לנובה. לוו את שיירות המתיישבים החוצה דרך ההתלקחויות והסערות שלו, ושברו את שר המלחמה שצד אותן."
+The Last Gate,,השער האחרון
+"In a rift strewn with the wrecks of a forgotten war, an ancient gate is waking. Fight through the graveyard and what comes through it, and close the gate for good.",,"בשבר זרוע בהריסות של מלחמה נשכחת מתעורר שער עתיק. הילחמו דרך בית הקברות ודרך מה שעובר בו, וסגרו את השער לתמיד."
+Ember Drift,,סחף הגחלים
+Ion Reach,,מרחב היונים
+Iron Shoals,,שרטוני הברזל
+Corona,,הקורונה
+Wreck Rift,,שבר ההריסות
+Phantom Reach,,מרחב הרפאים
+Hydra Nebula,,ערפילית ההידרה
+The Gate,,השער
+Iron Rock,,סלע ברזל
+Hydra Rock,,סלע הידרה
+Wreckage,,הריסות
+Slag Titan,,טיטאן הסיגים
+Storm Herald,,מבשר הסערה
+Bastion,,המעוז
+Sunbreaker,,שובר השמש
+Scrap Leviathan,,לווייתן הגרוטאות
+Wraith Matriarch,,אם הרפאים
+The Hydra,,ההידרה
+The Gatekeeper,,שומר השער
+The Titan is calling the star!,,הטיטאן קורא לכוכב!
+The storm thickens!,,הסערה מתעבה!
+The Herald calls its raiders!,,המבשר קורא לשודדים שלו!
+The Bastion opens its mine bays!,,המעוז פותח את תאי המוקשים!
+Every gun is firing!,,כל התותחים יורים!
+The sun cannon is charging!,,תותח השמש נטען!
+Supernova protocol!,,פרוטוקול סופרנובה!
+Its maw is pulling you in!,,הלוע שלו שואב אתכם פנימה!
+The Leviathan sheds its scrap!,,הלווייתן משיל את הגרוטאות שלו!
+She blinks faster!,,היא מהבהבת מהר יותר!
+The Matriarch calls her brood!,,האם קוראת לצאצאיה!
+It heals when you let up - keep firing!,,היא מחלימה כשאתם מרפים - המשיכו לירות!
+The Hydra is frenzied!,,ההידרה משתוללת!
+The gate opens!,,השער נפתח!
+Something is coming through!,,משהו עובר דרכו!
+The gate is collapsing - finish it!,,השער קורס - גמרו אותו!
+Escort the freighter across the sector,,לוו את ספינת המשא לרוחב הגזרה
+Escort {0} freighters across the sector,,לוו {0} ספינות משא לרוחב הגזרה
+Defend the station for {0},,הגנו על התחנה במשך {0}
+Destroy the marked target,,השמידו את המטרה המסומנת
+Destroy {0} marked targets,,השמידו {0} מטרות מסומנות
+HULL {0}%,,גוף {0}%
+ESCORT  {0} / {1},,ליווי  {0} / {1}
+DEFEND  {0},,הגנה  {0}
+MARKED  {0} / {1},,מסומנים  {0} / {1}
+FREIGHTER INBOUND - escort it across,,ספינת משא בדרך - לוו אותה לצד השני
+NEXT FREIGHTER INBOUND,,ספינת המשא הבאה בדרך
+FREIGHTER SAFE,,ספינת המשא בטוחה
+FREIGHTER UNDER FIRE!,,ספינת המשא תחת אש!
+STATION UNDER ATTACK!,,התחנה מותקפת!
+FREIGHTER LOST,,ספינת המשא אבדה
+STATION LOST,,התחנה אבדה
+The mission has failed,,המשימה נכשלה
+MARKED TARGET DOWN  {0} / {1},,מטרה מסומנת הופלה  {0} / {1}
+SOLAR FLARE - DASH through the fire!,,התלקחות סולארית - זנקו דרך האש!
+SOLAR FLARE - dash through the fire (SHIFT)!,,התלקחות סולארית - זנקו דרך האש (SHIFT)!
+ION STORM - stay out of the cloud,,סערת יונים - התרחקו מהענן
+SENTRY GUN - it glows before it fires,,תותח זקיף - הוא זוהר לפני שהוא יורה
+MINELAYER - stop it before it seeds the sector,,מטיל מוקשים - עצרו אותו לפני שימקש את הגזרה
+PHASE STALKER - shoot it while it shows,,רודף פאזה - ירו בו כשהוא נראה
+CORSAIRS - they go for the convoy,,קורסרים - הם הולכים על השיירה
+CORSAIRS INBOUND,,קורסרים בדרך
+Dying Light,,אור גווע
+"The Void Core is behind you; ahead, a red giant is dying. Its flares sweep the Ember Drift - clear the rocks from the convoy lanes.",,ליבת הריק מאחוריכם; לפניכם ענק אדום גוסס. ההתלקחויות שלו סוחפות את סחף הגחלים - פנו את הסלעים מנתיבי השיירות.
+Solar flares sweep across the sector. Dash through the fire.,,התלקחויות סולאריות חוצות את הגזרה. זנקו דרך האש.
+The edge of the screen glows before a flare. Its wall of fire crosses the whole sector.,,קצה המסך זוהר לפני התלקחות. חומת האש שלה חוצה את כל הגזרה.
+"A dash (SHIFT) carries you through the fire unharmed - so does a full shield, at a price.",,"זינוק (SHIFT) מעביר אתכם דרך האש בלי פגע - וגם מגן מלא, במחיר מסוים."
+"A DASH carries you through the fire unharmed - so does a full shield, at a price.",,"זינוק מעביר אתכם דרך האש בלי פגע - וגם מגן מלא, במחיר מסוים."
+Iron Rain,,גשם ברזל
+The star's heat has boiled the drift down to iron. Armoured rocks shrug off your shots - but not a good blast.,,חום הכוכב הרתיח את הסחף עד שנשאר רק ברזל. סלעים משוריינים מתעלמים מהיריות שלכם - אבל לא מפיצוץ טוב.
+Iron rocks take half damage from shots and break in blasts.,,סלעי ברזל סופגים חצי נזק מיריות ונשברים בפיצוצים.
+Iron rocks ring when your shots glance off - they take half damage.,,סלעי ברזל מצלצלים כשהיריות שלכם ניתזות מהם - הם סופגים חצי נזק.
+Blasts crack iron: set off mines and magma rocks next to it.,,פיצוצים מבקיעים ברזל: פוצצו מוקשים וסלעי מאגמה לידו.
+"A titan of molten iron rolls out of the star's glare, hurling slag. It answers to nothing but heat.",,טיטאן של ברזל מותך מתגלגל מתוך בוהק הכוכב ומטיח סיגים. הוא לא נענה לשום דבר מלבד חום.
+Boss: the Slag Titan.,,בוס: טיטאן הסיגים.
+The Slag Titan throws iron rocks - blasts break them fastest.,,טיטאן הסיגים זורק סלעי ברזל - פיצוצים שוברים אותם הכי מהר.
+"Cornered, it calls the star's flares down on you.",,"כשהוא נלחץ לפינה, הוא מוריד עליכם את התלקחויות הכוכב."
+Heat haze,,להט
+Convoy,,שיירה
+The first colony freighters make their run through the Ion Reach. Raider corsairs are waiting for them. Get them across.,,ספינות המשא הראשונות של המתיישבים יוצאות לדרכן דרך מרחב היונים. קורסרים של השודדים מחכים להן. העבירו אותן לצד השני.
+Escort the freighters across. Corsairs go for them first. New weapon: the Arc Caster.,,לוו את ספינות המשא לצד השני. הקורסרים הולכים עליהן קודם. נשק חדש: מטיל הקשתות.
+"The freighter crosses the sector from one side to the other. If it is destroyed, the mission fails.",,"ספינת המשא חוצה את הגזרה מצד לצד. אם היא מושמדת, המשימה נכשלת."
+Corsairs dive at the freighter - shoot them down before they reach it.,,קורסרים צוללים אל ספינת המשא - הפילו אותם לפני שהם מגיעים אליה.
+Rocks that drift into the freighter damage it. Clear its path.,,סלעים שנסחפים אל ספינת המשא פוגעים בה. פנו לה את הדרך.
+Static,,חשמל סטטי
+An ion storm front rolls over the Reach. Hold on for a hundred seconds while the lightning hunts you.,,חזית של סערת יונים מתגלגלת על המרחב. החזיקו מעמד מאה שניות בזמן שהברקים צדים אתכם.
+"Ion storms slow you down, drain your shield and call lightning.",,"סערות יונים מאטות אתכם, מרוקנות את המגן וקוראות לברקים."
+Stay out of the ion clouds: they drag you and drain your shield.,,התרחקו מענני היונים: הם מאטים אתכם ומרוקנים את המגן.
+A ring marks where lightning will strike - get out of it.,,טבעת מסמנת היכן יפגע ברק - צאו ממנה.
+Something rides the storm: a living manta crackling with ion fire. The raiders call it the Herald.,,משהו רוכב על הסערה: טריגון חי שמתפצפץ באש יונים. השודדים קוראים לו המבשר.
+Boss: the Storm Herald circles the sector.,,בוס: מבשר הסערה חג סביב הגזרה.
+The Herald circles the sector and calls lightning on you - keep moving.,,המבשר חג סביב הגזרה ומוריד עליכם ברקים - המשיכו לזוז.
+It brings storms and corsairs when hurt. Save a nova bomb (B).,,כשהוא נפגע הוא מביא סערות וקורסרים. שמרו פצצת נובה (B).
+It brings storms and corsairs when hurt. Save a nova bomb (NOVA).,,כשהוא נפגע הוא מביא סערות וקורסרים. שמרו פצצת נובה (נובה).
+Storm front,,חזית הסערה
+Gun Line,,קו התותחים
+The raiders have anchored sentry guns among the iron shoals. Break the line so the convoys can pass.,,השודדים עיגנו תותחי זקיף בין שרטוני הברזל. שברו את הקו כדי שהשיירות יוכלו לעבור.
+Sentry guns glow before they fire. New weapon: the Rail Driver.,,תותחי זקיף זוהרים לפני שהם יורים. נשק חדש: מאיץ המסילה.
+A sentry's muzzle glows before a burst - get out of its line.,,הלוע של תותח זקיף זוהר לפני צרור - צאו מהקו שלו.
+The Rail Driver punches through iron and through lines of targets.,,מאיץ המסילה חודר דרך ברזל ודרך שורות של מטרות.
+Holdout,,החזקת העמדה
+"A refuelling station sits in the shoals, the last stop before the Corona. Minelayers are closing in. Keep it standing.",,"תחנת תדלוק ניצבת בשרטונים, התחנה האחרונה לפני הקורונה. מטילי מוקשים מתקרבים. שמרו שתישאר עומדת."
+Defend the station. Minelayers sow mines as they cross.,,הגנו על התחנה. מטילי מוקשים זורעים מוקשים בדרכם.
+Minelayers cross the sector sowing mines - stop them early.,,מטילי מוקשים חוצים את הגזרה וזורעים מוקשים - עצרו אותם מוקדם.
+Mine blasts next to the station damage it. Set mines off while they are far from it.,,פיצוצי מוקשים ליד התחנה פוגעים בה. פוצצו מוקשים כשהם רחוקים ממנה.
+"The warlord's fortress guards the way out of the shoals: a ring of guns, lances and mine bays.",,"המבצר של שר המלחמה שומר על היציאה מהשרטונים: טבעת של תותחים, רמחים ותאי מוקשים."
+Boss: the Bastion fires lances - a thin line warns where the beam will burn.,,בוס: המעוז יורה רמחים - קו דק מזהיר היכן הקרן תשרוף.
+A thin red line warns of a lance. Get off the line before it burns.,,קו אדום דק מזהיר מפני רומח. צאו מהקו לפני שהוא שורף.
+The Bastion sends out sentries and mines - clear them as you go.,,המעוז שולח תותחי זקיף ומוקשים - חסלו אותם בדרך.
+Outer guns,,התותחים החיצוניים
+Bounty,,ציד ראשים
+"The warlord's aces fly in the glare of the corona, and six of them carry his codes. Find the marked ones and bring them down.",,"האסים של שר המלחמה טסים בבוהק הקורונה, ושישה מהם נושאים את הקודים שלו. מצאו את המסומנים והפילו אותם."
+Hunt the marked targets. Marked enemies are worth double.,,צודו את המטרות המסומנות. אויבים מסומנים שווים כפול.
+Marked targets wear a gold reticle and are worth double points.,,מטרות מסומנות עונדות כוונת זהב ושוות כפול נקודות.
+Only the marked ones count - but the others still shoot.,,רק המסומנים נחשבים - אבל גם האחרים יורים.
+Exodus,,המנוסה
+The star is about to blow. The last three freighters run the Corona with everything the warlord has left on their tails.,,הכוכב עומד להתפוצץ. שלוש ספינות המשא האחרונות דוהרות דרך הקורונה עם כל מה שנשאר לשר המלחמה על הזנב שלהן.
+Everything at once - and the convoy must get through.,,הכול בבת אחת - והשיירה חייבת לעבור.
+Flares burn the freighters too. Clear their way and keep the corsairs off them.,,התלקחויות שורפות גם את ספינות המשא. פנו להן את הדרך והרחיקו מהן את הקורסרים.
+A freighter that gets through earns a bonus for the hull it has left.,,ספינת משא שעוברת מזכה בבונוס לפי הגוף שנשאר לה.
+"The warlord himself, aboard the Sunbreaker: a flagship built around a cannon that drinks starlight. End his war before the star ends everything.",,"שר המלחמה בעצמו, על סיפון שובר השמש: ספינת דגל שנבנתה סביב תותח ששותה אור כוכבים. סיימו את המלחמה שלו לפני שהכוכב יסיים הכול."
+The last boss of the Frontier: the Sunbreaker.,,הבוס האחרון של הגבול: שובר השמש.
+Its sun cannon sweeps a beam across the sector - watch the warning line and get behind it.,,תותח השמש שלו סוחף קרן לרוחב הגזרה - שימו לב לקו האזהרה והיכנסו מאחוריו.
+Nova orbs burst into rings of fire. Shoot them early or give them room.,,כדורי נובה מתפוצצים לטבעות של אש. ירו בהם מוקדם או תנו להם מרחב.
+Flagship escort,,ליווי ספינת הדגל
+Graveyard,,בית הקברות
+Past the dead star lies a rift full of wrecks from a war nobody remembers. Something in it is calling. Clear a way in.,,מעבר לכוכב המת משתרע שבר מלא בהריסות ממלחמה שאיש לא זוכר. משהו בתוכו קורא. פנו דרך פנימה.
+"Wreckage holds salvage, and pieces with a glowing tank explode. New weapon: the Flak Burster.",,"בהריסות יש שלל, וחלקים עם מכל זוהר מתפוצצים. נשק חדש: מפוצץ הרסיסים."
+Big wrecks drop salvage crystals when they break.,,הריסות גדולות משאירות גבישי שלל כשהן נשברות.
+A wreck with a glowing red tank explodes - use it on the rocks around it.,,הריסה עם מכל אדום זוהר מתפוצצת - נצלו אותה נגד הסלעים סביבה.
+Salvage Rights,,זכות השלל
+Scavengers and raiders pick over the graveyard. Take the salvage before they do - and before the minelayers seal the field.,,אוספי גרוטאות ושודדים מנקרים בבית הקברות. קחו את השלל לפניהם - ולפני שמטילי המוקשים יאטמו את השדה.
+Minelayers and corsairs fight you for the salvage.,,מטילי מוקשים וקורסרים נלחמים בכם על השלל.
+Wrecks drop salvage crystals - fly close to scoop them up.,,הריסות משאירות גבישי שלל - טוסו קרוב כדי לאסוף אותם.
+Minelayers sow mines behind them. Stop them early.,,מטילי מוקשים זורעים מוקשים מאחוריהם. עצרו אותם מוקדם.
+"The graveyard has a keeper: a leviathan of welded wrecks, with a maw that drags whole ships in.",,"לבית הקברות יש שומר: לווייתן של הריסות מרותכות, עם לוע ששואב פנימה ספינות שלמות."
+Boss: the Scrap Leviathan. Its maw pulls like a black hole.,,בוס: לווייתן הגרוטאות. הלוע שלו שואב כמו חור שחור.
+"When its maw opens, thrust away from the pull.",,"כשהלוע שלו נפתח, דחפו הרחק מהמשיכה."
+It hurls wreckage - the pieces with tanks explode.,,הוא מטיח הריסות - החלקים עם המכלים מתפוצצים.
+Debris field,,שדה פסולת
+Ghost Signal,,אות רפאים
+"The gate's signal grows stronger, and things answer it - ships that fade in and out of the dark.",,"האות של השער מתחזק, ודברים עונים לו - ספינות שמופיעות ונעלמות בחושך."
+Phase stalkers blink in close. Shoot them while they show.,,רודפי פאזה מהבהבים קרוב אליכם. ירו בהם כשהם נראים.
+A ring of light shows where a stalker will appear.,,טבעת של אור מראה היכן יופיע רודף.
+"Out of phase, a stalker cannot be hurt. Fire when it appears.",,כשהוא מחוץ לפאזה אי אפשר לפגוע ברודף. ירו כשהוא מופיע.
+Ghost Hunt,,ציד רפאים
+Some of the stalkers carry the gate's key codes - eight of them. Hunt down the marked ones through the storms.,,חלק מהרודפים נושאים את קודי המפתח של השער - שמונה מהם. צודו את המסומנים דרך הסערות.
+Hunt the marked stalkers - through ion storms.,,צודו את הרודפים המסומנים - דרך סערות יונים.
+Marked stalkers wear a gold reticle. Only they count.,,רודפים מסומנים עונדים כוונת זהב. רק הם נחשבים.
+"Ion storms drain your shield - fight at their edges, not inside.",,"סערות יונים מרוקנות את המגן - הילחמו בשוליהן, לא בתוכן."
+The stalkers have a mother. She blinks across the Reach faster than any of her brood.,,לרודפים יש אם. היא מהבהבת לרוחב המרחב מהר יותר מכל צאצאיה.
+Boss: the Wraith Matriarch blinks from place to place.,,בוס: אם הרפאים מהבהבת ממקום למקום.
+She cannot be hurt while she blinks - a ring shows where she will appear.,,אי אפשר לפגוע בה כשהיא מהבהבת - טבעת מראה היכן היא תופיע.
+"Wounded, she calls her stalkers in swarms.",,"כשהיא פצועה, היא קוראת לרודפים שלה בנחילים."
+Shadows,,צללים
+Overgrowth,,צמיחת פרא
+"The nebula beyond the Reach is alive. Its rocks grow, split and grow again. Cut a path before it chokes the rift.",,"הערפילית שמעבר למרחב חיה. הסלעים שלה צומחים, מתפצלים וצומחים שוב. פלסו דרך לפני שהיא תחנוק את השבר."
+"Hydra rocks split in three, and their small pieces grow back if left alone.",,"סלעי הידרה מתפצלים לשלושה, והחלקים הקטנים שלהם צומחים בחזרה אם משאירים אותם."
+Finish the small hydra pieces quickly - a swelling one is about to grow back.,,גמרו מהר את חלקי ההידרה הקטנים - חלק שמתנפח עומד לצמוח בחזרה.
+A hydra rock is only gone when every piece of it is.,,סלע הידרה נעלם רק כשכל החלקים שלו נעלמים.
+Lifeline,,חבל הצלה
+A survey freighter has charted the way to the gate. Bring it and its twin through the nebula alive.,,ספינת משא של סקר מיפתה את הדרך אל השער. העבירו אותה ואת התאומה שלה דרך הערפילית בחיים.
+"Escort through the hydra fields, with stalkers on the prowl.",,"ליווי דרך שדות ההידרה, עם רודפים שמשוטטים בסביבה."
+Hydra rocks swarm around the freighter - keep its path clear.,,סלעי הידרה מתקהלים סביב ספינת המשא - שמרו על הדרך שלה פנויה.
+"Stalkers appear next to you, not the freighter. Do not let them draw you away for long.",,"רודפים מופיעים לידכם, לא ליד ספינת המשא. אל תתנו להם למשוך אתכם הרחק לזמן רב."
+"At the heart of the nebula waits the mother of the hydra rocks, three-headed and spitting acid. Its wounds close as you watch.",,"בלב הערפילית מחכה אם סלעי ההידרה, בעלת שלושה ראשים ויורקת חומצה. הפצעים שלה נסגרים מול עיניכם."
+Boss: the Hydra heals when you let up.,,בוס: ההידרה מחלימה כשאתם מרפים.
+"Once wounded, the Hydra heals whenever you stop hitting it. Keep up the fire.",,"אחרי שנפצעה, ההידרה מחלימה בכל פעם שאתם מפסיקים לפגוע בה. המשיכו לירות."
+It seeds hydra rocks - clear them before they grow.,,היא זורעת סלעי הידרה - חסלו אותם לפני שהם צומחים.
+The brood,,הצאצאים
+Threshold,,הסף
+Engineers have reached the gate with a station that can seal it. They need time - and everything in the rift is coming for them.,,מהנדסים הגיעו אל השער עם תחנה שיכולה לאטום אותו. הם צריכים זמן - וכל מה שיש בשבר בא אליהם.
+Defend the sealing station at the gate.,,הגנו על תחנת האיטום שליד השער.
+Corsairs go for the station first. Stay close to it.,,הקורסרים הולכים קודם על התחנה. הישארו קרוב אליה.
+Lightning and flares burn the station too.,,ברקים והתלקחויות שורפים גם את התחנה.
+Last Stand,,העמידה האחרונה
+The seal is failing. Hold the gate for two and a half minutes while everything the rift ever swallowed comes through.,,האיטום קורס. החזיקו את השער שתי דקות וחצי בזמן שכל מה שהשבר אי פעם בלע עובר דרכו.
+Everything the rift has - at once.,,כל מה שיש לשבר - בבת אחת.
+Wing drones and the chrono field help when you are swamped.,,רחפני ליווי ושדה הזמן עוזרים כשאתם מוצפים.
+"Keep moving, and keep a nova bomb for the worst moment.",,"המשיכו לזוז, ושמרו פצצת נובה לרגע הקשה ביותר."
+The gate opens its eye. Whatever built it left a keeper behind - and it has been waiting a very long time.,,השער פוקח את עינו. מי שבנה אותו השאיר אחריו שומר - והוא מחכה כבר זמן רב מאוד.
+"The last boss: the Gatekeeper, in four phases.",,"הבוס האחרון: שומר השער, בארבעה שלבים."
+The Gatekeeper holds the middle of the sector - do not fly into it.,,שומר השער מחזיק במרכז הגזרה - אל תטוסו לתוכו.
+Every phase brings something new. Watch for warning lines and rings.,,כל שלב מביא משהו חדש. שימו לב לקווי אזהרה ולטבעות.
+The threshold,,הסף

@@ -4,7 +4,7 @@ using static Portfolio.Asteroids.AsteroidsText;
 namespace Portfolio.Asteroids
 {
     /// <summary>Tracks a mission's objective and describes it for the briefing and the HUD.</summary>
-    public class MissionObjective
+    public partial class MissionObjective
     {
         public MissionObjective(LevelObjective type, int target, int waveCount, string bossName)
         {
@@ -40,6 +40,9 @@ namespace Portfolio.Asteroids
                     case LevelObjective.Survive: return Survived >= Target;
                     case LevelObjective.Collect: return Crystals >= Target;
                     case LevelObjective.Boss: return BossDefeated;
+                    case LevelObjective.Escort:
+                    case LevelObjective.Defend:
+                    case LevelObjective.Hunt: return CampaignComplete;
                     default: return false;
                 }
             }
@@ -56,6 +59,9 @@ namespace Portfolio.Asteroids
                     case LevelObjective.Survive: return Target > 0 ? Mathf.Clamp01(Survived / Target) : 0f;
                     case LevelObjective.Collect: return Target > 0 ? Mathf.Clamp01(Crystals / (float)Target) : 0f;
                     case LevelObjective.Boss: return BossDefeated ? 1f : 0f;
+                    case LevelObjective.Escort:
+                    case LevelObjective.Defend:
+                    case LevelObjective.Hunt: return CampaignProgress;
                     default: return 0f;
                 }
             }
@@ -100,6 +106,9 @@ namespace Portfolio.Asteroids
                     case LevelObjective.Survive: return F("Survive for {0}", FormatTime(Target));
                     case LevelObjective.Collect: return F("Collect {0} crystals", Target);
                     case LevelObjective.Boss: return F("Destroy {0}", T(BossName));
+                    case LevelObjective.Escort:
+                    case LevelObjective.Defend:
+                    case LevelObjective.Hunt: return CampaignBriefing;
                     default: return T("Survive as long as you can");
                 }
             }
@@ -131,6 +140,9 @@ namespace Portfolio.Asteroids
                 case LevelObjective.Survive: return F("SURVIVE  {0}", FormatTime(Mathf.Max(0f, Target - survived)));
                 case LevelObjective.Collect: return F("CRYSTALS  {0} / {1}", Mathf.Min(crystals, Target), Target);
                 case LevelObjective.Boss: return bossDefeated ? T("BOSS DEFEATED") : F("DESTROY {0}", T(BossName).ToUpperInvariant());
+                case LevelObjective.Escort:
+                case LevelObjective.Defend:
+                case LevelObjective.Hunt: return DescribeCampaign(survived, crystals);
                 default: return F("WAVE {0}", Mathf.Max(1, wave));
             }
         }

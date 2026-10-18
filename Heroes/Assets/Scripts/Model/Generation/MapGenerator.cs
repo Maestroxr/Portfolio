@@ -149,8 +149,11 @@ namespace Portfolio.Heroes
             int[][] homes = HomeLayouts[Math.Min(players, 4) - 1];
             for (int i = 0; i < players; i++)
             {
-                int x = homes[i][0] + random.Range(-40, 41);
-                int y = homes[i][1] + random.Range(-40, 41);
+                // A seat may say where its home lies; the others take the layout's places.
+                PlayerSpec seat = i < spec.players.Count ? spec.players[i] : null;
+                bool placed = seat != null && seat.homeX >= 0 && seat.homeY >= 0;
+                int x = (placed ? seat.homeX : homes[i][0]) + random.Range(-40, 41);
+                int y = (placed ? seat.homeY : homes[i][1]) + random.Range(-40, 41);
                 zones.Add(new Zone { index = zones.Count, center = CellAt(x, y), owner = i });
             }
             // The middle, then neutral zones where they are farthest from everything placed so far.
@@ -232,7 +235,7 @@ namespace Portfolio.Heroes
                 {
                     zone.terrain = Land.Native(state.players[zone.owner].faction);
                 }
-                else if (spec.theme != 0 && random.Range(0, 100) < 70)
+                else if (spec.theme != 0 && random.Range(0, 100) < spec.themeShare)
                 {
                     zone.terrain = spec.themeTerrain;
                 }
@@ -406,7 +409,7 @@ namespace Portfolio.Heroes
                 Zone zone = zones[map.zone[cell]];
                 int woods = Noise.At(grid, cell, 7, 53u);
                 int rocks = Noise.At(grid, cell, 5, 67u);
-                int threshold = zone.owner >= 0 ? 690 : 650;
+                int threshold = (zone.owner >= 0 ? 690 : 650) - spec.woods;
                 if (woods > threshold)
                 {
                     TerrainType land = (TerrainType)map.terrain[cell];
@@ -447,15 +450,21 @@ namespace Portfolio.Heroes
             }
         }
 
-        private int PlaceTown(Zone zone, Faction faction, int owner)
+        private int PlaceTown(Zone zone, Faction faction, int owner, bool clearOfObjects = false)
         {
-            // Look for room near the zone's center: seven cells for the town and a clearing around it.
+            // Look for room near the zone's center: seven cells for the town and a clearing around it. A town a scenario
+            // places once the map is filled keeps clear of what stands there already, and close enough to the spot it was
+            // given (which can be walked to) for its clearing to take that spot in.
             int center = zone.center;
             int best = -1;
             int bestScore = int.MaxValue;
-            foreach (int cell in grid.Disk(zone.center, 4))
+            foreach (int cell in grid.Disk(zone.center, clearOfObjects ? 2 : 4))
             {
                 if (map.zone[cell] != zone.index || IsBorder(cell) || grid.Column(cell) < 4 || grid.Row(cell) < 4 || grid.Column(cell) > grid.columns - 5 || grid.Row(cell) > grid.rows - 5)
+                {
+                    continue;
+                }
+                if (clearOfObjects && Crowded(cell, 3))
                 {
                     continue;
                 }
@@ -840,6 +849,19 @@ namespace Portfolio.Heroes
             return open >= 5;
         }
 
+        /// <summary>Whether anything already stands within <paramref name="radius"/> of <paramref name="cell"/>.</summary>
+        private bool Crowded(int cell, int radius)
+        {
+            foreach (int near in grid.Disk(cell, radius))
+            {
+                if (map.occupant[near] >= 0)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         private int FindSpot(Zone zone, int minFromCenter, int maxFromCenter, int spacing = 1)
         {
             int anchor = zone.town >= 0 ? state.towns[zone.town].center : zone.center;
@@ -1215,7 +1237,9 @@ namespace Portfolio.Heroes
                         {
                             zone.cells.Add(c);
                         }
-                        int town = PlaceTown(zone, special.faction == Faction.Neutral ? Faction.Necropolis : special.faction, -1);
+                        // A town of the wilds, or one a seat holds from the start (with that seat's buildings and no garrison).
+                        int owner = special.owner >= 0 && special.owner < state.players.Count ? special.owner : -1;
+                        int town = PlaceTown(zone, special.faction == Faction.Neutral ? Faction.Necropolis : special.faction, owner, true);
                         obj = state.Object(state.towns[town].objectId);
                         TownState placed = state.towns[town];
                         if (special.creature != CreatureId.None)
@@ -1336,14 +1360,24 @@ namespace Portfolio.Heroes
                     }
                 }
             }
-            if (rules.loss == LossKind.LoseHero)
+            if (rules.victory == VictoryKind.DefeatHero)
             {
-                // The starting hero of the first person.
+                // "player:N": the starting hero of seat N.
+                PlayerState foe = !string.IsNullOrEmpty(rules.victoryTag) && rules.victoryTag.StartsWith("player:")
+                    ? state.Player(int.Parse(rules.victoryTag.Substring(7)))
+                    : null;
+                rules.victoryValue = foe != null && foe.heroes.Count > 0 ? foe.heroes[0] : -1;
+            }
+            if (rules.loss == LossKind.LoseHero || rules.loss == LossKind.LoseTown)
+            {
+                // The starting hero, or the first town, of the first person.
+                rules.lossValue = -1;
                 foreach (PlayerState player in state.players)
                 {
-                    if (player.human && player.heroes.Count > 0)
+                    if (player.human)
                     {
-                        rules.lossValue = player.heroes[0];
+                        List<int> kept = rules.loss == LossKind.LoseHero ? player.heroes : player.towns;
+                        rules.lossValue = kept.Count > 0 ? kept[0] : -1;
                         break;
                     }
                 }

@@ -22,6 +22,36 @@ namespace Portfolio.Asteroids
         public bool Endless;
         public int BestWave;
         public bool Boss;
+        /// <summary>The name of the mission's campaign, in the language shown.</summary>
+        public string CampaignTitle;
+        /// <summary>The place of the mission's sector among its campaign's sectors (the column of the map), -1 for none.</summary>
+        public int SectorSlot;
+        /// <summary>The mission's place among the missions of its sector (the row of its column).</summary>
+        public int SectorPosition;
+        /// <summary>Stars of the mission's campaign needed to enter its sector.</summary>
+        public int SectorStars;
+        /// <summary>The colour of the mission's sector, for its column's header.</summary>
+        public Color SectorAccent;
+    }
+
+
+    /// <summary>What the campaign switcher of the mission select shows about the campaign of a mode it shows.</summary>
+    public struct CampaignSummary
+    {
+        public MissionMode Mode;
+        /// <summary>The campaign within its mode (0 = the first).</summary>
+        public int Arc;
+        /// <summary>The campaigns the mode has.</summary>
+        public int Count;
+        public string Title;
+        public string Description;
+        /// <summary>The stars of the campaign's missions, and the most they can earn.</summary>
+        public int Stars;
+        public int MaxStars;
+        /// <summary>Whether the campaign's first mission can be flown.</summary>
+        public bool Open;
+        /// <summary>Why the campaign is closed (empty when it is open).</summary>
+        public string LockReason;
     }
 
 
@@ -101,7 +131,7 @@ namespace Portfolio.Asteroids
     public struct StrikeMissionSummary
     {
         public int Index;
-        /// <summary>1 to 9 within the strike campaign.</summary>
+        /// <summary>1 to 9 within its strike campaign.</summary>
         public int Number;
         public string Title;
         public string Description;
@@ -115,8 +145,14 @@ namespace Portfolio.Asteroids
         /// <summary>The most money one flight earned.</summary>
         public int BestMoney;
         public string BossName;
-        /// <summary>Strike stars needed to enter the mission's sector.</summary>
+        /// <summary>Strike stars of the mission's campaign needed to enter its sector.</summary>
         public int SectorStars;
+        /// <summary>The name of the mission's campaign, in the language shown.</summary>
+        public string CampaignTitle;
+        /// <summary>The place of the mission's sector among its campaign's sectors (the column of the map), -1 for none.</summary>
+        public int SectorSlot;
+        /// <summary>The mission's place among the missions of its sector (the row of its column).</summary>
+        public int SectorPosition;
     }
 
 

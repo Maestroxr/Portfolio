@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using Gamebox;
 using Gamebox.Online;
@@ -12,13 +13,13 @@ namespace Portfolio.Heroes
     /// <summary>
     /// Development players only. Started with <c>-heroes-ui-tour &lt;folder&gt;</c>, it walks through the screens of the
     /// game outside its battles and saves a screenshot of each into the folder, then quits; without the argument it
-    /// does nothing. It looks at the title, the credits and the settings, the campaign and the skirmish maps, then
-    /// starts the first chapter and looks at the adventure screen, what the pointer shows over the map and the
-    /// interface, a few moves, the log, the hero's way home into his town, his book, the town with its market and
-    /// tavern, the questions the rules ask, the next day, the pause menu, the results of a game, the online lobby and
-    /// the title it goes back to. To have
-    /// something to show it gives the hero skills, spells and artifacts and the town a few buildings, behind the rules'
-    /// back; the questions and the results are shown without being asked.
+    /// does nothing. It looks at the title, the credits and the settings, the page of every campaign and the skirmish
+    /// maps, then starts the first chapter and looks at the adventure screen, what the pointer shows over the map and
+    /// the interface (the date tells the task), a few moves, the log, the hero's way home into his town, his book, the
+    /// town with its market and tavern, the questions the rules ask, the next day, the pause menu, the results of a game,
+    /// the online lobby and the title it goes back to. To have something to show it gives the hero skills, spells and
+    /// artifacts and the town a few buildings, behind the rules' back; the questions and the results are shown without
+    /// being asked.
     /// </summary>
     public class HeroesUITour : MonoBehaviour
     {
@@ -161,6 +162,28 @@ namespace Portfolio.Heroes
             UI.OpenCampaign(false);
             yield return new WaitForSeconds(0.6f);
             yield return Shot("campaign_chapters");
+            // Every campaign's page, its first chapter picked, and the tooltip of a tab.
+            var campaign = manager.Campaign as HeroesCampaign;
+            int campaigns = campaign != null ? campaign.ArcCount : 0;
+            for (int arc = 0; arc < campaigns; arc++)
+            {
+                UI.Campaign.ShowCampaign(arc);
+                yield return new WaitForSeconds(0.5f);
+                Write($"Campaign {arc}: {campaign.GetArc(arc).title}, {campaign.ChaptersOf(arc).Count} chapters.");
+                yield return Shot($"campaign_{arc}");
+            }
+            if (campaigns > 1)
+            {
+                // The last chapter of the last campaign, with an ally among its realms.
+                List<int> last = campaign.ChaptersOf(campaigns - 1);
+                UI.Campaign.ShowCampaign(campaigns - 1, last[last.Count - 1]);
+                yield return new WaitForSeconds(0.5f);
+                yield return Shot($"campaign_{campaigns - 1}_last");
+                Hover(UI.Campaign.transform, "Campaign1");
+                yield return new WaitForSeconds(0.7f);
+                yield return Shot("campaign_tab_tip");
+                Unhover();
+            }
             UI.Campaign.Show(true);
             yield return new WaitForSeconds(0.4f);
             yield return Shot("campaign_skirmish");
@@ -191,6 +214,10 @@ namespace Portfolio.Heroes
             yield return new WaitForSeconds(2.2f);
             yield return Shot("adventure_settled");
             yield return FrameTime("the adventure map");
+            Hover(UI.Hud.transform, "Date");
+            yield return new WaitForSeconds(0.7f);
+            yield return Shot("hover_date_task");
+            Unhover();
 
             HeroState hero = FirstHero();
             MapObject monster = Nearest(hero, ObjectKind.Monster);

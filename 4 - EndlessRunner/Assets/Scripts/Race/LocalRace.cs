@@ -7,7 +7,10 @@ namespace Portfolio.EndlessRunner
     /// A race of several runners at one device (<see cref="LocalMatch"/>): a run per seat on the same track. It knows who
     /// leads, how far the field is spread (the track is kept from the last runner to the first), when the race is over
     /// (every run across the line or out of hearts) and the places, by the rule of the online race
-    /// (<see cref="RaceStandings"/>): the higher score is ahead, a point a meter and the points of the coins.
+    /// (<see cref="RaceStandings"/>): the higher score is ahead, a point a meter and the points of the coins. The runners
+    /// at one device of an online race (a party: the device's player and the companions who play through its connection)
+    /// run the same way, without a match: each run then carries its runner of the room, and the places are the whole
+    /// race's.
     /// </summary>
     internal sealed class LocalRace
     {
@@ -19,6 +22,7 @@ namespace Portfolio.EndlessRunner
             Match = match;
         }
 
+        /// <summary>The local match the race plays, or null for the runners at this device of an online race.</summary>
         public LocalMatch Match { get; }
 
         /// <summary>The runs by seat.</summary>
@@ -30,9 +34,28 @@ namespace Portfolio.EndlessRunner
         /// <summary>Adds the run of <paramref name="seat"/>, with its line on the scoreboard.</summary>
         public void Add(RunnerRun run, LocalSeat seat)
         {
+            Add(run, seat, new Racer { Seat = seat.Index, Slot = runs.Count, Name = seat.Name });
+        }
+
+        /// <summary>Adds the run of <paramref name="seat"/> for <paramref name="racer"/>, a runner of an online race played here.</summary>
+        public void Add(RunnerRun run, LocalSeat seat, Racer racer)
+        {
             run.Seat = seat;
-            run.Racer = new Racer { Seat = seat.Index, Slot = runs.Count, Name = seat.Name };
+            run.Racer = racer;
             runs.Add(run);
+        }
+
+        /// <summary>The run whose runner sits at <paramref name="seat"/> (of the match, or of the room), or null.</summary>
+        public RunnerRun RunAt(int seat)
+        {
+            foreach (RunnerRun run in runs)
+            {
+                if (run.Racer != null && run.Racer.Seat == seat)
+                {
+                    return run;
+                }
+            }
+            return null;
         }
 
         /// <summary>The run of <paramref name="runner"/>, or null.</summary>

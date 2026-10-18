@@ -35,7 +35,7 @@ namespace Portfolio.Asteroids
             public float Time;
         }
 
-        private readonly float[] reloads = new float[(int)StrikeItem.TwinLaser + 1];
+        private readonly float[] reloads = new float[StrikeArmory.ItemCount];
         private readonly List<Dropping> dropping = new List<Dropping>(16);
         private readonly float[] beamDamage = new float[2];
         private readonly System.Random random;
@@ -395,9 +395,18 @@ namespace Portfolio.Asteroids
                     return direction.sqrMagnitude > 0.0001f ? direction.normalized * info.Speed : Vector2.up * info.Speed;
                 }
                 case StrikeItem.Bombs:
+                case StrikeItem.ClusterBombs:
+                case StrikeItem.Napalm:
                     // Nothing is hit while the bomb falls; it bursts on the ground when its lifetime runs out.
                     reach = Altitude.None;
                     return Vector2.up * info.Speed;
+                case StrikeItem.SwarmRockets:
+                {
+                    // Fanned out by the barrel's side (the outer ones widest), a little different every salvo.
+                    float halfWidth = Mathf.Max(0.01f, (info.Barrels - 1) * 0.5f * info.BarrelSpacing);
+                    float angle = -side / halfWidth * info.Spread * 0.5f + ((float)random.NextDouble() - 0.5f) * 8f;
+                    return (Vector2)(Quaternion.Euler(0f, 0f, angle) * Vector2.up) * info.Speed;
+                }
                 default:
                     return Vector2.up * info.Speed;
             }
@@ -452,9 +461,34 @@ namespace Portfolio.Asteroids
                     field.Effects?.Muzzle(nose);
                     break;
                 case StrikeItem.Bombs:
+                case StrikeItem.ClusterBombs:
+                case StrikeItem.Napalm:
                     field.Sounds?.BombDrop();
                     break;
                 case StrikeItem.MicroMissiles:
+                    break;
+                case StrikeItem.FlakCannon:
+                    if (visuals != null)
+                    {
+                        visuals.MuzzleFlash(new Color(1f, 0.8f, 0.35f));
+                    }
+                    field.Sounds?.FlakFire();
+                    break;
+                case StrikeItem.ArcLightning:
+                    if (visuals != null)
+                    {
+                        visuals.MuzzleFlash(new Color(0.7f, 0.55f, 1f));
+                    }
+                    field.Sounds?.ArcFire();
+                    break;
+                case StrikeItem.RailGun:
+                    if (visuals != null)
+                    {
+                        visuals.MuzzleFlash(new Color(0.85f, 0.95f, 1f));
+                    }
+                    field.Effects?.Muzzle(nose);
+                    field.Sounds?.RailFire();
+                    field.CameraRig?.Shake(0.15f);
                     break;
                 default:
                     field.Sounds?.StrikeMissileLaunch();

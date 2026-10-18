@@ -124,8 +124,8 @@ namespace Portfolio.Heroes
         }
 
         /// <summary>
-        /// Whether the battle is shown at this device: online when the player here fights in it (the director only
-        /// plays those), at one device when a person, not the computer, leads one of its sides.
+        /// Whether the battle is shown at this device: online when a player here fights in it (the director only plays
+        /// those), at one device when a person, not the computer, leads one of its sides.
         /// </summary>
         private bool ShowsBattle(BattleState start)
         {
@@ -140,28 +140,35 @@ namespace Portfolio.Heroes
 
         /// <summary>
         /// The side the end of a battle is told for (its victory or defeat, its sound): the player's at this device, and
-        /// when people lead both sides at this device (a hot seat), the winner's, since one of them has won either way.
+        /// when people at this device lead both sides (a hot seat, or two players here online), the winner's, since one of
+        /// them has won either way.
         /// </summary>
         private int ResultSide(BattleState battle, BattleResult result)
         {
-            if (!IsOnlineGame)
+            if (PlaysHere(battle.attackerPlayer) && PlaysHere(battle.defenderPlayer))
             {
-                PlayerState attacker = Game.State.Player(battle.attackerPlayer);
-                PlayerState defender = Game.State.Player(battle.defenderPlayer);
-                if (attacker != null && attacker.human && defender != null && defender.human)
-                {
-                    return result == BattleResult.AttackerWon || result == BattleResult.DefenderFled ? 0 : 1;
-                }
+                return result == BattleResult.AttackerWon || result == BattleResult.DefenderFled ? 0 : 1;
             }
             return MySide(battle);
         }
 
-        /// <summary>The side the player at this device fights on (the attacker's when both or neither are).</summary>
+        /// <summary>
+        /// The side the player at this device fights on (the attacker's when both or neither are); online with several
+        /// players here, the side of the one who holds the device, else of another of them who fights in it.
+        /// </summary>
         private int MySide(BattleState battle)
         {
             if (IsOnlineGame)
             {
-                return battle.defenderPlayer == localSeat ? 1 : 0;
+                if (battle.defenderPlayer == localSeat)
+                {
+                    return 1;
+                }
+                if (battle.attackerPlayer == localSeat)
+                {
+                    return 0;
+                }
+                return !IsLocalSeat(battle.attackerPlayer) && IsLocalSeat(battle.defenderPlayer) ? 1 : 0;
             }
             if (battle.attackerPlayer == Viewer)
             {

@@ -19,6 +19,9 @@ namespace Portfolio.Asteroids
     /// </summary>
     public class AsteroidsUI : GameUI
     {
+        /// <summary>The player's avatar on this device while the menu is up: At the top, between the title and the stars.</summary>
+        protected override (Vector2 anchor, Vector2 offset)? AvatarPlace => (new Vector2(1f, 1f), new Vector2(-430f, -24f));
+
         [Serializable]
         internal class PowerUpSlot
         {
@@ -78,6 +81,12 @@ namespace Portfolio.Asteroids
         [SerializeField] internal Button localPlayButton;
         [SerializeField] internal Button resetProgressButton;
         [SerializeField] internal TMP_Text resetProgressLabel;
+        [Tooltip("The campaign bar next to the mode tabs: the campaign of the mode shown, with arrows to the others (both tabs).")]
+        [SerializeField] internal CampaignSwitcher campaignSwitcher;
+        [Tooltip("The header and the path of each sector column of the field map, in pairs (hidden for the columns the campaign shown does not use).")]
+        [SerializeField] internal GameObject[] sectorColumns = new GameObject[0];
+        [Tooltip("The mission nodes of a sector column of the field map; the nodes are numbered column by column, the endless one last.")]
+        [SerializeField] internal int nodesPerSector = 3;
 
         [Header("Hangar")]
         [SerializeField] internal ShipCard[] shipCards = new ShipCard[0];
@@ -234,6 +243,8 @@ namespace Portfolio.Asteroids
         private float resetConfirmUntil = -1f;
         private AsteroidsLevel shownMission;
         private string shownSectorTitle;
+        private string shownCampaignTitle;
+        private int shownNumber;
         private string shownBriefing;
         private string shownBossName;
         private bool localHud;
@@ -273,6 +284,10 @@ namespace Portfolio.Asteroids
             Listen(missionsButton, () => Asteroids?.ReturnToMissionSelect());
             Listen(fieldTab, () => Asteroids?.SelectMode(MissionMode.Field));
             Listen(strikeTab, () => Asteroids?.SelectMode(MissionMode.Strike));
+            if (campaignSwitcher != null)
+            {
+                campaignSwitcher.Stepped += step => Asteroids?.StepCampaign(step);
+            }
             foreach (MissionNode node in missionNodes)
             {
                 if (node != null)
@@ -333,10 +348,21 @@ namespace Portfolio.Asteroids
             {
                 LoadGame.onClick.Invoke();
             }
-            if (shownState == BaseGameState.Initialization && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)) &&
-                (hangarScreen == null || !hangarScreen.gameObject.activeSelf) && (strike == null || !strike.IsSupplyOpen))
+            bool select = shownState == BaseGameState.Initialization && (hangarScreen == null || !hangarScreen.gameObject.activeSelf) &&
+                          (strike == null || !strike.IsSupplyOpen);
+            if (select && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)))
             {
                 Asteroids?.LaunchSelectedMission();
+            }
+            // Page Up / Page Down step through the campaigns of the tab, as the campaign bar's arrows do.
+            select &= !IsSettingsShown;
+            if (select && Input.GetKeyDown(KeyCode.PageUp))
+            {
+                Asteroids?.StepCampaign(-1);
+            }
+            if (select && Input.GetKeyDown(KeyCode.PageDown))
+            {
+                Asteroids?.StepCampaign(1);
             }
             Animate(Time.unscaledDeltaTime);
         }
@@ -591,21 +617,24 @@ namespace Portfolio.Asteroids
             ships.Clear();
             ships.AddRange(hangar);
             selectedMission = selected;
+            MissionSummary?[] placed = PlaceOnMap(summaries, missionNodes, sectorTitles.Length, nodesPerSector);
             for (int i = 0; i < missionNodes.Length; i++)
             {
                 if (missionNodes[i] == null)
                 {
                     continue;
                 }
-                bool used = i < summaries.Count;
+                bool used = placed[i] != null;
                 missionNodes[i].gameObject.SetActive(used);
                 if (used)
                 {
-                    missionNodes[i].Show(summaries[i], summaries[i].Index == selected, StarFull, StarEmpty);
+                    missionNodes[i].Show(placed[i].Value, placed[i].Value.Index == selected, StarFull, StarEmpty);
                 }
             }
             ShowSectorHeaders(totalStars);
+            FitPaths(sectorColumns, missionNodes, placed, nodesPerSector);
             SetLabel(starsTotal, $"{totalStars} / {maxStars}");
+            ShowCampaign(MissionMode.Field);
             MissionSummary current = summaries.Find(summary => summary.Index == selected);
             ShowDetails(current);
             if (continueButton != null)
@@ -619,27 +648,133 @@ namespace Portfolio.Asteroids
         }
 
 
+        /// <summary>
+        /// The sector columns of the campaign shown: a header each with the sector's name and its gate (the stars of the
+        /// campaign it needs), the columns the campaign does not use hidden.
+        /// </summary>
         private void ShowSectorHeaders(int totalStars)
         {
-            AsteroidsCampaign campaign = Asteroids != null ? Asteroids.AsteroidsCampaign : null;
+            var sectors = new MissionSummary?[sectorTitles.Length];
+            foreach (MissionSummary summary in summaries)
+            {
+                if (!summary.Endless && summary.SectorSlot >= 0 && summary.SectorSlot < sectors.Length && sectors[summary.SectorSlot] == null)
+                {
+                    sectors[summary.SectorSlot] = summary;
+                }
+            }
+            for (int i = 0; i < sectorColumns.Length; i++)
+            {
+                if (sectorColumns[i] != null)
+                {
+                    sectorColumns[i].SetActive(i / 2 < sectors.Length && sectors[i / 2] != null);
+                }
+            }
             for (int i = 0; i < sectorTitles.Length; i++)
             {
-                AsteroidsCampaign.Sector sector = campaign != null ? campaign.GetSector(i) : null;
+                MissionSummary? sector = sectors[i];
                 if (sectorTitles[i] != null)
                 {
-                    sectorTitles[i].text = sector != null ? T(sector.title).ToUpperInvariant() : string.Empty;
-                    if (sector != null && sector.theme != null)
+                    sectorTitles[i].text = sector != null ? sector.Value.SectorTitle.ToUpperInvariant() : string.Empty;
+                    if (sector != null && sector.Value.SectorAccent.a > 0f)
                     {
-                        sectorTitles[i].color = sector.theme.Accent;
+                        sectorTitles[i].color = sector.Value.SectorAccent;
                     }
                 }
                 if (i < sectorGates.Length && sectorGates[i] != null)
                 {
-                    int required = sector != null ? sector.starsRequired : 0;
-                    sectorGates[i].text = required <= 0 ? T("OPEN") : totalStars >= required ? F("{0} STARS - OPEN", required) : F("NEEDS {0} STARS", required);
+                    int required = sector != null ? sector.Value.SectorStars : 0;
+                    sectorGates[i].text = sector == null ? string.Empty : required <= 0 ? T("OPEN") : totalStars >= required ? F("{0} STARS - OPEN", required) : F("NEEDS {0} STARS", required);
                     sectorGates[i].color = required <= 0 || totalStars >= required ? new Color(0.6f, 1f, 0.7f, 0.8f) : new Color(1f, 0.75f, 0.35f);
                 }
             }
+        }
+
+
+        /// <summary>
+        /// The summary each node of a sector map shows (null for a node left empty): a mission goes to the node of its place
+        /// on its campaign's map (<see cref="CampaignSelect.Place"/>, the nodes numbered column by column), the endless
+        /// mission to the node with the endless badge.
+        /// </summary>
+        internal static MissionSummary?[] PlaceOnMap(List<MissionSummary> missions, MissionNode[] nodes, int columns, int perColumn)
+        {
+            var placed = new MissionSummary?[nodes.Length];
+            int endless = Array.FindIndex(nodes, node => node != null && node.endlessIcon != null);
+            var places = new List<(int sector, int position)>();
+            var campaignMissions = new List<MissionSummary>();
+            foreach (MissionSummary summary in missions)
+            {
+                if (summary.Endless)
+                {
+                    if (endless >= 0)
+                    {
+                        placed[endless] = summary;
+                    }
+                    continue;
+                }
+                places.Add((summary.SectorSlot, summary.SectorPosition));
+                campaignMissions.Add(summary);
+            }
+            int[] slots = CampaignSelect.Nodes(places, columns, perColumn);
+            for (int i = 0; i < slots.Length; i++)
+            {
+                if (slots[i] >= 0 && slots[i] < nodes.Length && slots[i] != endless)
+                {
+                    placed[slots[i]] = campaignMissions[i];
+                }
+            }
+            return placed;
+        }
+
+
+        /// <summary>
+        /// The path down each sector column (the second of each pair of <paramref name="columns"/>) reaches the last mission
+        /// the column shows, and goes for a column of one mission; the columns are laid out for the largest campaign.
+        /// </summary>
+        internal static void FitPaths(GameObject[] columns, MissionNode[] nodes, MissionSummary?[] placed, int perColumn)
+        {
+            for (int column = 0; column * 2 + 1 < columns.Length; column++)
+            {
+                GameObject path = columns[column * 2 + 1];
+                if (path == null || !path.activeSelf || !(path.transform is RectTransform rect))
+                {
+                    continue;
+                }
+                int first = column * perColumn;
+                int last = -1;
+                for (int node = first; node < first + perColumn && node < placed.Length && node < nodes.Length; node++)
+                {
+                    if (placed[node] != null && nodes[node] != null)
+                    {
+                        last = node;
+                    }
+                }
+                if (last <= first)
+                {
+                    path.SetActive(false);
+                    continue;
+                }
+                // The path starts under the header and ends inside the last node's hexagon.
+                float length = rect.anchoredPosition.y - ((RectTransform)nodes[last].transform).anchoredPosition.y - 22f;
+                rect.sizeDelta = new Vector2(rect.sizeDelta.x, Mathf.Max(0f, length));
+            }
+        }
+
+
+        /// <summary>
+        /// The campaign bar shows the campaign of <paramref name="mode"/> the mission select is on (the manager's
+        /// <see cref="AsteroidsGameManager.CampaignSummaryOf"/>), in the mode's colours.
+        /// </summary>
+        internal void ShowCampaign(MissionMode mode)
+        {
+            if (campaignSwitcher == null)
+            {
+                return;
+            }
+            CampaignSummary summary = Asteroids != null ? Asteroids.CampaignSummaryOf(mode) : new CampaignSummary { Mode = mode };
+            Color accent = mode == MissionMode.Strike
+                ? AsteroidsThemes.Color("strikeAccent", new Color(1f, 0.6f, 0.25f))
+                : AsteroidsThemes.Color("cyan", new Color(0.35f, 0.9f, 1f));
+            campaignSwitcher.Show(summary, accent);
         }
 
 
@@ -650,7 +785,7 @@ namespace Portfolio.Asteroids
             {
                 detailAccent.color = accent;
             }
-            SetLabel(detailSector, summary.Endless ? T("DEEP FIELD - ENDLESS") : F("{0}  -  MISSION {1}", summary.SectorTitle.ToUpperInvariant(), summary.Number));
+            SetLabel(detailSector, summary.Endless ? T("DEEP FIELD - ENDLESS") : MissionLine(summary.CampaignTitle, summary.SectorTitle, summary.Number));
             if (detailSector != null)
             {
                 detailSector.color = accent;
@@ -717,11 +852,33 @@ namespace Portfolio.Asteroids
 
         #region HUD
 
-        public void BeginMission(AsteroidsLevel mission, string briefing, int lives, string sectorTitle)
+        /// <summary>
+        /// "CAMPAIGN  -  SECTOR  -  MISSION 2": where a mission is, for the details of the mission select and the briefing
+        /// (<paramref name="campaign"/> and <paramref name="sector"/> already in the language shown; without a campaign
+        /// the line names the sector and the mission only).
+        /// </summary>
+        internal static string MissionLine(string campaign, string sector, int number)
+        {
+            string sectorTitle = (sector ?? string.Empty).ToUpperInvariant();
+            if (string.IsNullOrEmpty(campaign))
+            {
+                return F("{0}  -  MISSION {1}", sectorTitle, number);
+            }
+            return F("{0}  -  {1}  -  MISSION {2}", campaign.ToUpperInvariant(), sectorTitle, number);
+        }
+
+
+        /// <summary>
+        /// The HUD and the briefing of <paramref name="mission"/>: the briefing names the mission's campaign
+        /// (<paramref name="campaignTitle"/>, untranslated; null for none), its sector and its number in the campaign.
+        /// </summary>
+        public void BeginMission(AsteroidsLevel mission, string briefing, int lives, string sectorTitle, string campaignTitle = null, int number = 0)
         {
             accent = mission.Theme != null ? mission.Theme.Accent : accent;
             shownMission = mission;
             shownSectorTitle = sectorTitle;
+            shownCampaignTitle = campaignTitle;
+            shownNumber = number;
             shownBriefing = briefing;
             WriteMissionTitles();
             if (briefingSector != null)
@@ -1357,7 +1514,10 @@ namespace Portfolio.Asteroids
         {
             string title = T(shownMission.Title).ToUpperInvariant();
             SetLabel(missionText, shownMission.IsEndless ? T("ENDLESS SURVIVAL") : title);
-            SetLabel(briefingSector, T(shownSectorTitle ?? string.Empty).ToUpperInvariant());
+            // The briefing says where the mission is: its campaign, its sector and its number in the campaign.
+            SetLabel(briefingSector, shownNumber > 0
+                ? MissionLine(string.IsNullOrEmpty(shownCampaignTitle) ? null : T(shownCampaignTitle), T(shownSectorTitle ?? string.Empty), shownNumber)
+                : T(shownSectorTitle ?? string.Empty).ToUpperInvariant());
             SetLabel(briefingTitle, title);
             SetLabel(briefingObjective, shownBriefing);
         }

@@ -73,6 +73,10 @@ MonoBehaviour:
     spriteTint: -1
   slots:
     sprites:
+    - key: Icons/Aegis
+      value: {fileID: 21300000, guid: e5f8ef91a02b53c4ea9bf709fa89fc92, type: 3}
+    - key: Icons/Arc
+      value: {fileID: 21300000, guid: f353619ac3057444eb4cbe14827dbf45, type: 3}
     - key: Icons/Arrow
       value: {fileID: 21300000, guid: 336840aff76b6bb4a9edf842c4d10bff, type: 3}
     - key: Icons/Asteroid
@@ -91,6 +95,8 @@ MonoBehaviour:
       value: {fileID: 21300000, guid: d0fe910533706424a80293853a95ece7, type: 3}
     - key: Icons/Exit
       value: {fileID: 21300000, guid: 551c788f85603634bb6f84755f91391b, type: 3}
+    - key: Icons/Flak
+      value: {fileID: 21300000, guid: e43d592a17d0da94d8732a9137c14cf3, type: 3}
     - key: Icons/GameIcon
       value: {fileID: 21300000, guid: 43cf11e63e82a3c47bd9794efea99b95, type: 3}
     - key: Icons/Hangar
@@ -113,8 +119,12 @@ MonoBehaviour:
       value: {fileID: 21300000, guid: 90f10f2a340db3d40b8ba2d8595ad58b, type: 3}
     - key: Icons/Pause
       value: {fileID: 21300000, guid: 79e1877ea2787134383d601ac3af8365, type: 3}
+    - key: Icons/Piercing
+      value: {fileID: 21300000, guid: f8188706b62c2f74ab63a10c6750be76, type: 3}
     - key: Icons/Play
       value: {fileID: 21300000, guid: d231027bf6d14224fb0f28c13086bfbd, type: 3}
+    - key: Icons/Rail
+      value: {fileID: 21300000, guid: c8d9244182373fe46abcb5dbd97d1f21, type: 3}
     - key: Icons/Repair
       value: {fileID: 21300000, guid: adaeae01f92cff84685cff44388b9ce5, type: 3}
     - key: Icons/Retry
@@ -135,6 +145,8 @@ MonoBehaviour:
       value: {fileID: 21300000, guid: 4e9787d25894823439161fa32d74106c, type: 3}
     - key: Icons/Warning
       value: {fileID: 21300000, guid: 43446318556a94e4cb960d7621124d2f, type: 3}
+    - key: Icons/Wave
+      value: {fileID: 21300000, guid: aa1c53025e18bde4991162e9b4e14bff, type: 3}
     - key: Interface/Bar
       value: {fileID: 21300000, guid: 851de4cf0a1803c4da848483822adfd1, type: 3}
     - key: Interface/Button
@@ -167,10 +179,18 @@ MonoBehaviour:
       value: {fileID: 21300000, guid: b26d636c976a1314f9373f684c774ea4, type: 3}
     - key: Previews/Sparrow
       value: {fileID: 21300000, guid: d77d12b0161e4c84dacd143dc334acb6, type: 3}
+    - key: Strike/Icons/Afterburner
+      value: {fileID: 21300000, guid: d1e9908fd13a8c3488ec827b3e6ae049, type: 3}
     - key: Strike/Icons/AirMissiles
       value: {fileID: 21300000, guid: ce104825f888c9443b13131b4f2a9328, type: 3}
+    - key: Strike/Icons/ArcLightning
+      value: {fileID: 21300000, guid: 0f8c41650fd7484499753faaf47a1653, type: 3}
+    - key: Strike/Icons/ArmorPlating
+      value: {fileID: 21300000, guid: 0eb83df411f0193429224a95499cb4b5, type: 3}
     - key: Strike/Icons/Bombs
       value: {fileID: 21300000, guid: 4f1ae2d4e7edb4744b9c3095b6f8bddb, type: 3}
+    - key: Strike/Icons/ClusterBombs
+      value: {fileID: 21300000, guid: d8c24ce94bb15714495ffde9eabf9e44, type: 3}
     - key: Strike/Icons/CreditOrb
       value: {fileID: 21300000, guid: df06bbc8ab9ff9b499e53595ceb66174, type: 3}
     - key: Strike/Icons/Deathray
@@ -183,6 +203,8 @@ MonoBehaviour:
       value: {fileID: 21300000, guid: e109cb00f8fb143488a1fd8ea7f8a330, type: 3}
     - key: Strike/Icons/EnergyModule
       value: {fileID: 21300000, guid: 1e871c6cf31dda740a1a0bb2b3f51749, type: 3}
+    - key: Strike/Icons/FlakCannon
+      value: {fileID: 21300000, guid: 3c7b5b38e1bd4794c946b3fde240910e, type: 3}
     - key: Strike/Icons/FreyliumOre
       value: {fileID: 21300000, guid: 8df6417674d2bd04283c3b9545696ac0, type: 3}
     - key: Strike/Icons/FusionCore
@@ -207,6 +229,8 @@ MonoBehaviour:
       value: {fileID: 21300000, guid: 23c9d6d1c182d2c41b423a38deabe7f0, type: 3}
     - key: Strike/Icons/Money
       value: {fileID: 21300000, guid: 1d1a2d6d8e92f094a866355036391173, type: 3}
+    - key: Strike/Icons/Napalm
+      value: {fileID: 21300000, guid: fcb264c4ed789224eac556200210fe18, type: 3}
     - key: Strike/Icons/PhaseShield
       value: {fileID: 21300000, guid: fb2ffdf5072751a41ac299aa6adf0341, type: 3}
     - key: Strike/Icons/PlasmaCannon
@@ -215,8 +239,16 @@ MonoBehaviour:
       value: {fileID: 21300000, guid: e4a0f3d2afe9b4a4eafac2206a60bc3e, type: 3}
     - key: Strike/Icons/PulseCannon
       value: {fileID: 21300000, guid: d84ab9b3e0e45cf4da0f68f1991f1fc2, type: 3}
+    - key: Strike/Icons/RailGun
+      value: {fileID: 21300000, guid: 5552b1a9e52e3f941a0382186e5d5e58, type: 3}
+    - key: Strike/Icons/RepairDrone
+      value: {fileID: 21300000, guid: 03b70adb5a65ffe4a9335a85c66b1462, type: 3}
+    - key: Strike/Icons/RepairKit
+      value: {fileID: 21300000, guid: 70c8204d4ac99504ab576810cdfbc2c4, type: 3}
     - key: Strike/Icons/Rookie
       value: {fileID: 21300000, guid: 543041f542bb45e469c2037a3eb43d04, type: 3}
+    - key: Strike/Icons/SalvageMagnet
+      value: {fileID: 21300000, guid: 801809cf443dde04a9576599feae436e, type: 3}
     - key: Strike/Icons/Scanner
       value: {fileID: 21300000, guid: e5cab1237939fae4f92c367ed2f767d4, type: 3}
     - key: Strike/Icons/SmallArms
@@ -225,6 +257,8 @@ MonoBehaviour:
       value: {fileID: 21300000, guid: cbda2a3858757f446993a023f3c2856b, type: 3}
     - key: Strike/Icons/SupplyRoom
       value: {fileID: 21300000, guid: cd4ef4c374aaa754cbd4a18efc8f9841, type: 3}
+    - key: Strike/Icons/SwarmRockets
+      value: {fileID: 21300000, guid: c1bcb75b919b91446af79e3e594b35b8, type: 3}
     - key: Strike/Icons/Target
       value: {fileID: 21300000, guid: 6c4b8d57ea0de3147bdd4096277b5b75, type: 3}
     - key: Strike/Icons/Thaelite
@@ -233,6 +267,8 @@ MonoBehaviour:
       value: {fileID: 21300000, guid: 14f1f397d4512a447ae5200a5f33c47e, type: 3}
     - key: Strike/Icons/Veteran
       value: {fileID: 21300000, guid: c9ac0002f06a8e241af500f1df4a967c, type: 3}
+    - key: Strike/Icons/WingmanDrones
+      value: {fileID: 21300000, guid: 9c4ae17b9edf0404d9baac20b81bd61a, type: 3}
     - key: Interface/Scanlines
       value: {fileID: 21300000, guid: dc510e8d7cb92d84c9938f24417819ce, type: 3}
     - key: Interface/Crt
@@ -250,6 +286,8 @@ MonoBehaviour:
       value: {fileID: 2100000, guid: 5aba73580f9c4d9488c87fe33b361b11, type: 2}
     - key: Ground/Materials/LightFFCC8059
       value: {fileID: 2100000, guid: 5153196afa1e70b45ad4c83a56eb2e95, type: 2}
+    - key: Ground/Materials/LightFFD9804C
+      value: {fileID: 2100000, guid: 5bea79a20c37c7148b73bb2ead11d924, type: 2}
     - key: Ground/Materials/LightFFD99959
       value: {fileID: 2100000, guid: 20e0af084044a1c41a519fdb10563ef8, type: 2}
     - key: Ground/Materials/Telegraph
@@ -260,6 +298,8 @@ MonoBehaviour:
       value: {fileID: 2100000, guid: 5548c5d4d3528674bb85dd4133cee2bd, type: 2}
     - key: Materials/Acid
       value: {fileID: 2100000, guid: fded0076adf621a43b9c55a17e9b5aac, type: 2}
+    - key: Materials/ArcSpark
+      value: {fileID: 2100000, guid: 54002f5683d216e44a4510303d13cd8c, type: 2}
     - key: Materials/Atmosphere
       value: {fileID: 2100000, guid: d514b637256b85b4797a1a86de28845c, type: 2}
     - key: Materials/AtmosphereHalo
@@ -280,6 +320,8 @@ MonoBehaviour:
       value: {fileID: 2100000, guid: 68d9e5ac32f1c734490a4fb46ad08d04, type: 2}
     - key: Materials/CoreNovaBomb
       value: {fileID: 2100000, guid: f478e9642ea9d4445a0ca3bcef6c31ab, type: 2}
+    - key: Materials/CorePowerUpAegis
+      value: {fileID: 2100000, guid: 4edef7d1b70a92848a5584f3eaf4926c, type: 2}
     - key: Materials/CorePowerUpChrono
       value: {fileID: 2100000, guid: 844960d91d63152419fe97550bc8eac7, type: 2}
     - key: Materials/CorePowerUpDrones
@@ -288,18 +330,28 @@ MonoBehaviour:
       value: {fileID: 2100000, guid: 61e2339798c29844c8316c59a21dcedb, type: 2}
     - key: Materials/CorePowerUpOverdrive
       value: {fileID: 2100000, guid: 4e5596184f814044081b6540aa1c773d, type: 2}
+    - key: Materials/CorePowerUpPiercing
+      value: {fileID: 2100000, guid: aeff96e73e13fdf4eb863b30cd1d1489, type: 2}
     - key: Materials/CoreRepair
       value: {fileID: 2100000, guid: 9e765ecb020114941b8ee4a24409af52, type: 2}
     - key: Materials/CoreShield
       value: {fileID: 2100000, guid: 58511cf37764e4949be675f928103a54, type: 2}
+    - key: Materials/CoreWeaponArc
+      value: {fileID: 2100000, guid: f5974104d923a254d9bcd84909771b3e, type: 2}
     - key: Materials/CoreWeaponBlaster
       value: {fileID: 2100000, guid: 0631bfcd9f45eea4ab634cb70bd2d7fd, type: 2}
+    - key: Materials/CoreWeaponFlak
+      value: {fileID: 2100000, guid: 7a1fa5f351a774f4bba116cbc313424d, type: 2}
     - key: Materials/CoreWeaponLaser
       value: {fileID: 2100000, guid: 1015bd55936fba24bb8ae3dc4609dad3, type: 2}
     - key: Materials/CoreWeaponMissiles
       value: {fileID: 2100000, guid: 614311f3c04c7094ea3d7f2095290835, type: 2}
+    - key: Materials/CoreWeaponRail
+      value: {fileID: 2100000, guid: e4e03348925e27543b5f7bef656de144, type: 2}
     - key: Materials/CoreWeaponScatter
       value: {fileID: 2100000, guid: edb5e44538126804fa0228757d84f022, type: 2}
+    - key: Materials/CoreWeaponWave
+      value: {fileID: 2100000, guid: cbe5697e81533ca4ebad7841fa56c92d, type: 2}
     - key: Materials/CrystalGlow
       value: {fileID: 2100000, guid: f32c38e357660004ea8207cae5ff4d6b, type: 2}
     - key: Materials/CrystalPalette
@@ -320,6 +372,10 @@ MonoBehaviour:
       value: {fileID: 2100000, guid: fe9b36d94a17e2749ae6257c06cebd98, type: 2}
     - key: Materials/EngineFlame
       value: {fileID: 2100000, guid: 02d3eca7918173f4ca247864dd002fc1, type: 2}
+    - key: Materials/FlakShell
+      value: {fileID: 2100000, guid: 495d60c8c376a144583d08214633415b, type: 2}
+    - key: Materials/FlakShrapnel
+      value: {fileID: 2100000, guid: 433ae157236c71a478d9fcad68af90f9, type: 2}
     - key: Materials/Flare
       value: {fileID: 2100000, guid: 1c887079dd931324a879706db97cd35f, type: 2}
     - key: Materials/Glow
@@ -328,12 +384,18 @@ MonoBehaviour:
       value: {fileID: 2100000, guid: 82a828c5d2d2eec44b815cff03606ad9, type: 2}
     - key: Materials/IcePalette
       value: {fileID: 2100000, guid: c36ac936b5de4a248954e14e5a74f187, type: 2}
+    - key: Materials/IconAegis
+      value: {fileID: 2100000, guid: 687427a1f74533849bd0a7cd875123b7, type: 2}
+    - key: Materials/IconArc
+      value: {fileID: 2100000, guid: 80faef69ec68e604dbcb61866358fd54, type: 2}
     - key: Materials/IconBlaster
       value: {fileID: 2100000, guid: 465a92f50f53219498ff29cdfed4d246, type: 2}
     - key: Materials/IconChrono
       value: {fileID: 2100000, guid: 6941d4aafe59d8a4ea0b5ed16d21cdd8, type: 2}
     - key: Materials/IconDrones
       value: {fileID: 2100000, guid: 3b7f47c14432f73458309b566a3226a9, type: 2}
+    - key: Materials/IconFlak
+      value: {fileID: 2100000, guid: 2f88f2e7b4a91d54788d9e5fb7f3ac68, type: 2}
     - key: Materials/IconLaser
       value: {fileID: 2100000, guid: a7013a923c2a1974b8be821a180c9163, type: 2}
     - key: Materials/IconMagnet
@@ -344,6 +406,10 @@ MonoBehaviour:
       value: {fileID: 2100000, guid: 72d31fc24bbc03141afd85e29210941f, type: 2}
     - key: Materials/IconOverdrive
       value: {fileID: 2100000, guid: 0e24989a08ea5a14e95d5596c860ad0e, type: 2}
+    - key: Materials/IconPiercing
+      value: {fileID: 2100000, guid: 092d7d27ea538664db400ff5e9b3d412, type: 2}
+    - key: Materials/IconRail
+      value: {fileID: 2100000, guid: 10f3a6dbc482e1c41b3abfa39e234bd0, type: 2}
     - key: Materials/IconRepair
       value: {fileID: 2100000, guid: 809b152ba55e73e4f827a057402e13a6, type: 2}
     - key: Materials/IconScatter
@@ -352,8 +418,16 @@ MonoBehaviour:
       value: {fileID: 2100000, guid: 5b72d0200424b044a903d4c793142eaf, type: 2}
     - key: Materials/IconShip
       value: {fileID: 2100000, guid: 5b2258cbb1f48a84e9bb0155d593810d, type: 2}
+    - key: Materials/IconWave
+      value: {fileID: 2100000, guid: 57a2f032def103d409feb3e395dafe72, type: 2}
+    - key: Materials/IonWave
+      value: {fileID: 2100000, guid: 95effd9ed8d6ea4409b7f0fb927d4860, type: 2}
     - key: Materials/Laser
       value: {fileID: 2100000, guid: 00281d5d4b3b3ad42a0158b9deaa7f5d, type: 2}
+    - key: Materials/Lightning
+      value: {fileID: 2100000, guid: c7eeeee975b45bc43ae8ebd12d42a0e3, type: 2}
+    - key: Materials/LightningCore
+      value: {fileID: 2100000, guid: 2fe1eb07572383c41812f3c3b4a044a3, type: 2}
     - key: Materials/Magma
       value: {fileID: 2100000, guid: b4f35d50ebf2c8149be81206995da3a6, type: 2}
     - key: Materials/MothershipGlow
@@ -390,6 +464,8 @@ MonoBehaviour:
       value: {fileID: 2100000, guid: 57ce04876cb954c44af0562247eaa678, type: 2}
     - key: Materials/QueenGlow
       value: {fileID: 2100000, guid: 1e9a26a9e54ecc243b42de124807833d, type: 2}
+    - key: Materials/RailSlug
+      value: {fileID: 2100000, guid: bfc1411ddc00c9548b065f8010ff266d, type: 2}
     - key: Materials/Ring
       value: {fileID: 2100000, guid: 93f4e8925b03ac042a35a01c570716ce, type: 2}
     - key: Materials/Rock
@@ -420,6 +496,8 @@ MonoBehaviour:
       value: {fileID: 2100000, guid: f9307b47c197f8e429a2c4d1d24459ef, type: 2}
     - key: Strike/Materials/AirCrimson
       value: {fileID: 2100000, guid: d9015697d198ecd4188ed12c0dae8cec, type: 2}
+    - key: Strike/Materials/AirIronSteel
+      value: {fileID: 2100000, guid: c8dbcb779d4960344936ba0855292067, type: 2}
     - key: Strike/Materials/AirOlive
       value: {fileID: 2100000, guid: 128ad24a177287243b3447fcb95caf86, type: 2}
     - key: Strike/Materials/AirRust
@@ -432,6 +510,10 @@ MonoBehaviour:
       value: {fileID: 2100000, guid: 1dc2c62a9ff8dc14bb5461b40bce5dd6, type: 2}
     - key: Strike/Materials/Bullet
       value: {fileID: 2100000, guid: 8271b7f30ea9fee43b49171c605a7c54, type: 2}
+    - key: Strike/Materials/ClusterGlow
+      value: {fileID: 2100000, guid: 4eb48c308acdb2b4f82df18564a3da6b, type: 2}
+    - key: Strike/Materials/ClusterShellGlow
+      value: {fileID: 2100000, guid: 28ed1de4d24ea494ca0aecc049d15238, type: 2}
     - key: Strike/Materials/Crater
       value: {fileID: 2100000, guid: 8c4c9ead9b2425f4e9ace0ddfef726b6, type: 2}
     - key: Strike/Materials/DisrupterOrb
@@ -446,14 +528,34 @@ MonoBehaviour:
       value: {fileID: 2100000, guid: 8105e4c1f94c1274491cc925cfe20251, type: 2}
     - key: Strike/Materials/EnemyMineGlow
       value: {fileID: 2100000, guid: 56a4722a105266247b977cd852596fd8, type: 2}
+    - key: Strike/Materials/EnemyNeedle
+      value: {fileID: 2100000, guid: da0a90cc0d9d4524e820eb3bc380ebf3, type: 2}
     - key: Strike/Materials/EnemyRocketFlame
       value: {fileID: 2100000, guid: 3a4f7f624e610464ab87f22e847cc106, type: 2}
+    - key: Strike/Materials/EnemySeekerFlame
+      value: {fileID: 2100000, guid: a4a0c68798ca969469f3393162d85034, type: 2}
+    - key: Strike/Materials/EnemyShellGlow
+      value: {fileID: 2100000, guid: 0c5d46c355a20154ba927bc33d30c096, type: 2}
+    - key: Strike/Materials/EnemyShellMarker
+      value: {fileID: 2100000, guid: e946b25a6fa801046aa973959bf51462, type: 2}
+    - key: Strike/Materials/EnemySporeCore
+      value: {fileID: 2100000, guid: 7dcf911c52713eb44a0e31fb77466ac9, type: 2}
+    - key: Strike/Materials/EnemySporeGlow
+      value: {fileID: 2100000, guid: 3359e7c40ad56e545a89ac380fa8ff2e, type: 2}
     - key: Strike/Materials/EngineRed
       value: {fileID: 2100000, guid: 564be3eb70260ed4cb2f0eb4cf48355e, type: 2}
+    - key: Strike/Materials/IconAfterburner
+      value: {fileID: 2100000, guid: e1a078c0b2df946459b2e671fb4eeff6, type: 2}
     - key: Strike/Materials/IconAirMissiles
       value: {fileID: 2100000, guid: bc1b613fb315ae04c92daccaf4763b13, type: 2}
+    - key: Strike/Materials/IconArcLightning
+      value: {fileID: 2100000, guid: 2e304cc111b507e4cbfb0f8af0cce913, type: 2}
+    - key: Strike/Materials/IconArmorPlating
+      value: {fileID: 2100000, guid: a8eff1d5ae4dee941952821a87244bde, type: 2}
     - key: Strike/Materials/IconBombs
       value: {fileID: 2100000, guid: 45ea43c975c1715438ab1da83887b5ab, type: 2}
+    - key: Strike/Materials/IconClusterBombs
+      value: {fileID: 2100000, guid: e2e8529732fb7aa45b1d9ff4c3528490, type: 2}
     - key: Strike/Materials/IconCreditOrb
       value: {fileID: 2100000, guid: 5d0f3f97b0e005840a72bcafbc561733, type: 2}
     - key: Strike/Materials/IconDeathray
@@ -466,6 +568,8 @@ MonoBehaviour:
       value: {fileID: 2100000, guid: 9cc4b5aaa98246f4d9154efe2312f9fe, type: 2}
     - key: Strike/Materials/IconEnergyModule
       value: {fileID: 2100000, guid: 6eb61eaf05079914e887cc349036ea7e, type: 2}
+    - key: Strike/Materials/IconFlakCannon
+      value: {fileID: 2100000, guid: 7d917898f4c777d459da8e483ef177ed, type: 2}
     - key: Strike/Materials/IconFreyliumOre
       value: {fileID: 2100000, guid: 0720f912ef01f3346aa5fdbfed59e9eb, type: 2}
     - key: Strike/Materials/IconFusionCore
@@ -490,6 +594,8 @@ MonoBehaviour:
       value: {fileID: 2100000, guid: e01fe0fa53a8ec94fb02ec3bf41abf0e, type: 2}
     - key: Strike/Materials/IconMoney
       value: {fileID: 2100000, guid: ec1ece52aa42ed940914134ed8d9db02, type: 2}
+    - key: Strike/Materials/IconNapalm
+      value: {fileID: 2100000, guid: 5c12c18f3d699c5409d3864d1978e507, type: 2}
     - key: Strike/Materials/IconPhaseShield
       value: {fileID: 2100000, guid: 7e965cf0450b965469777e0daee5c0fd, type: 2}
     - key: Strike/Materials/IconPlasmaCannon
@@ -498,8 +604,16 @@ MonoBehaviour:
       value: {fileID: 2100000, guid: 0e24fd16f3f7e8748b88757650799e15, type: 2}
     - key: Strike/Materials/IconPulseCannon
       value: {fileID: 2100000, guid: 1cf7a2caeedf9af4399c9b8e6b8584ad, type: 2}
+    - key: Strike/Materials/IconRailGun
+      value: {fileID: 2100000, guid: 2d45acf5fee331540b8388221f1a72c4, type: 2}
+    - key: Strike/Materials/IconRepairDrone
+      value: {fileID: 2100000, guid: 93f383e3dc3813c4f829f91c8b30d488, type: 2}
+    - key: Strike/Materials/IconRepairKit
+      value: {fileID: 2100000, guid: dadbaffdba06084458b462b73e23a4a4, type: 2}
     - key: Strike/Materials/IconRookie
       value: {fileID: 2100000, guid: 8dc8404533c7fe04880544ab9bbcd967, type: 2}
+    - key: Strike/Materials/IconSalvageMagnet
+      value: {fileID: 2100000, guid: 743031b12591e214aa2fb5641bf08d89, type: 2}
     - key: Strike/Materials/IconScanner
       value: {fileID: 2100000, guid: b0aeb2701ee58914a8b861b603713ac9, type: 2}
     - key: Strike/Materials/IconSmallArms
@@ -508,6 +622,8 @@ MonoBehaviour:
       value: {fileID: 2100000, guid: 61b5084684533e24a9c8eb41f0472234, type: 2}
     - key: Strike/Materials/IconSupplyRoom
       value: {fileID: 2100000, guid: 73398d1306c1b2d4caa1fb59fb92ea89, type: 2}
+    - key: Strike/Materials/IconSwarmRockets
+      value: {fileID: 2100000, guid: 3ee8f620e67cd0d47a6a92c7d7fb27aa, type: 2}
     - key: Strike/Materials/IconTarget
       value: {fileID: 2100000, guid: a0d743581bbe40a4d9061d1b9c374bcd, type: 2}
     - key: Strike/Materials/IconThaelite
@@ -516,12 +632,18 @@ MonoBehaviour:
       value: {fileID: 2100000, guid: 13518f9612ae2484f9cc64e9dd0337d0, type: 2}
     - key: Strike/Materials/IconVeteran
       value: {fileID: 2100000, guid: 98c656feffe99e84a9185eb5ffd049d4, type: 2}
+    - key: Strike/Materials/IconWingmanDrones
+      value: {fileID: 2100000, guid: ba0b29200afc7834982045cf3d23c74a, type: 2}
     - key: Strike/Materials/MegabombFlash
       value: {fileID: 2100000, guid: c36ee431a9cae154daba22c4d3406df4, type: 2}
     - key: Strike/Materials/MiniGunRound
       value: {fileID: 2100000, guid: 6ff61c485f788e1418ea53eb9882bc16, type: 2}
     - key: Strike/Materials/MissileFlame
       value: {fileID: 2100000, guid: cfa17887e9aedbf42ac47512dc9f9854, type: 2}
+    - key: Strike/Materials/NapalmFire
+      value: {fileID: 2100000, guid: b5f36e6158811fa4680a3310863ae770, type: 2}
+    - key: Strike/Materials/NapalmScorch
+      value: {fileID: 2100000, guid: bcb5d573c47dacf42874b6fbd83d32f1, type: 2}
     - key: Strike/Materials/PlasmaBolt
       value: {fileID: 2100000, guid: 36c36cb04a362af498fedd42a5fd3727, type: 2}
     - key: Strike/Materials/PlayerBeam
@@ -536,6 +658,8 @@ MonoBehaviour:
       value: {fileID: 2100000, guid: df2e0e340e4181b40b2f654a5d78c594, type: 2}
     - key: Strike/Materials/Shadow
       value: {fileID: 2100000, guid: 266487a85daa5ae41955d2c0f89d546c, type: 2}
+    - key: Strike/Materials/ShieldDome
+      value: {fileID: 2100000, guid: 874847111fe36c64781acc39c8d46ed8, type: 2}
     - key: Strike/Materials/StrikeBasalt
       value: {fileID: 2100000, guid: ff60ec9f61a16b4449270e21e001413b, type: 2}
     - key: Strike/Materials/StrikeBeamFlare
@@ -548,14 +672,20 @@ MonoBehaviour:
       value: {fileID: 2100000, guid: 0f49c0969cf93794aae0fe1d9d5d5878, type: 2}
     - key: Strike/Materials/StrikeBombGlow
       value: {fileID: 2100000, guid: a47e7881db9faf349b036610483a49cf, type: 2}
+    - key: Strike/Materials/StrikeCoreAfterburner
+      value: {fileID: 2100000, guid: ce29a4f3eff5cb64dbb2c5752fdcf87d, type: 2}
     - key: Strike/Materials/StrikeCoreAirMissiles
       value: {fileID: 2100000, guid: 274941d2eeca0634ba2bd104b72cc840, type: 2}
+    - key: Strike/Materials/StrikeCoreArmorPlating
+      value: {fileID: 2100000, guid: e58fd0d7270792a41aae3e8c66f28116, type: 2}
     - key: Strike/Materials/StrikeCoreBombs
       value: {fileID: 2100000, guid: 6ba04f9a9cf7ece438b9399de16f427f, type: 2}
     - key: Strike/Materials/StrikeCoreDumbfire
       value: {fileID: 2100000, guid: 982b0684ab3e1594792d753489178df9, type: 2}
     - key: Strike/Materials/StrikeCoreEnergy
       value: {fileID: 2100000, guid: b8c34e20709b0df42ac6de228fb7ac20, type: 2}
+    - key: Strike/Materials/StrikeCoreFlakCannon
+      value: {fileID: 2100000, guid: adb7f770d0ce0454c8a09f2d79bc299e, type: 2}
     - key: Strike/Materials/StrikeCoreGroundMissiles
       value: {fileID: 2100000, guid: 81498ab2ffba452499aa9cc7621ec204, type: 2}
     - key: Strike/Materials/StrikeCoreIonScanner
@@ -566,8 +696,14 @@ MonoBehaviour:
       value: {fileID: 2100000, guid: 2cfd020d32878b3488a4934a43e0b647, type: 2}
     - key: Strike/Materials/StrikeCorePlasmaCannon
       value: {fileID: 2100000, guid: 960399f3425d54f4dbfdb57e74e461f4, type: 2}
+    - key: Strike/Materials/StrikeCoreRepairKit
+      value: {fileID: 2100000, guid: 369473515c30dd042bb041c157ae174a, type: 2}
+    - key: Strike/Materials/StrikeCoreSalvageMagnet
+      value: {fileID: 2100000, guid: 928a5f5cf62134341b69fb2a5a7cb468, type: 2}
     - key: Strike/Materials/StrikeCrimson
       value: {fileID: 2100000, guid: 69093bee5c1e61548abb0636446fae0a, type: 2}
+    - key: Strike/Materials/StrikeCrystalRose
+      value: {fileID: 2100000, guid: edbae562fb8f77e43acafa6877cb4dcb, type: 2}
     - key: Strike/Materials/StrikeHaloCreditOrb
       value: {fileID: 2100000, guid: cac14a125e4c892479cf212d181b5fb3, type: 2}
     - key: Strike/Materials/StrikeHaloFreyliumOre
@@ -580,6 +716,10 @@ MonoBehaviour:
       value: {fileID: 2100000, guid: f20fdaae5403af44fb1d48fab49b82ce, type: 2}
     - key: Strike/Materials/StrikeHaloThaelite
       value: {fileID: 2100000, guid: 2f33f6ebb903b174f8aa16da50a2a93f, type: 2}
+    - key: Strike/Materials/StrikeHivePurple
+      value: {fileID: 2100000, guid: 94212e99678bfb0418b852645601c32e, type: 2}
+    - key: Strike/Materials/StrikeIronSteel
+      value: {fileID: 2100000, guid: e1b0682ae5dbceb4d903012be46c2542, type: 2}
     - key: Strike/Materials/StrikeNight
       value: {fileID: 2100000, guid: 4dfc40cfb572f4840bc728207cf3e3fe, type: 2}
     - key: Strike/Materials/StrikeOlive
@@ -588,18 +728,104 @@ MonoBehaviour:
       value: {fileID: 2100000, guid: b9e4ae47076d927469c2dbd5533dd71c, type: 2}
     - key: Strike/Materials/StrikeSand
       value: {fileID: 2100000, guid: 5457231297207444b889e266e63b92c4, type: 2}
+    - key: Field/Materials/AllyPaint
+      value: {fileID: 2100000, guid: 403131dbb54e3334ebafa1e920e9feb7, type: 2}
+    - key: Field/Materials/AllyGlow
+      value: {fileID: 2100000, guid: 63c7c4321f8ea63438f1d322b3f9db4d, type: 2}
+    - key: Field/Materials/HullBarBack
+      value: {fileID: 2100000, guid: 5e909789bfdeec742915c69474a2a6dd, type: 2}
+    - key: Field/Materials/HullBarFill
+      value: {fileID: 2100000, guid: bd8539cd6da30214684dde277bf7d55d, type: 2}
+    - key: Field/Materials/Hydra
+      value: {fileID: 2100000, guid: dc93b9eecb472204683e9a10c47ca18d, type: 2}
+    - key: Field/Materials/Metal
+      value: {fileID: 2100000, guid: 4a175262fedca2b4dba370bd52a97d55, type: 2}
+    - key: Field/Materials/Wreck
+      value: {fileID: 2100000, guid: 47dfc0db5d801fd438f4dd3d246e4a41, type: 2}
+    - key: Field/Materials/BastionPaint
+      value: {fileID: 2100000, guid: f15dfa3e8ff396d41a0d80c0a5a5abb6, type: 2}
+    - key: Field/Materials/BastionGlow
+      value: {fileID: 2100000, guid: e069e1c0a81dc8c40a2303f76777722d, type: 2}
     - key: StarSparrow/Materials/StarSparrow Red
       value: {fileID: 2100000, guid: 3574d5733ac60b941b175932e0a1aa2e, type: 2}
+    - key: Field/Materials/GatePaint
+      value: {fileID: 2100000, guid: 665860546b760ac4f92860ece4d4c967, type: 2}
+    - key: Field/Materials/GateGlow
+      value: {fileID: 2100000, guid: c39e3488ed23f2841865dc36636fdd76, type: 2}
+    - key: Field/Materials/HydraHide
+      value: {fileID: 2100000, guid: 32f94fe29716c4742bb174b04f60bfa4, type: 2}
+    - key: Field/Materials/HydraGlow
+      value: {fileID: 2100000, guid: 412915c84b9ac814cb5d1265af1a294a, type: 2}
+    - key: Field/Materials/LeviathanPaint
+      value: {fileID: 2100000, guid: 367fdee0681923d4289f53d56884b3fb, type: 2}
+    - key: Field/Materials/LeviathanGlow
+      value: {fileID: 2100000, guid: 51929d5185155e54da01820b130b3ebd, type: 2}
+    - key: Field/Materials/TitanIron
+      value: {fileID: 2100000, guid: 0ab607acfc94ffc4bb34344c555b1aba, type: 2}
+    - key: Field/Materials/HeraldPaint
+      value: {fileID: 2100000, guid: bc73357cc58200e4186e2c35ccecaeee, type: 2}
+    - key: Field/Materials/HeraldGlow
+      value: {fileID: 2100000, guid: a2cee19e1c1d5624d873a2c93cf05db3, type: 2}
+    - key: Field/Materials/WarlordPaint
+      value: {fileID: 2100000, guid: 384adbcc6a851e343bd767316f180260, type: 2}
+    - key: Field/Materials/SunGlow
+      value: {fileID: 2100000, guid: 8d7c5562c5d06d545a4933c19d3cfd8b, type: 2}
+    - key: Field/Materials/MatriarchPaint
+      value: {fileID: 2100000, guid: 882e7a4224f1ce649b6e527e515236da, type: 2}
+    - key: Field/Materials/MatriarchGlow
+      value: {fileID: 2100000, guid: 1e75e7efe9303ca488564687179156e7, type: 2}
+    - key: Field/Materials/CorsairPaint
+      value: {fileID: 2100000, guid: 69a4459e6ac0aa8499b105129a86a884, type: 2}
+    - key: Field/Materials/CorsairGlow
+      value: {fileID: 2100000, guid: 58b3790a08867c342bada0ca09bb815b, type: 2}
+    - key: Field/Materials/Reticle
+      value: {fileID: 2100000, guid: fb756b50cfcface4899904f804205697, type: 2}
+    - key: Field/Materials/MinelayerPaint
+      value: {fileID: 2100000, guid: 699f312ec10c8e2439065eba1599d9c9, type: 2}
+    - key: Field/Materials/SentryPaint
+      value: {fileID: 2100000, guid: a6fb3992396adda4da55d0acc626a47c, type: 2}
+    - key: Field/Materials/SentryCharge
+      value: {fileID: 2100000, guid: f2743b5bf1feb364d9992aafd0046e76, type: 2}
+    - key: Field/Materials/StalkerPaint
+      value: {fileID: 2100000, guid: c424a42ec116c8c4fa23a06a430dbe32, type: 2}
+    - key: Field/Materials/StalkerGlow
+      value: {fileID: 2100000, guid: 505ae8b46a152194894382e957b4c371, type: 2}
     - key: StarSparrow/Materials/BonusContent/Mine Sample 2
       value: {fileID: 2100000, guid: 7da0d403d4fb0da40ac018d557c6db89, type: 2}
     - key: StarSparrow/Materials/BonusContent/AsteroidsLava_Red
       value: {fileID: 2100000, guid: 816eca2bca813da4883bad3b376c4dbc, type: 2}
+    - key: Field/Materials/StormShade
+      value: {fileID: 2100000, guid: 05c383d1600ed10469a817575f9ea647, type: 2}
+    - key: Field/Materials/StormCloud
+      value: {fileID: 2100000, guid: 87cd85fbec4d078499095bb48e3f3d73, type: 2}
+    - key: Field/Materials/StormArc
+      value: {fileID: 2100000, guid: c3d2de3707ce37e459d94f8ead2f1663, type: 2}
     - key: StarSparrow/Materials/BonusContent/Mine Sample 1
       value: {fileID: 2100000, guid: 82c97815f01775d4899d78255a373dfe, type: 2}
+    - key: Field/Materials/FlareFront
+      value: {fileID: 2100000, guid: 739f3700f42d48b49970ad2d85325339, type: 2}
+    - key: Field/Materials/FlareEdge
+      value: {fileID: 2100000, guid: c43caa4f2ab33984a82b53257b7f26aa, type: 2}
+    - key: Field/Materials/FlareEmber
+      value: {fileID: 2100000, guid: 2b3b54ffa2aaf9c49b981006050bd1c4, type: 2}
     - key: StarSparrow/Materials/StarSparrow Blue
       value: {fileID: 2100000, guid: ca28c97d23f98024fb31e22662eb58e7, type: 2}
     - key: StarSparrow/Materials/BonusContent/Missile
       value: {fileID: 2100000, guid: 30d351457dfac9d40a8b07e6426fd177, type: 2}
+    - key: Field/Materials/LanceBeam
+      value: {fileID: 2100000, guid: de43d3ed9f60f204c83d3b3d2c4ad3f3, type: 2}
+    - key: Field/Materials/BeamSource
+      value: {fileID: 2100000, guid: 393db113aed0dde42a630f60449e75de, type: 2}
+    - key: Field/Materials/ZoneRing
+      value: {fileID: 2100000, guid: dc9a173d0114773458b582ce157749a2, type: 2}
+    - key: Field/Materials/LightningBolt
+      value: {fileID: 2100000, guid: 8dc614f2e4cf5fe48be0707ebb7e914e, type: 2}
+    - key: Field/Materials/NovaOrb
+      value: {fileID: 2100000, guid: 7315f4476919390419542149509e39fc, type: 2}
+    - key: Field/Materials/NovaOrbHalo
+      value: {fileID: 2100000, guid: bba7a7a179842b7468ab4147f01f6c69, type: 2}
+    - key: Field/Materials/SweepBeam
+      value: {fileID: 2100000, guid: 1808da004ce69b24a96f6f4ab05d8ddc, type: 2}
     - key: Ground/Desert/Crater
       value: {fileID: 2100000, guid: fe2b6ee87d1960248a75de93d1250d63, type: 2}
     - key: Ground/Desert/Rubble
@@ -628,6 +854,32 @@ MonoBehaviour:
       value: {fileID: 2100000, guid: 16a838eacaba4be4ab8d2ef1d6548106, type: 2}
     - key: Ground/City/Tiles/Road2
       value: {fileID: 2100000, guid: 3112de084f548994cae02a0026a5454f, type: 2}
+    - key: Ground/Crystal/Tiles/Base0
+      value: {fileID: 2100000, guid: e5cedf6c4ff5f9446bdb4d75c2aecbca, type: 2}
+    - key: Ground/Crystal/Tiles/Base1
+      value: {fileID: 2100000, guid: 20ae59be117c6d2479ff565942b7201d, type: 2}
+    - key: Ground/Crystal/Tiles/Crystals0
+      value: {fileID: 2100000, guid: 5c58d260df4782b40b1f1158ba7a2c34, type: 2}
+    - key: Ground/Crystal/Tiles/Crystals1
+      value: {fileID: 2100000, guid: f211bd5517ecc9544a8ca65a7569523d, type: 2}
+    - key: Ground/Crystal/Tiles/Lake0
+      value: {fileID: 2100000, guid: 46a487670b8708e4593d0adb1ee4dec1, type: 2}
+    - key: Ground/Crystal/Tiles/Lake1
+      value: {fileID: 2100000, guid: 17dbaf0a8e9a3d9499883aaf5dcd4459, type: 2}
+    - key: Ground/Crystal/Tiles/Plain0
+      value: {fileID: 2100000, guid: de8022fbfe6e6a240912d2f54c06f2cb, type: 2}
+    - key: Ground/Crystal/Tiles/Plain1
+      value: {fileID: 2100000, guid: 100e7a174ac1a5347a7ed13d5f8a79c4, type: 2}
+    - key: Ground/Crystal/Tiles/Plain2
+      value: {fileID: 2100000, guid: 0c1fa5eaa42319243b5097e1f7057f2d, type: 2}
+    - key: Ground/Crystal/Tiles/Road0
+      value: {fileID: 2100000, guid: 1a785e2b0acd168489d59eae8bbb8758, type: 2}
+    - key: Ground/Crystal/Tiles/Road1
+      value: {fileID: 2100000, guid: c6d3b7ccf409a8a4fb45226c7ef42aed, type: 2}
+    - key: Ground/Crystal/Tiles/Rough0
+      value: {fileID: 2100000, guid: 72b62e76c3796bb4ba1a5ecfe7481071, type: 2}
+    - key: Ground/Crystal/Tiles/Rough1
+      value: {fileID: 2100000, guid: 168de2ecb8daa704a8595e2d37805a12, type: 2}
     - key: Ground/Desert/Tiles/Base0
       value: {fileID: 2100000, guid: fea47add5cddacc48830ebbb51187bf4, type: 2}
     - key: Ground/Desert/Tiles/Base1
@@ -656,6 +908,84 @@ MonoBehaviour:
       value: {fileID: 2100000, guid: 5408977e12d8b714f956a6d66b1342a6, type: 2}
     - key: Ground/Desert/Tiles/Sea1
       value: {fileID: 2100000, guid: 94cf20c76d355774c9ecc169cb20e5b0, type: 2}
+    - key: Ground/Glacier/Tiles/Base0
+      value: {fileID: 2100000, guid: 2964c51ba30cd6241a03cdd0b701e323, type: 2}
+    - key: Ground/Glacier/Tiles/Base1
+      value: {fileID: 2100000, guid: 374ccd191b960c8489b3770790c9a19b, type: 2}
+    - key: Ground/Glacier/Tiles/Coast0
+      value: {fileID: 2100000, guid: dae61801bc8420341a78fbd9f6d096ed, type: 2}
+    - key: Ground/Glacier/Tiles/Coast1
+      value: {fileID: 2100000, guid: bc85c4ab35ac53340aaa1ffdb96c2e81, type: 2}
+    - key: Ground/Glacier/Tiles/Ice0
+      value: {fileID: 2100000, guid: a8c68537b54a919499c4ef58ab9da743, type: 2}
+    - key: Ground/Glacier/Tiles/Ice1
+      value: {fileID: 2100000, guid: 8c0c0b66fc277f44b82474a046209757, type: 2}
+    - key: Ground/Glacier/Tiles/Plain0
+      value: {fileID: 2100000, guid: 8000cd37b32d2bd42ab0d4b665fb27db, type: 2}
+    - key: Ground/Glacier/Tiles/Plain1
+      value: {fileID: 2100000, guid: 88b17f7a8b4075a4b98a28049e09e25b, type: 2}
+    - key: Ground/Glacier/Tiles/Plain2
+      value: {fileID: 2100000, guid: 170193e5003f3ab45ac978f0d9d0d684, type: 2}
+    - key: Ground/Glacier/Tiles/Road0
+      value: {fileID: 2100000, guid: a038c065832fca4458926e61a9e53b3b, type: 2}
+    - key: Ground/Glacier/Tiles/Road1
+      value: {fileID: 2100000, guid: 401a83f502c94cb43b669020144d172a, type: 2}
+    - key: Ground/Glacier/Tiles/Road2
+      value: {fileID: 2100000, guid: d61d8a6f5c5f5ca499d454bf40d1da3b, type: 2}
+    - key: Ground/Glacier/Tiles/Rough0
+      value: {fileID: 2100000, guid: d474725c2e18abc4e8aa4575acfede40, type: 2}
+    - key: Ground/Glacier/Tiles/Rough1
+      value: {fileID: 2100000, guid: d2f81c12cfcfdbd4bb827de5ed4df7a1, type: 2}
+    - key: Ground/Glacier/Tiles/Sea0
+      value: {fileID: 2100000, guid: ce57ea5e63038964c9458df541515a90, type: 2}
+    - key: Ground/Glacier/Tiles/Sea1
+      value: {fileID: 2100000, guid: 1d45da7611f1650459b33fb6851f5af8, type: 2}
+    - key: Ground/Halo/Tiles/Base0
+      value: {fileID: 2100000, guid: 61b5e3db78c323a438d97676abcb82bb, type: 2}
+    - key: Ground/Halo/Tiles/Base1
+      value: {fileID: 2100000, guid: 2f59956a08fd2694294c60288ce7cf44, type: 2}
+    - key: Ground/Halo/Tiles/Lake0
+      value: {fileID: 2100000, guid: 3870ba0a9a2a4f7468167f5db510f152, type: 2}
+    - key: Ground/Halo/Tiles/Lake1
+      value: {fileID: 2100000, guid: a17a067df641f1348882404e54b27842, type: 2}
+    - key: Ground/Halo/Tiles/Plain0
+      value: {fileID: 2100000, guid: 642afe77e185add42a5011966d7e2cae, type: 2}
+    - key: Ground/Halo/Tiles/Plain1
+      value: {fileID: 2100000, guid: 60d11b90c0f1142478b1eceacea5a729, type: 2}
+    - key: Ground/Halo/Tiles/Plain2
+      value: {fileID: 2100000, guid: 21dc828b4c4d3aa4b8d8738ad094befd, type: 2}
+    - key: Ground/Halo/Tiles/Road0
+      value: {fileID: 2100000, guid: 1377ec694d4cabc43a1f9080c7131a06, type: 2}
+    - key: Ground/Halo/Tiles/Road1
+      value: {fileID: 2100000, guid: d402fcf0f93d28f4b9ec3436bb5b77ef, type: 2}
+    - key: Ground/Hive/Tiles/Base0
+      value: {fileID: 2100000, guid: 43751d2a78400f14c9bacc90e706158c, type: 2}
+    - key: Ground/Hive/Tiles/Base1
+      value: {fileID: 2100000, guid: 0a34fafc96e3c4f469526a079a80842f, type: 2}
+    - key: Ground/Hive/Tiles/Lake0
+      value: {fileID: 2100000, guid: 5c198afb5ccbf944f98f2e37051ac504, type: 2}
+    - key: Ground/Hive/Tiles/Lake1
+      value: {fileID: 2100000, guid: 2048d0f26f95bf043ad60b4d78e4235c, type: 2}
+    - key: Ground/Hive/Tiles/Nest0
+      value: {fileID: 2100000, guid: af78478935d2f0e469a58bbaad553c24, type: 2}
+    - key: Ground/Hive/Tiles/Nest1
+      value: {fileID: 2100000, guid: 73108df79c379ac43874ab84748031db, type: 2}
+    - key: Ground/Hive/Tiles/Nest2
+      value: {fileID: 2100000, guid: 29524475b0f75b04597dc8dbb5cba24b, type: 2}
+    - key: Ground/Hive/Tiles/Plain0
+      value: {fileID: 2100000, guid: 210e23e25409b3040a37289cbc488f68, type: 2}
+    - key: Ground/Hive/Tiles/Plain1
+      value: {fileID: 2100000, guid: 87bae804482405b48a32047929b9f667, type: 2}
+    - key: Ground/Hive/Tiles/Plain2
+      value: {fileID: 2100000, guid: 28025cc68d8ecee479dc6e9c894d5e2b, type: 2}
+    - key: Ground/Hive/Tiles/River0
+      value: {fileID: 2100000, guid: c60d033f9d368ed40a9e3dfb1106e887, type: 2}
+    - key: Ground/Hive/Tiles/River1
+      value: {fileID: 2100000, guid: 1acc4f97cba85a44599e3bcff59b6406, type: 2}
+    - key: Ground/Hive/Tiles/Rough0
+      value: {fileID: 2100000, guid: fd21650c0d751dd4aa22c6df68b8ac9a, type: 2}
+    - key: Ground/Hive/Tiles/Rough1
+      value: {fileID: 2100000, guid: 4fa0a2865dbe36e4da4c35548cb63b51, type: 2}
     - key: Ground/Jungle/Tiles/Base0
       value: {fileID: 2100000, guid: f5d44ea790101254ca8d7d36897deb22, type: 2}
     - key: Ground/Jungle/Tiles/Base1
@@ -702,6 +1032,34 @@ MonoBehaviour:
       value: {fileID: 2100000, guid: 9a06837adbc9bfb4d8a7d6d3ced63f52, type: 2}
     - key: Ground/Moon/Tiles/Rough1
       value: {fileID: 2100000, guid: 6c0dbaeea80989644baa339746a7d0ad, type: 2}
+    - key: Ground/Reef/Tiles/Base0
+      value: {fileID: 2100000, guid: a2b32e6c7ea5f8541b13e552e419a8da, type: 2}
+    - key: Ground/Reef/Tiles/Base1
+      value: {fileID: 2100000, guid: 5a524c77e877d6e4fa880de591ad354f, type: 2}
+    - key: Ground/Reef/Tiles/Coast0
+      value: {fileID: 2100000, guid: c030826fe96419346b035b25351c1b85, type: 2}
+    - key: Ground/Reef/Tiles/Coast1
+      value: {fileID: 2100000, guid: 53769ed2f3c80e94e95ceb94e190be53, type: 2}
+    - key: Ground/Reef/Tiles/Islands0
+      value: {fileID: 2100000, guid: 83cbdee4177f787478142a4925b87b10, type: 2}
+    - key: Ground/Reef/Tiles/Islands1
+      value: {fileID: 2100000, guid: db5696e0148ced349b3175a787348696, type: 2}
+    - key: Ground/Reef/Tiles/Islands2
+      value: {fileID: 2100000, guid: c244aafeae5cbd14697c97699df8b0e5, type: 2}
+    - key: Ground/Reef/Tiles/Plain0
+      value: {fileID: 2100000, guid: af29012c4536eb345acbe58cd9133fe5, type: 2}
+    - key: Ground/Reef/Tiles/Plain1
+      value: {fileID: 2100000, guid: 8f8f5e651887c504783e8f965eb1a0b4, type: 2}
+    - key: Ground/Reef/Tiles/Road0
+      value: {fileID: 2100000, guid: 9a12efe205a79604294e4606b4d19f63, type: 2}
+    - key: Ground/Reef/Tiles/Road1
+      value: {fileID: 2100000, guid: 0d46e3e04b502844bb26246e937351d3, type: 2}
+    - key: Ground/Reef/Tiles/Sea0
+      value: {fileID: 2100000, guid: 42ef6590ffb5f494f9351c15eeb3aeeb, type: 2}
+    - key: Ground/Reef/Tiles/Sea1
+      value: {fileID: 2100000, guid: 6bb879c13ca88094ab917bca13affd2e, type: 2}
+    - key: Ground/Reef/Tiles/Sea2
+      value: {fileID: 2100000, guid: d60d2021e6d4ce44483f0fef9faedcd9, type: 2}
     - key: Ground/Station/Tiles/Base0
       value: {fileID: 2100000, guid: 9c9e6e99a07734948b66e95c2b86560b, type: 2}
     - key: Ground/Station/Tiles/Base1
@@ -739,10 +1097,26 @@ MonoBehaviour:
     textures: []
     prefabs: []
     meshes:
-    - key: StarSparrow/Meshes/StarSparrowExamples2#StarSparrow8
-      value: {fileID: 4300010, guid: 21c6d0bb8170cae4f9d49bb728b3f524, type: 3}
+    - key: Field/Models/Freighter
+      value: {fileID: 4300000, guid: bd81c650b11666146b5c536acda6ea5a, type: 2}
     - key: Models/FlameQuad
       value: {fileID: 4300000, guid: adf0f750045e93b4fb31013aebba35ca, type: 2}
+    - key: Field/Models/StationHub
+      value: {fileID: 4300000, guid: 45d959ebc7c38fd4b86224af0ad94f15, type: 2}
+    - key: Field/Models/StationRing
+      value: {fileID: 4300000, guid: 9db92cb83f81a82459160a3abbc936c5, type: 2}
+    - key: Field/Models/BastionFortress
+      value: {fileID: 4300000, guid: d337e8df744564648b93cde474876623, type: 2}
+    - key: Field/Models/BastionRing
+      value: {fileID: 4300000, guid: d62cff68adc62f84e86a3e376ea9d200, type: 2}
+    - key: StarSparrow/Meshes/StarSparrowExamples2#StarSparrow8
+      value: {fileID: 4300010, guid: 21c6d0bb8170cae4f9d49bb728b3f524, type: 3}
+    - key: Field/Models/GateCore
+      value: {fileID: 4300000, guid: 59b585b9112421b448f4d386c892f565, type: 2}
+    - key: Field/Models/GateRing
+      value: {fileID: 4300000, guid: ab82e1f2df929bb4283311ae6217a777, type: 2}
+    - key: Field/Models/GateRingInner
+      value: {fileID: 4300000, guid: 9b2dc86316ca2614480a31e2da1af088, type: 2}
     - key: StarSparrow/Meshes/BonusContent/FlyingInsects3#FlyingInsect3
       value: {fileID: 4300000, guid: b2359fd8578c87649ad70d6001527479, type: 3}
     - key: StarSparrow/Meshes/BonusContent/FlyingInsects3_Wing1#FlyingInsect3_Wing1
@@ -753,6 +1127,8 @@ MonoBehaviour:
       value: {fileID: 4300000, guid: b194a334c875d914aa66569a0a81be6c, type: 3}
     - key: StarSparrow/Meshes/BonusContent/FlyingInsects3_Wing4#FlyingInsect3_Wing4
       value: {fileID: 4300000, guid: bb401a4b2f241b54f904ccba8227557f, type: 3}
+    - key: Field/Models/Hydra
+      value: {fileID: 4300000, guid: 4fa9f95c0b69ab748a44650386e40977, type: 2}
     - key: Models/Saucer
       value: {fileID: 4300000, guid: 6cee65c92e2c0ee40be635e22a653063, type: 2}
     - key: Models/SaucerLights
@@ -767,8 +1143,36 @@ MonoBehaviour:
       value: {fileID: 4300000, guid: c3a497d01bb75de4f866a1c8dfb337d9, type: 2}
     - key: Models/Rock3
       value: {fileID: 4300000, guid: e3c60f1207b22d448aaacc19ebbc71ca, type: 2}
+    - key: Field/Models/ScrapMaw
+      value: {fileID: 4300000, guid: 7fa279c7682d89646961fdd1c1946722, type: 2}
+    - key: Field/Models/Wreck1
+      value: {fileID: 4300000, guid: bfe161c2b036e7d439490a3a756d021d, type: 2}
+    - key: Field/Models/Wreck2
+      value: {fileID: 4300000, guid: 1f10dd41c03a34647aee6fceaf622e5f, type: 2}
+    - key: Field/Models/StormHerald
+      value: {fileID: 4300000, guid: 9c3debf08e4ea254db9008627182754b, type: 2}
+    - key: Field/Models/HeraldRings
+      value: {fileID: 4300000, guid: bdac2e35c082056449e93b66efb636c9, type: 2}
+    - key: StarSparrow/Meshes/StarSparrowExamples1#StarSparrow4
+      value: {fileID: 4300004, guid: e0f90ad78680d6145b082ac69f7fc504, type: 3}
+    - key: Field/Models/SunCannon
+      value: {fileID: 4300000, guid: 028213988c5b0554a932c1d83b6d80a9, type: 2}
+    - key: Field/Models/WraithMatriarch
+      value: {fileID: 4300000, guid: 292b3738ab024274d9c2f6624e513899, type: 2}
+    - key: StarSparrow/Meshes/StarSparrowExamples1#StarSparrow6
+      value: {fileID: 4300006, guid: e0f90ad78680d6145b082ac69f7fc504, type: 3}
+    - key: Field/Models/Minelayer
+      value: {fileID: 4300000, guid: 25b7084a896bd0940820f2e5631cb68f, type: 2}
+    - key: Field/Models/MineDrum
+      value: {fileID: 4300000, guid: f9f05cdf218306343b81ab4bb2c33957, type: 2}
     - key: Models/Scout
       value: {fileID: 4300000, guid: 87edd0a4e1ac6894aa0bd31f40b04813, type: 2}
+    - key: Field/Models/SentryBase
+      value: {fileID: 4300000, guid: 7d6d28385566eb349ae189c3b3bce861, type: 2}
+    - key: Field/Models/SentryTurret
+      value: {fileID: 4300000, guid: 8bdb7f4bb00e296418a0a1b8de67bcff, type: 2}
+    - key: Field/Models/Stalker
+      value: {fileID: 4300000, guid: b659fec075f1f3e47b483fb0a2e0f170, type: 2}
     - key: StarSparrow/Meshes/BonusContent/MinesSample#SpaceMine11
       value: {fileID: 4300002, guid: 6ed599d7224ee9943b11064add7ed981, type: 3}
     - key: Models/Comet
@@ -787,8 +1191,14 @@ MonoBehaviour:
       value: {fileID: 4300002, guid: afbbf42a35d3ca347aea29a1457035cc, type: 3}
     - key: StarSparrow/Meshes/StarSparrowExamples1#StarSparrow5
       value: {fileID: 4300010, guid: e0f90ad78680d6145b082ac69f7fc504, type: 3}
+    - key: StarSparrow/Meshes/StarSparrowExamples2#StarSparrow12
+      value: {fileID: 4300002, guid: 21c6d0bb8170cae4f9d49bb728b3f524, type: 3}
+    - key: Strike/Models/ModulePod
+      value: {fileID: 4300000, guid: ee7255ee25fae4f4b92f1abc00ef08f3, type: 2}
     - key: StarSparrow/Meshes/StarSparrowExamples2#StarSparrow13
       value: {fileID: 4300000, guid: 21c6d0bb8170cae4f9d49bb728b3f524, type: 3}
+    - key: Strike/Models/Drone
+      value: {fileID: 4300000, guid: 738e8d5536e0f5b45a4ffb4bda532d8b, type: 2}
     - key: Strike/Models/Gunship
       value: {fileID: 4300000, guid: 5fd1849b05d6efe4d9541c21405dc1c9, type: 2}
     - key: StarSparrow/Meshes/StarSparrowExamples2#StarSparrow9
@@ -797,44 +1207,120 @@ MonoBehaviour:
       value: {fileID: 4300002, guid: e0f90ad78680d6145b082ac69f7fc504, type: 3}
     - key: StarSparrow/Meshes/StarSparrowExamples1#StarSparrow1
       value: {fileID: 4300008, guid: e0f90ad78680d6145b082ac69f7fc504, type: 3}
+    - key: Strike/Models/Mite
+      value: {fileID: 4300000, guid: 6d4df0d3b7f984646830d5849b9b53ba, type: 2}
+    - key: Strike/Models/Stinger
+      value: {fileID: 4300000, guid: 6fa8be0f7590f6b4c9e88aa0dff5b0d8, type: 2}
     - key: StarSparrow/Meshes/StarSparrowExamples2#StarSparrow10
       value: {fileID: 4300004, guid: 21c6d0bb8170cae4f9d49bb728b3f524, type: 3}
-    - key: Strike/Models/Bastion
-      value: {fileID: 4300000, guid: 2c933a2fe9023774783c25ccc3f91974, type: 2}
-    - key: Strike/Models/Dome
-      value: {fileID: 4300000, guid: b73147f52cb74c049ab2238446cc3d12, type: 2}
+    - key: Strike/Models/BattleshipHull
+      value: {fileID: 4300000, guid: 5f263dba0309c9242b5dd866c6edd898, type: 2}
     - key: Strike/Models/TurretBase
       value: {fileID: 4300000, guid: ca359f22c676ad4498dc9f0f7d88676a, type: 2}
     - key: Strike/Models/TwinTurret
       value: {fileID: 4300000, guid: 6caeb0de594c70046bfd8100de3383a3, type: 2}
+    - key: Strike/Models/SamRack
+      value: {fileID: 4300000, guid: e668459344dcfed459f3d1763c197f90, type: 2}
+    - key: Strike/Models/FlakTurret
+      value: {fileID: 4300000, guid: 46eb2e6bba02048468678cf838afa201, type: 2}
+    - key: Strike/Models/TurretBaseLarge
+      value: {fileID: 4300000, guid: f2831931fb9b0ac4da81a57370b561e7, type: 2}
+    - key: Strike/Models/HowitzerHead
+      value: {fileID: 4300000, guid: a0fbe6b350c0c7d4198a971b420b719b, type: 2}
+    - key: Strike/Models/BroodMound
+      value: {fileID: 4300000, guid: 9e4e41972b2d09841950eb7b10560a88, type: 2}
+    - key: Strike/Models/HiveHeart
+      value: {fileID: 4300000, guid: 9b9e0b8c3080aa441a024b78f42c2562, type: 2}
+    - key: Strike/Models/HiveMaw
+      value: {fileID: 4300000, guid: df3ac4a3839f76f48b7ad0dddfa149f5, type: 2}
+    - key: Strike/Models/SporeSac
+      value: {fileID: 4300000, guid: 60d4c3fda3832f34d9aa358f766b1220, type: 2}
+    - key: Strike/Models/BroodShipBody
+      value: {fileID: 4300000, guid: c9abdaeb76c7b8a4c9231a5c02b7130c, type: 2}
+    - key: Strike/Models/SweepGun
+      value: {fileID: 4300000, guid: b5dfded2f70196a45a6b27f2edb8bdca, type: 2}
+    - key: Strike/Models/Burrow
+      value: {fileID: 4300000, guid: 519656a936e97b144900f5eee818406c, type: 2}
+    - key: Strike/Models/WyrmHead
+      value: {fileID: 4300000, guid: 0b5e9d843958e6d4caa6f1cb8c109265, type: 2}
+    - key: Strike/Models/WyrmSegment
+      value: {fileID: 4300000, guid: fe714974f79853a4dbdd79ff0449cfe5, type: 2}
+    - key: Strike/Models/WyrmSegmentLarge
+      value: {fileID: 4300000, guid: 0708a8b703f871f4985aae2c7394dfaa, type: 2}
+    - key: Strike/Models/Bastion
+      value: {fileID: 4300000, guid: 2c933a2fe9023774783c25ccc3f91974, type: 2}
+    - key: Strike/Models/Dome
+      value: {fileID: 4300000, guid: b73147f52cb74c049ab2238446cc3d12, type: 2}
+    - key: Strike/Models/Drydock
+      value: {fileID: 4300000, guid: ebb8c045665f45f4599899dd4b394f51, type: 2}
     - key: Strike/Models/FoundryHull
       value: {fileID: 4300000, guid: 1ed91101b26e985428e93d2d05c6be75, type: 2}
     - key: Strike/Models/MainCannon
       value: {fileID: 4300000, guid: d67a3ded84f77924f825906b94b4c6df, type: 2}
     - key: Strike/Models/FlameVent
       value: {fileID: 4300000, guid: 33bac222a66368549abbf369997e7588, type: 2}
+    - key: Strike/Models/RadomeLarge
+      value: {fileID: 4300000, guid: b816538d3d4bec6428da39905b401e74, type: 2}
+    - key: Strike/Models/CarrierHull
+      value: {fileID: 4300000, guid: c9ba78710e2027c489dfe25a8922baff, type: 2}
+    - key: Strike/Models/HangarBay
+      value: {fileID: 4300000, guid: aa1d823425368e14c8b147a6b695a49a, type: 2}
+    - key: Strike/Models/HaulerHull
+      value: {fileID: 4300000, guid: 5315d28b09472d24184c227edba11d9b, type: 2}
+    - key: Strike/Models/Radome
+      value: {fileID: 4300000, guid: 2d900ab7874044242b999027ecc8a2fe, type: 2}
+    - key: Strike/Models/StationCore
+      value: {fileID: 4300000, guid: f75edf0940ea9bd43b06d4148e62f621, type: 2}
+    - key: Strike/Models/StationOuterRing
+      value: {fileID: 4300000, guid: 8dbd675016fe98b43b25d1c1011a081a, type: 2}
+    - key: Strike/Models/HiveMotherBody
+      value: {fileID: 4300000, guid: 8b85239e4a488e240a18ea73a8ff4fd1, type: 2}
+    - key: Strike/Models/HiveHeartLarge
+      value: {fileID: 4300000, guid: b3919d8bf910e3a4fae82a7585aed2e7, type: 2}
+    - key: Strike/Models/SporeSacLarge
+      value: {fileID: 4300000, guid: ee5277fe6f2eb43478170f9d3f4c3c6f, type: 2}
+    - key: Strike/Models/IcebreakerHull
+      value: {fileID: 4300000, guid: 924b9568060ef3844a6d95bed97314f9, type: 2}
+    - key: Strike/Models/Launcher
+      value: {fileID: 4300000, guid: 16c79b9b4ffa2234e8866f3b6819a35e, type: 2}
+    - key: Strike/Models/LeviathanHull
+      value: {fileID: 4300000, guid: 085f023195a59964ca19765ade564877, type: 2}
+    - key: Strike/Models/ReactorCrown
+      value: {fileID: 4300000, guid: 2bd66474594127b4dacbc429d3418ccc, type: 2}
+    - key: Strike/Models/SiloPad
+      value: {fileID: 4300000, guid: e4ed454e50d511441b83faaaf66a2ee7, type: 2}
+    - key: Strike/Models/CrystalPrismLarge
+      value: {fileID: 4300000, guid: e11215f13fa2b9843bf483867747cf74, type: 2}
+    - key: Strike/Models/AtollFortress
+      value: {fileID: 4300000, guid: dcbd46a75edf0a944bb58edd52e4b3d0, type: 2}
     - key: Strike/Models/PumpStation
       value: {fileID: 4300000, guid: a4b1c8653dfdb394f910556b9e90b3fe, type: 2}
     - key: Strike/Models/Reactor
       value: {fileID: 4300000, guid: a840355bfd0557944912c00315de67e5, type: 2}
-    - key: Strike/Models/FlakTurret
-      value: {fileID: 4300000, guid: 46eb2e6bba02048468678cf838afa201, type: 2}
+    - key: Strike/Models/ResonatorBase
+      value: {fileID: 4300000, guid: 14330a2b89c459d42bd50ffd39c0828a, type: 2}
+    - key: Strike/Models/CrystalHeart
+      value: {fileID: 4300000, guid: 750587500da806c42ac40a8a5025f32c, type: 2}
+    - key: Strike/Models/CrystalRing
+      value: {fileID: 4300000, guid: 6fe0a60203292054da282cef426a1af2, type: 2}
+    - key: Strike/Models/CrystalPrism
+      value: {fileID: 4300000, guid: 5d7f280d1558c4142ae13f2b1e90bb0f, type: 2}
     - key: Strike/Models/CrawlerHull
       value: {fileID: 4300000, guid: 9ecf18cbf58c3f6438708b24b170e1bc, type: 2}
     - key: Strike/Models/RigPlatform
       value: {fileID: 4300000, guid: 9de366c5a8771674195e1d20c453c89f, type: 2}
     - key: Strike/Models/LaserCore
       value: {fileID: 4300000, guid: cf89912326764ba40a89adc050439b4d, type: 2}
-    - key: Strike/Models/Launcher
-      value: {fileID: 4300000, guid: 16c79b9b4ffa2234e8866f3b6819a35e, type: 2}
-    - key: Strike/Models/ModulePod
-      value: {fileID: 4300000, guid: ee7255ee25fae4f4b92f1abc00ef08f3, type: 2}
+    - key: Strike/Models/Hydrofoils
+      value: {fileID: 4300000, guid: 6d21581634d4fae4388b287b23951503, type: 2}
+    - key: Strike/Models/ColossusBody
+      value: {fileID: 4300000, guid: a0cabe6c490994b458b072469d06094e, type: 2}
     - key: Strike/Models/ModulePodRed
       value: {fileID: 4300000, guid: f16fcc49ef352b041a6a883d75ec1754, type: 2}
-    - key: Strike/Models/StationCore
-      value: {fileID: 4300000, guid: f75edf0940ea9bd43b06d4148e62f621, type: 2}
-    - key: Strike/Models/StationOuterRing
-      value: {fileID: 4300000, guid: 8dbd675016fe98b43b25d1c1011a081a, type: 2}
+    - key: Strike/Models/TowerRidge
+      value: {fileID: 4300000, guid: 42baaca9f0c6290499905e7c9586743e, type: 2}
+    - key: Strike/Models/SporeTower
+      value: {fileID: 4300000, guid: 3fb11aac6a47fc1408ae5b1de57a47ee, type: 2}
     - key: Strike/Models/StationInnerRing
       value: {fileID: 4300000, guid: bde3c0c62d447974ba2dfe20262d9e38, type: 2}
     - key: Strike/Models/LaserEmitter
@@ -843,16 +1329,22 @@ MonoBehaviour:
       value: {fileID: 4300000, guid: f06ff5268151b794893cbe1716925c9f, type: 2}
     - key: Strike/Models/SideCannon
       value: {fileID: 4300000, guid: eb1bfaee76eea8141b2b83ac0731efd6, type: 2}
-    - key: Strike/Models/SiloPad
-      value: {fileID: 4300000, guid: e4ed454e50d511441b83faaaf66a2ee7, type: 2}
     - key: Strike/Models/Silo
       value: {fileID: 4300000, guid: 4d32a96e67fab3b44a29a2ab01f6e9a4, type: 2}
+    - key: Ground/Models/Units/Artillery
+      value: {fileID: 4300000, guid: b4df258a39c43134b94c4a502b0be8f1, type: 2}
+    - key: Ground/Models/Units/ArtilleryTurret
+      value: {fileID: 4300000, guid: fc04b3d6071493c4c95f40c233f6e205, type: 2}
     - key: Ground/Models/Units/Bunker
       value: {fileID: 4300000, guid: 73e0210bc91d2f94087bd824a33b07ee, type: 2}
     - key: Ground/Models/Units/Crate
       value: {fileID: 4300000, guid: 5aacaf60b3f52da45aa1a95130df38ab, type: 2}
     - key: Ground/Models/Units/Depot
       value: {fileID: 4300000, guid: 59cbe0dd5c0024a479c0a98004a00f75, type: 2}
+    - key: Ground/Models/Units/Destroyer
+      value: {fileID: 4300000, guid: f5a4293eaae74f947a30b84774d762a4, type: 2}
+    - key: Ground/Models/Units/DestroyerTurret
+      value: {fileID: 4300000, guid: dd800b190e24cb74a977f482d60bd2a0, type: 2}
     - key: Ground/Models/Units/Flak
       value: {fileID: 4300000, guid: a377e9da6aa2e594a8eff98762e9f716, type: 2}
     - key: Ground/Models/Units/FlakTurret
@@ -863,14 +1355,28 @@ MonoBehaviour:
       value: {fileID: 4300000, guid: 235d82a269e3b96439d5ea9aca105a99, type: 2}
     - key: Ground/Models/Units/GunboatTurret
       value: {fileID: 4300000, guid: 825a89eec5e07604d82853d9c71968e1, type: 2}
+    - key: Ground/Models/Units/HiveSpawner
+      value: {fileID: 4300000, guid: 972c40ba522578f48b15a97f754f4a48, type: 2}
     - key: Ground/Models/Units/Hut
       value: {fileID: 4300000, guid: fde6523e95d822a4ea4f9cb331722d39, type: 2}
     - key: Ground/Models/Units/LaserTower
       value: {fileID: 4300000, guid: abd64fa58be60594a900357b0e8db28e, type: 2}
+    - key: Ground/Models/Units/Prism
+      value: {fileID: 4300000, guid: 6d30996702b9c3d4099f8742a9b70104, type: 2}
     - key: Ground/Models/Units/Radar
       value: {fileID: 4300000, guid: 7996707c8ac0a1f4b9e3d0b5d35d174d, type: 2}
     - key: Ground/Models/Units/RadarSpinner
       value: {fileID: 4300000, guid: be0034d7b8ea2e441970ee1345170a20, type: 2}
+    - key: Ground/Models/Units/SamSite
+      value: {fileID: 4300000, guid: b152bf5071cc9fa47a9f8cb8e10ce881, type: 2}
+    - key: Ground/Models/Units/SamSiteTurret
+      value: {fileID: 4300000, guid: 7ca9d6eaea0d92447a8549944a6c6c10, type: 2}
+    - key: Ground/Models/Units/ShieldGenerator
+      value: {fileID: 4300000, guid: 922f4a6e01902e247a0b9ba5d0dbbe3a, type: 2}
+    - key: Ground/Models/Units/Spitter
+      value: {fileID: 4300000, guid: 92cd21c1788d424439c285965208d34d, type: 2}
+    - key: Ground/Models/Units/SpitterTurret
+      value: {fileID: 4300000, guid: 9fb749d7cf191874a894f06d32d07bbd, type: 2}
     - key: Ground/Models/Units/Tank
       value: {fileID: 4300000, guid: 20550b9cb7a1ad64f9169ec1bdbbee5c, type: 2}
     - key: Ground/Models/Units/TankTurret
@@ -881,6 +1387,10 @@ MonoBehaviour:
       value: {fileID: 4300000, guid: dc4172f690e266b4fa096a79c9e3b048, type: 2}
     - key: Ground/Models/Units/TurretTurret
       value: {fileID: 4300000, guid: d55e0c8cb961a1645a7ae5d55fb34958, type: 2}
+    - key: Ground/Models/Units/Walker
+      value: {fileID: 4300000, guid: 886c9bf5615c23643bfe98fc916cf202, type: 2}
+    - key: Ground/Models/Units/WalkerTurret
+      value: {fileID: 4300000, guid: 11841a39b440e1c4ea466fb3c4e64066, type: 2}
     - key: Strike/Models/CreditCoin
       value: {fileID: 4300000, guid: d94787f051efe3843b8639ddb8763879, type: 2}
     - key: Strike/Models/FreyliumOre
@@ -941,6 +1451,32 @@ MonoBehaviour:
       value: {fileID: 4300000, guid: 7588920edd9b2c047a454d8c99140352, type: 2}
     - key: Ground/City/Tiles/Road2Props
       value: {fileID: 4300000, guid: 535bbaea3b686fc418514acd3e410cf4, type: 2}
+    - key: Ground/Crystal/Tiles/Base0Props
+      value: {fileID: 4300000, guid: 40094b2cc4b37914fbc5f38740412af2, type: 2}
+    - key: Ground/Crystal/Tiles/Base1Props
+      value: {fileID: 4300000, guid: 4a077b09d0de7b348817928fe5913b59, type: 2}
+    - key: Ground/Crystal/Tiles/Crystals0Props
+      value: {fileID: 4300000, guid: ef179eae5b0eee542a2a37e82f5d2bd9, type: 2}
+    - key: Ground/Crystal/Tiles/Crystals1Props
+      value: {fileID: 4300000, guid: 620c178d8197a2344b70c61b619b464c, type: 2}
+    - key: Ground/Crystal/Tiles/Lake0Props
+      value: {fileID: 4300000, guid: d363b720ae0f88949bea71fc68b19154, type: 2}
+    - key: Ground/Crystal/Tiles/Lake1Props
+      value: {fileID: 4300000, guid: c4f49a2cf5a67bb4a91edaf6ace243f8, type: 2}
+    - key: Ground/Crystal/Tiles/Plain0Props
+      value: {fileID: 4300000, guid: 777e3b8ea46ddb642a50b62236faa971, type: 2}
+    - key: Ground/Crystal/Tiles/Plain1Props
+      value: {fileID: 4300000, guid: dc3f205d3d0188942bfc444df393d02f, type: 2}
+    - key: Ground/Crystal/Tiles/Plain2Props
+      value: {fileID: 4300000, guid: 0afd70a028dce7d47b1b5bbaf5bfe60a, type: 2}
+    - key: Ground/Crystal/Tiles/Road0Props
+      value: {fileID: 4300000, guid: e1722a000a53d2742b6c1c87a4f20e75, type: 2}
+    - key: Ground/Crystal/Tiles/Road1Props
+      value: {fileID: 4300000, guid: ff176b41b4c27fb419c1926695f7bd4a, type: 2}
+    - key: Ground/Crystal/Tiles/Rough0Props
+      value: {fileID: 4300000, guid: d402b4f59e7c4bf49bd660ebb28d05f5, type: 2}
+    - key: Ground/Crystal/Tiles/Rough1Props
+      value: {fileID: 4300000, guid: ead032312163d114e9862b01fcfd0303, type: 2}
     - key: Ground/Desert/Tiles/Base0Props
       value: {fileID: 4300000, guid: 9357caea4e764354babcab392d7999d8, type: 2}
     - key: Ground/Desert/Tiles/Base1Props
@@ -965,6 +1501,80 @@ MonoBehaviour:
       value: {fileID: 4300000, guid: efacdee5970dc8747aaaa7e827b547c1, type: 2}
     - key: Ground/Desert/Tiles/Rough1Props
       value: {fileID: 4300000, guid: 5156a2712ebe0df4ca44e76256c5e381, type: 2}
+    - key: Ground/Glacier/Tiles/Base0Props
+      value: {fileID: 4300000, guid: c0ae9bbd4d8efee44a18972c9282e6a1, type: 2}
+    - key: Ground/Glacier/Tiles/Base1Props
+      value: {fileID: 4300000, guid: 03f40f9d612e2a24b828f99ab0c9a5d0, type: 2}
+    - key: Ground/Glacier/Tiles/Coast0Props
+      value: {fileID: 4300000, guid: a4a3c08bfa5d5ff418ab612a82d42702, type: 2}
+    - key: Ground/Glacier/Tiles/Coast1Props
+      value: {fileID: 4300000, guid: 3269cb6d2fd5393468ad23b13a37e65d, type: 2}
+    - key: Ground/Glacier/Tiles/Ice0Props
+      value: {fileID: 4300000, guid: 4c5ff9017ea3c9b429c06617baa82775, type: 2}
+    - key: Ground/Glacier/Tiles/Ice1Props
+      value: {fileID: 4300000, guid: cb8ca128041baca4b95d2eaf5504f03f, type: 2}
+    - key: Ground/Glacier/Tiles/Plain0Props
+      value: {fileID: 4300000, guid: d5f30e3a6d72b214592c352e9f030935, type: 2}
+    - key: Ground/Glacier/Tiles/Plain1Props
+      value: {fileID: 4300000, guid: 47d966fdc59249f4ab7a210f02179396, type: 2}
+    - key: Ground/Glacier/Tiles/Plain2Props
+      value: {fileID: 4300000, guid: 3ff52a97def5e04409eda32faa22c50d, type: 2}
+    - key: Ground/Glacier/Tiles/Road0Props
+      value: {fileID: 4300000, guid: 6e0c5579880dab14aa952da1763ae087, type: 2}
+    - key: Ground/Glacier/Tiles/Road1Props
+      value: {fileID: 4300000, guid: 223c8e74c6a9c0c45b75ba1655e442bf, type: 2}
+    - key: Ground/Glacier/Tiles/Road2Props
+      value: {fileID: 4300000, guid: 894644fba6c085e4a98b03f78a5b087a, type: 2}
+    - key: Ground/Glacier/Tiles/Rough0Props
+      value: {fileID: 4300000, guid: bb87d1693c4c653439186e59c6d7fcef, type: 2}
+    - key: Ground/Glacier/Tiles/Rough1Props
+      value: {fileID: 4300000, guid: fff7883b4d970d74f9348638d9809bc9, type: 2}
+    - key: Ground/Halo/Tiles/Base0Props
+      value: {fileID: 4300000, guid: 486fe52ac3b7fc944bd40a45ead6a85e, type: 2}
+    - key: Ground/Halo/Tiles/Base1Props
+      value: {fileID: 4300000, guid: f1afb00fd4422cc49906d25f766ae86b, type: 2}
+    - key: Ground/Halo/Tiles/Lake0Props
+      value: {fileID: 4300000, guid: 09da2117725df4a49ac9762cc355b9bd, type: 2}
+    - key: Ground/Halo/Tiles/Lake1Props
+      value: {fileID: 4300000, guid: 57c6aec0240f85b4cb19b39b9359b215, type: 2}
+    - key: Ground/Halo/Tiles/Plain0Props
+      value: {fileID: 4300000, guid: 9fc90b7092f3d7e4e8275c457ec21270, type: 2}
+    - key: Ground/Halo/Tiles/Plain1Props
+      value: {fileID: 4300000, guid: f92bd65565f49604ba6c00a2101ad6a6, type: 2}
+    - key: Ground/Halo/Tiles/Plain2Props
+      value: {fileID: 4300000, guid: 5658de6029eeec34b82c1215ab4bd45d, type: 2}
+    - key: Ground/Halo/Tiles/Road0Props
+      value: {fileID: 4300000, guid: af1059b1b9c4cf74a9332639b2ea28ad, type: 2}
+    - key: Ground/Halo/Tiles/Road1Props
+      value: {fileID: 4300000, guid: 8d6c28965e0966449bb1e9b4efb9925f, type: 2}
+    - key: Ground/Hive/Tiles/Base0Props
+      value: {fileID: 4300000, guid: fa43f6caf00fcd2438d8183d9180377d, type: 2}
+    - key: Ground/Hive/Tiles/Base1Props
+      value: {fileID: 4300000, guid: 972e07cc5fda5074b8f2588da708558a, type: 2}
+    - key: Ground/Hive/Tiles/Lake0Props
+      value: {fileID: 4300000, guid: 8c1fbb475f4be4b4dbeca00babf7fbd1, type: 2}
+    - key: Ground/Hive/Tiles/Lake1Props
+      value: {fileID: 4300000, guid: 25650c678ac3dab4fadc4d0bf07b1425, type: 2}
+    - key: Ground/Hive/Tiles/Nest0Props
+      value: {fileID: 4300000, guid: 1a7f72715d35b4348a5352beab351c98, type: 2}
+    - key: Ground/Hive/Tiles/Nest1Props
+      value: {fileID: 4300000, guid: 0ac801685abb89c4cafeb1c62e98a7f7, type: 2}
+    - key: Ground/Hive/Tiles/Nest2Props
+      value: {fileID: 4300000, guid: f51de5f4b73976046843c3e86c888446, type: 2}
+    - key: Ground/Hive/Tiles/Plain0Props
+      value: {fileID: 4300000, guid: dd8edbb2138abf94e966d3172016d669, type: 2}
+    - key: Ground/Hive/Tiles/Plain1Props
+      value: {fileID: 4300000, guid: 6d08ba01f84cb1b41bc9abf25564a804, type: 2}
+    - key: Ground/Hive/Tiles/Plain2Props
+      value: {fileID: 4300000, guid: fb3bbb294f084114f861c37dcc18b7a5, type: 2}
+    - key: Ground/Hive/Tiles/River0Props
+      value: {fileID: 4300000, guid: e150e3f481b3e634b9266a4730e68a5b, type: 2}
+    - key: Ground/Hive/Tiles/River1Props
+      value: {fileID: 4300000, guid: 3b585ee0b40968e46b81dee646a22bf0, type: 2}
+    - key: Ground/Hive/Tiles/Rough0Props
+      value: {fileID: 4300000, guid: d034fb666ec2b134c8251029648f9261, type: 2}
+    - key: Ground/Hive/Tiles/Rough1Props
+      value: {fileID: 4300000, guid: f2107d37c97b7ca408211bbaadaa35e7, type: 2}
     - key: Ground/Jungle/Tiles/Base0Props
       value: {fileID: 4300000, guid: f2f94d6cb1e95484998d4c44d894d200, type: 2}
     - key: Ground/Jungle/Tiles/Base1Props
@@ -1011,6 +1621,28 @@ MonoBehaviour:
       value: {fileID: 4300000, guid: 5f55c8a67e0441645ad686c736dc5fb4, type: 2}
     - key: Ground/Moon/Tiles/Rough1Props
       value: {fileID: 4300000, guid: 2b99b617fd02c884b8040382f7c69e20, type: 2}
+    - key: Ground/Reef/Tiles/Base0Props
+      value: {fileID: 4300000, guid: c73af15d7e7773741b7df1d8400a2de9, type: 2}
+    - key: Ground/Reef/Tiles/Base1Props
+      value: {fileID: 4300000, guid: c731c650671a5414c81d8c0ebce5525b, type: 2}
+    - key: Ground/Reef/Tiles/Coast0Props
+      value: {fileID: 4300000, guid: 9c0712ae9d5da18499e018d1c7ba24e8, type: 2}
+    - key: Ground/Reef/Tiles/Coast1Props
+      value: {fileID: 4300000, guid: 7f15428323dc912459b266212ad8fc5d, type: 2}
+    - key: Ground/Reef/Tiles/Islands0Props
+      value: {fileID: 4300000, guid: a4d6d9ce2e16cce49acad3f0883358b2, type: 2}
+    - key: Ground/Reef/Tiles/Islands1Props
+      value: {fileID: 4300000, guid: cc9a58586f064494d897a7d092df73b8, type: 2}
+    - key: Ground/Reef/Tiles/Islands2Props
+      value: {fileID: 4300000, guid: 3c1081fc6ec84f1428383ccc76012f89, type: 2}
+    - key: Ground/Reef/Tiles/Plain0Props
+      value: {fileID: 4300000, guid: b0b73c8200a961248963371c1b9b9e58, type: 2}
+    - key: Ground/Reef/Tiles/Plain1Props
+      value: {fileID: 4300000, guid: 262ded3858d630d4ca9aee824b666ed9, type: 2}
+    - key: Ground/Reef/Tiles/Road0Props
+      value: {fileID: 4300000, guid: 10fbefd8bb4c9dc4a9eeb1ae01ef9459, type: 2}
+    - key: Ground/Reef/Tiles/Road1Props
+      value: {fileID: 4300000, guid: 6d471d4f03611584b8947a5e410cf3db, type: 2}
     - key: Ground/Station/Tiles/Base0Props
       value: {fileID: 4300000, guid: 9a5652e4f817915429db31aaa233fe9e, type: 2}
     - key: Ground/Station/Tiles/Base1Props
@@ -1053,8 +1685,6 @@ MonoBehaviour:
       value: {fileID: 4300000, guid: e0f90ad78680d6145b082ac69f7fc504, type: 3}
     - key: StarSparrow/Meshes/StarSparrowExamples2#StarSparrow11
       value: {fileID: 4300006, guid: 21c6d0bb8170cae4f9d49bb728b3f524, type: 3}
-    - key: StarSparrow/Meshes/StarSparrowExamples2#StarSparrow12
-      value: {fileID: 4300002, guid: 21c6d0bb8170cae4f9d49bb728b3f524, type: 3}
     - key: Models/Ice1
       value: {fileID: 4300000, guid: 721bbda85960e814ab6560d2ee8decf2, type: 2}
     - key: Models/Ice2
@@ -1067,6 +1697,14 @@ MonoBehaviour:
       value: {fileID: 4300000, guid: c578f87fa80ea1e45bcaafd8f1f736b2, type: 2}
     - key: Models/Crystal3
       value: {fileID: 4300000, guid: 9caae61818b360f4faf25ee3aa96070a, type: 2}
+    - key: Field/Models/HydraRock1
+      value: {fileID: 4300000, guid: f6fd47a9209150b4a862c89a3d2a04b6, type: 2}
+    - key: Field/Models/HydraRock2
+      value: {fileID: 4300000, guid: 7b2458b1397c7344aafacdd8e9162e6d, type: 2}
+    - key: Field/Models/HydraRock3
+      value: {fileID: 4300000, guid: 6cf21edc562114a40a441acc4ffa1591, type: 2}
+    - key: Field/Models/Wreck3
+      value: {fileID: 4300000, guid: 8afb317777a3ade42a2446d0f0869a43, type: 2}
     fonts:
     - key: plain
       value: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -1133,6 +1771,27 @@ MonoBehaviour:
     - {fileID: 4300000, guid: 9caae61818b360f4faf25ee3aa96070a, type: 2}
     material: {fileID: 2100000, guid: 953e50debf8e39442b6926cca85171be, type: 2}
     flash: {r: 1, g: 0.5, b: 1, a: 1}
+  - kind: 5
+    meshes:
+    - {fileID: 4300000, guid: aeb82eb7131677b48b75a42be3ed8336, type: 2}
+    - {fileID: 4300000, guid: c3a497d01bb75de4f866a1c8dfb337d9, type: 2}
+    - {fileID: 4300000, guid: e3c60f1207b22d448aaacc19ebbc71ca, type: 2}
+    material: {fileID: 2100000, guid: 4a175262fedca2b4dba370bd52a97d55, type: 2}
+    flash: {r: 0.8, g: 0.9, b: 1, a: 1}
+  - kind: 6
+    meshes:
+    - {fileID: 4300000, guid: f6fd47a9209150b4a862c89a3d2a04b6, type: 2}
+    - {fileID: 4300000, guid: 7b2458b1397c7344aafacdd8e9162e6d, type: 2}
+    - {fileID: 4300000, guid: 6cf21edc562114a40a441acc4ffa1591, type: 2}
+    material: {fileID: 2100000, guid: dc93b9eecb472204683e9a10c47ca18d, type: 2}
+    flash: {r: 0.6, g: 1, b: 0.5, a: 1}
+  - kind: 7
+    meshes:
+    - {fileID: 4300000, guid: bfe161c2b036e7d439490a3a756d021d, type: 2}
+    - {fileID: 4300000, guid: 1f10dd41c03a34647aee6fceaf622e5f, type: 2}
+    - {fileID: 4300000, guid: 8afb317777a3ade42a2446d0f0869a43, type: 2}
+    material: {fileID: 2100000, guid: 47dfc0db5d801fd438f4dd3d246e4a41, type: 2}
+    flash: {r: 1, g: 0.7, b: 0.4, a: 1}
   shots:
   - name: DroneBolt
     material: {fileID: 2100000, guid: ca2065054f7aaee428fbd091d8d183c0, type: 2}
@@ -1144,7 +1803,19 @@ MonoBehaviour:
     material: {fileID: 2100000, guid: fe9b36d94a17e2749ae6257c06cebd98, type: 2}
   - name: EnemyShrapnel
     material: {fileID: 2100000, guid: ae73fd345f290304b86938f746a836ec, type: 2}
+  - name: FlakShrapnel
+    material: {fileID: 2100000, guid: 433ae157236c71a478d9fcad68af90f9, type: 2}
+  - name: Lance
+    material: {fileID: 2100000, guid: de43d3ed9f60f204c83d3b3d2c4ad3f3, type: 2}
+  - name: Lightning
+    material: {fileID: 2100000, guid: dc9a173d0114773458b582ce157749a2, type: 2}
+  - name: NovaOrb
+    material: {fileID: 2100000, guid: 7315f4476919390419542149509e39fc, type: 2}
+  - name: PlayerArc
+    material: {fileID: 2100000, guid: 92d8ee26ba327d14683c5a8d65b4d96e, type: 2}
   - name: PlayerBolt
+    material: {fileID: 2100000, guid: 92d8ee26ba327d14683c5a8d65b4d96e, type: 2}
+  - name: PlayerFlak
     material: {fileID: 2100000, guid: 92d8ee26ba327d14683c5a8d65b4d96e, type: 2}
   - name: PlayerLaser
     material: {fileID: 2100000, guid: 00281d5d4b3b3ad42a0158b9deaa7f5d, type: 2}
@@ -1152,13 +1823,27 @@ MonoBehaviour:
     material: {fileID: 2100000, guid: 30d351457dfac9d40a8b07e6426fd177, type: 2}
   - name: PlayerPellet
     material: {fileID: 2100000, guid: ad55566cd2697494496b8060757df806, type: 2}
+  - name: PlayerRail
+    material: {fileID: 2100000, guid: 92d8ee26ba327d14683c5a8d65b4d96e, type: 2}
+  - name: PlayerWave
+    material: {fileID: 2100000, guid: 95effd9ed8d6ea4409b7f0fb927d4860, type: 2}
+  - name: SweepBeam
+    material: {fileID: 2100000, guid: 1808da004ce69b24a96f6f4ab05d8ddc, type: 2}
   - name: VoidShard
     material: {fileID: 2100000, guid: 1dde66ffc5975f44d9860e89a16421fd, type: 2}
   enemies:
+  - name: Corsair
+    material: {fileID: 2100000, guid: 69a4459e6ac0aa8499b105129a86a884, type: 2}
+  - name: Minelayer
+    material: {fileID: 2100000, guid: 699f312ec10c8e2439065eba1599d9c9, type: 2}
   - name: Saucer
     material: {fileID: 2100000, guid: 265e8d2c34f339844bd5492237cfb4f2, type: 2}
   - name: Scout
     material: {fileID: 2100000, guid: 265e8d2c34f339844bd5492237cfb4f2, type: 2}
+  - name: Sentry
+    material: {fileID: 2100000, guid: a6fb3992396adda4da55d0acc626a47c, type: 2}
+  - name: Stalker
+    material: {fileID: 2100000, guid: c424a42ec116c8c4fa23a06a430dbe32, type: 2}
   - name: Wasp
     material: {fileID: 2100000, guid: 6171b0aef5b3b5c489bf9a96cf0dde73, type: 2}
   - name: ClusterBomb
@@ -1167,18 +1852,38 @@ MonoBehaviour:
     material: {fileID: 2100000, guid: 816eca2bca813da4883bad3b376c4dbc, type: 2}
   - name: GravityWell
     material: {fileID: 2100000, guid: 96d7f0b7a30db964a82c97c925644ddb, type: 2}
+  - name: IonStorm
+    material: {fileID: 2100000, guid: 05c383d1600ed10469a817575f9ea647, type: 2}
   - name: Mine
     material: {fileID: 2100000, guid: 82c97815f01775d4899d78255a373dfe, type: 2}
+  - name: SolarFlare
+    material: {fileID: 2100000, guid: 739f3700f42d48b49970ad2d85325339, type: 2}
   - name: SupplyPod
     material: {fileID: 2100000, guid: 265e8d2c34f339844bd5492237cfb4f2, type: 2}
+  - name: Bastion
+    material: {fileID: 2100000, guid: f15dfa3e8ff396d41a0d80c0a5a5abb6, type: 2}
   - name: Dreadnought
     material: {fileID: 2100000, guid: 3574d5733ac60b941b175932e0a1aa2e, type: 2}
+  - name: Gatekeeper
+    material: {fileID: 2100000, guid: 665860546b760ac4f92860ece4d4c967, type: 2}
   - name: HiveQueen
     material: {fileID: 2100000, guid: 82a828c5d2d2eec44b815cff03606ad9, type: 2}
+  - name: Hydra
+    material: {fileID: 2100000, guid: 32f94fe29716c4742bb174b04f60bfa4, type: 2}
   - name: Mothership
     material: {fileID: 2100000, guid: 265e8d2c34f339844bd5492237cfb4f2, type: 2}
   - name: RockTitan
     material: {fileID: 2100000, guid: 68afba8ace46bca41bd540fd42c61c1c, type: 2}
+  - name: ScrapLeviathan
+    material: {fileID: 2100000, guid: 367fdee0681923d4289f53d56884b3fb, type: 2}
+  - name: SlagTitan
+    material: {fileID: 2100000, guid: 0ab607acfc94ffc4bb34344c555b1aba, type: 2}
+  - name: StormHerald
+    material: {fileID: 2100000, guid: bc73357cc58200e4186e2c35ccecaeee, type: 2}
+  - name: Sunbreaker
+    material: {fileID: 2100000, guid: 384adbcc6a851e343bd767316f180260, type: 2}
+  - name: WraithMatriarch
+    material: {fileID: 2100000, guid: 882e7a4224f1ce649b6e527e515236da, type: 2}
   effects:
     particleAdd: {fileID: 2100000, guid: 92d8ee26ba327d14683c5a8d65b4d96e, type: 2}
     particleSpark: {fileID: 2100000, guid: eef3330287ed8d64484f68265e66e193, type: 2}
@@ -1209,6 +1914,10 @@ MonoBehaviour:
     core: {fileID: 2100000, guid: f478e9642ea9d4445a0ca3bcef6c31ab, type: 2}
     icon: {fileID: 2100000, guid: 72d31fc24bbc03141afd85e29210941f, type: 2}
     sprite: {fileID: 21300000, guid: bfa44cdff6a42e349ab9298166d8940f, type: 3}
+  - name: PowerUpAegis
+    core: {fileID: 2100000, guid: 4edef7d1b70a92848a5584f3eaf4926c, type: 2}
+    icon: {fileID: 2100000, guid: 687427a1f74533849bd0a7cd875123b7, type: 2}
+    sprite: {fileID: 21300000, guid: e5f8ef91a02b53c4ea9bf709fa89fc92, type: 3}
   - name: PowerUpChrono
     core: {fileID: 2100000, guid: 844960d91d63152419fe97550bc8eac7, type: 2}
     icon: {fileID: 2100000, guid: 6941d4aafe59d8a4ea0b5ed16d21cdd8, type: 2}
@@ -1225,6 +1934,10 @@ MonoBehaviour:
     core: {fileID: 2100000, guid: 4e5596184f814044081b6540aa1c773d, type: 2}
     icon: {fileID: 2100000, guid: 0e24989a08ea5a14e95d5596c860ad0e, type: 2}
     sprite: {fileID: 21300000, guid: 90f10f2a340db3d40b8ba2d8595ad58b, type: 3}
+  - name: PowerUpPiercing
+    core: {fileID: 2100000, guid: aeff96e73e13fdf4eb863b30cd1d1489, type: 2}
+    icon: {fileID: 2100000, guid: 092d7d27ea538664db400ff5e9b3d412, type: 2}
+    sprite: {fileID: 21300000, guid: f8188706b62c2f74ab63a10c6750be76, type: 3}
   - name: Repair
     core: {fileID: 2100000, guid: 9e765ecb020114941b8ee4a24409af52, type: 2}
     icon: {fileID: 2100000, guid: 809b152ba55e73e4f827a057402e13a6, type: 2}
@@ -1233,10 +1946,18 @@ MonoBehaviour:
     core: {fileID: 2100000, guid: 58511cf37764e4949be675f928103a54, type: 2}
     icon: {fileID: 2100000, guid: 5b72d0200424b044a903d4c793142eaf, type: 2}
     sprite: {fileID: 21300000, guid: 0fe2cd2abb2f97645b9c17d4e89b30cc, type: 3}
+  - name: WeaponArc
+    core: {fileID: 2100000, guid: f5974104d923a254d9bcd84909771b3e, type: 2}
+    icon: {fileID: 2100000, guid: 80faef69ec68e604dbcb61866358fd54, type: 2}
+    sprite: {fileID: 21300000, guid: f353619ac3057444eb4cbe14827dbf45, type: 3}
   - name: WeaponBlaster
     core: {fileID: 2100000, guid: 0631bfcd9f45eea4ab634cb70bd2d7fd, type: 2}
     icon: {fileID: 2100000, guid: 465a92f50f53219498ff29cdfed4d246, type: 2}
     sprite: {fileID: 21300000, guid: 0ad5f72348112d24e97f1cc97417cbf5, type: 3}
+  - name: WeaponFlak
+    core: {fileID: 2100000, guid: 7a1fa5f351a774f4bba116cbc313424d, type: 2}
+    icon: {fileID: 2100000, guid: 2f88f2e7b4a91d54788d9e5fb7f3ac68, type: 2}
+    sprite: {fileID: 21300000, guid: e43d592a17d0da94d8732a9137c14cf3, type: 3}
   - name: WeaponLaser
     core: {fileID: 2100000, guid: 1015bd55936fba24bb8ae3dc4609dad3, type: 2}
     icon: {fileID: 2100000, guid: a7013a923c2a1974b8be821a180c9163, type: 2}
@@ -1245,10 +1966,18 @@ MonoBehaviour:
     core: {fileID: 2100000, guid: 614311f3c04c7094ea3d7f2095290835, type: 2}
     icon: {fileID: 2100000, guid: 459fd47d38c41ea46bce6e7600a40c3f, type: 2}
     sprite: {fileID: 21300000, guid: af966380ee469324da8f0781e33e0ce6, type: 3}
+  - name: WeaponRail
+    core: {fileID: 2100000, guid: e4e03348925e27543b5f7bef656de144, type: 2}
+    icon: {fileID: 2100000, guid: 10f3a6dbc482e1c41b3abfa39e234bd0, type: 2}
+    sprite: {fileID: 21300000, guid: c8d9244182373fe46abcb5dbd97d1f21, type: 3}
   - name: WeaponScatter
     core: {fileID: 2100000, guid: edb5e44538126804fa0228757d84f022, type: 2}
     icon: {fileID: 2100000, guid: 80336192d5a451947898d7e8338a7818, type: 2}
     sprite: {fileID: 21300000, guid: 8fe2a569c162ac649a11d56a30016479, type: 3}
+  - name: WeaponWave
+    core: {fileID: 2100000, guid: cbe5697e81533ca4ebad7841fa56c92d, type: 2}
+    icon: {fileID: 2100000, guid: 57a2f032def103d409feb3e395dafe72, type: 2}
+    sprite: {fileID: 21300000, guid: aa1c53025e18bde4991162e9b4e14bff, type: 3}
   backdrop:
     space: {fileID: 2100000, guid: 8dca3d952e260494784cd7a507cb7b18, type: 2}
     atmosphere: {fileID: 2100000, guid: d514b637256b85b4797a1a86de28845c, type: 2}
@@ -1260,6 +1989,14 @@ MonoBehaviour:
   - {fileID: 11400000, guid: b9c43084b72c9ff4d8804d6653ae841e, type: 2}
   - {fileID: 11400000, guid: f0c8ff538a1918b49990cd7c00e166f7, type: 2}
   - {fileID: 11400000, guid: 9a9ff548805707043b700b1ba546a47e, type: 2}
+  - {fileID: 11400000, guid: 49fd1a08a44a5db48ad0b9fd36247f70, type: 2}
+  - {fileID: 11400000, guid: bb0ed386f0226014bb93de66a45a7310, type: 2}
+  - {fileID: 11400000, guid: 48a4760342014fc4eb76a0fbb49f6874, type: 2}
+  - {fileID: 11400000, guid: 31ba1a6827b2fb0419c741076b9b6ef9, type: 2}
+  - {fileID: 11400000, guid: ebcc84aeca9b35745b1d5c6835106a92, type: 2}
+  - {fileID: 11400000, guid: a6731190662fc2746a44d97e04c2cb26, type: 2}
+  - {fileID: 11400000, guid: 2bba2819783ef694fa7f2808361b47b5, type: 2}
+  - {fileID: 11400000, guid: 047de15e2ce6dae458b44c5a1ff01391, type: 2}
   strikeThemes:
   - {fileID: 11400000, guid: f5f794ceeaa25d7418375fcade4d471c, type: 2}
   - {fileID: 11400000, guid: 807edeab39dd34443a542a1197921f1d, type: 2}
@@ -1267,6 +2004,11 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 96ccb6af40cbe6b45b12bc9e7a90343e, type: 2}
   - {fileID: 11400000, guid: caf288bc6cc9db9428a7dda6120785ec, type: 2}
   - {fileID: 11400000, guid: eeb7fb3136797e0409b724a2140b0669, type: 2}
+  - {fileID: 11400000, guid: c28b87c5e817bfc4dad825ae3c1a3280, type: 2}
+  - {fileID: 11400000, guid: 01c2b9b877b767845b6ea004a06f2f77, type: 2}
+  - {fileID: 11400000, guid: 3c40afa39534fdd49b9f31ceec576311, type: 2}
+  - {fileID: 11400000, guid: 139c987454f37b54ea79447b1a46f2f6, type: 2}
+  - {fileID: 11400000, guid: 03d5439eec10cdb41aed8eb20bfbe6f4, type: 2}
   ui:
     panel: {fileID: 21300000, guid: 8e90349d1d231e942b51c4ac03922e40, type: 3}
     button: {fileID: 21300000, guid: cda9c1b271038724ab4d6b07e857e02b, type: 3}
@@ -1288,7 +2030,15 @@ MonoBehaviour:
     - {fileID: 21300000, guid: 8c807707d25d3264681b187654cee47e, type: 3}
     - {fileID: 21300000, guid: 8fe2a569c162ac649a11d56a30016479, type: 3}
     - {fileID: 21300000, guid: af966380ee469324da8f0781e33e0ce6, type: 3}
+    - {fileID: 21300000, guid: f353619ac3057444eb4cbe14827dbf45, type: 3}
+    - {fileID: 21300000, guid: c8d9244182373fe46abcb5dbd97d1f21, type: 3}
+    - {fileID: 21300000, guid: e43d592a17d0da94d8732a9137c14cf3, type: 3}
+    - {fileID: 21300000, guid: aa1c53025e18bde4991162e9b4e14bff, type: 3}
   icons:
+  - name: Aegis
+    sprite: {fileID: 21300000, guid: e5f8ef91a02b53c4ea9bf709fa89fc92, type: 3}
+  - name: Arc
+    sprite: {fileID: 21300000, guid: f353619ac3057444eb4cbe14827dbf45, type: 3}
   - name: Arrow
     sprite: {fileID: 21300000, guid: 336840aff76b6bb4a9edf842c4d10bff, type: 3}
   - name: Asteroid
@@ -1307,6 +2057,8 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: d0fe910533706424a80293853a95ece7, type: 3}
   - name: Exit
     sprite: {fileID: 21300000, guid: 551c788f85603634bb6f84755f91391b, type: 3}
+  - name: Flak
+    sprite: {fileID: 21300000, guid: e43d592a17d0da94d8732a9137c14cf3, type: 3}
   - name: GameIcon
     sprite: {fileID: 21300000, guid: 43cf11e63e82a3c47bd9794efea99b95, type: 3}
   - name: Hangar
@@ -1329,8 +2081,12 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: 90f10f2a340db3d40b8ba2d8595ad58b, type: 3}
   - name: Pause
     sprite: {fileID: 21300000, guid: 79e1877ea2787134383d601ac3af8365, type: 3}
+  - name: Piercing
+    sprite: {fileID: 21300000, guid: f8188706b62c2f74ab63a10c6750be76, type: 3}
   - name: Play
     sprite: {fileID: 21300000, guid: d231027bf6d14224fb0f28c13086bfbd, type: 3}
+  - name: Rail
+    sprite: {fileID: 21300000, guid: c8d9244182373fe46abcb5dbd97d1f21, type: 3}
   - name: Repair
     sprite: {fileID: 21300000, guid: adaeae01f92cff84685cff44388b9ce5, type: 3}
   - name: Retry
@@ -1351,11 +2107,21 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: 4e9787d25894823439161fa32d74106c, type: 3}
   - name: Warning
     sprite: {fileID: 21300000, guid: 43446318556a94e4cb960d7621124d2f, type: 3}
+  - name: Wave
+    sprite: {fileID: 21300000, guid: aa1c53025e18bde4991162e9b4e14bff, type: 3}
   strikeIcons:
+  - name: Afterburner
+    sprite: {fileID: 21300000, guid: d1e9908fd13a8c3488ec827b3e6ae049, type: 3}
   - name: AirMissiles
     sprite: {fileID: 21300000, guid: ce104825f888c9443b13131b4f2a9328, type: 3}
+  - name: ArcLightning
+    sprite: {fileID: 21300000, guid: 0f8c41650fd7484499753faaf47a1653, type: 3}
+  - name: ArmorPlating
+    sprite: {fileID: 21300000, guid: 0eb83df411f0193429224a95499cb4b5, type: 3}
   - name: Bombs
     sprite: {fileID: 21300000, guid: 4f1ae2d4e7edb4744b9c3095b6f8bddb, type: 3}
+  - name: ClusterBombs
+    sprite: {fileID: 21300000, guid: d8c24ce94bb15714495ffde9eabf9e44, type: 3}
   - name: CreditOrb
     sprite: {fileID: 21300000, guid: df06bbc8ab9ff9b499e53595ceb66174, type: 3}
   - name: Deathray
@@ -1368,6 +2134,8 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: e109cb00f8fb143488a1fd8ea7f8a330, type: 3}
   - name: EnergyModule
     sprite: {fileID: 21300000, guid: 1e871c6cf31dda740a1a0bb2b3f51749, type: 3}
+  - name: FlakCannon
+    sprite: {fileID: 21300000, guid: 3c7b5b38e1bd4794c946b3fde240910e, type: 3}
   - name: FreyliumOre
     sprite: {fileID: 21300000, guid: 8df6417674d2bd04283c3b9545696ac0, type: 3}
   - name: FusionCore
@@ -1392,6 +2160,8 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: 23c9d6d1c182d2c41b423a38deabe7f0, type: 3}
   - name: Money
     sprite: {fileID: 21300000, guid: 1d1a2d6d8e92f094a866355036391173, type: 3}
+  - name: Napalm
+    sprite: {fileID: 21300000, guid: fcb264c4ed789224eac556200210fe18, type: 3}
   - name: PhaseShield
     sprite: {fileID: 21300000, guid: fb2ffdf5072751a41ac299aa6adf0341, type: 3}
   - name: PlasmaCannon
@@ -1400,8 +2170,16 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: e4a0f3d2afe9b4a4eafac2206a60bc3e, type: 3}
   - name: PulseCannon
     sprite: {fileID: 21300000, guid: d84ab9b3e0e45cf4da0f68f1991f1fc2, type: 3}
+  - name: RailGun
+    sprite: {fileID: 21300000, guid: 5552b1a9e52e3f941a0382186e5d5e58, type: 3}
+  - name: RepairDrone
+    sprite: {fileID: 21300000, guid: 03b70adb5a65ffe4a9335a85c66b1462, type: 3}
+  - name: RepairKit
+    sprite: {fileID: 21300000, guid: 70c8204d4ac99504ab576810cdfbc2c4, type: 3}
   - name: Rookie
     sprite: {fileID: 21300000, guid: 543041f542bb45e469c2037a3eb43d04, type: 3}
+  - name: SalvageMagnet
+    sprite: {fileID: 21300000, guid: 801809cf443dde04a9576599feae436e, type: 3}
   - name: Scanner
     sprite: {fileID: 21300000, guid: e5cab1237939fae4f92c367ed2f767d4, type: 3}
   - name: SmallArms
@@ -1410,6 +2188,8 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: cbda2a3858757f446993a023f3c2856b, type: 3}
   - name: SupplyRoom
     sprite: {fileID: 21300000, guid: cd4ef4c374aaa754cbd4a18efc8f9841, type: 3}
+  - name: SwarmRockets
+    sprite: {fileID: 21300000, guid: c1bcb75b919b91446af79e3e594b35b8, type: 3}
   - name: Target
     sprite: {fileID: 21300000, guid: 6c4b8d57ea0de3147bdd4096277b5b75, type: 3}
   - name: Thaelite
@@ -1418,6 +2198,8 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: 14f1f397d4512a447ae5200a5f33c47e, type: 3}
   - name: Veteran
     sprite: {fileID: 21300000, guid: c9ac0002f06a8e241af500f1df4a967c, type: 3}
+  - name: WingmanDrones
+    sprite: {fileID: 21300000, guid: 9c4ae17b9edf0404d9baac20b81bd61a, type: 3}
   palette:
     panel: {r: 0.35, g: 0.75, b: 1, a: 0.95}
     soft: {r: 0.78, g: 0.86, b: 0.96, a: 1}

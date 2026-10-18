@@ -105,7 +105,7 @@ namespace Portfolio.Heroes.UI
             resume = Entry("Continue", Continue, "The scenario you left, where you left it.");
             resumeTip = resume.GetComponent<Tooltip>();
             load = Entry("Load Game", () => manager.ShowSavedGames(false), "Load Game\nA game you saved, by its name; or a save file to bring in.");
-            Entry("Campaign", () => ui.OpenCampaign(false), "The Shattered Crown\nEight chapters, one after the other.");
+            Entry("Campaign", () => ui.OpenCampaign(false), "Campaign\nThree stories told in chapters, played as the Castle, the Necropolis and the Stronghold.");
             Entry("Skirmish", () => ui.OpenCampaign(true), "Skirmish\nA single map against the computer.");
             hotSeat = Entry("Hot Seat", () => manager.OpenLocalPlay(), "Hot Seat\nTwo to four people take turns at this device.");
             online = Entry("Play Online", () => manager.OpenOnline(), "Play Online\nA room on the server, with players on other devices.");

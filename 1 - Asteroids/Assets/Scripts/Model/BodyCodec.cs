@@ -24,7 +24,17 @@ namespace Portfolio.Asteroids
         /// <summary>A strike ground unit; variant = (int)StrikeUnit.</summary>
         StrikeGround = 13,
         /// <summary>A part of a strike boss; variant = (boss net id &lt;&lt; 8) | part index. Bound to the boss's part, never spawned.</summary>
-        BossPart = 14
+        BossPart = 14,
+        /// <summary>A solar flare; variant = the side it comes from (<see cref="SolarFlare"/>).</summary>
+        SolarFlare = 15,
+        IonStorm = 16,
+        /// <summary>The field campaigns' enemies; variant 1 marks the quarry of a hunt (<see cref="CampaignEnemy"/>).</summary>
+        Sentry = 17,
+        Minelayer = 18,
+        Stalker = 19,
+        Corsair = 20,
+        /// <summary>A freighter or station to protect; variant = (int)<see cref="AllyKind"/> | full hull &lt;&lt; 4 (<see cref="SpawnService.AllyVariant"/>).</summary>
+        Ally = 21
     }
 
 

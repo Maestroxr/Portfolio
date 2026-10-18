@@ -5,6 +5,7 @@ using System.IO;
 using Gamebox;
 using Portfolio.Heroes.UI;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 
 namespace Portfolio.Heroes
@@ -18,7 +19,10 @@ namespace Portfolio.Heroes
     /// again from a copy of the game made in the middle of it, as a saved game would be, and a scenario left for
     /// the title while its battlefield is loading and again while it is up. The step <c>skirmish</c> (not in the
     /// plan unless asked for) starts a skirmish map on a large, rich, deadly and hard setting and logs what the map
-    /// came out as. It changes a copy of the settings only.
+    /// came out as. The step <c>chapters</c> (not in the plan unless asked for either) begins every chapter of the
+    /// campaigns after the first, one after the other, and shoots each on its first day, as the player first sees it and
+    /// with the tooltip of the date that tells the task; <c>chapters:N</c> does the same for campaign N (0 the first) and
+    /// <c>chapters:all</c> for every chapter. It changes a copy of the settings only.
     /// For each it starts the first chapter in that style, stands the hero a few steps from his foe (the one thing it
     /// does behind the rules' back, with a few spells for his book and, for the siege, the walls and a bigger army),
     /// walks him in, and fights as a player would: it points at the field, holds the right button on a stack, aims and
@@ -88,7 +92,15 @@ namespace Portfolio.Heroes
             {
                 Write($"== {step}");
                 manager.Options.battleSpeed = speed;
-                switch (step.Trim())
+                // A step may say what it is about after a colon: chapters:2.
+                string name = step.Trim();
+                string about = "";
+                if (name.IndexOf(':') > 0)
+                {
+                    about = name.Substring(name.IndexOf(':') + 1);
+                    name = name.Substring(0, name.IndexOf(':'));
+                }
+                switch (name)
                 {
                     case "field":
                         yield return Wanderers(BattleStyle.Battlefield, "field");
@@ -110,6 +122,9 @@ namespace Portfolio.Heroes
                         break;
                     case "skirmish":
                         yield return Skirmish();
+                        break;
+                    case "chapters":
+                        yield return Chapters(about);
                         break;
                     default:
                         Write($"No such step: {step}.");
@@ -456,6 +471,95 @@ namespace Portfolio.Heroes
             }
             options.CopySettings(before);
             Destroy(before);
+        }
+
+        /// <summary>
+        /// Begins chapters one after the other on their first day: by default those of the campaigns after the first,
+        /// with <paramref name="which"/> a number those of that campaign, with "all" every chapter. Each is shot as the
+        /// player first sees it (the banner of the day still up) and with the tooltip of the date, which tells the task.
+        /// </summary>
+        private IEnumerator Chapters(string which)
+        {
+            var campaign = manager.Campaign as HeroesCampaign;
+            if (campaign == null)
+            {
+                Write("No campaign.");
+                yield break;
+            }
+            bool every = which == "all";
+            bool one = int.TryParse(which, out int only);
+            foreach (int index in campaign.Chapters)
+            {
+                int arc = campaign.ArcOf(index);
+                if (!every && (one ? arc != only : arc == 0))
+                {
+                    continue;
+                }
+                if (Game != null)
+                {
+                    manager.ReturnToTitle();
+                    yield return new WaitForSeconds(1f);
+                }
+                HeroesLevel level = campaign.Scenario(index);
+                manager.BeginScenario(null, index);
+                float until = Time.unscaledTime + 40f;
+                while (Game == null && Time.unscaledTime < until)
+                {
+                    yield return null;
+                }
+                yield return WaitForTurn(30f);
+                if (Game == null)
+                {
+                    Write($"{level.Title} never started.");
+                    continue;
+                }
+                GameState state = Game.State;
+                PlayerState me = manager.ViewerState;
+                var realms = new List<string>();
+                foreach (PlayerState player in state.players)
+                {
+                    realms.Add($"{player.name} ({player.faction}, {(player.human ? "person" : $"computer {player.aiLevel}")}, team {player.team}, {player.towns.Count} towns)");
+                }
+                Write($"Chapter {index} {level.Title} of campaign {arc}: day {state.day}, map {state.map.grid.columns}x{state.map.grid.rows}, " +
+                      $"{state.towns.Count} towns, {state.objects.FindAll(o => o.kind == ObjectKind.Monster).Count} wandering armies; " +
+                      $"victory {state.rules.victory} {state.rules.victoryValue} '{state.rules.victoryTag}', loss {state.rules.loss} {state.rules.lossValue}, " +
+                      $"day limit {state.rules.dayLimit}; viewer {me?.name}; realms {string.Join("; ", realms)}.");
+                yield return new WaitForSeconds(0.4f);
+                yield return Shot($"chapter_{index}_start");
+                yield return new WaitForSeconds(2.6f);
+                Transform date = manager.HeroesUI.Hud != null ? FindChild(manager.HeroesUI.Hud.transform, "Date") : null;
+                if (date != null)
+                {
+                    TooltipBox.Pointer = new Vector2(date.position.x, date.position.y);
+                    ExecuteEvents.Execute(date.gameObject, new PointerEventData(EventSystem.current), ExecuteEvents.pointerEnterHandler);
+                    yield return new WaitForSeconds(0.8f);
+                    yield return Shot($"chapter_{index}_task");
+                    ExecuteEvents.Execute(date.gameObject, new PointerEventData(EventSystem.current), ExecuteEvents.pointerExitHandler);
+                    TooltipBox.Pointer = null;
+                }
+                else
+                {
+                    Write("No date on the adventure screen.");
+                    yield return Shot($"chapter_{index}_task");
+                }
+            }
+            if (Game != null)
+            {
+                manager.ReturnToTitle();
+                yield return new WaitForSeconds(1f);
+            }
+        }
+
+        private static Transform FindChild(Transform root, string name)
+        {
+            foreach (Transform child in root.GetComponentsInChildren<Transform>(true))
+            {
+                if (child.name == name)
+                {
+                    return child;
+                }
+            }
+            return null;
         }
 
         /// <summary>

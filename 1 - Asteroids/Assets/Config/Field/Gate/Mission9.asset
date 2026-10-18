@@ -1,0 +1,67 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25edec1141714089bb4a39576791ecca, type: 3}
+  m_Name: Mission9
+  m_EditorClassIdentifier: Skinnerboxes.Asteroids::Portfolio.Asteroids.AsteroidsLevel
+  <Index>k__BackingField: 42
+  <Title>k__BackingField: The Hydra
+  quarry: 
+  quarryShare: 1
+  allyHull: 120
+  crossing: 45
+  scoutChance: 0.54
+  <Settings>k__BackingField: {fileID: 11400000, guid: 990157b69f8a8644bb9611b72930f299, type: 2}
+  description: At the heart of the nebula waits the mother of the hydra rocks, three-headed and spitting acid. Its wounds close as you watch.
+  introduces: 'Boss: the Hydra heals when you let up.'
+  hints:
+  - Once wounded, the Hydra heals whenever you stop hitting it. Keep up the fire.
+  - It seeds hydra rocks - clear them before they grow.
+  touchHints: []
+  sector: 13
+  theme: {fileID: 11400000, guid: 2bba2819783ef694fa7f2808361b47b5, type: 2}
+  themeRotation: []
+  wavesPerTheme: 5
+  objective: 3
+  objectiveTarget: 0
+  waves:
+  - metal: 0
+    hydra: 0
+    wrecks: 0
+    flares: 0
+    storms: 0
+    sentries: 0
+    minelayers: 0
+    stalkers: 0
+    corsairs: 2
+    title: The brood
+    rocks: 2
+    ores: 0
+    magma: 0
+    ice: 0
+    crystals: 0
+    mines: 0
+    bombs: 0
+    comets: 0
+    wells: 0
+    saucers: 0
+    wasps: 0
+    pods: 1
+    hazardInterval: 6
+    duration: 30
+  boss: {fileID: 3044283756910616246, guid: 87d19abc0fb7c7048ae04c11a3d470dc, type: 3}
+  bossRotation: []
+  bossEvery: 10
+  asteroidLoot: {fileID: 11400000, guid: e98d929fa659bfb4993a0e32d9937fa6, type: 2}
+  lootChance: 0.08
+  podLoot: {fileID: 11400000, guid: f7a52c2ebd23d784882243f37526615e, type: 2}
+  scoreGoal: 35500
+  speedMultiplier: 1

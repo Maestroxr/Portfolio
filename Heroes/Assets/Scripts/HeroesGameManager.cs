@@ -73,7 +73,7 @@ namespace Portfolio.Heroes
 
         public HeroesSettings Options => Settings as HeroesSettings ?? settings;
 
-        public HeroesProgress Progress => progress ??= new HeroesProgress(Disk, GameType.Heroes);
+        public HeroesProgress Progress => progress ??= new HeroesProgress(Disk, GameType.Heroes) { Avatar = LocalAvatar.Instance };
 
         public HeroesLevel Scenario => campaign != null ? campaign.Scenario(LevelIndex) : null;
 
@@ -312,8 +312,9 @@ namespace Portfolio.Heroes
             brain = new AdventureAI();
 
             Build();
-            // Online the screen belongs to the seat of the player at this device, from the first frame; in a hot seat to
-            // the person who plays next, whom the hand-over screen asks for before anything shows.
+            // Online the screen belongs to the seat of the player at this device (of several, the one the game goes on
+            // with), from the first frame; in a hot seat to the person who plays next, whom the hand-over screen asks for
+            // before anything shows.
             Viewer = IsOnlineGame && localSeat >= 0 ? localSeat
                 : IsHotSeat && HotSeat.NextPerson(game.State, game.State.currentPlayer) is int next && next >= 0 ? next
                 : FirstHuman(game);
@@ -338,7 +339,8 @@ namespace Portfolio.Heroes
 
             TransitionState(new Gamebox.GameState(BaseGameState.Running));
             sound?.PlayAdventureMusic();
-            // A hot seat starts behind the hand-over screen, raised before the first frame shows the map.
+            // A hot seat starts behind the hand-over screen, raised before the first frame shows the map (several people
+            // online at this device start behind it when they asked for it, else with the first one's view).
             HandOverIfDue();
             // A lobby in the scene does not make a game online; a lockstep game does.
             director = StartCoroutine(IsOnlineGame ? DirectOnline() : Run());

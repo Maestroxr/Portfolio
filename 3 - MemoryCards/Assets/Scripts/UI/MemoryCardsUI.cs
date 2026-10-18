@@ -18,6 +18,9 @@ namespace Portfolio.MemoryCards
     /// </summary>
     public class MemoryCardsUI : GameUI
     {
+        /// <summary>The player's avatar on this device while the menu is up: At the bottom, between the play buttons and the settings.</summary>
+        protected override (Vector2 anchor, Vector2 offset)? AvatarPlace => (new Vector2(1f, 0f), new Vector2(-260f, 24f));
+
         private sealed class Popup
         {
             public TMP_Text text;
@@ -690,10 +693,13 @@ namespace Portfolio.MemoryCards
             }
         }
 
-        /// <summary>The players of a versus game that starts. <paramref name="localSeat"/> is "you" online; -1 on one device.</summary>
-        public void ShowVersus(IReadOnlyList<VersusSeat> seats, int localSeat)
+        /// <summary>
+        /// The players of a versus game that starts. Online <paramref name="youSeat"/> is the device's own player ("you") and
+        /// <paramref name="hereSeats"/> the seats played at this device; -1 and null on one device.
+        /// </summary>
+        public void ShowVersus(IReadOnlyList<VersusSeat> seats, int youSeat, IReadOnlyList<int> hereSeats)
         {
-            versusHud?.Show(seats, localSeat);
+            versusHud?.Show(seats, youSeat, hereSeats);
         }
 
         public void UpdateVersus(IReadOnlyList<VersusSeat> seats, int currentSeat, float turnFraction, float secondsLeft)

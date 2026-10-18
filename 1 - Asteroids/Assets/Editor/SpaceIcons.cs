@@ -303,7 +303,8 @@ namespace Portfolio.Asteroids.EditorTools
         {
             "Star", "StarEmpty", "Lock", "Play", "Retry", "Levels", "Settings", "Exit", "Pause", "Ship", "Nova", "Skull",
             "Infinity", "Blaster", "Laser", "Scatter", "Missile", "Overdrive", "Magnet", "Chrono", "Drones", "Shield",
-            "Repair", "Crystal", "Warning", "Arrow", "Check", "Hangar", "Asteroid", "Dash"
+            "Repair", "Crystal", "Warning", "Arrow", "Check", "Hangar", "Asteroid", "Dash",
+            "Arc", "Rail", "Flak", "Wave", "Piercing", "Aegis"
         };
 
         public static Texture2D Icon(string name)
@@ -474,7 +475,7 @@ namespace Portfolio.Asteroids.EditorTools
                         L(p => Mathf.Min(Circle(p, new Vector2(-0.25f, 0.25f), 0.17f), Mathf.Min(Circle(p, new Vector2(0.3f, -0.15f), 0.12f), Circle(p, new Vector2(-0.1f, -0.38f), 0.09f))),
                             new Color(0.25f, 0.23f, 0.23f), new Color(0.35f, 0.32f, 0.3f), 0f));
                 default:
-                    throw new ArgumentException($"Unknown icon {name}");
+                    return ArmoryIcon(name) ?? throw new ArgumentException($"Unknown icon {name}");
             }
         }
 

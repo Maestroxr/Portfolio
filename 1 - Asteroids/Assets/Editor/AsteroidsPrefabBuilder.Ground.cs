@@ -170,7 +170,8 @@ namespace Portfolio.Asteroids.EditorTools
             StrikeUnitInfo info = StrikeUnitRules.Info(unit);
             EnemyShotInfo shot = StrikeUnitRules.Shot(info.ShotKind);
             var root = new GameObject(unit.ToString());
-            var body = root.AddComponent<GroundUnit>();
+            // A unit with rules of its own has a component of its own (AsteroidsPrefabBuilder.StrikeCampaigns.cs).
+            var body = (GroundUnit)root.AddComponent(GroundUnitComponent(unit));
             float depthValue = StrikeRules.GroundDepth - model.Height * 0.5f;
             Transform depth = Child(root.transform, "Depth", new Vector3(0f, 0f, depthValue));
             depth.gameObject.AddComponent<DepthAnchor>().depth = depthValue;
@@ -247,6 +248,7 @@ namespace Portfolio.Asteroids.EditorTools
             body.telegraph = telegraph;
             body.explosionTint = info.Explodes ? new Color(1f, 0.6f, 0.25f) : new Color(1f, 0.7f, 0.4f);
             body.explosionScale = info.ExplosionScale;
+            DressGroundUnit(unit, body, model);
             Save(root, $"Strike/Ground/{unit}");
         }
 
@@ -422,7 +424,7 @@ namespace Portfolio.Asteroids.EditorTools
             {
                 var prefab = AsteroidsAssets.Load<GameObject>($"Prefabs/Strike/Ground/{units[i]}.prefab");
                 var go = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
-                var at = new Vector2(-14f + (i % 6) * 5.6f, i < 6 ? 5.5f : 0.5f);
+                var at = new Vector2(-15f + (i % 7) * 5f, 6f - (i / 7) * 5f);
                 go.transform.position = new Vector3(at.x, at.y, 0f);
                 if (units[i] == StrikeUnit.Truck || units[i] == StrikeUnit.Gunboat)
                 {

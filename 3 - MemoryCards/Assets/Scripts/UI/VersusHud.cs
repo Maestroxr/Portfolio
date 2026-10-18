@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
+using Gamebox;
 using Gamebox.Online;
 using TMPro;
 using UnityEngine;
@@ -65,8 +67,12 @@ namespace Portfolio.MemoryCards
             return seat >= 0 && seat < chips.Length && chips[seat].root != null ? chips[seat].root.position : transform.position;
         }
 
-        /// <summary>Lays the chips out for the players of a game. <paramref name="localSeat"/> marks "you" online; -1 on one device.</summary>
-        public void Show(IReadOnlyList<VersusSeat> seats, int localSeat)
+        /// <summary>
+        /// Lays the chips out for the players of a game. Online <paramref name="youSeat"/> marks the device's own player
+        /// "(you)" and the other seats of <paramref name="hereSeats"/>, the companions at this device, "(here)", as the
+        /// lobby does; -1 and null on one device, where everybody goes by name.
+        /// </summary>
+        public void Show(IReadOnlyList<VersusSeat> seats, int youSeat, IReadOnlyList<int> hereSeats)
         {
             gameObject.SetActive(true);
             count = Mathf.Min(seats.Count, chips.Length);
@@ -93,7 +99,8 @@ namespace Portfolio.MemoryCards
                 chip.root.localScale = Vector3.one;
                 if (chip.nameText != null)
                 {
-                    chip.nameText.text = Standings.Who(seats[i].Name, i == localSeat);
+                    chip.nameText.text = i == youSeat ? Standings.Who(seats[i].Name, true)
+                        : hereSeats != null && hereSeats.Contains(i) ? $"{seats[i].Name} {Loc.T(Loc.Shared, "(here)")}" : seats[i].Name;
                     chip.nameText.color = SeatColor(i);
                 }
             }

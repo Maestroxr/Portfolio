@@ -1,0 +1,107 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2889f78791f059b499b1411c0a8eb318, type: 3}
+  m_Name: C3_2_IronTribute
+  m_EditorClassIdentifier: Skinnerboxes.Heroes::Portfolio.Heroes.HeroesLevel
+  <Index>k__BackingField: 20
+  <Title>k__BackingField: The Iron Tribute
+  <Map>k__BackingField:
+    name: The Iron Tribute
+    columns: 42
+    rows: 46
+    seed: 2002
+    players:
+    - faction: 2
+      human: 1
+      aiLevel: 1
+      team: 0
+      hero: 16
+      buildings: 
+      name: You
+      homeX: -1
+      homeY: -1
+    - faction: 0
+      human: 0
+      aiLevel: 1
+      team: 1
+      hero: -1
+      buildings: 
+      name: The Border Barons
+      homeX: -1
+      homeY: -1
+    zonesPerPlayer: 1
+    neutralTowns: 1
+    treasure: 3
+    monsters: 2
+    water: 1
+    theme: 1
+    themeTerrain: 1
+    themeShare: 80
+    rules:
+      victory: 3
+      victoryValue: 40000
+      victoryTag: 
+      loss: 2
+      lossValue: 0
+      dayLimit: 84
+      battleStyle: 0
+    specials:
+    - kind: 4
+      x: 520
+      y: 300
+      creature: -1
+      count: 0
+      artifact: -1
+      faction: 3
+      building: 3
+      resource: 0
+      tag: 
+      guard: 2
+      guardCount: 24
+      owner: -1
+    - kind: 4
+      x: 300
+      y: 560
+      creature: -1
+      count: 0
+      artifact: -1
+      faction: 3
+      building: 3
+      resource: 0
+      tag: 
+      guard: 22
+      guardCount: 40
+      owner: -1
+    - kind: 3
+      x: 640
+      y: 620
+      creature: -1
+      count: 0
+      artifact: 20
+      faction: 3
+      building: 3
+      resource: 0
+      tag: 
+      guard: 5
+      guardCount: 8
+      owner: -1
+    startingGold: 3000
+    woods: 0
+  <Intro>k__BackingField: A horde marches on its stomach, and the border barons keep the granaries. Gold buys grain, and grain buys loyalty. Fill the war chest before the winter moon.
+  <Outro>k__BackingField: The war chest is full. For the first time in a generation every clan eats, and every clan listens.
+  <Goal>k__BackingField: Gather 40,000 gold.
+  <Loss>k__BackingField: Win by day 84.
+  <ThreeStarDays>k__BackingField: 50
+  <TwoStarDays>k__BackingField: 70
+  <IsSkirmish>k__BackingField: 0
+  <MapPosition>k__BackingField: {x: 380, y: 300}
+  <Arc>k__BackingField: 2

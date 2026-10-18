@@ -8,7 +8,7 @@ namespace Portfolio.Asteroids
     /// release shards that hunt the ship. One prefab per kind serves every size: <see cref="Configure"/> picks the
     /// size, a shape and the numbers that go with them.
     /// </summary>
-    public class Asteroid : Shootable
+    public partial class Asteroid : Shootable
     {
         [SerializeField] internal AsteroidKind kind;
         [Tooltip("Shape variants; one is picked at random for every asteroid.")]
@@ -121,7 +121,7 @@ namespace Portfolio.Asteroids
             {
                 spawner.ReleaseVoidShards(Position, shards, radius);
             }
-            if (kind == AsteroidKind.Magma)
+            if (AsteroidRules.Explodes(kind, Shape))
             {
                 float scale = Size == AsteroidSize.Large ? 1f : Size == AsteroidSize.Medium ? 0.8f : 0.55f;
                 Field.Explode(new Blast

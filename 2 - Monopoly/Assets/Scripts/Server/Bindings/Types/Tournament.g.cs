@@ -46,6 +46,12 @@ namespace Portfolio.Monopoly.Server
         public SpacetimeDB.Timestamp StartedAt;
         [DataMember(Name = "finished_at")]
         public SpacetimeDB.Timestamp FinishedAt;
+        [DataMember(Name = "private")]
+        public bool Private;
+        [DataMember(Name = "starts_at")]
+        public long StartsAt;
+        [DataMember(Name = "min_entrants")]
+        public byte MinEntrants;
 
         public Tournament(
             ulong Id,
@@ -63,7 +69,10 @@ namespace Portfolio.Monopoly.Server
             bool HasWinner,
             SpacetimeDB.Timestamp CreatedAt,
             SpacetimeDB.Timestamp StartedAt,
-            SpacetimeDB.Timestamp FinishedAt
+            SpacetimeDB.Timestamp FinishedAt,
+            bool Private,
+            long StartsAt,
+            byte MinEntrants
         )
         {
             this.Id = Id;
@@ -82,6 +91,9 @@ namespace Portfolio.Monopoly.Server
             this.CreatedAt = CreatedAt;
             this.StartedAt = StartedAt;
             this.FinishedAt = FinishedAt;
+            this.Private = Private;
+            this.StartsAt = StartsAt;
+            this.MinEntrants = MinEntrants;
         }
 
         public Tournament()
