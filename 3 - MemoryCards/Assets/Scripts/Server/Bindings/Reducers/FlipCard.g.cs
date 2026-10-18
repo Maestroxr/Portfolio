@@ -13,12 +13,12 @@ namespace Portfolio.MemoryCards.Server
 {
     public sealed partial class RemoteReducers : RemoteBase
     {
-        public delegate void FlipCardHandler(ReducerEventContext ctx, ushort index);
+        public delegate void FlipCardHandler(ReducerEventContext ctx, byte seat, ushort index);
         public event FlipCardHandler? OnFlipCard;
 
-        public void FlipCard(ushort index)
+        public void FlipCard(byte seat, ushort index)
         {
-            conn.InternalCallReducer(new Reducer.FlipCard(index));
+            conn.InternalCallReducer(new Reducer.FlipCard(seat, index));
         }
 
         public bool InvokeFlipCard(ReducerEventContext ctx, Reducer.FlipCard args)
@@ -37,6 +37,7 @@ namespace Portfolio.MemoryCards.Server
             }
             OnFlipCard(
                 ctx,
+                args.Seat,
                 args.Index
             );
             return true;
@@ -49,11 +50,17 @@ namespace Portfolio.MemoryCards.Server
         [DataContract]
         public sealed partial class FlipCard : Reducer, IReducerArgs
         {
+            [DataMember(Name = "seat")]
+            public byte Seat;
             [DataMember(Name = "index")]
             public ushort Index;
 
-            public FlipCard(ushort Index)
+            public FlipCard(
+                byte Seat,
+                ushort Index
+            )
             {
+                this.Seat = Seat;
                 this.Index = Index;
             }
 

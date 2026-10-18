@@ -284,6 +284,57 @@ namespace Portfolio.EndlessRunner.Tests
             Assert.IsNull(race.RunOf(null));
             Assert.AreEqual(1, second.Racer.Slot);
             Assert.AreEqual(1, second.Seat.Index);
+            Assert.AreSame(second, race.RunAt(1));
+            Assert.IsNull(race.RunAt(2));
+        }
+
+        // ------------------------------------------------------------------------------------------------
+        // A party online: several runners at this device in a race of a room
+        // ------------------------------------------------------------------------------------------------
+
+        [Test]
+        public void APartysRunsCarryTheirRunnersOfTheRoom()
+        {
+            // The device's player sits at seat 1 and starts third; the companion at seat 3, fourth.
+            var device = new Racer { Seat = 1, Slot = 2, Name = "Host", Local = true };
+            var companion = new Racer { Seat = 3, Slot = 3, Name = "Friend", Local = true };
+            var party = new LocalRace(null);
+            RunnerRun mine = Run(0f, RunPhase.Running);
+            RunnerRun theirs = Run(0f, RunPhase.Running);
+            party.Add(mine, new LocalSeat(0) { Name = device.Name }, device);
+            party.Add(theirs, new LocalSeat(1) { Name = companion.Name }, companion);
+            Assert.IsNull(party.Match, "a party plays no local match");
+            Assert.AreSame(device, mine.Racer, "the run is its runner on the scoreboard of the race");
+            Assert.AreEqual(2, mine.Racer.Slot, "the place at the start is the race's");
+            Assert.AreSame(theirs, party.RunAt(3), "the run of a seat of the room");
+            Assert.AreSame(mine, party.RunAt(1));
+            Assert.IsNull(party.RunAt(0), "seat 0 runs on another device");
+            Assert.AreEqual(1, theirs.Seat.Index, "the views go by the order at this device");
+
+            theirs.Phase = RunPhase.Watching;
+            Assert.IsFalse(party.IsOver);
+            mine.Phase = RunPhase.Watching;
+            Assert.IsTrue(party.IsOver, "every runner here is done: the views follow the others");
+        }
+
+        [Test]
+        public void ARaceIsAPartyWhenSeveralRunnersRunAtThisDevice()
+        {
+            var setup = new RunnerGameManager.RaceSetup { LocalSeat = 1 };
+            setup.LocalSeats.Add(1);
+            Assert.IsFalse(setup.IsParty, "one runner here races as it always did");
+            setup.LocalSeats.Add(3);
+            Assert.IsTrue(setup.IsParty);
+        }
+
+        [Test]
+        public void ANewRunHasReportedNoScore()
+        {
+            RunnerRun run = Run(120f, RunPhase.Running);
+            Assert.AreEqual(-1, run.ReportedScore);
+            run.ReportedScore = 120;
+            run.Reset(3);
+            Assert.AreEqual(-1, run.ReportedScore, "the next race reports its first score again");
         }
 
         // ------------------------------------------------------------------------------------------------

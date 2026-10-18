@@ -722,7 +722,7 @@ namespace Portfolio.Heroes.UI
             return sum;
         }
 
-        /// <summary>Whether a player (a seat) is led from this device: online the seat here, at one device any person.</summary>
+        /// <summary>Whether a player (a seat) is led from this device: online a seat played here, at one device any person.</summary>
         private bool Local(int player)
         {
             if (player < 0)
@@ -731,7 +731,7 @@ namespace Portfolio.Heroes.UI
             }
             if (manager.IsOnlineGame)
             {
-                return player == manager.LocalSeat;
+                return manager.IsLocalSeat(player);
             }
             PlayerState state = Game.State.Player(player);
             return state != null && state.human;

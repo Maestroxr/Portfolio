@@ -324,8 +324,10 @@ namespace Portfolio.BoardGames
                     name = L.T("Computer");
                 }
                 Color color = look != null ? look.ColorOf(side) : side == Side.Light ? Color.white : new Color(0.2f, 0.2f, 0.2f);
-                bool you = manager.IsOnlineGame && manager.LocalSeat == seat;
-                panel.Bind(name, color, manager.SideName(seat), you);
+                // Online, the player at this device is "(you)" and a player who joined at this device is "(here)".
+                bool you = manager.IsOwnSeat(seat);
+                bool here = !you && manager.IsOnlineGame && manager.PlayedHere(seat);
+                panel.Bind(name, color, manager.SideName(seat), you, here);
                 panel.SetLine(manager.SeatLine(seat));
                 panel.SetTurn(!game.IsOver && table.SeatToAct == seat);
             }

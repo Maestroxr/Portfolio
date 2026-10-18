@@ -255,7 +255,26 @@ or the computer (Easy, Normal or Hard) plays it, at least two people; each realm
 **Play Online** on the title screen opens the lobby shared by all Gamebox games (`BaseGameManager.OpenOnline`). A room
 plays a random map or one of the skirmish maps, with the options Map size, Battles (on the map or on a battlefield),
 Turn clock (none, 1, 2, 4 or 8 minutes; 2 by default), Computer players (up to three), Computer skill, Treasure and
-Wandering armies.
+Wandering armies. A room may also be private (the lobby's "Who can join"): it is not listed, and the others enter it with
+its code; nothing of the game changes.
+
+**Several people at one device.** Players who sign in at the device in the lobby, or join it there as guests, play
+realms of their own in the room through the device's connection, against the players of the other devices. They share
+the screen the way a hot seat does (the hot seat's machinery in `HeroesGameManager.HotSeat.cs`, run by
+`HeroesGameManager.Online.cs`): it belongs to one of them at a time, and shows their fog, treasury, heroes, towns and
+chronicle; it goes to another of them for their turn, a question for them or a battle they are in, and while the
+players of the other devices take their turns, to the one of them who plays next, who watches those moves as their own
+realm sees the map. Who holds the device is the hot seat's rule over the seats played here (`HotSeat.HandOverTo` with
+the local seats, tested outside Unity); since the rules run ahead of the screen online, a battle about to come onto the
+screen asks once more (`HotSeat.ToBattle`), so it always opens on the screen of one who fights it. With the lobby's
+"Hand the device over between turns" the hand-over screen covers the map between them, as in a hot seat; without it the
+map changes realm at once. Two of them who fight each other do it at one screen. They are called by name, never "you",
+on the bars, the tips, the towns and the battle bar; every realm played here reports its own score and place to the
+room; and the end shows the standings of all the realms in the order the room ranks them, with Back to the Room (a
+victory when a realm played here won, or, when the host called the game off, when the room ranked one of them first,
+`WonHere`). The game's online progress (the
+scenarios won online) is the device's player's; the others' avatars earn experience of their own. A party alone cannot
+start a room: it needs a player of another device. One player at a device plays exactly as before.
 
 An online game is played in step, which is what the deterministic rules are for. Everybody in the room lays out the
 same map from the room's seed, and every client runs the same rules over the same commands: what a player does is sent
@@ -371,7 +390,12 @@ without these arguments, and in a release player, nothing of it runs:
   --data-dir <folder>`, then from a folder without a `spacetime.json`, `spacetime publish <database> --server
   http://127.0.0.1:3917 --no-config --bin-path Server/bin/Release/net8.0/wasi-wasm/AppBundle/StdbModule.wasm` (after
   `spacetime build --module-path Server` in this folder), and start both players with
-  `-gamebox-server http://127.0.0.1:3917 -gamebox-database <database>`.
+  `-gamebox-server http://127.0.0.1:3917 -gamebox-database <database>`. `hostprivate` and `joinprivate` play the same
+  game in a private room, entered with its code; `hostparty` and `joinparty` first bring other players to the device
+  (`-gamebox-companions <n>`, one by default, and `-gamebox-guests <n>`), and the tour then plays whichever realm of the
+  device the game waits for and writes down whenever the screen changes hands; `-heroes-online-handover` asks for the
+  hand-over screen between them, which the tour lifts. The host's room takes two players and the host's own party; a
+  plain `host` that waits for a `joinparty` is given the size with `-gamebox-room-players <n>`.
 
 ## Art
 

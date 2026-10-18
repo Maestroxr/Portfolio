@@ -15,7 +15,9 @@ using SpacetimeDB;
 /// card stands and show a face only while the card is face up, so nobody can look at a card they have not turned. The
 /// turn passes with the base server's turns: a set lets the player go on, a mistake shows for a moment (the clock
 /// stops) and passes the turn, a bomb passes it at once, and so does running out of time. The score is kept here and
-/// nowhere else: the reports and the early end the base server offers are refused.
+/// nowhere else: the reports and the early end the base server offers are refused. Several people may play at one
+/// device (the base server's companions): each holds a seat of their own, and the device flips for whichever of its
+/// seats has the turn, which is why <see cref="FlipCard"/> takes the seat it flips for.
 ///
 /// After a change: publish the module, then generate the client bindings (Gamebox > Server in the Unity editor,
 /// or <c>spacetime publish</c> and <c>spacetime generate</c> in the project folder, which read spacetime.json).
@@ -193,11 +195,15 @@ public static partial class Module
     // Reducers
     // ---------------------------------------------------------------------------------------------------
 
-    /// <summary>The player whose turn it is flips a card: the rules of the game judge it (<see cref="MemoryRound.Flip"/>, <see cref="VersusMatch.Judge"/>).</summary>
+    /// <summary>
+    /// The player whose turn it is flips a card: the rules of the game judge it (<see cref="MemoryRound.Flip"/>,
+    /// <see cref="VersusMatch.Judge"/>). <paramref name="seat"/> says who flips, as with every player reducer of the base
+    /// server: the caller's own seat (<see cref="NoSeat"/>), or the seat of a player at the caller's device (Companions.cs).
+    /// </summary>
     [SpacetimeDB.Reducer]
-    public static void FlipCard(ReducerContext ctx, ushort index)
+    public static void FlipCard(ReducerContext ctx, byte seat, ushort index)
     {
-        var member = RequirePlayingMember(ctx, out var room);
+        var member = RequirePlayingActor(ctx, seat, out var room);
         RequireTurn(ctx, member);
         var board = ctx.Db.MemoryBoard.RoomId.Find(room.Id) ?? throw new Exception("There is no board.");
         if (board.MismatchShowing)

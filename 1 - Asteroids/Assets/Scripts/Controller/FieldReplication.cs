@@ -21,6 +21,11 @@ namespace Portfolio.Asteroids
     /// Every client reports the shots of its own ship, which the others show as ghosts. The callbacks of the connection
     /// only take notes; <see cref="Tick"/> works through them once a frame, in an order that holds: bodies arrive
     /// before they are moved, are moved before they leave.
+    ///
+    /// Several pilots may fly at one device (the companions of the base server), each in a ship of their own with a
+    /// seat of their own in the room. What a ship does goes out under the seat of its pilot (<see cref="Begin"/> names
+    /// the local seats, the device's own first), and what comes back for a local seat is applied to that pilot's ship;
+    /// the device's own seat stays the simulator's identity.
     /// </summary>
     public class FieldReplication : IFieldLink
     {
@@ -59,6 +64,14 @@ namespace Portfolio.Asteroids
             public bool Dirty;
         }
 
+        /// <summary>What one pilot at this device did since the last report: the shots (with the moment each was fired) and the hits.</summary>
+        private sealed class Report
+        {
+            public readonly List<ShotInfo> Shots = new List<ShotInfo>();
+            public readonly List<float> ShotTimes = new List<float>();
+            public readonly List<HitInfo> Hits = new List<HitInfo>();
+        }
+
         private readonly AsteroidsGameManager manager;
         private readonly SpaceField field;
         private readonly SpawnService spawner;
@@ -85,14 +98,15 @@ namespace Portfolio.Asteroids
         private readonly Dictionary<uint, FieldBody> pendingParts = new Dictionary<uint, FieldBody>();
         private readonly List<uint> boundParts = new List<uint>();
 
-        // What the local ship did since the last report, with the moment each shot was fired.
-        private readonly List<ShotInfo> shots = new List<ShotInfo>();
-        private readonly List<float> shotTimes = new List<float>();
-        private readonly List<HitInfo> hits = new List<HitInfo>();
+        // What the ships at this device did since the last report, by the seat of their pilot.
+        private readonly Dictionary<byte, Report> reports = new Dictionary<byte, Report>();
+        private bool reportsPending;
+
+        // The seats of the pilots at this device, the device's own first.
+        private DeviceSeats localSeats = new DeviceSeats(null);
 
         private DbConnection connection;
         private ulong roomId;
-        private int localSeat;
         private float nextSync;
         private float nextReport;
         private float nextScroll;
@@ -117,15 +131,16 @@ namespace Portfolio.Asteroids
         // ------------------------------------------------------------------ the mission
 
         /// <summary>
-        /// The mission of the room starts. A client that does not simulate takes over the bodies that are there already
+        /// The mission of the room starts, with the pilots at this device in <paramref name="seats"/> (the device's own seat
+        /// first, then its companions'). A client that does not simulate takes over the bodies that are there already
         /// (none, unless it is late).
         /// </summary>
-        public void Begin(DbConnection openConnection, ulong room, int seat, bool simulates)
+        public void Begin(DbConnection openConnection, ulong room, IReadOnlyList<byte> seats, bool simulates)
         {
             End();
             connection = openConnection;
             roomId = room;
-            localSeat = seat;
+            localSeats = new DeviceSeats(seats);
             Simulates = simulates;
             IsActive = true;
             nextSync = 0f;
@@ -179,9 +194,8 @@ namespace Portfolio.Asteroids
             arrivedHits.Clear();
             arrivedShipSignals.Clear();
             pendingParts.Clear();
-            shots.Clear();
-            shotTimes.Clear();
-            hits.Clear();
+            reports.Clear();
+            reportsPending = false;
         }
 
 
@@ -216,7 +230,7 @@ namespace Portfolio.Asteroids
             }
             // The guns of a strike ship fire many times a second: what they did goes out a few times a second at most.
             float now = Time.unscaledTime;
-            if (now >= nextReport && (shots.Count > 0 || hits.Count > 0))
+            if (now >= nextReport && reportsPending)
             {
                 nextReport = now + 1f / SyncRate;
                 SendReports(Time.time);
@@ -289,7 +303,7 @@ namespace Portfolio.Asteroids
 
         public void VolleyArrived(ShotVolley volley)
         {
-            if (IsActive && volley.RoomId == roomId && volley.Seat != localSeat)
+            if (IsActive && volley.RoomId == roomId && !IsLocalSeat(volley.Seat))
             {
                 arrivedVolleys.Add(volley);
             }
@@ -297,7 +311,7 @@ namespace Portfolio.Asteroids
 
         public void HitsArrived(HitReport report)
         {
-            if (IsActive && Simulates && report.RoomId == roomId && report.Seat != localSeat)
+            if (IsActive && Simulates && report.RoomId == roomId && !IsLocalSeat(report.Seat))
             {
                 arrivedHits.Add(report);
             }
@@ -305,10 +319,44 @@ namespace Portfolio.Asteroids
 
         public void ShipSignalArrived(ShipSignal signal)
         {
-            if (IsActive && signal.RoomId == roomId && signal.Seat != localSeat)
+            if (IsActive && signal.RoomId == roomId && !IsLocalSeat(signal.Seat))
             {
                 arrivedShipSignals.Add(signal);
             }
+        }
+
+
+        /// <summary>Whether <paramref name="seat"/> is flown at this device: by the device's own pilot or a companion.</summary>
+        private bool IsLocalSeat(int seat)
+        {
+            return localSeats.Contains(seat);
+        }
+
+
+        /// <summary>The seat a ship flown at this device reports under: its pilot's (a wingman's <see cref="AsteroidsPlayer.HitSeat"/>), else the device's own.</summary>
+        private byte SeatOf(AsteroidsPlayer ship)
+        {
+            return localSeats.Of(ship != null ? ship.HitSeat : null);
+        }
+
+
+        /// <summary>The seat a deed with the seat <paramref name="seat"/> (null for the device's own ship) is reported under.</summary>
+        private byte SeatOf(int? seat)
+        {
+            return localSeats.Of(seat);
+        }
+
+
+        /// <summary>The report of the pilot at <paramref name="seat"/>, made when they first do something.</summary>
+        private Report ReportOf(byte seat)
+        {
+            if (!reports.TryGetValue(seat, out Report report))
+            {
+                report = new Report();
+                reports[seat] = report;
+            }
+            reportsPending = true;
+            return report;
         }
 
 
@@ -336,7 +384,7 @@ namespace Portfolio.Asteroids
                 return;
             }
             tracks.Remove(body);
-            exits.Add(new BodyExit(id, (byte)body.Exit, ExitSeatOf(body, localSeat, IsStrikeField)));
+            exits.Add(new BodyExit(id, (byte)body.Exit, ExitSeatOf(body, localSeats.Device, IsStrikeField)));
         }
 
 
@@ -371,16 +419,17 @@ namespace Portfolio.Asteroids
         {
             if (IsActive && bodies.TryGetId(puppet, out uint id))
             {
-                hits.Add(new HitInfo(id, hit.Amount, hit.Direction.x, hit.Direction.y, hit.Point.x, hit.Point.y, (byte)hit.Source));
+                // The hit names the seat of a wingman's shot or blast; the device's own ship leaves it empty.
+                ReportOf(SeatOf(hit.Seat)).Hits.Add(new HitInfo(id, hit.Amount, hit.Direction.x, hit.Direction.y, hit.Point.x, hit.Point.y, (byte)hit.Source));
             }
         }
 
 
-        public void PuppetRammed(Shootable puppet, Vector2 direction, bool dashing)
+        public void PuppetRammed(Shootable puppet, AsteroidsPlayer ship, Vector2 direction, bool dashing)
         {
             if (IsActive && bodies.TryGetId(puppet, out uint id))
             {
-                hits.Add(new HitInfo(id, 0f, direction.x, direction.y, puppet.Position.x, puppet.Position.y, dashing ? DashRamSource : RamSource));
+                ReportOf(SeatOf(ship)).Hits.Add(new HitInfo(id, 0f, direction.x, direction.y, puppet.Position.x, puppet.Position.y, dashing ? DashRamSource : RamSource));
             }
         }
 
@@ -389,16 +438,16 @@ namespace Portfolio.Asteroids
         {
             if (IsActive && bodies.TryGetId(puppet, out uint id))
             {
-                hits.Add(new HitInfo(id, 0f, 0f, 0f, puppet.Position.x, puppet.Position.y, AbsorbedSource));
+                ReportOf(localSeats.Device).Hits.Add(new HitInfo(id, 0f, 0f, 0f, puppet.Position.x, puppet.Position.y, AbsorbedSource));
             }
         }
 
 
-        public void RewardTouched(Reward reward)
+        public void RewardTouched(Reward reward, AsteroidsPlayer ship)
         {
             if (IsActive && connection != null && bodies.TryGetId(reward, out uint id))
             {
-                connection.Reducers.ClaimBody(id);
+                connection.Reducers.ClaimBody(SeatOf(ship), id);
                 return;
             }
             // Not announced yet: the ship reaches for it again next frame.
@@ -410,26 +459,27 @@ namespace Portfolio.Asteroids
         {
             if (IsActive)
             {
-                shots.Add(new ShotInfo(kind, (byte)Mathf.Clamp(level, 0, 255), shot.Position.x, shot.Position.y, shot.Velocity.x, shot.Velocity.y, shot.Lifetime));
-                shotTimes.Add(Time.time);
+                Report report = ReportOf(SeatOf(shot.FiredBy));
+                report.Shots.Add(new ShotInfo(kind, (byte)Mathf.Clamp(level, 0, 255), shot.Position.x, shot.Position.y, shot.Velocity.x, shot.Velocity.y, shot.Lifetime));
+                report.ShotTimes.Add(Time.time);
             }
         }
 
 
-        public void NovaFired(Vector2 center, float damage, float bossDamage)
+        public void NovaFired(Vector2 center, float damage, float bossDamage, int? seat)
         {
             if (IsActive && connection != null)
             {
-                connection.Reducers.SignalShip((byte)ShipSignalKind.Nova, center.x, center.y, damage, bossDamage);
+                connection.Reducers.SignalShip(SeatOf(seat), (byte)ShipSignalKind.Nova, center.x, center.y, damage, bossDamage);
             }
         }
 
 
-        public void RoomWanted(Vector2 center)
+        public void RoomWanted(Vector2 center, int? seat)
         {
             if (IsActive && connection != null)
             {
-                connection.Reducers.SignalShip((byte)ShipSignalKind.MakeRoom, center.x, center.y, 0f, 0f);
+                connection.Reducers.SignalShip(SeatOf(seat), (byte)ShipSignalKind.MakeRoom, center.x, center.y, 0f, 0f);
             }
         }
 
@@ -616,37 +666,46 @@ namespace Portfolio.Asteroids
 
 
         /// <summary>
-        /// Sends the shots and hits of the local ship. A shot waited for up to one report: it is sent where it has got to
-        /// by now, with the time it has left, so the ghosts elsewhere do not trail behind.
+        /// Sends the shots and hits of the ships at this device, each pilot's under their seat. A shot waited for up to one
+        /// report: it is sent where it has got to by now, with the time it has left, so the ghosts elsewhere do not trail
+        /// behind.
         /// </summary>
         private void SendReports(float time)
         {
-            if (shots.Count > 0)
+            reportsPending = false;
+            foreach (KeyValuePair<byte, Report> entry in reports)
             {
-                for (int i = 0; i < shots.Count; i++)
+                byte seat = entry.Key;
+                List<ShotInfo> shots = entry.Value.Shots;
+                List<float> shotTimes = entry.Value.ShotTimes;
+                List<HitInfo> hits = entry.Value.Hits;
+                if (shots.Count > 0)
                 {
-                    float age = i < shotTimes.Count ? Mathf.Max(0f, time - shotTimes[i]) : 0f;
-                    ShotInfo shot = shots[i];
-                    if (age > 0f)
+                    for (int i = 0; i < shots.Count; i++)
                     {
-                        shots[i] = new ShotInfo(shot.Kind, shot.Level, shot.X + shot.VelocityX * age, shot.Y + shot.VelocityY * age,
-                            shot.VelocityX, shot.VelocityY, shot.Lifetime > 0f ? Mathf.Max(0.01f, shot.Lifetime - age) : shot.Lifetime);
+                        float age = i < shotTimes.Count ? Mathf.Max(0f, time - shotTimes[i]) : 0f;
+                        ShotInfo shot = shots[i];
+                        if (age > 0f)
+                        {
+                            shots[i] = new ShotInfo(shot.Kind, shot.Level, shot.X + shot.VelocityX * age, shot.Y + shot.VelocityY * age,
+                                shot.VelocityX, shot.VelocityY, shot.Lifetime > 0f ? Mathf.Max(0.01f, shot.Lifetime - age) : shot.Lifetime);
+                        }
                     }
+                    for (int call = 0; call < BodyCodec.BatchCount(shots.Count); call++)
+                    {
+                        connection.Reducers.FireShots(seat, BodyCodec.Batch(shots, call));
+                    }
+                    shots.Clear();
+                    shotTimes.Clear();
                 }
-                for (int call = 0; call < BodyCodec.BatchCount(shots.Count); call++)
+                if (hits.Count > 0)
                 {
-                    connection.Reducers.FireShots(BodyCodec.Batch(shots, call));
+                    for (int call = 0; call < BodyCodec.BatchCount(hits.Count); call++)
+                    {
+                        connection.Reducers.ReportHits(seat, BodyCodec.Batch(hits, call));
+                    }
+                    hits.Clear();
                 }
-                shots.Clear();
-                shotTimes.Clear();
-            }
-            if (hits.Count > 0)
-            {
-                for (int call = 0; call < BodyCodec.BatchCount(hits.Count); call++)
-                {
-                    connection.Reducers.ReportHits(BodyCodec.Batch(hits, call));
-                }
-                hits.Clear();
             }
         }
 
@@ -709,7 +768,10 @@ namespace Portfolio.Asteroids
         }
 
 
-        /// <summary>The server gave a pickup to a pilot: the local ship gets what it holds, anybody else's is taken off the field.</summary>
+        /// <summary>
+        /// The server gave a pickup to a pilot: the ship of a pilot at this device gets what it holds, anybody else's is
+        /// taken off the field.
+        /// </summary>
         private void ApplyClaims()
         {
             foreach (FieldBody row in claimedBodies)
@@ -718,9 +780,9 @@ namespace Portfolio.Asteroids
                 {
                     continue;
                 }
-                if (row.ClaimedBy == localSeat)
+                if (IsLocalSeat(row.ClaimedBy))
                 {
-                    field.GrantReward(reward);
+                    field.GrantReward(reward, manager.LocalShipAt(row.ClaimedBy));
                     continue;
                 }
                 manager.CoopPickupTaken(reward);
@@ -879,7 +941,9 @@ namespace Portfolio.Asteroids
                 {
                     continue;
                 }
-                bool mine = exit.Seat == localSeat;
+                // A kill of the device's own ship carries no seat, as its own hits do; a companion's names their seat, so
+                // the manager credits that pilot; another device's pilot is named too, and scores on their device.
+                bool mine = exit.Seat == localSeats.Device;
                 switch ((ExitReason)exit.Reason)
                 {
                     case ExitReason.Destroyed when puppet is Shootable shootable:
@@ -953,7 +1017,7 @@ namespace Portfolio.Asteroids
                         field.CameraRig?.Shake(0.3f);
                         if (Simulates)
                         {
-                            field.Nova(at, signal.A, signal.B, signal.Seat);
+                            field.Nova(at, signal.A, signal.B, signal.Seat, false);
                         }
                         break;
                     case ShipSignalKind.Nova:
@@ -962,7 +1026,7 @@ namespace Portfolio.Asteroids
                         field.CameraRig?.Shake(0.4f);
                         if (Simulates)
                         {
-                            field.Nova(at, signal.A, signal.B, signal.Seat);
+                            field.Nova(at, signal.A, signal.B, signal.Seat, false);
                         }
                         break;
                     case ShipSignalKind.MakeRoom:

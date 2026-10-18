@@ -40,6 +40,8 @@ namespace Portfolio.BoardGames.Server
         public SpacetimeDB.Timestamp CreatedAt;
         [DataMember(Name = "started_at")]
         public SpacetimeDB.Timestamp StartedAt;
+        [DataMember(Name = "private")]
+        public bool Private;
 
         public Room(
             ulong Id,
@@ -54,7 +56,8 @@ namespace Portfolio.BoardGames.Server
             uint Seed,
             uint Round,
             SpacetimeDB.Timestamp CreatedAt,
-            SpacetimeDB.Timestamp StartedAt
+            SpacetimeDB.Timestamp StartedAt,
+            bool Private
         )
         {
             this.Id = Id;
@@ -70,6 +73,7 @@ namespace Portfolio.BoardGames.Server
             this.Round = Round;
             this.CreatedAt = CreatedAt;
             this.StartedAt = StartedAt;
+            this.Private = Private;
         }
 
         public Room()

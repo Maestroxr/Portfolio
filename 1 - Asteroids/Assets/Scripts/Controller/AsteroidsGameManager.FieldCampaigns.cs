@@ -214,7 +214,21 @@ namespace Portfolio.Asteroids
                 {
                     phase = MissionPhase.Watching;
                     phaseTime = 0f;
-                    online?.PilotOut(score.Score);
+                    if (IsParty)
+                    {
+                        // Every pilot at this device who still flies is done in the room.
+                        foreach (LocalPilot pilot in LocalPilots)
+                        {
+                            if (pilot.Record != null && !pilot.Record.Out)
+                            {
+                                online?.PilotOut((byte)pilot.Seat.Index, pilot.Record.Score.Score);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        online?.PilotOut((byte)coop.LocalSeat, score.Score);
+                    }
                 }
                 ui?.Announce(title, T("The mission has failed"), new Color(1f, 0.35f, 0.3f));
                 sounds?.GameOver();

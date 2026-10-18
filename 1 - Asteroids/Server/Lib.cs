@@ -14,6 +14,10 @@ using SpacetimeDB;
 /// it, and ends the mission: won when the simulator says so, lost when no pilot flies any more (the base
 /// server finishes the room then), abandoned when the simulator leaves.
 ///
+/// Several pilots may fly at one device (the base server's companions): what a pilot does goes out with the
+/// seat it is for, the caller's own (<see cref="NoSeat"/>) or a companion's, and the server checks that the
+/// seat is the caller's to play (<see cref="ActingMember"/>). The simulator stays the device of the host.
+///
 /// After a change: publish the module, then generate the client bindings (Gamebox > Server in the Unity editor,
 /// or <c>spacetime publish</c> and <c>spacetime generate</c> in the project folder, which read spacetime.json).
 /// </summary>
@@ -394,36 +398,36 @@ public static partial class Module
     }
 
     // ---------------------------------------------------------------------------------------------------
-    // Reducers of every pilot
+    // Reducers of every pilot (the seat is the caller's own, NoSeat, or a companion's at the caller's device)
     // ---------------------------------------------------------------------------------------------------
 
-    /// <summary>The shots the caller fired this frame; the other clients show them, the caller's client decides what they hit.</summary>
+    /// <summary>The shots the pilot at <paramref name="seat"/> fired this frame; the other clients show them, their own client decides what they hit.</summary>
     [SpacetimeDB.Reducer]
-    public static void FireShots(ReducerContext ctx, List<ShotInfo> shots)
+    public static void FireShots(ReducerContext ctx, byte seat, List<ShotInfo> shots)
     {
-        if (FlyingMember(ctx) is not { } member || shots.Count == 0 || shots.Count > MaxBatch)
+        if (FlyingMember(ctx, seat) is not { } member || shots.Count == 0 || shots.Count > MaxBatch)
         {
             return;
         }
         ctx.Db.ShotVolley.Insert(new ShotVolley { RoomId = member.RoomId, Seat = member.Seat, Shots = shots });
     }
 
-    /// <summary>What the caller hit on their copy of the playfield. The simulator applies it to the real bodies.</summary>
+    /// <summary>What the pilot at <paramref name="seat"/> hit on their copy of the playfield. The simulator applies it to the real bodies.</summary>
     [SpacetimeDB.Reducer]
-    public static void ReportHits(ReducerContext ctx, List<HitInfo> hits)
+    public static void ReportHits(ReducerContext ctx, byte seat, List<HitInfo> hits)
     {
-        if (FlyingMember(ctx) is not { } member || hits.Count == 0 || hits.Count > MaxBatch)
+        if (FlyingMember(ctx, seat) is not { } member || hits.Count == 0 || hits.Count > MaxBatch)
         {
             return;
         }
         ctx.Db.HitReport.Insert(new HitReport { RoomId = member.RoomId, Seat = member.Seat, Hits = hits });
     }
 
-    /// <summary>A nova bomb or the like of the caller, see the client's ShipSignalKind.</summary>
+    /// <summary>A nova bomb or the like of the pilot at <paramref name="seat"/>, see the client's ShipSignalKind.</summary>
     [SpacetimeDB.Reducer]
-    public static void SignalShip(ReducerContext ctx, byte kind, float x, float y, float a, float b)
+    public static void SignalShip(ReducerContext ctx, byte seat, byte kind, float x, float y, float a, float b)
     {
-        if (FlyingMember(ctx) is not { } member)
+        if (FlyingMember(ctx, seat) is not { } member)
         {
             return;
         }
@@ -431,13 +435,13 @@ public static partial class Module
     }
 
     /// <summary>
-    /// The caller's ship touched a pickup. The first claim marks the row: that pilot's client applies the pickup,
-    /// and the simulator takes the body out of the playfield. A later claim changes nothing.
+    /// The ship of the pilot at <paramref name="seat"/> touched a pickup. The first claim marks the row: that pilot's
+    /// client applies the pickup, and the simulator takes the body out of the playfield. A later claim changes nothing.
     /// </summary>
     [SpacetimeDB.Reducer]
-    public static void ClaimBody(ReducerContext ctx, uint netId)
+    public static void ClaimBody(ReducerContext ctx, byte seat, uint netId)
     {
-        if (FlyingMember(ctx) is not { } member
+        if (FlyingMember(ctx, seat) is not { } member
             || ctx.Db.FieldBody.Key.Find(BodyKey(member.RoomId, netId)) is not { Kind: KindReward, ClaimedBy: NoSeat } body)
         {
             return;
@@ -581,14 +585,13 @@ public static partial class Module
         return mission;
     }
 
-    /// <summary>The caller's membership while they fly in a running mission, or null: what comes late is no error.</summary>
-    private static RoomMember? FlyingMember(ReducerContext ctx)
+    /// <summary>
+    /// The membership the caller flies for while that pilot flies in a running mission: their own (<see cref="NoSeat"/>)
+    /// or a companion's at their device (<see cref="ActingMember"/>). Null otherwise: what comes late, or for a seat that
+    /// is not the caller's to play, is no error.
+    /// </summary>
+    private static RoomMember? FlyingMember(ReducerContext ctx, byte seat)
     {
-        if (ctx.Db.RoomMember.Identity.Find(ctx.Sender) is not { Playing: true } member
-            || ctx.Db.Room.Id.Find(member.RoomId) is not { State: RoomState.Playing })
-        {
-            return null;
-        }
-        return member;
+        return ActingMember(ctx, seat);
     }
 }

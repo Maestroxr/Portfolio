@@ -10,9 +10,9 @@ namespace Portfolio.Monopoly.Server
     /// <summary>
     /// The server client of the bindings next to this file: the component to put in a scene. It ties the shared
     /// <see cref="ServerClient"/> to the tables and the reducers of the base server as these bindings name them
-    /// (users, rooms and their members, turns, the action log, the seats of a table, saved games, poses, tournaments with
-    /// their entries, matches and codes, the player's data, the admins), which is all that has to be written per set of
-    /// bindings; everything else, the same whatever the names, is in the base classes.
+    /// (users, rooms and their members and codes, turns, the action log, the seats of a table, saved games, poses,
+    /// companions, tournaments with their entries, matches and codes, the player's data, the admins), which is all that has
+    /// to be written per set of bindings; everything else, the same whatever the names, is in the base classes.
     ///
     /// The original of this class belongs to BaseGame's bindings of the base server;
     /// <c>Gamebox &gt; Server &gt; Generate Client Bindings</c> and <c>Publish All Games</c> write it into a game, in the
@@ -34,6 +34,9 @@ namespace Portfolio.Monopoly.Server
             Watch(db.RoomSave, row => NotifySaveChanged(ToSave(row)), row => NotifySaveRemoved(row.RoomId));
             Watch(db.RoomPose, row => NotifyPoseChanged(ToPose(row)), row => NotifyPoseRemoved(row.Identity));
             db.RoomAction.OnInsert += (context, row) => NotifyAction(ToAction(row));
+            db.MyRoomCodes.OnInsert += (context, row) => NotifyRoomCode(row.RoomId, row.Code);
+            db.MyRoomCodes.OnDelete += (context, row) => NotifyRoomCodeRemoved(row.RoomId);
+            Watch(db.Companion, row => NotifyCompanionChanged(new CompanionInfo(row.Identity, row.Device)), row => NotifyCompanionRemoved(row.Identity));
             Watch(db.Tournament, row => NotifyTournamentChanged(ToTournament(row)), row => NotifyTournamentRemoved(row.Id));
             Watch(db.TournamentEntry, row => NotifyEntryChanged(ToEntry(row)), row => NotifyEntryRemoved(row.Id));
             Watch(db.TournamentMatch, row => NotifyMatchChanged(ToMatch(row)), row => NotifyMatchRemoved(row.Id));
@@ -48,18 +51,21 @@ namespace Portfolio.Monopoly.Server
             reducers.OnSetLook += (context, look, level) => NotifyReducerFinished(SetLookReducer, context.Event.Status);
             reducers.OnSavePlayerData += (context, changes) => NotifyReducerFinished(SavePlayerDataReducer, context.Event.Status);
             reducers.OnDeleteAccount += context => NotifyReducerFinished(DeleteAccountReducer, context.Event.Status);
-            reducers.OnCreateRoom += (context, roomName, maxPlayers, level, options) => NotifyReducerFinished(CreateRoomReducer, context.Event.Status);
+            reducers.OnCreateRoom += (context, roomName, maxPlayers, level, options, isPrivate) => NotifyReducerFinished(CreateRoomReducer, context.Event.Status);
             reducers.OnJoinRoom += (context, roomId) => NotifyReducerFinished(JoinRoomReducer, context.Event.Status);
+            reducers.OnJoinRoomByCode += (context, code) => NotifyReducerFinished(JoinRoomByCodeReducer, context.Event.Status);
             reducers.OnLeaveRoom += context => NotifyReducerFinished(LeaveRoomReducer, context.Event.Status);
             reducers.OnSetReady += (context, ready) => NotifyReducerFinished(SetReadyReducer, context.Event.Status);
             reducers.OnConfigureRoomGame += (context, maxPlayers, level, options) => NotifyReducerFinished(ConfigureRoomGameReducer, context.Event.Status);
             reducers.OnStartRoom += context => NotifyReducerFinished(StartRoomReducer, context.Event.Status);
-            reducers.OnReportScore += (context, score) => NotifyReducerFinished(ReportScoreReducer, context.Event.Status);
-            reducers.OnFinishPlaying += (context, score) => NotifyReducerFinished(FinishPlayingReducer, context.Event.Status);
+            reducers.OnReportScore += (context, seat, score) => NotifyReducerFinished(ReportScoreReducer, context.Event.Status);
+            reducers.OnFinishPlaying += (context, seat, score) => NotifyReducerFinished(FinishPlayingReducer, context.Event.Status);
             reducers.OnEndRoom += context => NotifyReducerFinished(EndRoomReducer, context.Event.Status);
             reducers.OnSubmitAction += (context, seat, kind, payload) => NotifyReducerFinished(SubmitActionReducer, context.Event.Status);
             reducers.OnSetRoomSave += (context, saveName, level, data, seats) => NotifyReducerFinished(SetRoomSaveReducer, context.Event.Status);
             reducers.OnClearRoomSave += context => NotifyReducerFinished(ClearRoomSaveReducer, context.Event.Status);
+            reducers.OnInviteCompanion += (context, secret) => NotifyReducerFinished(InviteCompanionReducer, context.Event.Status);
+            reducers.OnRemoveCompanion += (context, companion) => NotifyReducerFinished(RemoveCompanionReducer, context.Event.Status);
             reducers.OnCreateTournament += (context, tournamentName, level, options, playersPerMatch, maxEntrants, readySeconds, isPublic, hostPlays,
                 startInSeconds, minEntrants) => NotifyReducerFinished(CreateTournamentReducer, context.Event.Status);
             reducers.OnJoinTournament += (context, tournamentId) => NotifyReducerFinished(JoinTournamentReducer, context.Event.Status);
@@ -93,10 +99,12 @@ namespace Portfolio.Monopoly.Server
 
         protected override void SendDeleteAccount() => Connection.Reducers.DeleteAccount();
 
-        protected override void SendCreateRoom(string roomName, byte maxPlayers, int level, string options) =>
-            Connection.Reducers.CreateRoom(roomName, maxPlayers, level, options);
+        protected override void SendCreateRoom(string roomName, byte maxPlayers, int level, string options, bool isPrivate) =>
+            Connection.Reducers.CreateRoom(roomName, maxPlayers, level, options, isPrivate);
 
         protected override void SendJoinRoom(ulong roomId) => Connection.Reducers.JoinRoom(roomId);
+
+        protected override void SendJoinRoomByCode(string code) => Connection.Reducers.JoinRoomByCode(code);
 
         protected override void SendLeaveRoom() => Connection.Reducers.LeaveRoom();
 
@@ -107,9 +115,9 @@ namespace Portfolio.Monopoly.Server
 
         protected override void SendStartRoom() => Connection.Reducers.StartRoom();
 
-        protected override void SendReportScore(long score) => Connection.Reducers.ReportScore(score);
+        protected override void SendReportScore(byte seat, long score) => Connection.Reducers.ReportScore(seat, score);
 
-        protected override void SendFinishPlaying(long score) => Connection.Reducers.FinishPlaying(score);
+        protected override void SendFinishPlaying(byte seat, long score) => Connection.Reducers.FinishPlaying(seat, score);
 
         protected override void SendEndRoom() => Connection.Reducers.EndRoom();
 
@@ -127,8 +135,12 @@ namespace Portfolio.Monopoly.Server
 
         protected override void SendClearRoomSave() => Connection.Reducers.ClearRoomSave();
 
-        protected override void SendUpdatePose(Vector3 position, Vector3 velocity, float heading, uint state, int value) =>
-            Connection.Reducers.UpdatePose(position.x, position.y, position.z, velocity.x, velocity.y, velocity.z, heading, state, value);
+        protected override void SendUpdatePose(byte seat, Vector3 position, Vector3 velocity, float heading, uint state, int value) =>
+            Connection.Reducers.UpdatePose(seat, position.x, position.y, position.z, velocity.x, velocity.y, velocity.z, heading, state, value);
+
+        protected override void SendInviteCompanion(string secret) => Connection.Reducers.InviteCompanion(secret);
+
+        protected override void SendRemoveCompanion(SpacetimeDB.Identity companion) => Connection.Reducers.RemoveCompanion(companion);
 
         protected override void SendCreateTournament(string tournamentName, int level, string options, byte playersPerMatch, byte maxEntrants, uint readySeconds,
             bool isPublic, bool hostPlays, uint startInSeconds, byte minEntrants) =>
@@ -151,7 +163,7 @@ namespace Portfolio.Monopoly.Server
             row.CreatedAt, row.LastLoginAt, row.LastSeenAt, row.Logins, row.SecondsOnline, row.Look, row.Level);
 
         private static RoomInfo ToRoom(Room row) => new RoomInfo(row.Id, row.Name, row.Host, (RoomPhase)(int)row.State, row.MinPlayers,
-            row.MaxPlayers, row.Level, row.Options, row.TurnSeconds, row.Seed, row.Round);
+            row.MaxPlayers, row.Level, row.Options, row.TurnSeconds, row.Seed, row.Round, row.Private);
 
         private static RoomMemberInfo ToMember(RoomMember row) =>
             new RoomMemberInfo(row.Identity, row.RoomId, row.Seat, row.Ready, row.Playing, row.Score, row.Place);

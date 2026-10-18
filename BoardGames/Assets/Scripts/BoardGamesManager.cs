@@ -45,14 +45,63 @@ namespace Portfolio.BoardGames
 
         public TableSetup Setup => table != null ? table.Setup : null;
 
-        /// <summary>Whether the table is the room's: a game with a player on another device.</summary>
-        public bool IsOnlineGame => table != null && onlineSeat >= 0;
+        /// <summary>Whether the table is the room's: a game played online, through the action log of the server.</summary>
+        public bool IsOnlineGame => table != null && onlineSeats.Any;
 
-        /// <summary>Online: the table seat of this device; offline -1 (both seats are here).</summary>
-        public int LocalSeat => IsOnlineGame ? onlineSeat : -1;
+        /// <summary>
+        /// Online: the table seat the people at this device act for now (the seat to act when it is theirs, else the first
+        /// of theirs); offline -1 (both seats are here).
+        /// </summary>
+        public int LocalSeat => IsOnlineGame ? onlineSeats.Acting(table.SeatToAct) : -1;
 
-        /// <summary>Whether the game is one of two people at this device.</summary>
+        /// <summary>Online: the table seats played at this device (one, or both when two people share it); offline none.</summary>
+        public IReadOnlyList<int> LocalSeats => IsOnlineGame ? onlineSeats.All : Array.Empty<int>();
+
+        /// <summary>Whether the game is one of two people at this device, not online.</summary>
         public bool IsHotSeat => table != null && !IsOnlineGame && table.Setup.Humans > 1;
+
+        /// <summary>
+        /// Whether more than one person plays at this device: two people in a game here, or online the player and a
+        /// player who joined at this device, both still at the table (a seat the computer took over counts no more).
+        /// </summary>
+        public bool SeveralHere
+        {
+            get
+            {
+                if (!IsOnlineGame)
+                {
+                    return IsHotSeat;
+                }
+                int people = 0;
+                foreach (int seat in onlineSeats.All)
+                {
+                    if (!table.IsComputer(seat))
+                    {
+                        people++;
+                    }
+                }
+                return people > 1;
+            }
+        }
+
+        /// <summary>
+        /// Whether a person at this device plays <paramref name="seat"/>: a seat the computer does not play, and online
+        /// one of the seats of this device.
+        /// </summary>
+        public bool PlayedHere(int seat)
+        {
+            if (table == null || seat < 0 || seat >= table.Setup.seats.Length || table.IsComputer(seat))
+            {
+                return false;
+            }
+            return !IsOnlineGame || onlineSeats.Has(seat);
+        }
+
+        /// <summary>Online: whether <paramref name="seat"/> is the seat of the player at this device themselves, not of a companion who joined here; offline false.</summary>
+        public bool IsOwnSeat(int seat)
+        {
+            return IsOnlineGame && online != null && onlineSeats.Has(seat) && online.IsOwnTableSeat(seat);
+        }
 
         /// <summary>The campaign level played, or -1 for every other game.</summary>
         public int CampaignLevel => table != null ? campaignLevel : -1;

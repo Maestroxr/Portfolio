@@ -5,13 +5,13 @@ namespace Portfolio.EndlessRunner
     /// <summary>What became of a piece when the server said who got it.</summary>
     public enum ClaimOutcome
     {
-        /// <summary>The local runner got the piece.</summary>
+        /// <summary>The local runner got the piece (one of the runners at this device, in a party).</summary>
         Awarded,
 
-        /// <summary>The local runner touched the piece, but another runner was there first.</summary>
+        /// <summary>The local runner touched the piece, but a runner on another device was there first.</summary>
         Lost,
 
-        /// <summary>Another runner took a piece the local runner had not touched.</summary>
+        /// <summary>A runner on another device took a piece nobody here had touched.</summary>
         Remote,
 
         /// <summary>The piece was settled before; nothing changes.</summary>
@@ -19,7 +19,7 @@ namespace Portfolio.EndlessRunner
     }
 
 
-    /// <summary>The answer of <see cref="CoinClaims.Settle"/>.</summary>
+    /// <summary>The answer of <see cref="CoinClaims.Settle(int, int, int, bool)"/>.</summary>
     public readonly struct ClaimResult
     {
         public ClaimResult(ClaimOutcome outcome, int coins)
@@ -38,8 +38,10 @@ namespace Portfolio.EndlessRunner
     /// <summary>
     /// The books of the coins of a race. The runners share the coins of the track, and the server decides who gets one:
     /// the local runner asks for a piece it touched (<see cref="Request"/>) and counts it when the server says so
-    /// (<see cref="Settle"/>), which is also how it learns what the others took. Pieces are known by their id in the
-    /// layout of the track, runners by their seat in the room.
+    /// (<see cref="Settle(int, int, int, bool)"/>), which is also how it learns what the others took. Pieces are known by
+    /// their id in the layout of the track, runners by their seat in the room. Several runners may run at this device (a
+    /// party online): the first of them to touch a piece takes it off the track here, so a piece is asked for once, for
+    /// the seat of the one who touched it, and the server gives it to that seat or to a runner elsewhere.
     /// </summary>
     public sealed class CoinClaims
     {
@@ -77,8 +79,17 @@ namespace Portfolio.EndlessRunner
             return true;
         }
 
-        /// <summary>The server gave <paramref name="piece"/> to the runner at <paramref name="seat"/>.</summary>
+        /// <summary>The server gave <paramref name="piece"/> to the runner at <paramref name="seat"/>; the local runner sits at <paramref name="localSeat"/>.</summary>
         public ClaimResult Settle(int piece, int seat, int value, int localSeat)
+        {
+            return Settle(piece, seat, value, seat == localSeat);
+        }
+
+        /// <summary>
+        /// The server gave <paramref name="piece"/> to the runner at <paramref name="seat"/>, who runs at this device when
+        /// <paramref name="local"/> is true (one of several in a party): an awarded piece counts for that runner.
+        /// </summary>
+        public ClaimResult Settle(int piece, int seat, int value, bool local)
         {
             if (owners.ContainsKey(piece))
             {
@@ -91,7 +102,7 @@ namespace Portfolio.EndlessRunner
 
             bool asked = pending.TryGetValue(piece, out Pending request);
             pending.Remove(piece);
-            if (seat != localSeat)
+            if (!local)
             {
                 return new ClaimResult(asked ? ClaimOutcome.Lost : ClaimOutcome.Remote, 0);
             }

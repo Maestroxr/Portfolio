@@ -311,9 +311,9 @@ namespace Portfolio.Heroes.UI
             PlayerState current = state.Player(state.currentPlayer);
             bool mine = current != null && current.index == manager.Viewer;
             turnPennant.color = HeroesArt.PlayerColor(current != null ? (int)current.color : 4);
-            // In a hot seat every person is called by name, the one at the device too.
+            // In a hot seat (and online with several people here) every person is called by name, the one at the device too.
             turn.text = current == null ? ""
-                : mine ? manager.IsHotSeat ? Words.F("{0}'s turn", Words.Name(current.name)) : Words.T("Your turn")
+                : mine ? manager.SharesDevice ? Words.F("{0}'s turn", Words.Name(current.name)) : Words.T("Your turn")
                 : Words.F(busy ? "{0} moves" : "{0} thinks", Words.Name(current.name));
             turn.color = mine ? UIKit.Good : UIKit.Ink;
 

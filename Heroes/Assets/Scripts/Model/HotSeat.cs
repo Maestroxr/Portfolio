@@ -16,8 +16,10 @@ namespace Portfolio.Heroes
     /// <summary>
     /// The rules of a hot seat: several people take their turns at one device, with the computer playing any other seat.
     /// Which seat is whose (<see cref="Spec"/>), who has to hold the device before the game goes on
-    /// (<see cref="HandOverTo"/>), so nobody sees the map as another person sees it, and how the realms stand at the end
-    /// (<see cref="Standings"/>). Engine-free, like the rest of the rules, so the model tests check it outside Unity.
+    /// (<see cref="HandOverTo(GameState, int, int)"/>), so nobody sees the map as another person sees it, and how the
+    /// realms stand at the end (<see cref="Standings"/>). The same rules hand the device over between the people who play
+    /// online at one device against the others (<see cref="HandOverTo(GameState, int, int, ICollection{int})"/>).
+    /// Engine-free, like the rest of the rules, so the model tests check it outside Unity.
     /// </summary>
     public static class HotSeat
     {
@@ -76,10 +78,14 @@ namespace Portfolio.Heroes
             return people;
         }
 
-        private static bool IsPerson(GameState state, int player)
+        /// <summary>
+        /// Whether a person still in the game plays <paramref name="player"/> at this device: any person when
+        /// <paramref name="here"/> is null, else only the seats it holds.
+        /// </summary>
+        private static bool IsPerson(GameState state, int player, ICollection<int> here = null)
         {
             PlayerState seat = state.Player(player);
-            return seat != null && seat.human && seat.alive;
+            return seat != null && seat.human && seat.alive && (here == null || here.Contains(player));
         }
 
         /// <summary>
@@ -88,11 +94,21 @@ namespace Portfolio.Heroes
         /// </summary>
         public static int NextPerson(GameState state, int from)
         {
+            return NextPerson(state, from, null);
+        }
+
+        /// <summary>
+        /// As <see cref="NextPerson(GameState, int)"/>, among the people at this device only (<paramref name="here"/>, the
+        /// seats they play; null for every person of the game): online the realms of the others are skipped like the
+        /// computer's.
+        /// </summary>
+        public static int NextPerson(GameState state, int from, ICollection<int> here)
+        {
             int count = state.players.Count;
             for (int i = 0; i < count; i++)
             {
                 int index = ((from + i) % count + count) % count;
-                if (IsPerson(state, index))
+                if (IsPerson(state, index, here))
                 {
                     return index;
                 }
@@ -116,6 +132,18 @@ namespace Portfolio.Heroes
         /// </summary>
         public static int HandOverTo(GameState state, int holder, int acting)
         {
+            return HandOverTo(state, holder, acting, null);
+        }
+
+        /// <summary>
+        /// As <see cref="HandOverTo(GameState, int, int)"/>, for a device that plays some of the seats only: online, where
+        /// several people at one device play their realms against others (<paramref name="here"/>, the seats played at
+        /// this device; null for a hot seat, where every person is here). The turns, questions and battles of the others
+        /// hand nothing over, and while the others play, the person here who plays next holds the device, as while the
+        /// computer plays in a hot seat.
+        /// </summary>
+        public static int HandOverTo(GameState state, int holder, int acting, ICollection<int> here)
+        {
             if (state.over)
             {
                 return -1;
@@ -124,24 +152,37 @@ namespace Portfolio.Heroes
             BattleState battle = state.battle;
             if (battle != null && battle.active)
             {
-                bool holderFights = holder >= 0 && (holder == battle.attackerPlayer || holder == battle.defenderPlayer);
-                if (holderFights && IsPerson(state, holder))
-                {
-                    return -1;
-                }
-                to = IsPerson(state, acting) ? acting
-                    : IsPerson(state, battle.attackerPlayer) ? battle.attackerPlayer
-                    : IsPerson(state, battle.defenderPlayer) ? battle.defenderPlayer
-                    : -1;
-                return to != holder ? to : -1;
+                return ToBattle(state, holder, acting, battle.attackerPlayer, battle.defenderPlayer, here);
             }
             if (state.pending.Count > 0)
             {
                 int asked = state.pending[0].player;
-                to = IsPerson(state, asked) ? asked : -1;
+                to = IsPerson(state, asked, here) ? asked : -1;
                 return to != holder ? to : -1;
             }
-            to = NextPerson(state, state.currentPlayer);
+            to = NextPerson(state, state.currentPlayer, here);
+            return to != holder ? to : -1;
+        }
+
+        /// <summary>
+        /// The person who has to hold the device for a battle between <paramref name="attacker"/> and
+        /// <paramref name="defender"/>, or -1 when the one holding it may keep it, as <see cref="HandOverTo(GameState, int, int)"/>
+        /// says of a battle: a person who fights in it and holds the device keeps it, else the person here whose troops act
+        /// (<paramref name="acting"/>, -1 when nobody's do yet), the attacker or the defender takes it. Online the director
+        /// asks it of a battle that is about to come onto the screen, which the rules, ahead of the screen, may have left
+        /// behind already.
+        /// </summary>
+        public static int ToBattle(GameState state, int holder, int acting, int attacker, int defender, ICollection<int> here = null)
+        {
+            bool holderFights = holder >= 0 && (holder == attacker || holder == defender);
+            if (holderFights && IsPerson(state, holder, here))
+            {
+                return -1;
+            }
+            int to = IsPerson(state, acting, here) ? acting
+                : IsPerson(state, attacker, here) ? attacker
+                : IsPerson(state, defender, here) ? defender
+                : -1;
             return to != holder ? to : -1;
         }
 

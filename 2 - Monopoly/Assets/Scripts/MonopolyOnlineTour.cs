@@ -3,6 +3,7 @@ using System.Collections;
 using System.Linq;
 using Gamebox;
 using Gamebox.Online;
+using Gamebox.UI;
 using UnityEngine;
 
 namespace Portfolio.Monopoly
@@ -17,10 +18,13 @@ namespace Portfolio.Monopoly
     /// computer plays their seats on and the match goes on; when the host left, the room passes to a guest, who calls the
     /// match off a little later. <c>hostsaves</c> and <c>joinsaves</c> play a round or two, then the host saves the match by
     /// name and calls it off, opens a new room from the save and the guest joins it: both write down the match they go on
-    /// with, which has to be the one saved. Every action of the log is written down with the checksum of the match after it, so the
-    /// logs of the players show whether they stayed in step. Run the players with <c>-gamebox-identity</c> to tell them
-    /// apart, and <c>-gamebox-server</c> / <c>-gamebox-database</c> for a test server. Without the argument it does
-    /// nothing.
+    /// with, which has to be the one saved. <c>hostprivate</c> and <c>joinprivate</c> play a private room, entered with
+    /// its code; <c>hostparty</c> and <c>joinparty</c> bring other players to their device first (<c>-gamebox-companions</c>,
+    /// <c>-gamebox-guests</c>), who hold seats of their own: the autopilot then plays whichever seat of the device the
+    /// table waits for, with the hand-over screen between their turns, which it lifts itself. Every action of the log is
+    /// written down with the checksum of the match after it, so the logs of the players show whether they stayed in
+    /// step. Run the players with <c>-gamebox-identity</c> to tell them apart, and <c>-gamebox-server</c> /
+    /// <c>-gamebox-database</c> for a test server. Without the argument it does nothing.
     /// </summary>
     public class MonopolyOnlineTour : OnlineTour
     {
@@ -42,6 +46,7 @@ namespace Portfolio.Monopoly
         private int sleepy;
         private bool proposed;
         private bool timeoutShot;
+        private bool curtainShot;
         private bool savedOnline;
         private bool playingSave;
 
@@ -86,16 +91,22 @@ namespace Portfolio.Monopoly
                 : "no match");
             Server.ActionReceived += ShootTimeout;
             yield return new WaitForSeconds(0.5f);
+            if (InParty)
+            {
+                // The party hands the device over between the turns of the people at it; the autopilot lifts the curtain.
+                manager.Online.HandOverLocalSeats = true;
+            }
 
             if (Hosting)
             {
                 int guests = Quits ? 2 : 1;
                 string options = RoomOptions.Write(RoomOptions.TurnOption, 20, RoomOptions.ComputersOption, 1,
                     RoomOptions.ComputerLevelOption, 1);
+                // The biggest table of the game: a party at this device and its guests fit in it (four people at most).
                 yield return HostRoom("Tour table", Mode, options, 4);
                 yield return new WaitForSeconds(0.5f);
                 yield return Shot("01_room");
-                yield return WaitForGuests(guests, 120f);
+                yield return WaitForGuestDevices(guests, 120f);
                 yield return new WaitForSeconds(0.5f);
                 yield return Shot("02_everybody_ready");
                 StartRoom();
@@ -115,7 +126,7 @@ namespace Portfolio.Monopoly
                 yield return Fail("the match did not start");
                 yield break;
             }
-            Note($"playing seat {manager.LocalSeat} of {Match.players.Count}: " + string.Join(", ", Match.players.Select(p => $"{p.name}{(p.bot ? " (computer)" : "")}")));
+            Note($"playing {Seats()} of {Match.players.Count}: " + string.Join(", ", Match.players.Select(p => $"{p.name}{(p.bot ? " (computer)" : "")}")));
             piloting = true;
             StartCoroutine(Pilot());
             StartCoroutine(ShotWhen("04_the_clock_runs_down", () => WaitingForSomebodyElse && Server.Turn != null && Server.Turn.Remaining < 6f));
@@ -194,7 +205,7 @@ namespace Portfolio.Monopoly
                 yield return HostSavedGame(manager.Online, OnlineSaveName, "Tour saved table", RoomOptions.Write(RoomOptions.TurnOption, 20));
                 yield return new WaitForSeconds(0.5f);
                 yield return Shot("12_room_of_the_save");
-                yield return WaitForGuests(1, 120f);
+                yield return WaitForGuestDevices(1, 120f);
                 StartRoom();
             }
             else
@@ -209,7 +220,7 @@ namespace Portfolio.Monopoly
                 yield return Fail("the saved match did not start");
                 yield break;
             }
-            Note($"resumed: seat {manager.LocalSeat}, round {Match.round}, applied {manager.Lockstep.Applied} sum {manager.Lockstep.Checksum():X8} " +
+            Note($"resumed: {Seats()}, round {Match.round}, applied {manager.Lockstep.Applied} sum {manager.Lockstep.Checksum():X8} " +
                  $"cash {string.Join("/", Match.players.Select(p => p.cash))}; " +
                  string.Join(", ", Match.players.Select(p => $"{p.name}{(p.bot ? " (computer)" : "")}")));
             yield return new WaitForSeconds(3f);
@@ -256,8 +267,24 @@ namespace Portfolio.Monopoly
             get
             {
                 int seat = manager.Lockstep != null ? manager.Lockstep.Waiting : -1;
-                return seat >= 0 && seat != manager.LocalSeat && !Match.players[seat].bot && !Match.HasEvents;
+                return seat >= 0 && !manager.IsLocalSeat(seat) && !Match.players[seat].bot && !Match.HasEvents;
             }
+        }
+
+        /// <summary>The seats played at this device, for the log: "seat 2", or "seats 0 and 2" for a party.</summary>
+        private string Seats()
+        {
+            return manager.LocalSeats.Count == 1 ? $"seat {manager.LocalSeats[0]}" : $"seats {string.Join(" and ", manager.LocalSeats)}";
+        }
+
+        /// <summary>
+        /// Waits until <paramref name="guests"/> players from other devices joined the room and are ready (the players at
+        /// this device do not count), then writes down who sits where.
+        /// </summary>
+        private IEnumerator WaitForGuestDevices(int guests, float patience)
+        {
+            yield return WaitForGuests(guests, patience);
+            Note($"members: {string.Join(", ", Server.Members.Select(member => $"{Server.NameOf(member.Identity)} seat {member.Seat}{(Server.IsLocal(member) ? " (here)" : "")}"))}");
         }
 
         /// <summary>Leaves through the match menu, as a player who has had enough does.</summary>
@@ -276,7 +303,10 @@ namespace Portfolio.Monopoly
             Quit();
         }
 
-        /// <summary>Plays the seat of this player: rolls, buys what it can afford, builds, bids a little, pays or gives up, ends turns.</summary>
+        /// <summary>
+        /// Plays the seats of this device (the one the table waits for, when several people sit here): rolls, buys what it
+        /// can afford, builds, bids a little, pays or gives up, ends turns, answers offers, and lifts the hand-over curtain.
+        /// </summary>
         private IEnumerator Pilot()
         {
             while (true)
@@ -287,6 +317,18 @@ namespace Portfolio.Monopoly
                     continue;
                 }
                 int seat = manager.LocalSeat;
+                TurnCurtain curtain = manager.GetComponent<TurnCurtain>();
+                if (curtain != null && curtain.IsShown)
+                {
+                    if (!curtainShot)
+                    {
+                        curtainShot = true;
+                        yield return Shot("05b_hand_over");
+                    }
+                    Note($"taking the device for seat {seat}");
+                    curtain.Lift();
+                    continue;
+                }
                 if (manager.MonopolyUI.Cards.IsOpen)
                 {
                     manager.MonopolyUI.Cards.Confirm();
@@ -297,7 +339,7 @@ namespace Portfolio.Monopoly
                 {
                     yield return new WaitForSeconds(1.2f);
                     bool accept = BotBrain.TradeGain(Match, pending, seat) >= 0f;
-                    Note($"answering the offer of seat {pending.from}: {(accept ? "accept" : "decline")}");
+                    Note($"seat {seat} answers the offer of seat {pending.from}: {(accept ? "accept" : "decline")}");
                     manager.Online.AnswerTrade(seat, accept);
                     continue;
                 }
@@ -308,7 +350,7 @@ namespace Portfolio.Monopoly
                 if (sleepy > 0)
                 {
                     sleepy--;
-                    Note($"leaving {Match.phase} to the clock");
+                    Note($"seat {seat} leaves {Match.phase} to the clock");
                     int applied = manager.Lockstep.Applied;
                     yield return WaitFor(() => manager.Lockstep == null || manager.Lockstep.Applied != applied, 40f, "the clock");
                     continue;
@@ -377,16 +419,19 @@ namespace Portfolio.Monopoly
                 .DefaultIfEmpty(-1).First();
             if (site >= 0)
             {
-                Note($"building on {Match.Space(site).name}");
+                Note($"seat {seat} builds on {Match.Space(site).name}");
                 commands.Build(seat, site);
                 return true;
             }
-            PlayerState other = Match.players.FirstOrDefault(p => !p.bot && !p.bankrupt && p.index != seat);
+            // The gift goes to another person at this device when there is one (the offer is then answered here, after the
+            // hand-over), else to the last person at the table: with a party at the guest's device, one of its companions.
+            PlayerState other = Match.players.Where(p => !p.bot && !p.bankrupt && p.index != seat)
+                .OrderBy(p => manager.IsLocalSeat(p.index) ? 0 : 1).ThenByDescending(p => p.index).FirstOrDefault();
             if (Hosting && !proposed && Match.round >= 2 && other != null && Match.players[seat].cash > 300)
             {
                 proposed = true;
                 var offer = new TradeOffer { from = seat, to = other.index, giveCash = 25 };
-                Note($"offering {other.name} a gift of $25");
+                Note($"seat {seat} offers {other.name} (seat {other.index}{(manager.IsLocalSeat(other.index) ? ", at this device" : "")}) a gift of $25");
                 commands.ProposeTrade(offer);
                 return true;
             }

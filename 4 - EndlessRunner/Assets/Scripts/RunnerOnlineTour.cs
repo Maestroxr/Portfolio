@@ -16,7 +16,11 @@ namespace Portfolio.EndlessRunner
     /// and watches the rest of the race, and <c>quitter</c> leaves in the middle of it. <c>-runner-give-up &lt;seconds&gt;</c>
     /// takes the autopilot away after a while, which ends an endless run, and <c>-runner-races &lt;n&gt;</c> runs several
     /// races in the room. The log says who got which coins and what the track looked like, to compare between the
-    /// players: no coin may count twice, and together they cannot have more than the track holds.
+    /// players: no coin may count twice, and together they cannot have more than the track holds. The roles of the base
+    /// tour play private rooms (<c>hostprivate</c>, <c>joinprivate</c>) and parties (<c>hostparty</c>, <c>joinparty</c>:
+    /// <c>-gamebox-companions</c> and <c>-gamebox-guests</c> players join at the device first), whose runners race in
+    /// split screen with an autopilot each; the host's room takes four runners (or <c>-gamebox-room-players</c>), so a
+    /// guest's party fits too. A party alone cannot start a race: it needs a runner of another device.
     /// <c>-runner-online solo &lt;folder&gt;</c> plays the first level (or the one after <c>-runner-level</c>) alone and
     /// offline the same way, after a picture of every world of the campaign behind the level select.
     /// <c>-runner-online local &lt;folder&gt;</c> plays races at one device (<see cref="LocalRace"/>): the setup,
@@ -34,8 +38,12 @@ namespace Portfolio.EndlessRunner
         private const string RacesArgument = "-runner-races";
         private const string LocalPlayersArgument = "-runner-local-players";
 
+        /// <summary>The runners the host's room takes: as many as a race has, so a party fits on either side.</summary>
+        private const byte RoomRunners = 4;
+
         private RunnerGameManager manager;
-        private RunnerAutopilot pilot;
+        // The autopilots of the runners at this device: one, or one per runner of a party.
+        private readonly System.Collections.Generic.List<RunnerAutopilot> pilots = new System.Collections.Generic.List<RunnerAutopilot>();
         private bool left;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -89,8 +97,8 @@ namespace Portfolio.EndlessRunner
                 int wanted = NumberArgument(LevelArgument, choices[0].Index);
                 int level = choices.Any(choice => choice.Index == wanted) ? wanted : choices[0].Index;
                 string options = manager.online.ComposeOptions(level, string.Empty);
-                Note($"opening a room for level {level} with options {options}");
-                yield return HostRoom("Tour race", level, options, 2);
+                Note($"opening a room of {RoomRunners} for level {level} with options {options}");
+                yield return HostRoom("Tour race", level, options, RoomRunners);
                 yield return Shot("01_room");
             }
             else
@@ -167,7 +175,7 @@ namespace Portfolio.EndlessRunner
         private IEnumerator PlayMatch(int number)
         {
             Note($"racing match {number} on seat {manager.LocalSeat} of {manager.Racers.Count}; layout of the first 250 m: {manager.track.LayoutHash(250f):X8}");
-            pilot = manager.Player.gameObject.AddComponent<RunnerAutopilot>();
+            PilotLocalRunners();
             float giveUp = Mathf.Max(3f, NumberArgument(GiveUpArgument, 12f));
             float started = Time.unscaledTime;
             yield return new WaitForSeconds(4.5f);
@@ -177,11 +185,10 @@ namespace Portfolio.EndlessRunner
             {
                 yield return null;
             }
-            if (pilot != null)
+            if (pilots.Count > 0)
             {
                 Note("the autopilot lets go");
-                Destroy(pilot);
-                pilot = null;
+                DropPilots();
             }
             yield return WaitFor(() => Ended, 600f, "the end of the race");
             yield return new WaitForSeconds(2.5f);
@@ -199,11 +206,16 @@ namespace Portfolio.EndlessRunner
                 yield return Fail("the race did not start");
                 yield break;
             }
-            Note($"racing on seat {manager.LocalSeat} of {manager.Racers.Count}; the track holds {manager.track.LevelCoins} coins; "
+            Note($"racing on seat {string.Join(", ", manager.LocalSeats)} of {manager.Racers.Count}; the track holds {manager.track.LevelCoins} coins; "
                 + $"layout of the first 250 m: {manager.track.LayoutHash(250f):X8}");
-            if (Role != "crash" && pilot == null)
+            if (manager.InParty)
             {
-                pilot = manager.Player.gameObject.AddComponent<RunnerAutopilot>();
+                Note("a party at this device: " + string.Join(", ", manager.LocalRuns.Select(run =>
+                    $"seat {run.Racer.Seat} {run.Seat.Name} lane {run.Runner.Lane} viewport {run.Camera.View.rect}")));
+            }
+            if (Role != "crash")
+            {
+                PilotLocalRunners();
             }
             float giveUp = NumberArgument(GiveUpArgument, -1f);
             float started = Time.unscaledTime;
@@ -240,11 +252,10 @@ namespace Portfolio.EndlessRunner
             }
             while (!Ended && !manager.IsWatching && Time.unscaledTime - started < 300f)
             {
-                if (pilot != null && giveUp > 0f && Time.unscaledTime - started > giveUp)
+                if (pilots.Count > 0 && giveUp > 0f && Time.unscaledTime - started > giveUp)
                 {
                     Note("giving up: the autopilot lets go");
-                    Destroy(pilot);
-                    pilot = null;
+                    DropPilots();
                 }
                 yield return null;
             }
@@ -332,7 +343,7 @@ namespace Portfolio.EndlessRunner
             yield return WaitFor(() => manager.IsGameRunning, 10f, "the run");
             Note($"running alone: in a session {manager.InSession}, in a race {manager.InRace}; the track holds {manager.track.LevelCoins} coins; "
                 + $"layout of the first 250 m: {manager.track.LayoutHash(250f):X8}");
-            pilot = manager.Player.gameObject.AddComponent<RunnerAutopilot>();
+            PilotLocalRunners();
             yield return new WaitForSeconds(1.2f);
             yield return Shot("03_countdown");
             yield return WaitOrEnd(9f);
@@ -528,6 +539,37 @@ namespace Portfolio.EndlessRunner
         {
             Note($"at {manager.Distance:0} m with {manager.Coins} coins; claims settled {manager.Claims.SettledCount}, pending {manager.Claims.PendingCount}; "
                 + string.Join(", ", manager.Racers.Select(racer => $"{racer.Name} {racer.Distance:0} m {racer.Coins} c {racer.Score} p{(racer.Done ? " done" : "")}")));
+            if (manager.InParty)
+            {
+                Note("runs here: " + string.Join(", ", manager.LocalRuns.Select(run =>
+                    $"seat {run.Racer.Seat} {run.Seat.Name} {run.Phase} {run.Distance:0} m {run.Coins} c {run.Hearts} h place {run.Racer.Place}")));
+            }
+        }
+
+        /// <summary>An autopilot on every runner at this device that has none: the runner of the scene, or each runner of a party.</summary>
+        private void PilotLocalRunners()
+        {
+            pilots.RemoveAll(pilot => pilot == null);
+            foreach (RunnerRun run in manager.LocalRuns)
+            {
+                if (run.Runner != null && run.Runner.GetComponent<RunnerAutopilot>() == null)
+                {
+                    pilots.Add(run.Runner.gameObject.AddComponent<RunnerAutopilot>());
+                }
+            }
+        }
+
+        /// <summary>The autopilots let go of the runners at this device.</summary>
+        private void DropPilots()
+        {
+            foreach (RunnerAutopilot pilot in pilots)
+            {
+                if (pilot != null)
+                {
+                    Destroy(pilot);
+                }
+            }
+            pilots.Clear();
         }
 
         /// <summary>The books of the race as this player has them; the other player's log has to agree.</summary>

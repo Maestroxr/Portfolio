@@ -32,7 +32,8 @@ namespace Portfolio.BoardGames
         private float clockRemaining = -1f;
         /// <summary>The <see cref="IBoardGame.Turn"/> the local clock was started for; -1 restarts it.</summary>
         private int clockTurn = -1;
-        private int reportedWorth = -1;
+        /// <summary>What each seat played at this device was last reported to be worth online (-1 nothing yet).</summary>
+        private readonly int[] reportedWorth = new int[DeviceSeats.TableSize];
         /// <summary>The command the computer worked out last (see <see cref="Think"/>).</summary>
         private BoardCommand thought;
 
@@ -99,7 +100,8 @@ namespace Portfolio.BoardGames
                 {
                     return L.F("{0} is thinking...", NameOf(seat));
                 }
-                if (IsOnlineGame && seat != onlineSeat || IsHotSeat)
+                // A person on another device, or one of several here, is named; the one person here is addressed.
+                if (!PlayedHere(seat) || SeveralHere)
                 {
                     return L.F("{0}'s move", NameOf(seat));
                 }
@@ -146,7 +148,10 @@ namespace Portfolio.BoardGames
             finishing = false;
             handedOverSeat = -1;
             clockTurn = -1;
-            reportedWorth = -1;
+            for (int i = 0; i < reportedWorth.Length; i++)
+            {
+                reportedWorth[i] = -1;
+            }
             thought = null;
             StarsEarned = 0;
             ResultTitle = "";
@@ -160,7 +165,7 @@ namespace Portfolio.BoardGames
                     continue;
                 }
                 PlayerControl control = table.Setup.seats[i].computer ? PlayerControl.Computer
-                    : IsOnlineGame && i != onlineSeat ? PlayerControl.Remote : PlayerControl.Local;
+                    : IsOnlineGame && !onlineSeats.Has(i) ? PlayerControl.Remote : PlayerControl.Local;
                 players[i].Assign(i, control, NameOf(i));
                 active.Add(players[i]);
             }
@@ -174,7 +179,10 @@ namespace Portfolio.BoardGames
             RaiseChanged();
         }
 
-        /// <summary>The side the camera shows at the bottom: the person's online and against the computer, Light between two people.</summary>
+        /// <summary>
+        /// The side the camera shows at the bottom: the one person's here, online and against the computer; Light between
+        /// two people at this device, online or not (the board turns to the one to act when the setting says so).
+        /// </summary>
         private Side HomeSide()
         {
             if (table == null)
@@ -183,7 +191,7 @@ namespace Portfolio.BoardGames
             }
             if (IsOnlineGame)
             {
-                return Setup.SideOf(onlineSeat);
+                return onlineSeats.HomeSide(Setup);
             }
             int human = SingleHumanSeat();
             return human >= 0 ? Setup.SideOf(human) : Side.Light;
@@ -355,7 +363,7 @@ namespace Portfolio.BoardGames
                     }
                     continue;
                 }
-                bool here = !IsOnlineGame || seat == onlineSeat;
+                bool here = PlayedHere(seat);
                 if (!here || IsOnlineGame && online.AwaitingEcho)
                 {
                     // Somebody else acts, or the command of the person here is on its way: what it did shows when it comes back.
@@ -366,12 +374,23 @@ namespace Portfolio.BoardGames
                     }
                     continue;
                 }
-                if (IsHotSeat && LocalMatch != null && LocalMatch.HandOver && handedOverSeat != seat)
+                // Several people at this device hand it over between them: in a game here when the setup asks for the
+                // screen, online through the party's setting in the lobby (the base shows the curtain, or goes on at once).
+                bool handOver = IsOnlineGame ? SeveralHere : IsHotSeat && LocalMatch != null && LocalMatch.HandOver;
+                if (handOver && handedOverSeat != seat)
                 {
                     // One hand-over per change of the person to act: a backgammon roll and its play are one.
                     handedOverSeat = seat;
                     bool ready = false;
-                    HandOver(LocalMatch[seat], () => ready = true, L.F("{0}'s move", NameOf(seat)));
+                    string detail = L.F("{0}'s move", NameOf(seat));
+                    if (IsOnlineGame)
+                    {
+                        online.HandOverSeat(seat, () => ready = true, detail);
+                    }
+                    else
+                    {
+                        HandOver(LocalMatch[seat], () => ready = true, detail);
+                    }
                     while (!ready && Same(at))
                     {
                         yield return null;
@@ -381,7 +400,7 @@ namespace Portfolio.BoardGames
                         continue;
                     }
                 }
-                if (IsHotSeat && Options.turnBoard)
+                if (SeveralHere && Options.turnBoard)
                 {
                     GameFrame(Setup.SideOf(seat), false);
                 }
@@ -584,7 +603,7 @@ namespace Portfolio.BoardGames
                     }
                     break;
                 case LockstepEntryKind.Command:
-                    if (command != null && (!IsOnlineGame || command.seat == onlineSeat))
+                    if (command != null && (!IsOnlineGame || onlineSeats.Has(command.seat)))
                     {
                         sound?.Play(ClipKind.Click);
                     }
@@ -670,14 +689,17 @@ namespace Portfolio.BoardGames
 
         // ------------------------------------------------------------------ giving up
 
-        /// <summary>The person at this device gives up: the one to act between two people, the local seat online.</summary>
+        /// <summary>
+        /// The person at this device gives up: the one to act between two people here, online the seat the people here act
+        /// for now (<see cref="LocalSeat"/>: the one to act when it is theirs, else the one seat here).
+        /// </summary>
         public void ResignLocal()
         {
             if (table == null || table.IsOver || !IsGameRunning)
             {
                 return;
             }
-            int seat = IsOnlineGame ? onlineSeat : IsHotSeat ? table.SeatToAct : SingleHumanSeat();
+            int seat = IsOnlineGame ? LocalSeat : IsHotSeat ? table.SeatToAct : SingleHumanSeat();
             if (seat < 0 || table.IsComputer(seat))
             {
                 return;
@@ -703,8 +725,9 @@ namespace Portfolio.BoardGames
             {
                 title = L.T("Draw");
             }
-            else if (IsOnlineGame ? winnerSeat == onlineSeat : winnerSeat == SingleHumanSeat())
+            else if (!SeveralHere && PlayedHere(winnerSeat))
             {
+                // The one person at this device won; among several here the winner is named, as between two people.
                 title = L.T("You win!");
             }
             else
@@ -757,7 +780,8 @@ namespace Portfolio.BoardGames
             if (IsOnlineGame)
             {
                 decided = ReportFinished(winnerSeat);
-                localWon = decided == onlineSeat || decided < 0 && game.Reason == EndReason.CalledOff && LocalPlace() == 1;
+                // A seat played at this device won, or the room placed somebody here first when it called the game off.
+                localWon = PlayedHere(decided) || decided < 0 && game.Reason == EndReason.CalledOff && PlacedFirstHere();
             }
             else
             {

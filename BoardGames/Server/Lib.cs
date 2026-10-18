@@ -8,8 +8,8 @@ using SpacetimeDB;
 /// An online game is played in step: every client runs the rules of the game and sends what its player does as an
 /// action of the base server's log; the server puts the actions of a room in one order. This module knows no rules of
 /// the games. It seats the table of two when a game starts (a member per seat, the computer in the second seat when the
-/// room asks for an opponent), checks who may act for which seat, keeps the clock, hands the seat of a player who
-/// leaves to the computer and keeps statistics.
+/// room asks for an opponent; never both seats to people at one device, who have local play for that), checks who may
+/// act for which seat, keeps the clock, hands the seat of a player who leaves to the computer and keeps statistics.
 ///
 /// After a change: publish the module, then generate the client bindings (Gamebox > Server in the Unity editor, or
 /// <c>spacetime publish</c> and <c>spacetime generate</c> in the project folder, which read spacetime.json).
@@ -89,8 +89,38 @@ public static partial class Module
 
     static partial void OnRoomStarted(ReducerContext ctx, Room room)
     {
-        SeatTable(ctx, room, MaxSeats, MaxComputerPlayers, BotNames, (seat, user) => seat);
+        var seats = SeatTable(ctx, room, MaxSeats, MaxComputerPlayers, BotNames, (seat, user) => seat);
+        // Players at one device play online against players elsewhere. The base server refuses to start a room that needs
+        // two players when they are all at one device; a room with a computer opponent needs one, and a party of two at
+        // one device takes both of its seats, so the two would play each other through the server, which local play does
+        // at the device itself. The start is refused the same way (the exception undoes it).
+        if (!IsTournamentRoom(room) && AllAtOneDevice(ctx, seats))
+        {
+            throw new Exception("Online, you play against players at other devices: wait for one to join, or play at this device with Local Play.");
+        }
         StartActionClock(ctx, room);
+    }
+
+    /// <summary>Whether the table seats more than one person and all of them play at one device (a player and their companions).</summary>
+    private static bool AllAtOneDevice(ReducerContext ctx, List<RoomSeat> seats)
+    {
+        Identity? device = null;
+        var people = 0;
+        foreach (var seat in seats)
+        {
+            if (seat.Kind != SeatHuman)
+            {
+                continue;
+            }
+            people++;
+            var at = DeviceOf(ctx, seat.Player);
+            if (device is { } first && first != at)
+            {
+                return false;
+            }
+            device = at;
+        }
+        return people > 1;
     }
 
     static partial void ValidateAction(ReducerContext ctx, Room room, RoomMember member, ref RoomAction action, ref bool decisive, ref string? error)

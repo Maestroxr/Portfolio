@@ -17,6 +17,13 @@ namespace Portfolio.Asteroids
     /// every pilot flies a copy of the saved pilot's loadout at the difficulty of the setup; the kit is only lent: when the
     /// mission is won and a ship lands, the money the squad earned is paid once into the saved pilot's wallet, and nothing
     /// else of the saved pilot changes.
+    ///
+    /// The same squad flies a party of an online room (<see cref="IsParty"/>): when players at this device hold seats of
+    /// their own in the room (the companions of the base server), the device's player flies the scene's ship and every
+    /// companion a wingman, each pilot with the seat of the room, its colour (the one the other devices show), the controls
+    /// the lobby gave them (<see cref="Gamebox.Online.OnlineGameController.ControlsOf"/>), a score and ships of their own.
+    /// The shared mission goes on as AsteroidsGameManager.Coop.cs says: a pilot out of ships is done in the room, and this
+    /// device watches once every pilot at it is out. One pilot alone at the device flies as in any shared mission.
     /// </summary>
     public partial class AsteroidsGameManager
     {
@@ -29,6 +36,9 @@ namespace Portfolio.Asteroids
 
             /// <summary>The ship was made for the match (a wingman); seat 1 flies the scene's ship.</summary>
             public bool Wingman;
+
+            /// <summary>Where the pilot starts among every pilot of the mission (a party's place among the pilots of the room).</summary>
+            public int Slot;
 
             /// <summary>Strike: the loadout the pilot flies with (a copy of the saved pilot's).</summary>
             public StrikeLoadout Working;
@@ -61,10 +71,19 @@ namespace Portfolio.Asteroids
         /// <summary>A local co-op match is on: its missions are flown by the pilots at this device (or their results show).</summary>
         internal bool IsLocal => InLocalMatch && localPilots.Count > 0;
 
-        /// <summary>The pilots of the local co-op mission and their scores and ships (tours and tests); null outside one.</summary>
-        internal LocalSquad Squad => IsLocal ? squad : null;
+        /// <summary>
+        /// Several pilots of an online room fly at this device: the device's player and the companions who play through its
+        /// connection, each in a ship of their own (<see cref="CoopSetup.Party"/>).
+        /// </summary>
+        internal bool IsParty => IsCoop && localPilots.Count > 0;
 
-        /// <summary>The pilots of the local co-op match at this device, by seat (tours and tests).</summary>
+        /// <summary>Several pilots fly at this device, each with a ship, a score and ships of their own: local co-op, or a party of a room.</summary>
+        internal bool FliesSquad => IsLocal || IsParty;
+
+        /// <summary>The pilots at this device and their scores and ships (tours and tests); null when one pilot flies alone.</summary>
+        internal LocalSquad Squad => FliesSquad ? squad : null;
+
+        /// <summary>The pilots of the local co-op match (or of the party of a room) at this device, by seat (tours and tests).</summary>
         internal IReadOnlyList<LocalPilot> LocalPilots => localPilots;
 
 
@@ -124,6 +143,94 @@ namespace Portfolio.Asteroids
         /// <summary>The match is over (back to the mission select): the wingmen go and the scene's ship is the player's again.</summary>
         protected override void OnLocalMatchEnded(LocalMatch match)
         {
+            ReleaseLocalPilots();
+        }
+
+
+        /// <summary>
+        /// The pilots of <paramref name="match"/>: seat 1 takes the scene's ship, every other seat a wingman made from the
+        /// ship prefab (the online stand-ins' prefab, else a copy of the scene's ship), each with the seat's controls, colour
+        /// and name. The ships wait inactive until the mission puts them in place.
+        /// </summary>
+        private void CreateLocalPilots(LocalMatch match)
+        {
+            int slot = 0;
+            foreach (LocalSeat seat in match.Players)
+            {
+                AddLocalPilot(seat, seat.Controls, slot++);
+            }
+            RefreshActivePlayers();
+        }
+
+
+        /// <summary>
+        /// The pilots of a party of an online room (<paramref name="party"/>, the device's player first): the device's player
+        /// takes the scene's ship and every companion a wingman, each by the seat of the room, in that seat's colour (as the
+        /// other devices show the ship), with the controls the lobby gave the seat. On a touch screen the device's player
+        /// keeps the touch controls.
+        /// </summary>
+        private void CreatePartyPilots(IReadOnlyList<CoopPilot> party)
+        {
+            foreach (CoopPilot member in party)
+            {
+                var seat = new LocalSeat(member.Seat) { Name = member.Name, Color = CoopRules.SeatColor(member.Seat) };
+                AddLocalPilot(seat, member.Controls, member.Slot);
+            }
+            if (MobilePlatform.UsesTouch && localPilots.Count > 0)
+            {
+                localPilots[0].Ship.OwnControls = null;
+            }
+            RefreshActivePlayers();
+        }
+
+
+        /// <summary>
+        /// A pilot for <paramref name="seat"/>, flown with <paramref name="controls"/>: the first takes the scene's ship, the
+        /// others a wingman made from the ship prefab (the online stand-ins' prefab, else a copy of the scene's ship) that
+        /// waits inactive until the mission puts it in place.
+        /// </summary>
+        private void AddLocalPilot(LocalSeat seat, PlayerControls controls, int slot)
+        {
+            AsteroidsPlayer prefab = online != null && online.shipPrefab != null ? online.shipPrefab : ship;
+            AsteroidsPlayer flown = ship;
+            bool wingman = localPilots.Count > 0;
+            if (wingman)
+            {
+                flown = Instantiate(prefab, ship.transform.parent);
+                flown.name = $"Ship of {seat.Name}";
+                flown.IsWingman = true;
+                flown.Field = field;
+                flown.TouchControls = null;
+                // The autopilots fly only when a tour switches them on.
+                if (flown.TryGetComponent(out AsteroidsAutopilot autopilot))
+                {
+                    autopilot.enabled = false;
+                }
+                StrikeAutopilot strikePilot = flown.GetComponentInChildren<StrikeAutopilot>(true);
+                if (strikePilot != null)
+                {
+                    strikePilot.enabled = false;
+                }
+                RegisterPlayer(flown);
+                if (hangar != null && hangar.Length > 0 && hangar[SelectedHullIndex] != null)
+                {
+                    flown.ApplyHull(hangar[SelectedHullIndex]);
+                }
+                flown.gameObject.SetActive(false);
+                field.AddWingman(flown);
+            }
+            flown.Assign(seat.Index, PlayerControl.Local, seat.Name);
+            flown.OwnControls = new LocalShipInput(controls);
+            PilotTag.Show(flown.gameObject, seat.Name, seat.Color);
+            var pilot = new LocalPilot { Seat = seat, Ship = flown, Wingman = wingman, Slot = slot };
+            Listen(pilot);
+            localPilots.Add(pilot);
+        }
+
+
+        /// <summary>Every pilot at this device is let go (the match or the session is over): the wingmen go, the scene's ship is the player's again.</summary>
+        private void ReleaseLocalPilots()
+        {
             foreach (LocalPilot pilot in localPilots)
             {
                 Release(pilot);
@@ -138,56 +245,6 @@ namespace Portfolio.Asteroids
             ui?.ShowPilots(null);
             ui?.ShowLocalHud(false);
             StrikeScreens?.ShowLocalHud(false);
-        }
-
-
-        /// <summary>
-        /// The pilots of <paramref name="match"/>: seat 1 takes the scene's ship, every other seat a wingman made from the
-        /// ship prefab (the online stand-ins' prefab, else a copy of the scene's ship), each with the seat's controls, colour
-        /// and name. The ships wait inactive until the mission puts them in place.
-        /// </summary>
-        private void CreateLocalPilots(LocalMatch match)
-        {
-            AsteroidsPlayer prefab = online != null && online.shipPrefab != null ? online.shipPrefab : ship;
-            var active = new List<IPlayer>();
-            foreach (LocalSeat seat in match.Players)
-            {
-                AsteroidsPlayer flown = ship;
-                bool wingman = localPilots.Count > 0;
-                if (wingman)
-                {
-                    flown = Instantiate(prefab, ship.transform.parent);
-                    flown.name = $"Ship of {seat.Name}";
-                    flown.IsWingman = true;
-                    flown.Field = field;
-                    flown.TouchControls = null;
-                    // The autopilots fly only when a tour switches them on.
-                    if (flown.TryGetComponent(out AsteroidsAutopilot autopilot))
-                    {
-                        autopilot.enabled = false;
-                    }
-                    StrikeAutopilot strikePilot = flown.GetComponentInChildren<StrikeAutopilot>(true);
-                    if (strikePilot != null)
-                    {
-                        strikePilot.enabled = false;
-                    }
-                    RegisterPlayer(flown);
-                    if (hangar != null && hangar.Length > 0 && hangar[SelectedHullIndex] != null)
-                    {
-                        flown.ApplyHull(hangar[SelectedHullIndex]);
-                    }
-                    flown.gameObject.SetActive(false);
-                    field.AddWingman(flown);
-                }
-                flown.Assign(seat.Index, PlayerControl.Local, seat.Name);
-                flown.OwnControls = new LocalShipInput(seat.Controls);
-                PilotTag.Show(flown.gameObject, seat.Name, seat.Color);
-                var pilot = new LocalPilot { Seat = seat, Ship = flown, Wingman = wingman };
-                Listen(pilot);
-                localPilots.Add(pilot);
-                active.Add(flown);
-            }
-            ActivePlayers = active;
         }
 
 
@@ -258,8 +315,10 @@ namespace Portfolio.Asteroids
 
         /// <summary>
         /// The local part of preparing a mission (after the scene's ship was reset for it): a fresh squad, every wingman
-        /// reset the same way, every ship at its start (on a circle in the asteroid field, in a row at the bottom of a strike),
-        /// the HUD of the pilots instead of one ship's.
+        /// reset the same way, every ship at its start (on a circle in the asteroid field, in a row at the bottom of a strike;
+        /// a party's ships at their places among the pilots of the room), the HUD of the pilots instead of one ship's. The
+        /// device's own pilot of a party keeps the mission's score keeper, so what the shared mission says about this device's
+        /// player stays as it is alone.
         /// </summary>
         private void PrepareLocalMission(bool strike)
         {
@@ -268,10 +327,13 @@ namespace Portfolio.Asteroids
             {
                 seats.Add(pilot.Seat);
             }
-            squad = new LocalSquad(seats, strike ? 1 : LocalCoopRules.Lives(LocalMatch));
+            bool party = IsParty;
+            int ships = strike ? 1 : party ? Mathf.Clamp(coop.Lives, 1, AsteroidSettings.LivesLimit) : LocalCoopRules.Lives(LocalMatch);
+            squad = new LocalSquad(seats, ships, party ? score : null);
             lives = squad.Pilots[0].Lives;
             localLifeBonus = 0;
             int count = localPilots.Count;
+            int places = party ? Mathf.Max(count, coop.Pilots) : count;
             Vector2 halfSize = Playground != null ? Playground.HalfSize : StrikeRules.HalfSize;
             AsteroidSettings settings = AsteroidSettings;
             for (int i = 0; i < count; i++)
@@ -295,7 +357,7 @@ namespace Portfolio.Asteroids
                     {
                         pilot.Working = working;
                     }
-                    flown.Position = FieldMath.RowPoint(i, count, halfSize);
+                    flown.Position = FieldMath.RowPoint(pilot.Slot, places, halfSize);
                     // The scene ship's gunnery is followed by PrepareStrike.
                     if (pilot.Wingman && flown.Strike != null)
                     {
@@ -310,7 +372,7 @@ namespace Portfolio.Asteroids
                     {
                         flown.ResetForMission(settings != null ? settings.HullStrength : 100f);
                     }
-                    flown.Position = FieldMath.StartPoint(i, count, CoopRules.StartRadius);
+                    flown.Position = FieldMath.StartPoint(pilot.Slot, places, CoopRules.StartRadius);
                 }
                 flown.Points = 0;
             }
@@ -323,7 +385,7 @@ namespace Portfolio.Asteroids
         private void SimulateShips(float deltaTime, bool controls = true)
         {
             ship.Simulate(deltaTime, controls);
-            if (!IsLocal)
+            if (!FliesSquad)
             {
                 return;
             }
@@ -364,7 +426,11 @@ namespace Portfolio.Asteroids
             foreach (LocalPilot pilot in localPilots)
             {
                 ScoreKeeper keeper = pilot.Record.Score;
-                keeper.Tick(deltaTime);
+                // The mission's own keeper (a party's device pilot) runs down with the mission already.
+                if (!ReferenceEquals(keeper, score))
+                {
+                    keeper.Tick(deltaTime);
+                }
                 if (keeper.Multiplier < pilot.LastMultiplier)
                 {
                     pilot.LastMultiplier = keeper.Multiplier;
@@ -399,7 +465,10 @@ namespace Portfolio.Asteroids
         }
 
 
-        /// <summary>The pilot a hit counts for: the wingman of its seat, else the pilot of the scene's ship.</summary>
+        /// <summary>
+        /// The pilot a hit counts for: the wingman of its seat, else the pilot of the scene's ship. In a party a seat that is
+        /// no wingman's belongs to a pilot of another device: the hit counts for nobody here.
+        /// </summary>
         private LocalPilot LocalPilotOf(DamageInfo hit)
         {
             if (hit.Seat.HasValue)
@@ -411,8 +480,30 @@ namespace Portfolio.Asteroids
                         return pilot;
                     }
                 }
+                if (IsParty)
+                {
+                    return null;
+                }
             }
             return localPilots.Count > 0 ? localPilots[0] : null;
+        }
+
+
+        /// <summary>The pilot at this device who flies room seat <paramref name="seat"/> in a party; null for any other seat.</summary>
+        private LocalPilot PartyPilotAt(int seat)
+        {
+            if (!IsParty)
+            {
+                return null;
+            }
+            foreach (LocalPilot pilot in localPilots)
+            {
+                if (pilot.Seat.Index == seat)
+                {
+                    return pilot;
+                }
+            }
+            return null;
         }
 
 
@@ -450,7 +541,10 @@ namespace Portfolio.Asteroids
         }
 
 
-        /// <summary>A ship of a pilot was destroyed: the next one warps in after a while, or the pilot is out of the mission.</summary>
+        /// <summary>
+        /// A ship of a pilot was destroyed: the next one warps in after a while, or the pilot is out of the mission. In a
+        /// party a pilot who is out is done in the room (with their score), and the others fly on.
+        /// </summary>
         private void LocalShipDestroyed(LocalPilot pilot)
         {
             if (!IsMissionActive || pilot.Record == null)
@@ -459,6 +553,10 @@ namespace Portfolio.Asteroids
             }
             livesLost++;
             bool back = pilot.Record.LoseShip(IsStrike);
+            if (!back && IsParty)
+            {
+                online?.PilotOut((byte)pilot.Seat.Index, pilot.Record.Score.Score);
+            }
             if (squad.AllOut)
             {
                 Lose();
@@ -543,13 +641,6 @@ namespace Portfolio.Asteroids
             bool strike = IsStrike;
             foreach (LocalPilot pilot in localPilots)
             {
-                AsteroidsPlayer flown = pilot.Ship;
-                float gauge = 0f;
-                if (flown != null && flown.IsAlive)
-                {
-                    gauge = strike && pilot.Working != null ? pilot.Working.Energy / StrikeRules.MaxEnergy
-                        : flown.MaxHealth > 0f ? flown.Health / flown.MaxHealth : 0f;
-                }
                 localStatus.Add(new PilotStatus
                 {
                     Seat = pilot.Seat.Index,
@@ -558,10 +649,45 @@ namespace Portfolio.Asteroids
                     Flying = !pilot.Record.Out,
                     Local = false,
                     Lives = strike ? (int?)null : pilot.Record.Lives,
-                    Gauge = Mathf.Clamp01(gauge)
+                    Gauge = GaugeOf(pilot, strike)
                 });
             }
             ui?.ShowPilots(localStatus);
+        }
+
+
+        /// <summary>
+        /// What the pilots list of a shared mission shows for room seat <paramref name="seat"/> when a pilot of this device's
+        /// party flies it: the score, whether the pilot is still in, ships left (asteroid field) and hull or energy. False,
+        /// and <paramref name="status"/> as it was, for any other seat.
+        /// </summary>
+        internal bool PartyPilotStatus(int seat, ref PilotStatus status)
+        {
+            LocalPilot pilot = PartyPilotAt(seat);
+            if (pilot == null || pilot.Record == null)
+            {
+                return false;
+            }
+            bool strike = IsStrike;
+            status.Score = pilot.Record.Score.Score;
+            status.Flying = !pilot.Record.Out;
+            status.Lives = strike ? (int?)null : pilot.Record.Lives;
+            status.Gauge = GaugeOf(pilot, strike);
+            return true;
+        }
+
+
+        /// <summary>The hull of the pilot's ship (a strike ship's energy), 0 to 1; 0 while the ship is down.</summary>
+        private static float GaugeOf(LocalPilot pilot, bool strike)
+        {
+            AsteroidsPlayer flown = pilot.Ship;
+            float gauge = 0f;
+            if (flown != null && flown.IsAlive)
+            {
+                gauge = strike && pilot.Working != null ? pilot.Working.Energy / StrikeRules.MaxEnergy
+                    : flown.MaxHealth > 0f ? flown.Health / flown.MaxHealth : 0f;
+            }
+            return Mathf.Clamp01(gauge);
         }
 
 

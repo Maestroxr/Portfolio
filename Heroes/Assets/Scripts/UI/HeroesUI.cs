@@ -558,7 +558,7 @@ namespace Portfolio.Heroes.UI
             {
                 return;
             }
-            if (manager != null && manager.IsHotSeat)
+            if (manager != null && manager.SharesDevice)
             {
                 Chronicle(chronicleOf).Add((text, player));
             }
@@ -578,8 +578,8 @@ namespace Portfolio.Heroes.UI
         private const int ChronicleLines = 60;
 
         /// <summary>
-        /// The lines of the log of each person of a hot seat, by seat; -1 holds what was written before anybody had the
-        /// device (the goal of the map), which every chronicle begins with.
+        /// The lines of the log of each person of a hot seat (or of an online game several people play here), by seat; -1
+        /// holds what was written before anybody had the device (the goal of the map), which every chronicle begins with.
         /// </summary>
         private readonly Dictionary<int, List<(string text, int player)>> chronicles =
             new Dictionary<int, List<(string text, int player)>>();
@@ -681,9 +681,9 @@ namespace Portfolio.Heroes.UI
             {
                 if (player.name == body)
                 {
-                    if (player.index != manager.Viewer || manager.IsHotSeat)
+                    if (player.index != manager.Viewer || manager.SharesDevice)
                     {
-                        // In a hot seat every person is called by name.
+                        // In a hot seat (and online with several people here) every person is called by name.
                         return Words.F("{0}'s turn", Words.Name(player.name));
                     }
                     string left = DaysLeft(false);
@@ -776,7 +776,7 @@ namespace Portfolio.Heroes.UI
             results.Show(won, stars, days);
         }
 
-        /// <summary>The end of a hot seat: who won, and how every realm stood.</summary>
+        /// <summary>The end of a hot seat (or of an online game several people played here): who won, and how every realm stood.</summary>
         public void ShowHotSeatEnd(GameState state, int days)
         {
             CloseAll();

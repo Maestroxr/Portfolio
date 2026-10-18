@@ -13,12 +13,12 @@ namespace Portfolio.BoardGames.Server
 {
     public sealed partial class RemoteReducers : RemoteBase
     {
-        public delegate void UpdatePoseHandler(ReducerEventContext ctx, float x, float y, float z, float velocityX, float velocityY, float velocityZ, float heading, uint state, int value);
+        public delegate void UpdatePoseHandler(ReducerEventContext ctx, byte seat, float x, float y, float z, float velocityX, float velocityY, float velocityZ, float heading, uint state, int value);
         public event UpdatePoseHandler? OnUpdatePose;
 
-        public void UpdatePose(float x, float y, float z, float velocityX, float velocityY, float velocityZ, float heading, uint state, int value)
+        public void UpdatePose(byte seat, float x, float y, float z, float velocityX, float velocityY, float velocityZ, float heading, uint state, int value)
         {
-            conn.InternalCallReducer(new Reducer.UpdatePose(x, y, z, velocityX, velocityY, velocityZ, heading, state, value));
+            conn.InternalCallReducer(new Reducer.UpdatePose(seat, x, y, z, velocityX, velocityY, velocityZ, heading, state, value));
         }
 
         public bool InvokeUpdatePose(ReducerEventContext ctx, Reducer.UpdatePose args)
@@ -37,6 +37,7 @@ namespace Portfolio.BoardGames.Server
             }
             OnUpdatePose(
                 ctx,
+                args.Seat,
                 args.X,
                 args.Y,
                 args.Z,
@@ -57,6 +58,8 @@ namespace Portfolio.BoardGames.Server
         [DataContract]
         public sealed partial class UpdatePose : Reducer, IReducerArgs
         {
+            [DataMember(Name = "seat")]
+            public byte Seat;
             [DataMember(Name = "x")]
             public float X;
             [DataMember(Name = "y")]
@@ -77,6 +80,7 @@ namespace Portfolio.BoardGames.Server
             public int Value;
 
             public UpdatePose(
+                byte Seat,
                 float X,
                 float Y,
                 float Z,
@@ -88,6 +92,7 @@ namespace Portfolio.BoardGames.Server
                 int Value
             )
             {
+                this.Seat = Seat;
                 this.X = X;
                 this.Y = Y;
                 this.Z = Z;

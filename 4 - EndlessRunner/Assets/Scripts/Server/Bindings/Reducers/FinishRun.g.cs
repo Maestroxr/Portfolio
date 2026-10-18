@@ -13,12 +13,12 @@ namespace Portfolio.EndlessRunner.Server
 {
     public sealed partial class RemoteReducers : RemoteBase
     {
-        public delegate void FinishRunHandler(ReducerEventContext ctx, uint distance, long score);
+        public delegate void FinishRunHandler(ReducerEventContext ctx, byte seat, uint distance, long score);
         public event FinishRunHandler? OnFinishRun;
 
-        public void FinishRun(uint distance, long score)
+        public void FinishRun(byte seat, uint distance, long score)
         {
-            conn.InternalCallReducer(new Reducer.FinishRun(distance, score));
+            conn.InternalCallReducer(new Reducer.FinishRun(seat, distance, score));
         }
 
         public bool InvokeFinishRun(ReducerEventContext ctx, Reducer.FinishRun args)
@@ -37,6 +37,7 @@ namespace Portfolio.EndlessRunner.Server
             }
             OnFinishRun(
                 ctx,
+                args.Seat,
                 args.Distance,
                 args.Score
             );
@@ -50,16 +51,20 @@ namespace Portfolio.EndlessRunner.Server
         [DataContract]
         public sealed partial class FinishRun : Reducer, IReducerArgs
         {
+            [DataMember(Name = "seat")]
+            public byte Seat;
             [DataMember(Name = "distance")]
             public uint Distance;
             [DataMember(Name = "score")]
             public long Score;
 
             public FinishRun(
+                byte Seat,
                 uint Distance,
                 long Score
             )
             {
+                this.Seat = Seat;
                 this.Distance = Distance;
                 this.Score = Score;
             }

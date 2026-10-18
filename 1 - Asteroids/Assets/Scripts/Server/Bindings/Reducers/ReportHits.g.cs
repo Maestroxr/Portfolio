@@ -13,12 +13,12 @@ namespace Portfolio.Asteroids.Server
 {
     public sealed partial class RemoteReducers : RemoteBase
     {
-        public delegate void ReportHitsHandler(ReducerEventContext ctx, System.Collections.Generic.List<Portfolio.Asteroids.Server.HitInfo> hits);
+        public delegate void ReportHitsHandler(ReducerEventContext ctx, byte seat, System.Collections.Generic.List<Portfolio.Asteroids.Server.HitInfo> hits);
         public event ReportHitsHandler? OnReportHits;
 
-        public void ReportHits(System.Collections.Generic.List<Portfolio.Asteroids.Server.HitInfo> hits)
+        public void ReportHits(byte seat, System.Collections.Generic.List<Portfolio.Asteroids.Server.HitInfo> hits)
         {
-            conn.InternalCallReducer(new Reducer.ReportHits(hits));
+            conn.InternalCallReducer(new Reducer.ReportHits(seat, hits));
         }
 
         public bool InvokeReportHits(ReducerEventContext ctx, Reducer.ReportHits args)
@@ -37,6 +37,7 @@ namespace Portfolio.Asteroids.Server
             }
             OnReportHits(
                 ctx,
+                args.Seat,
                 args.Hits
             );
             return true;
@@ -49,11 +50,17 @@ namespace Portfolio.Asteroids.Server
         [DataContract]
         public sealed partial class ReportHits : Reducer, IReducerArgs
         {
+            [DataMember(Name = "seat")]
+            public byte Seat;
             [DataMember(Name = "hits")]
             public System.Collections.Generic.List<HitInfo> Hits;
 
-            public ReportHits(System.Collections.Generic.List<HitInfo> Hits)
+            public ReportHits(
+                byte Seat,
+                System.Collections.Generic.List<HitInfo> Hits
+            )
             {
+                this.Seat = Seat;
                 this.Hits = Hits;
             }
 

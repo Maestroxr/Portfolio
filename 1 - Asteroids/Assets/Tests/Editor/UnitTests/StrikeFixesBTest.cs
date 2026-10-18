@@ -29,12 +29,12 @@ namespace Portfolio.Asteroids.Tests
             public void BodyRemoved(SpaceBody body) { }
             public void BlastSetOff(Blast blast) { }
             public void PuppetHit(Shootable puppet, DamageInfo hit) { }
-            public void PuppetRammed(Shootable puppet, Vector2 direction, bool dashing) { }
+            public void PuppetRammed(Shootable puppet, AsteroidsPlayer ship, Vector2 direction, bool dashing) { }
             public void PuppetShotAbsorbed(Shot puppet) => Absorbed.Add(puppet);
-            public void RewardTouched(Reward reward) { }
+            public void RewardTouched(Reward reward, AsteroidsPlayer ship) { }
             public void ShotFired(Shot shot, byte kind, int level) { }
-            public void NovaFired(Vector2 center, float damage, float bossDamage) => Novas++;
-            public void RoomWanted(Vector2 center) { }
+            public void NovaFired(Vector2 center, float damage, float bossDamage, int? seat) => Novas++;
+            public void RoomWanted(Vector2 center, int? seat) { }
             public void ScrollReported(float distance, float speed) { }
         }
 

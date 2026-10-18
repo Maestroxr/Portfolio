@@ -16,22 +16,43 @@ namespace Portfolio.Asteroids
     /// included), like a solo one; any other end discards it. In a strike mission the guests' ground scrolls as the
     /// simulator reports it (<see cref="CoopScrollReported"/>). Keeping the copies of the world in step is not done
     /// here but in <see cref="FieldReplication"/>.
+    ///
+    /// Several pilots of the room may fly at this device (a party: the device's player and their companions, see
+    /// AsteroidsGameManager.Local.cs). Then every one of them has a score and ships of their own, a pilot out of ships is
+    /// done in the room, this device watches once all of them are out, and the results add up the party's numbers.
     /// </summary>
     public partial class AsteroidsGameManager
     {
+        /// <summary>A pilot of a party of the room who flies at this device: the seat of the room, the name, where they start, their controls.</summary>
+        internal sealed class CoopPilot
+        {
+            public int Seat;
+            public string Name;
+            /// <summary>Place of the pilot among the pilots of the room, by seat, for the start positions.</summary>
+            public int Slot;
+            public PlayerControls Controls;
+        }
+
+
         /// <summary>What the online controller hands over for the mission that is about to start.</summary>
         internal sealed class CoopSetup
         {
             /// <summary>This client simulates the world (the host of the room).</summary>
             public bool Simulates;
+            /// <summary>The seat of the device's own pilot.</summary>
             public int LocalSeat;
-            /// <summary>Place of the local pilot among the pilots, by seat, for the start positions.</summary>
+            /// <summary>Place of the device's own pilot among the pilots, by seat, for the start positions.</summary>
             public int Slot;
             public int Pilots;
             public Vector2 HalfSize;
             public int Lives;
             /// <summary>Strike: the room's difficulty, which wins for this room without changing the pilot's own.</summary>
             public StrikeDifficulty Difficulty = StrikeDifficulty.Veteran;
+            /// <summary>
+            /// The pilots at this device when more than one plays here (the device's own first, then the companions by
+            /// seat); empty when the device's player flies alone.
+            /// </summary>
+            public List<CoopPilot> Party = new List<CoopPilot>();
         }
 
 
@@ -128,7 +149,10 @@ namespace Portfolio.Asteroids
 
         #region Setting up
 
-        /// <summary>The online controller hands over the mission of the room that is about to start.</summary>
+        /// <summary>
+        /// The online controller hands over the mission of the room that is about to start. With a party at this device
+        /// every pilot of it gets a ship (AsteroidsGameManager.Local.cs).
+        /// </summary>
         internal void PrepareCoop(CoopSetup setup)
         {
             coop = setup;
@@ -144,6 +168,14 @@ namespace Portfolio.Asteroids
             coopScrollFrame = -1;
             coopStrikeResult = null;
             ClearRemoteShips();
+            if (!InLocalMatch && localPilots.Count > 0)
+            {
+                ReleaseLocalPilots();
+            }
+            if (setup.Party != null && setup.Party.Count > 1 && ship != null && field != null)
+            {
+                CreatePartyPilots(setup.Party);
+            }
             if (spawner != null)
             {
                 spawner.BossCatalog = BossCatalog();
@@ -160,6 +192,11 @@ namespace Portfolio.Asteroids
             }
             coop = null;
             ClearRemoteShips();
+            if (!InLocalMatch && localPilots.Count > 0)
+            {
+                // The party's wingmen go with the session.
+                ReleaseLocalPilots();
+            }
             ui?.ShowPilots(null);
             // The pilot left the room before landing (or the room went away): the working copy of a strike mission is
             // never banked. A copy that was banked on the results is gone already.
@@ -267,6 +304,31 @@ namespace Portfolio.Asteroids
         }
 
 
+        /// <summary>The ship flown at this device for the pilot at room seat <paramref name="seat"/>: a wingman of the party, else the player's own.</summary>
+        internal AsteroidsPlayer LocalShipAt(int seat)
+        {
+            foreach (LocalPilot pilot in localPilots)
+            {
+                if (pilot.Wingman && pilot.Ship != null && pilot.Ship.Seat == seat)
+                {
+                    return pilot.Ship;
+                }
+            }
+            return ship;
+        }
+
+
+        /// <summary>
+        /// The score so far of the pilot at this device who flies room seat <paramref name="seat"/>: a party pilot's own, else
+        /// the mission's (the device's player flying alone).
+        /// </summary>
+        internal long CoopScoreOf(int seat)
+        {
+            LocalPilot pilot = PartyPilotAt(seat);
+            return pilot != null && pilot.Record != null ? pilot.Record.Score.Score : score.Score;
+        }
+
+
         /// <summary>The ship of the hangar the local pilot flies, which the others have to show.</summary>
         internal int LocalHullIndex => SelectedHullIndex;
 
@@ -295,9 +357,17 @@ namespace Portfolio.Asteroids
         }
 
 
+        /// <summary>The players in play: the scene's ship, the wingmen flown at this device and the stand-ins of the other pilots.</summary>
         private void RefreshActivePlayers()
         {
             var active = new List<IPlayer> { ship };
+            foreach (LocalPilot pilot in localPilots)
+            {
+                if (pilot.Wingman && pilot.Ship != null)
+                {
+                    active.Add(pilot.Ship);
+                }
+            }
             foreach (RemoteShip remote in remoteShips)
             {
                 active.Add(remote.Player);
@@ -348,7 +418,15 @@ namespace Portfolio.Asteroids
             if (wavesCleared > coopWavesCleared && IsMissionActive)
             {
                 int bonus = Mathf.RoundToInt(waveBonus * wavesCleared);
-                score.Add(bonus);
+                if (IsParty)
+                {
+                    // Every pilot of the party still in the mission scores it, as on the simulator.
+                    squad.WaveCleared(bonus);
+                }
+                else
+                {
+                    score.Add(bonus);
+                }
                 SyncScore();
                 ui?.Announce(T("WAVE CLEARED"), $"+{bonus}", new Color(0.5f, 1f, 0.65f));
                 sounds?.WaveClear();
@@ -518,18 +596,24 @@ namespace Portfolio.Asteroids
             {
                 online.MissionWon();
             }
-            online.ReportScoreNow(score.Score);
+            online.ReportScoresNow();
         }
 
 
-        /// <summary>Out of ships: the others fly on. The mission ends for everybody when the last pilot is out.</summary>
+        /// <summary>
+        /// Out of ships (in a party: every pilot at this device is): the others fly on. The mission ends for everybody when
+        /// the last pilot is out. A party's pilots were done in the room one by one, as each went out.
+        /// </summary>
         private void WatchOthers()
         {
             phase = MissionPhase.Watching;
             phaseTime = 0f;
             ui?.Announce(IsStrike ? T("SHIP DESTROYED") : T("OUT OF SHIPS"), T("Watching the other pilots"), new Color(1f, 0.35f, 0.3f));
             sounds?.GameOver();
-            online?.PilotOut(score.Score);
+            if (!IsParty)
+            {
+                online?.PilotOut((byte)coop.LocalSeat, score.Score);
+            }
         }
 
 
@@ -555,7 +639,10 @@ namespace Portfolio.Asteroids
         }
 
 
-        /// <summary>The results of a shared mission: how it ended, this pilot's numbers and everybody's scores. No stars, no records.</summary>
+        /// <summary>
+        /// The results of a shared mission: how it ended, this pilot's numbers (a party's, added up) and everybody's scores.
+        /// No stars, no records.
+        /// </summary>
         private void ShowCoopResults(bool victory)
         {
             if (IsStrike)
@@ -565,6 +652,7 @@ namespace Portfolio.Asteroids
             }
             phase = MissionPhase.Results;
             AsteroidsLevel mission = Mission;
+            bool party = IsParty;
             var result = new MissionResult
             {
                 Title = mission != null ? mission.Title : "Mission",
@@ -572,12 +660,12 @@ namespace Portfolio.Asteroids
                 Endless = false,
                 Coop = true,
                 Standings = online != null ? online.DescribeStandings() : string.Empty,
-                Score = score.Score,
-                LifeBonus = victory ? lives * lifeBonus : 0,
-                Kills = score.Kills,
-                Accuracy = score.Accuracy,
-                MaxCombo = score.MaxCombo,
-                Crystals = score.Crystals,
+                Score = party ? squad.TeamScore : score.Score,
+                LifeBonus = victory ? party ? localLifeBonus : lives * lifeBonus : 0,
+                Kills = party ? squad.Kills : score.Kills,
+                Accuracy = party ? squad.Accuracy : score.Accuracy,
+                MaxCombo = party ? squad.MaxCombo : score.MaxCombo,
+                Crystals = party ? squad.Crystals : score.Crystals,
                 Time = missionTime,
                 Wave = director != null ? director.WaveNumber : 0
             };
@@ -589,14 +677,22 @@ namespace Portfolio.Asteroids
         /// <summary>
         /// The results of a shared strike mission. A pilot whose ship landed after the victory banks the working copy with
         /// the money of the mission (the difficulty of the room does not become theirs); a pilot who was down, and any
-        /// defeat, keep the saved pilot as it was. No stars or records, and no Supply Room from here.
+        /// defeat, keep the saved pilot as it was. A party lands when one of its ships does: the money every pilot at this
+        /// device earned goes into the saved pilot once (<see cref="Land"/>), with the device's own kit when its ship is
+        /// home too. No stars or records, and no Supply Room from here.
         /// </summary>
         private void ShowCoopStrikeResults(bool victory)
         {
             phase = MissionPhase.Results;
-            int earned = (int)Mathf.Clamp(score.Score, 0, int.MaxValue);
-            bool landed = victory && ship != null && ship.IsAlive && working != null;
-            if (landed)
+            bool party = IsParty;
+            int earned = (int)Mathf.Clamp(party ? squad.TeamScore : score.Score, 0, int.MaxValue);
+            bool landed = victory && working != null && (party ? AnyLocalShipAlive : ship != null && ship.IsAlive);
+            if (landed && party)
+            {
+                Land();
+                DiscardCoopPilot();
+            }
+            else if (landed)
             {
                 BankCoopPilot(earned);
             }

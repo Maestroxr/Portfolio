@@ -17,7 +17,10 @@ namespace Portfolio.MemoryCards
     /// does for one player, the players pass the device around and the computer seats play by themselves. Online the
     /// server deals and judges
     /// (<see cref="MemoryCardsOnlineController"/>): the round here only mirrors the board, a click asks the server for
-    /// a flip, and what the server answers is played with the same animations as a local flip.
+    /// a flip, and what the server answers is played with the same animations as a local flip. Several people may sit at
+    /// this device online too (<see cref="OnlineSeats"/>): the board takes a click for whichever of their seats has the
+    /// turn, the device is handed over between them when their party asked for it, and with more than one person here
+    /// the banners and the results call everybody by name instead of "you".
     /// </summary>
     public partial class MemoryCardsGameManager
     {
@@ -52,7 +55,8 @@ namespace Portfolio.MemoryCards
             public float PreviewSeconds;
             public bool[] Frozen;
             public string[] Names;
-            public int LocalSeat;
+            /// <summary>The seats of the board against the room's, and which of them are played at this device.</summary>
+            public OnlineSeats Seats;
             /// <summary>The faces of every card, when the board is shown before the first turn (memorize).</summary>
             public List<OnlineCard> Preview;
         }
@@ -71,12 +75,15 @@ namespace Portfolio.MemoryCards
         private LocalPlayRules localRules;
         /// <summary>Seconds until the computer whose turn it is turns its next card.</summary>
         private float computerWait;
-        private int localSeat = -1;
         private int actingSeat = -1;
         private int onlineSets;
         private bool versusOver;
         /// <summary>The server began the first turn of the online game: until then nobody can flip.</summary>
         private bool onlineTurnBegan;
+        /// <summary>The player at this device whose turn it is took the board: false while the hand-over screen of the party waits for them.</summary>
+        private bool onlineTurnReady;
+        /// <summary>Counts the turns the server began, so a hand-over that ends late is told apart from the turn it was for.</summary>
+        private int onlineTurnCount;
         /// <summary>The mirror of an online board: a mistake shows until the server turns it back.</summary>
         private bool mirrorMismatch;
         /// <summary>The animals of the mirror round, by the order they turned up: their index in the pool of the level.</summary>
@@ -102,6 +109,24 @@ namespace Portfolio.MemoryCards
         private bool CanPlayVersus(MemoryCardsLevel level)
         {
             return level != null && !level.IsEndless;
+        }
+
+        /// <summary>
+        /// Whether <paramref name="seat"/> is played at this device: every seat of a game at one device; online the
+        /// device's own player and the companions who sit here.
+        /// </summary>
+        internal bool PlayedHere(int seat)
+        {
+            return onlineBoard != null ? onlineBoard.Seats.IsLocal(seat) : versus != null;
+        }
+
+        /// <summary>
+        /// Whether the player of <paramref name="seat"/> is spoken to as "you": the one player at this device in an online
+        /// game (<see cref="OnlineSeats.IsYou"/>). At one device, and with several people here online, everybody goes by name.
+        /// </summary>
+        private bool IsYou(int seat)
+        {
+            return IsOnlineVersus && onlineBoard.Seats.IsYou(seat);
         }
 
         #region Level select
@@ -217,21 +242,73 @@ namespace Portfolio.MemoryCards
             }
             bool changed = seat != versus.Current || !onlineTurnBegan;
             onlineTurnBegan = true;
+            onlineTurnCount++;
             versus.SetTurn(seat, number, 0f);
+            // A player here goes on at once after a set; a turn that came to them from somebody else may start behind the
+            // hand-over screen of the party (HandsOverOnline), and the board waits until they are ready.
+            onlineTurnReady = !changed || !HandsOverOnline(seat);
+            if (changed)
+            {
+                // A hand-over nobody took in time (the turn ran out behind it) goes with its turn.
+                TurnCurtain curtain = GetComponent<TurnCurtain>();
+                if (curtain != null && curtain.IsShown)
+                {
+                    curtain.Hide();
+                }
+            }
             if (changed && phase != Phase.Finished)
             {
-                // The banner of a bomb or a lost turn shows first; the new turn is announced after it.
+                // The banner of a bomb or a lost turn shows first; the new turn is offered after it.
                 float wait = bannerBusyUntil - Time.time;
                 if (wait > 0f)
                 {
-                    After(wait, AnnounceTurn);
+                    After(wait, OfferOnlineTurn);
                 }
                 else
                 {
-                    AnnounceTurn();
+                    OfferOnlineTurn();
                 }
             }
             RefreshVersusInput();
+        }
+
+        /// <summary>
+        /// Whether the turn of <paramref name="seat"/> starts behind the hand-over screen: a seat played here, in a party
+        /// that hands the device over between its players. The controller skips the screen when the same player had the
+        /// board last (<see cref="MemoryCardsOnlineController.HandOverTo"/>).
+        /// </summary>
+        private bool HandsOverOnline(int seat)
+        {
+            return online != null && online.HandOverLocalSeats && onlineBoard.Seats.IsParty && onlineBoard.Seats.IsLocal(seat);
+        }
+
+        /// <summary>
+        /// The turn of the current seat is announced; a player at this device takes the board first, behind the hand-over
+        /// screen when the party has one (the clock of the server runs on meanwhile). A hand-over that ends after the turn
+        /// passed changes nothing.
+        /// </summary>
+        private void OfferOnlineTurn()
+        {
+            if (!IsOnlineVersus || round == null || round.IsOver || phase == Phase.Finished || phase == Phase.Menu)
+            {
+                return;
+            }
+            if (onlineTurnReady || online == null)
+            {
+                AnnounceTurn();
+                return;
+            }
+            int seat = versus.Current;
+            int turn = onlineTurnCount;
+            online.HandOverTo(seat, SeatColor(seat), () =>
+            {
+                if (IsOnlineVersus && onlineTurnCount == turn && versus.Current == seat)
+                {
+                    onlineTurnReady = true;
+                    AnnounceTurn();
+                    RefreshVersusInput();
+                }
+            }, F("Your score: {0}", N(versus.CurrentSeat.Score)));
         }
 
         /// <summary>The scores are the server's; a seat whose member is gone stops playing.</summary>
@@ -261,13 +338,11 @@ namespace Portfolio.MemoryCards
             ClearVersus(keepOnlineBoard: true);
             if (InSession && onlineBoard != null)
             {
-                localSeat = onlineBoard.LocalSeat;
                 versus = new VersusMatch(onlineBoard.Names, 0f);
             }
             else if (InLocalMatch && CanPlayVersus(level))
             {
                 onlineBoard = null;
-                localSeat = -1;
                 localVersus = new LocalVersus(LocalMatch, random);
                 versus = localVersus.Match;
             }
@@ -312,8 +387,9 @@ namespace Portfolio.MemoryCards
             var active = new List<IPlayer>();
             for (int i = 0; i < versus.Seats.Count && i < seatPlayers.Count; i++)
             {
+                // Online every seat played at this device is local, the device's own and its companions' alike.
                 PlayerControl control = localVersus != null ? localVersus.SeatOf(i).Control
-                    : onlineBoard == null || i == localSeat ? PlayerControl.Local : PlayerControl.Remote;
+                    : onlineBoard == null || onlineBoard.Seats.IsLocal(i) ? PlayerControl.Local : PlayerControl.Remote;
                 seatPlayers[i].Assign(i, control, versus.Seats[i].Name);
                 seatPlayers[i].ResetMatches();
                 active.Add(seatPlayers[i]);
@@ -332,8 +408,8 @@ namespace Portfolio.MemoryCards
             }
             versusOver = false;
             onlineTurnBegan = false;
+            onlineTurnReady = false;
             actingSeat = -1;
-            localSeat = -1;
             onlineSets = 0;
             if (!keepOnlineBoard)
             {
@@ -525,6 +601,7 @@ namespace Portfolio.MemoryCards
             BeginLocalTurn(1.1f);
         }
 
+        /// <summary>Names the player whose turn it is; the one player at this device online hears "your turn".</summary>
         private void AnnounceTurn()
         {
             if (versus == null || round == null || phase == Phase.Finished || phase == Phase.Menu || (IsOnlineVersus && !onlineTurnBegan))
@@ -532,30 +609,31 @@ namespace Portfolio.MemoryCards
                 return;
             }
             VersusSeat seat = versus.CurrentSeat;
-            bool mine = IsOnlineVersus && seat.Seat == localSeat;
+            bool mine = IsYou(seat.Seat);
             string title = mine ? T("YOUR TURN!") : F("{0}'S TURN", seat.Name.ToUpperInvariant());
             gameUI?.ShowBanner(title, null, gameUI.VersusSeatColor(seat.Seat), 0.9f);
-            sounds?.Play(sounds.select, 0.7f, mine || !IsOnlineVersus ? 1.1f : 0.9f);
+            sounds?.Play(sounds.select, 0.7f, PlayedHere(seat.Seat) ? 1.1f : 0.9f);
         }
 
-        /// <summary>Online only the player whose turn it is can click; at one device the cards are everybody's.</summary>
+        /// <summary>Online only a player at this device whose turn it is can click, once they took the board; at one device the cards are everybody's.</summary>
         private void RefreshVersusInput()
         {
             if (IsOnlineVersus && phase == Phase.Playing)
             {
-                SetCardsInteractable(onlineTurnBegan && versus.Current == localSeat);
+                SetCardsInteractable(onlineTurnBegan && onlineTurnReady && onlineBoard.Seats.IsLocal(versus.Current));
             }
         }
 
-        /// <summary>A click in an online game: the server flips the card, when it is the local player's turn.</summary>
+        /// <summary>A click in an online game: the server flips the card for the player at this device whose turn it is.</summary>
         private void RequestOnlineFlip(Flippable view)
         {
             MemoryCard card = round.Cards[view.Index];
-            if (!onlineTurnBegan || versus.Current != localSeat || card.State != CardState.Hidden || mirrorMismatch || online == null)
+            if (!onlineTurnBegan || !onlineTurnReady || !onlineBoard.Seats.IsLocal(versus.Current) || card.State != CardState.Hidden || mirrorMismatch
+                || online == null)
             {
                 return;
             }
-            online.Flip(view.Index);
+            online.Flip(versus.Current, view.Index);
         }
 
         /// <summary>Plays a flip the server judged: the mirror of the board follows, and the view does what a local flip does.</summary>
@@ -581,7 +659,7 @@ namespace Portfolio.MemoryCards
                 if (flip.Outcome == FlipOutcome.TimedOut && flip.Seat >= 0 && flip.Seat < versus.Seats.Count)
                 {
                     sounds?.Play(sounds.mismatch, 0.7f, 0.85f);
-                    string late = flip.Seat == localSeat ? T("You ran out of time") : F("{0} ran out of time", versus.Seats[flip.Seat].Name);
+                    string late = IsYou(flip.Seat) ? T("You ran out of time") : F("{0} ran out of time", versus.Seats[flip.Seat].Name);
                     gameUI?.ShowBanner(T("TIME'S UP!"), late, Bad, 1.1f);
                     bannerBusyUntil = Time.time + 1.1f;
                 }
@@ -723,9 +801,11 @@ namespace Portfolio.MemoryCards
             {
                 seconds = -1f;
             }
-            PlayerScore = localSeat >= 0 && localSeat < versus.Seats.Count ? versus.Seats[localSeat].Score : versus.Standings()[0].Score;
+            // The score of the device's own player online, the leader's at one device.
+            int shown = onlineBoard != null ? onlineBoard.Seats.Device : -1;
+            PlayerScore = shown >= 0 && shown < versus.Seats.Count ? versus.Seats[shown].Score : versus.Standings()[0].Score;
             gameUI.UpdateVersus(versus.Seats, IsOnlineVersus && !onlineTurnBegan ? -1 : versus.Current, fraction, seconds);
-            if (seconds >= 0f && seconds <= 5f && (!IsOnlineVersus || versus.Current == localSeat))
+            if (seconds >= 0f && seconds <= 5f && PlayedHere(versus.Current))
             {
                 int second = Mathf.CeilToInt(seconds);
                 if (second > 0 && second != lastTick)
@@ -752,14 +832,14 @@ namespace Portfolio.MemoryCards
             particles?.Confetti(110, ConfettiColors());
             sounds?.Play(sounds.victory);
             List<VersusSeat> winners = versus.Winners();
-            string title = winners.Count > 1 ? T("IT'S A DRAW!") : winners[0].Seat == localSeat ? T("YOU WIN!") : F("{0} WINS!", winners[0].Name.ToUpperInvariant());
+            string title = winners.Count > 1 ? T("IT'S A DRAW!") : IsYou(winners[0].Seat) ? T("YOU WIN!") : F("{0} WINS!", winners[0].Name.ToUpperInvariant());
             Color color = winners.Count > 1 ? Gold : gameUI != null ? gameUI.VersusSeatColor(winners[0].Seat) : Gold;
             gameUI?.ShowBanner(title, null, color, 1.6f);
             yield return new WaitForSeconds(1.9f);
 
-            // At this device the people won unless only computers share the first place.
-            bool localWon = localVersus != null ? winners.Exists(seat => !localVersus.IsComputer(seat.Seat))
-                : localSeat < 0 || winners.Exists(seat => seat.Seat == localSeat);
+            // At this device the people won unless only computers share the first place; online, a seat played here did.
+            bool localWon = localVersus != null ? winners.Exists(seat => !localVersus.IsComputer(seat.Seat)) : winners.Exists(seat => PlayedHere(seat.Seat));
+            bool party = onlineBoard != null && onlineBoard.Seats.IsParty;
             var standings = new StringBuilder();
             List<VersusSeat> ranking = versus.Standings();
             // Players with the same result share a place, the way the server ranks the room.
@@ -767,18 +847,22 @@ namespace Portfolio.MemoryCards
             for (int i = 0; i < ranking.Count; i++)
             {
                 VersusSeat seat = ranking[i];
-                // The names of the players at this device wear their seat colours, as on the scoreboard.
-                Color? seatColor = localVersus != null ? SeatColor(seat.Seat) : (Color?)null;
-                standings.Append(i > 0 ? "\n" : string.Empty).Append(Standings.Line(places[i], seat.Name, seat.Seat == localSeat,
+                // Online the device's own player is "you" and the companions here are marked "(here)", as in the lobby; the
+                // names of the players at this device wear their seat colours, as on the scoreboard, when several share it.
+                bool here = IsOnlineVersus && PlayedHere(seat.Seat);
+                bool you = here && seat.Seat == onlineBoard.Seats.Device;
+                string name = here && !you ? $"{seat.Name} {Loc.T(Loc.Shared, "(here)")}" : seat.Name;
+                Color? seatColor = localVersus != null || party && here ? SeatColor(seat.Seat) : (Color?)null;
+                standings.Append(i > 0 ? "\n" : string.Empty).Append(Standings.Line(places[i], name, you,
                     N(seat.Score), seatColor, seat.Sets == 1 ? T("1 set") : F("{0} sets", seat.Sets)));
             }
             MemoryCardsLevel level = CardsLevel;
             int sets = 0;
             int bestCombo = 0;
-            // The lifetime counts are the people's at this device: what the computer found is not theirs.
+            // The lifetime counts are the people's at this device: what the computer, or a player elsewhere, found is not theirs.
             foreach (VersusSeat seat in versus.Seats)
             {
-                bool counts = localVersus != null ? !localVersus.IsComputer(seat.Seat) : localSeat < 0 || seat.Seat == localSeat;
+                bool counts = localVersus != null ? !localVersus.IsComputer(seat.Seat) : PlayedHere(seat.Seat);
                 if (counts)
                 {
                     sets += seat.Sets;

@@ -12,6 +12,12 @@ namespace Portfolio.Heroes
     {
         [SerializeField] protected Puppet puppet;
 
+        /// <summary>
+        /// Counts the turns asked of it: a turn gives up as soon as a newer one (or a walk, which turns as it goes) starts,
+        /// so two turns toward different sides never pull at the body at once and wait for each other for ever.
+        /// </summary>
+        private int turns;
+
         /// <summary>The cell it stands on, in the rules' numbering.</summary>
         public int Cell { get; set; } = -1;
 
@@ -29,6 +35,10 @@ namespace Portfolio.Heroes
             }
         }
 
+        /// <summary>
+        /// Turns to look along <paramref name="direction"/>, at <paramref name="speed"/>; it stops where it is when another
+        /// turn or a walk starts meanwhile (the battle turns a creature back to its facing in the background after a blow).
+        /// </summary>
         public IEnumerator Turn(Vector3 direction, float speed = 12f)
         {
             direction.y = 0f;
@@ -36,13 +46,17 @@ namespace Portfolio.Heroes
             {
                 yield break;
             }
+            int turn = ++turns;
             Quaternion target = Quaternion.LookRotation(direction);
-            while (Quaternion.Angle(transform.rotation, target) > 2f)
+            while (turn == turns && Quaternion.Angle(transform.rotation, target) > 2f)
             {
                 transform.rotation = Quaternion.RotateTowards(transform.rotation, target, speed * 60f * Time.deltaTime);
                 yield return null;
             }
-            transform.rotation = target;
+            if (turn == turns)
+            {
+                transform.rotation = target;
+            }
         }
 
         /// <summary>Walks to a point, turning into the step first and going back to standing at the end.</summary>
@@ -73,13 +87,15 @@ namespace Portfolio.Heroes
             {
                 yield break;
             }
-            // A walk that starts back the way it faces turns on the spot first; the rest turns on the move.
+            // A walk that starts back the way it faces turns on the spot first; the rest turns on the move. Either way a turn
+            // still going on in the background gives up.
             Vector3 first = points[0] - transform.position;
             first.y = 0f;
             if (first.sqrMagnitude > 0.0001f && Vector3.Angle(transform.forward, first) > 100f)
             {
                 yield return Turn(first, 16f);
             }
+            turns++;
             puppet?.Walk();
             foreach (Vector3 point in points)
             {

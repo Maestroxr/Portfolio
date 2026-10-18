@@ -13,12 +13,12 @@ namespace Portfolio.Asteroids.Server
 {
     public sealed partial class RemoteReducers : RemoteBase
     {
-        public delegate void ClaimBodyHandler(ReducerEventContext ctx, uint netId);
+        public delegate void ClaimBodyHandler(ReducerEventContext ctx, byte seat, uint netId);
         public event ClaimBodyHandler? OnClaimBody;
 
-        public void ClaimBody(uint netId)
+        public void ClaimBody(byte seat, uint netId)
         {
-            conn.InternalCallReducer(new Reducer.ClaimBody(netId));
+            conn.InternalCallReducer(new Reducer.ClaimBody(seat, netId));
         }
 
         public bool InvokeClaimBody(ReducerEventContext ctx, Reducer.ClaimBody args)
@@ -37,6 +37,7 @@ namespace Portfolio.Asteroids.Server
             }
             OnClaimBody(
                 ctx,
+                args.Seat,
                 args.NetId
             );
             return true;
@@ -49,11 +50,17 @@ namespace Portfolio.Asteroids.Server
         [DataContract]
         public sealed partial class ClaimBody : Reducer, IReducerArgs
         {
+            [DataMember(Name = "seat")]
+            public byte Seat;
             [DataMember(Name = "net_id")]
             public uint NetId;
 
-            public ClaimBody(uint NetId)
+            public ClaimBody(
+                byte Seat,
+                uint NetId
+            )
             {
+                this.Seat = Seat;
                 this.NetId = NetId;
             }
 

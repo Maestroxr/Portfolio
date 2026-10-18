@@ -13,12 +13,12 @@ namespace Portfolio.EndlessRunner.Server
 {
     public sealed partial class RemoteReducers : RemoteBase
     {
-        public delegate void ClaimPieceHandler(ReducerEventContext ctx, uint piece, byte value);
+        public delegate void ClaimPieceHandler(ReducerEventContext ctx, byte seat, uint piece, byte value);
         public event ClaimPieceHandler? OnClaimPiece;
 
-        public void ClaimPiece(uint piece, byte value)
+        public void ClaimPiece(byte seat, uint piece, byte value)
         {
-            conn.InternalCallReducer(new Reducer.ClaimPiece(piece, value));
+            conn.InternalCallReducer(new Reducer.ClaimPiece(seat, piece, value));
         }
 
         public bool InvokeClaimPiece(ReducerEventContext ctx, Reducer.ClaimPiece args)
@@ -37,6 +37,7 @@ namespace Portfolio.EndlessRunner.Server
             }
             OnClaimPiece(
                 ctx,
+                args.Seat,
                 args.Piece,
                 args.Value
             );
@@ -50,16 +51,20 @@ namespace Portfolio.EndlessRunner.Server
         [DataContract]
         public sealed partial class ClaimPiece : Reducer, IReducerArgs
         {
+            [DataMember(Name = "seat")]
+            public byte Seat;
             [DataMember(Name = "piece")]
             public uint Piece;
             [DataMember(Name = "value")]
             public byte Value;
 
             public ClaimPiece(
+                byte Seat,
                 uint Piece,
                 byte Value
             )
             {
+                this.Seat = Seat;
                 this.Piece = Piece;
                 this.Value = Value;
             }
