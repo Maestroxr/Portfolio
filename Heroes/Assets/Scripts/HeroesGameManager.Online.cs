@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Gamebox;
 using Gamebox.Lockstep;
 using Gamebox.Online;
+using Gamebox.UI;
 using Portfolio.Heroes.UI;
 using UnityEngine;
 
@@ -14,10 +15,18 @@ namespace Portfolio.Heroes
     /// <see cref="LockstepGame"/> that nothing but the action log of the server changes: the controller takes every action
     /// to it and tells the manager (<see cref="ILockstepHost{TCommand}"/>). What arrives is applied at once, so the rules
     /// may run ahead of the map, which plays the events out as it does in a game at one device. The director offers a
-    /// decision only to the player at this device; the computer seats and the wandering armies are moved by the host's
-    /// client, through the log like everybody else. Battles the player at this device does not fight are told, not
-    /// played out (<see cref="IsLocalBattle"/>). There is no saving and no pausing, the campaign at this device is left
-    /// alone, and the end leads back to the room.
+    /// decision only to a player at this device; the computer seats and the wandering armies are moved by the host's
+    /// client, through the log like everybody else. Battles nobody at this device fights are told, not played out
+    /// (<see cref="IsLocalBattle"/>). There is no saving and no pausing, the campaign at this device is left alone, and
+    /// the end leads back to the room.
+    ///
+    /// Several people may play online at one device, each a realm of their own (the device's player and those who signed
+    /// in at it: <see cref="OnlineGameController.LocalSeats"/>). They share the screen the way a hot seat does
+    /// (HeroesGameManager.HotSeat.cs): it belongs to one of them at a time, the holder, whose fog, panels and chronicle
+    /// it shows, and it goes to another of them for their turn, their question or their battle, and while the others at
+    /// the table play, to the one who plays next. The party's own setting covers the map between them with the hand-over
+    /// screen (<see cref="OnlineGameController.HandOver"/>); without it the map changes realm at once. They are called by
+    /// their names, never "you".
     /// </summary>
     public partial class HeroesGameManager : ILockstepHost<GameCommand>
     {
@@ -26,8 +35,8 @@ namespace Portfolio.Heroes
         {
             /// <summary>One entry per seat, in the order the server seated them.</summary>
             public List<PlayerSpec> Seats = new List<PlayerSpec>();
-            /// <summary>The seat of the player at this device.</summary>
-            public int LocalSeat = -1;
+            /// <summary>The seats of the players at this device, in seat order: the device's own and those of the players who signed in at it.</summary>
+            public List<int> LocalSeats = new List<int>();
             /// <summary>The seed of the room: every client lays out the same map from it.</summary>
             public uint Seed;
             /// <summary>The scenario of the room, or -1 for a map made up from the room's options.</summary>
@@ -51,7 +60,9 @@ namespace Portfolio.Heroes
 
         private OnlineTable onlineTable;
         private LockstepGame lockstep;
+        /// <summary>The seat the screen belongs to: the player at this device, or of several the one who holds it now.</summary>
         private int localSeat = -1;
+        private readonly List<int> localSeats = new List<int>();
         /// <summary>Counts what arrived from the server: the director looks at the game again when it changes.</summary>
         private int onlineVersion;
         private int reportedDay = -1;
@@ -69,12 +80,31 @@ namespace Portfolio.Heroes
         /// <summary>Whether the game online goes on from a saved game the room was opened with.</summary>
         public bool PlaysSavedGame { get; private set; }
 
+        /// <summary>The seat at this device the screen belongs to online: the player's own, or with several here the holder's.</summary>
         public int LocalSeat => localSeat;
 
+        /// <summary>The seats played at this device in an online game, in seat order (one unless others signed in at it).</summary>
+        public IReadOnlyList<int> LocalSeats => localSeats;
+
+        /// <summary>Whether several people play online at this device, sharing its screen as a hot seat does.</summary>
+        public bool IsOnlineParty => IsOnlineGame && localSeats.Count > 1;
+
+        /// <summary>Whether a player at this device plays <paramref name="seat"/> of the online game.</summary>
+        public bool IsLocalSeat(int seat)
+        {
+            return seat >= 0 && localSeats.Contains(seat);
+        }
+
         /// <summary>
-        /// Whether the battle the map is playing out (from its BattleStarted event to its BattleEnded) is fought by the
-        /// player at this device: always at one device, and online when they attack or defend in it. The battles of the
-        /// others at the table are not played out here: the director tells them in the log and moves on, so a
+        /// The seat at this device that acts now online: the one the rules wait for when it is played here (the other side
+        /// of a battle between two players here acts on the holder's screen), else the one the screen belongs to.
+        /// </summary>
+        public int ActingSeat => Game != null && IsLocalSeat(Game.WaitingPlayer) ? Game.WaitingPlayer : localSeat;
+
+        /// <summary>
+        /// Whether the battle the map is playing out (from its BattleStarted event to its BattleEnded) is fought by a
+        /// player at this device: always at one device, and online when one of them attacks or defends in it. The battles
+        /// of the others at the table are not played out here: the director tells them in the log and moves on, so a
         /// client that only watches never holds the table up.
         /// </summary>
         public bool IsLocalBattle { get; private set; } = true;
@@ -86,7 +116,7 @@ namespace Portfolio.Heroes
         /// <summary>The map of an online game plays faster while the rules are ahead of it.</summary>
         private float OnlinePace => lockstep != null && Game != null && Game.HasEvents ? CatchUpPace : 1f;
 
-        /// <summary>Whether the player at this device fights the battle that <paramref name="started"/> (its BattleStarted event) begins.</summary>
+        /// <summary>Whether a player at this device fights the battle that <paramref name="started"/> (its BattleStarted event) begins.</summary>
         public bool TakesPart(GameEvent started)
         {
             if (!IsOnlineGame || started == null)
@@ -95,7 +125,7 @@ namespace Portfolio.Heroes
             }
             int attacker = started.battle != null ? started.battle.attackerPlayer : started.player;
             int defender = started.battle != null ? started.battle.defenderPlayer : started.b;
-            return attacker == localSeat || defender == localSeat;
+            return IsLocalSeat(attacker) || IsLocalSeat(defender);
         }
 
         // ------------------------------------------------------------------ starting and ending
@@ -126,7 +156,7 @@ namespace Portfolio.Heroes
         {
             OnlineTable table = onlineTable;
             onlineTable = null;
-            if (table == null || table.Seats.Count < 2 || table.LocalSeat < 0)
+            if (table == null || table.Seats.Count < 2 || table.LocalSeats.Count == 0)
             {
                 UI?.UpdateError("The table of the online game did not arrive.");
                 return;
@@ -150,7 +180,13 @@ namespace Portfolio.Heroes
                 // The saved day goes on where it was.
                 lockstep = new LockstepGame(saved);
             }
-            localSeat = table.LocalSeat;
+            localSeats.Clear();
+            localSeats.AddRange(table.LocalSeats);
+            ResetHotSeat();
+            // With several players here the screen goes first to the one the game goes on with (nobody holds it yet: the
+            // director hands it over before anything shows); alone, it is the player's from the first frame.
+            int first = IsOnlineParty ? HotSeat.HandOverTo(lockstep.Game.State, -1, lockstep.Game.WaitingPlayer, localSeats) : -1;
+            localSeat = first >= 0 ? first : localSeats[0];
             onlineVersion = 0;
             reportedDay = -1;
             calledOff = false;
@@ -230,10 +266,8 @@ namespace Portfolio.Heroes
             }
             StopDirecting();
             CloseBattleNow(false);
-            lockstep = null;
+            LeaveOnline();
             onlineTable = null;
-            localSeat = -1;
-            IsLocalBattle = true;
             Game = null;
             if (Map != null)
             {
@@ -246,20 +280,32 @@ namespace Portfolio.Heroes
 
         private void LeaveOnline()
         {
+            bool party = IsOnlineParty;
             lockstep = null;
             localSeat = -1;
+            localSeats.Clear();
             IsLocalBattle = true;
+            if (party)
+            {
+                // A hand-over screen of the party that was still up goes with the game.
+                ResetHotSeat();
+                TurnCurtain curtain = GetComponent<TurnCurtain>();
+                if (curtain != null)
+                {
+                    curtain.Hide();
+                }
+            }
         }
 
         /// <summary>
-        /// The scenario of the room is over. The ending belongs to the player at this device: a victory when their realm
-        /// won, or, when the room called the game off, when the room ranked them first. Nothing at this device changes for
-        /// it: the campaign keeps its stars and unlocks, and the saved game of the title screen stays.
+        /// The scenario of the room is over. The ending belongs to the players at this device: a victory when a realm of
+        /// theirs won (<see cref="WonHere"/>). One player here is told how their realm did; several see the standings of
+        /// every realm, called by name. Nothing at this device changes for it: the campaign keeps its stars and unlocks,
+        /// and the saved game of the title screen stays.
         /// </summary>
         private IEnumerator FinishOnline(GameState state, int days)
         {
-            RoomMemberInfo me = online != null && online.ServerClient != null ? online.ServerClient.LocalMember : null;
-            bool won = calledOff ? me != null && me.Place == 1 : state.winner >= 0 && state.winner == localSeat;
+            bool won = WonHere(state);
             if (won)
             {
                 sound?.PlayVictoryMusic();
@@ -269,15 +315,43 @@ namespace Portfolio.Heroes
                 sound?.PlayDefeatMusic();
             }
             yield return new WaitForSeconds(0.6f);
-            ui.ShowEnd(won, 0, days);
+            if (IsOnlineParty)
+            {
+                ui.ShowHotSeatEnd(state, days);
+            }
+            else
+            {
+                ui.ShowEnd(won, 0, days);
+            }
             TransitionState(new Gamebox.GameState(won ? BaseGameState.Victory : BaseGameState.GameOver));
+        }
+
+        /// <summary>
+        /// Whether the game online ended in a win at this device: a realm played here won, or, when the room called the
+        /// game off, the room ranked a player here first.
+        /// </summary>
+        public bool WonHere(GameState state)
+        {
+            if (!calledOff)
+            {
+                return state.winner >= 0 && IsLocalSeat(state.winner);
+            }
+            foreach (RoomMemberInfo member in online != null ? online.LocalMembers : System.Array.Empty<RoomMemberInfo>())
+            {
+                if (member.Place == 1)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         // ------------------------------------------------------------------ what the server sends
 
         LockstepTable<GameCommand> ILockstepHost<GameCommand>.Table => lockstep;
 
-        int ILockstepHost<GameCommand>.TableSeat => localSeat;
+        /// <summary>The seat at this device the game waits for now, else the one the screen belongs to.</summary>
+        int ILockstepHost<GameCommand>.TableSeat => ActingSeat;
 
         string ILockstepHost<GameCommand>.TurnCaption => OnlineCaption();
 
@@ -331,7 +405,7 @@ namespace Portfolio.Heroes
             onlineVersion++;
         }
 
-        /// <summary>A command of the player at this device did not reach the log: the choice is theirs again.</summary>
+        /// <summary>A command of a player at this device did not reach the log: the choice is theirs again.</summary>
         void ILockstepHost<GameCommand>.CommandFailed()
         {
             sound?.Play(Sfx.Error, 0.7f);
@@ -348,25 +422,47 @@ namespace Portfolio.Heroes
             return player != null ? player.name : $"Seat {seat + 1}";
         }
 
-        /// <summary>The room learns how the player at this device is doing, and that they are done once it is over.</summary>
+        /// <summary>
+        /// The room learns how each player at this device is doing (once a day), and that they are done once it is over:
+        /// every realm played here reports its own place and worth.
+        /// </summary>
         private void ReportToRoom()
         {
-            if (online == null || Game == null || localSeat < 0)
+            if (online == null || Game == null || localSeats.Count == 0)
             {
                 return;
             }
-            PlayerState me = Game.State.Player(localSeat);
-            long worth = me != null ? Worth(me) : 0;
-            if (Game.IsOver)
+            bool over = Game.IsOver;
+            if (!over && Game.State.day == reportedDay)
             {
-                // The room gives the members the places of their realms, a computer player that won before them all.
-                online.ReportTableFinished(Game.State.winner, PlaceAtTable(localSeat), worth);
+                return;
             }
-            else if (Game.State.day != reportedDay)
+            reportedDay = Game.State.day;
+            foreach (int seat in localSeats)
             {
-                reportedDay = Game.State.day;
-                online.ReportScore(worth);
+                PlayerState player = Game.State.Player(seat);
+                long worth = player != null ? Worth(player) : 0;
+                if (over)
+                {
+                    // The room gives the members the places of their realms, a computer player that won before them all.
+                    online.ReportTableFinished(seat, Game.State.winner, PlaceAtTable(seat), worth);
+                }
+                else
+                {
+                    online.ReportSeatScore(seat, worth);
+                }
             }
+        }
+
+        /// <summary>
+        /// The realms of the online game in the order of their places at the table (<see cref="PlaceAtTable"/>), the order
+        /// the room ranks its members in: the standings several players at this device see at the end.
+        /// </summary>
+        internal List<PlayerState> TableStandings()
+        {
+            var order = new List<PlayerState>(Game.State.players);
+            order.Sort((a, b) => PlaceAtTable(a.index).CompareTo(PlaceAtTable(b.index)));
+            return order;
         }
 
         /// <summary>
@@ -426,7 +522,7 @@ namespace Portfolio.Heroes
             return worth;
         }
 
-        /// <summary>Who the game waits for, for the clock of the lobby.</summary>
+        /// <summary>Who the game waits for, for the clock of the lobby: a player here by name when several play at this device.</summary>
         private string OnlineCaption()
         {
             if (lockstep == null || Game == null)
@@ -442,14 +538,26 @@ namespace Portfolio.Heroes
             {
                 return Game.InBattle ? Words.T("The wilds move") : "";
             }
-            return seat == localSeat ? Words.T(Game.InBattle ? "Your move" : "Your turn") : Words.F("{0}'s turn", Words.Sentence(NameOfSeat(seat)));
+            if (IsLocalSeat(seat) && !IsOnlineParty)
+            {
+                return Words.T(Game.InBattle ? "Your move" : "Your turn");
+            }
+            string name = Words.Sentence(NameOfSeat(seat));
+            return IsLocalSeat(seat) && Game.InBattle ? Words.F("{0}'s move", name) : Words.F("{0}'s turn", name);
         }
 
-        /// <summary>Whether the player at this device is the one the rules are waiting for, and the map has caught up.</summary>
+        /// <summary>
+        /// Whether a player at this device is the one the rules are waiting for, holds the device (or fights on its screen,
+        /// in a battle between two of them), and the map has caught up.
+        /// </summary>
         internal bool OnlineDeciding()
         {
-            return lockstep != null && IsGameRunning && WaitingForHuman && !Game.HasEvents &&
-                   Game.WaitingPlayer == localSeat;
+            if (lockstep == null || !IsGameRunning || !WaitingForHuman || Game.HasEvents)
+            {
+                return false;
+            }
+            int seat = Game.WaitingPlayer;
+            return IsLocalSeat(seat) && !IsPassing && (seat == localSeat || Game.InBattle);
         }
 
         /// <summary>
@@ -486,6 +594,12 @@ namespace Portfolio.Heroes
                     yield return null;
                     continue;
                 }
+                // With several players here the device goes to the one the game goes on with first (as in a hot seat).
+                if (HandOverIfDue())
+                {
+                    yield return null;
+                    continue;
+                }
                 if (Game.HasEvents)
                 {
                     WaitingForHuman = false;
@@ -495,6 +609,10 @@ namespace Portfolio.Heroes
                         if (what.kind == EventKind.BattleStarted)
                         {
                             IsLocalBattle = TakesPart(what);
+                            if (IsLocalBattle && IsOnlineParty)
+                            {
+                                yield return HandOverForBattle(what);
+                            }
                         }
                         yield return IsLocalBattle ? Play(what) : Tell(what);
                         if (what.kind == EventKind.BattleEnded)
@@ -551,7 +669,7 @@ namespace Portfolio.Heroes
                         patience = Time.unscaledTime + ComputerPatience;
                     }
                 }
-                else if (seat == localSeat)
+                else if (IsLocalSeat(seat))
                 {
                     if (Game.State.pending.Count > 0)
                     {
@@ -586,8 +704,30 @@ namespace Portfolio.Heroes
         }
 
         /// <summary>
-        /// An event of a battle the player at this device does not fight: the start and the end are told in the log and
-        /// the map catches up with the losses; the stacks, their strikes and their spells are not on this screen.
+        /// A battle a player here fights is about to come onto the screen, which the rules may have left behind already
+        /// (the director hands the device over by the game as it stands): it opens on the screen of one who fights it, so
+        /// the device goes to them first unless the one holding it fights in it too.
+        /// </summary>
+        private IEnumerator HandOverForBattle(GameEvent started)
+        {
+            int attacker = started.battle != null ? started.battle.attackerPlayer : started.player;
+            int defender = started.battle != null ? started.battle.defenderPlayer : started.b;
+            int to = HotSeat.ToBattle(Game.State, holder, -1, attacker, defender, localSeats);
+            if (to < 0 || passing)
+            {
+                yield break;
+            }
+            HeroesGame game = Game;
+            PassTo(to);
+            while (passing && Game == game)
+            {
+                yield return null;
+            }
+        }
+
+        /// <summary>
+        /// An event of a battle nobody at this device fights: the start and the end are told in the log and the map
+        /// catches up with the losses; the stacks, their strikes and their spells are not on this screen.
         /// </summary>
         private IEnumerator Tell(GameEvent what)
         {

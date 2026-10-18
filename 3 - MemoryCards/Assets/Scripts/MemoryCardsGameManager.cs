@@ -828,7 +828,7 @@ namespace Portfolio.MemoryCards
             gameUI?.BeginRound(versus != null ? VersusHudSetup(setup) : setup);
             if (versus != null)
             {
-                gameUI?.ShowVersus(versus.Seats, localSeat);
+                gameUI?.ShowVersus(versus.Seats, onlineBoard != null ? onlineBoard.Seats.Device : -1, onlineBoard != null ? onlineBoard.Seats.Local : null);
             }
             RefreshHud();
             RefreshParade();
@@ -1296,6 +1296,11 @@ namespace Portfolio.MemoryCards
             }
             yield return new WaitForSeconds(flipTime + shown.Count * previewStagger);
             phase = Phase.Playing;
+            if (IsOnlineVersus)
+            {
+                // A player at this device who took the board meanwhile (a hand-over) gets the cards now.
+                RefreshVersusInput();
+            }
         }
 
 

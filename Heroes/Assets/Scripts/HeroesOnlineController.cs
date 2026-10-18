@@ -8,9 +8,10 @@ namespace Portfolio.Heroes
     /// <summary>
     /// The online controller: what is Heroes about a scenario played in step with the other players of a room. The
     /// shared <see cref="LockstepOnlineController{TCommand}"/> reads the table the server seated, takes the actions of
-    /// the log to the <see cref="LockstepGame"/> and sends what the player at this device asks for; this class adds the
-    /// maps a room can play and their options, hands the seats to the manager, and turns the requests of the interface
-    /// (<see cref="IHeroesCommands"/>) into commands. Commands count when they come back in the log, in their place among
+    /// the log to the <see cref="LockstepGame"/> and sends what the players at this device ask for; this class adds the
+    /// maps a room can play and their options, hands the seats to the manager (those of every player at this device, who
+    /// share its screen), and turns the requests of the interface (<see cref="IHeroesCommands"/>) into commands for the
+    /// seat at this device the game waits for. Commands count when they come back in the log, in their place among
     /// everybody else's, so every client applies the same commands in the same order to the same map.
     /// </summary>
     public class HeroesOnlineController : LockstepOnlineController<GameCommand>, IHeroesCommands
@@ -49,7 +50,8 @@ namespace Portfolio.Heroes
 
         /// <summary>
         /// A game played online: a win of a scenario counts like one on the device, a win on a random map only among the
-        /// wins, and a loss among the losses. The skirmish maps a room plays are not a campaign: nothing to unlock.
+        /// wins, and a loss among the losses. The skirmish maps a room plays are not a campaign: nothing to unlock. The
+        /// progress is the device's player's: what the others who played at this device win shows on their own avatars.
         /// </summary>
         protected override void RecordOnlineResult(RoomInfo room, RoomMemberInfo me)
         {
@@ -141,7 +143,7 @@ namespace Portfolio.Heroes
             {
                 Seed = setup.Seed,
                 Scenario = setup.Level,
-                LocalSeat = setup.TableSeat,
+                LocalSeats = new List<int>(setup.TableSeats),
                 MapSize = room.Option(SizeOption, 1),
                 Treasure = Mathf.Clamp(room.Option(TreasureOption, 2), 1, 3),
                 Monsters = Mathf.Clamp(room.Option(MonstersOption, 2), 1, 3),
@@ -183,16 +185,28 @@ namespace Portfolio.Heroes
             payload = command.Payload();
         }
 
-        /// <summary>Sends a command of the player at this device; it counts when it comes back in the log.</summary>
+        /// <summary>Sends a command of a player at this device; it counts when it comes back in the log.</summary>
         public bool Submit(GameCommand command)
         {
-            return command != null && Heroes != null && command.player == Heroes.LocalSeat && Submit(command, true);
+            return command != null && Heroes != null && Heroes.IsLocalSeat(command.player) && Submit(command, true);
         }
 
-        /// <summary>Whether the game is waiting for the player at this device right now.</summary>
+        /// <summary>
+        /// Covers the game until the player at this device who plays table seat <paramref name="tableSeat"/> is ready to
+        /// take the device, then calls <paramref name="ready"/>: <see cref="OnlineGameController.HandOver"/> for the seat in
+        /// the room, which calls it at once unless the players here asked for the hand-over screen. The screen names them
+        /// in <paramref name="color"/>, the colour their realm flies on the map.
+        /// </summary>
+        public void HandOverSeat(int tableSeat, System.Action ready, string detail, Color color)
+        {
+            HandOver(RoomSeatOf(tableSeat), ready, detail, color);
+        }
+
+        /// <summary>Whether the game is waiting for a player at this device right now.</summary>
         private bool Ready => IsPlaying && Heroes != null && Heroes.OnlineDeciding() && !AwaitingEcho;
 
-        private int Seat => Heroes != null ? Heroes.LocalSeat : -1;
+        /// <summary>The seat at this device the game waits for (<see cref="HeroesGameManager.ActingSeat"/>).</summary>
+        private int Seat => Heroes != null ? Heroes.ActingSeat : -1;
 
         private void Do(CommandKind kind, int a = 0, int b = 0, int c = 0, int d = 0, int e = 0)
         {
@@ -249,12 +263,14 @@ namespace Portfolio.Heroes
             Do(CommandKind.Trade, (int)give, (int)take, amount);
         }
 
+        /// <summary>Answers the question the rules put to a player at this device, once the device is theirs.</summary>
         public void Choose(int option)
         {
             GameState state = Game?.State;
-            if (state != null && state.pending.Count > 0 && state.pending[0].player == Seat)
+            int seat = Heroes != null ? Heroes.LocalSeat : -1;
+            if (state != null && state.pending.Count > 0 && state.pending[0].player == seat && !Heroes.IsPassing)
             {
-                Submit(GameCommand.Of(CommandKind.Choose, Seat, option));
+                Submit(GameCommand.Of(CommandKind.Choose, seat, option));
             }
         }
 

@@ -269,6 +269,48 @@ namespace Portfolio.Monopoly.Tests
             Assert.IsNull(table.PendingOffer);
         }
 
+        // ------------------------------------------------------------------ several people at one device
+
+        [Test]
+        public void ADeviceActsForTheSeatTheTableWaitsFor()
+        {
+            // Four people, two of them (seats 0 and 2) at one device; seat 1 opens the match.
+            LockstepMatch table = Table(new RuleSet(), 61, 4, false);
+            int[] here = { 0, 2 };
+            Assert.AreEqual(1, table.Waiting);
+            Assert.AreEqual(0, table.ActingSeat(here), "Somebody else's turn: the first seat of the device stands for it");
+            Assert.AreEqual(-1, table.ActingSeat(new int[0]), "Nobody plays here");
+            Assert.AreEqual(-1, table.ActingSeat(null));
+
+            // The clock moves the table on until it waits for the second person at the device (a bid in somebody's
+            // auction, or their own turn), and then until that person's own turn begins.
+            uint stamp = 1;
+            while (table.Waiting != 2 && stamp < 500)
+            {
+                Assert.IsNotEmpty(table.Timeout(stamp++), $"The default move got stuck in {table.Match.phase}");
+            }
+            Assert.AreEqual(2, table.Waiting);
+            Assert.AreEqual(2, table.ActingSeat(here), "The device acts for whichever of its seats the table waits for");
+            while (!(table.Match.current == 2 && table.Match.phase == MatchPhase.Roll) && stamp < 500)
+            {
+                Assert.IsNotEmpty(table.Timeout(stamp++), $"The default move got stuck in {table.Match.phase}");
+                Assert.AreEqual(here.Contains(table.Waiting) ? table.Waiting : 0, table.ActingSeat(here), $"Waiting for seat {table.Waiting}");
+            }
+            Assert.AreEqual(2, table.Waiting, "The turn of the second person at the device");
+
+            // An offer from one person at the device to the other: the recipient answers at the same device.
+            Give(table.Match, 2, Damrak);
+            var offer = new TradeOffer { from = 2, to = 0, giveCash = 10 };
+            offer.giveSpaces.Add(Damrak);
+            Assert.IsTrue(table.Match.CanTrade(offer, out string refused), refused);
+            Assert.IsTrue(table.Apply(ThroughTheLog(MatchCommand.Propose(offer)), stamp++), "The offer is on the table");
+            Assert.AreEqual(0, table.Waiting);
+            Assert.AreEqual(0, table.ActingSeat(here), "The recipient at the same device answers");
+            Assert.IsTrue(table.Apply(ThroughTheLog(MatchCommand.Answer(0, true)), stamp++), "The answer is taken");
+            Assert.AreEqual(0, table.Match.Owner(Damrak));
+            Assert.AreEqual(2, table.ActingSeat(here), "Back to the proposer's move");
+        }
+
         [Test]
         public void ALeaverIsPlayedByTheComputer()
         {

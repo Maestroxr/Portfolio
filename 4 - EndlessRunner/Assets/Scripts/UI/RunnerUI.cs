@@ -845,6 +845,15 @@ namespace Portfolio.EndlessRunner
                 SetLabel(resultGoals, RunnerText.T("Retry races again with the same players."));
                 resultStarCount = 0;
             }
+            else if (result.Online && result.Party)
+            {
+                // A race of several runners at this device and others: the winner by name, as a race at one device says it.
+                SetLabel(resultTitle, result.Winner != null ? RunnerText.F("{0} WINS!", result.Winner) : RunnerText.T("IT'S A TIE!"));
+                SetLabel(resultSubtitle, RunnerText.F("{0} - race of {1}", levelTitle, result.Runners));
+                SetLabel(resultStats, result.Standings);
+                SetLabel(resultGoals, RunnerText.T("The host starts the next race from the room."));
+                resultStarCount = 0;
+            }
             else if (result.Online)
             {
                 // A race: the places are the server's, and the next one starts from the room.

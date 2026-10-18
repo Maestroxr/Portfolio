@@ -942,7 +942,7 @@ namespace Portfolio.Asteroids
                     lives = Mathf.Clamp(coop.Lives, 1, AsteroidSettings.LivesLimit);
                 }
             }
-            if (IsLocal)
+            if (FliesSquad)
             {
                 // The wingmen, the pilots' scores and ships, the starts (AsteroidsGameManager.Local.cs).
                 PrepareLocalMission(strike);
@@ -1040,7 +1040,7 @@ namespace Portfolio.Asteroids
             {
                 lastMultiplier = score.Multiplier;
             }
-            if (IsLocal)
+            if (FliesSquad)
             {
                 UpdateLocalPilots(deltaTime);
             }
@@ -1071,8 +1071,8 @@ namespace Portfolio.Asteroids
         private void UpdateHints(float deltaTime)
         {
             AsteroidsLevel mission = Mission;
-            // The hints name the keys of the single player game: the pilots of a local mission have keys of their own.
-            if (mission == null || hintIndex >= mission.HintCount || IsLocal)
+            // The hints name the keys of the single player game: several pilots at this device have keys of their own.
+            if (mission == null || hintIndex >= mission.HintCount || FliesSquad)
             {
                 return;
             }
@@ -1102,8 +1102,9 @@ namespace Portfolio.Asteroids
                 }
                 return;
             }
-            // In local co-op the HUD shows the squad's score; every pilot's own is on the pilots list.
-            bool local = IsLocal;
+            // With several pilots at this device the HUD shows the squad's score; every pilot's own is on the pilots list
+            // (a party's comes from the online controller with the other pilots of the room).
+            bool local = FliesSquad;
             var hud = new HudState
             {
                 Score = local ? squad.TeamScore : score.Score,
@@ -1128,7 +1129,7 @@ namespace Portfolio.Asteroids
                 ui.SetPowerUp(type, ship.PowerUpTime(type) / PowerUps.Duration(type));
             }
             ui.UpdateHud(hud);
-            if (local)
+            if (IsLocal)
             {
                 ShowLocalPilots();
             }
@@ -1148,7 +1149,7 @@ namespace Portfolio.Asteroids
             else
             {
                 int bonus = lives * lifeBonus;
-                if (IsLocal)
+                if (FliesSquad)
                 {
                     // Every pilot still flying scores the bonus for the ships they have left.
                     localLifeBonus = Mission != null && !Mission.IsEndless ? squad.Victory(lifeBonus) : 0;
@@ -1315,7 +1316,7 @@ namespace Portfolio.Asteroids
         {
             objective?.WaveCleared();
             int bonus = Mathf.RoundToInt(waveBonus * wave);
-            if (IsLocal)
+            if (FliesSquad)
             {
                 squad.WaveCleared(bonus);
             }
@@ -1408,7 +1409,7 @@ namespace Portfolio.Asteroids
                 return;
             }
             // The kill of a pilot on another device scores on their device; what it drops is the same for everybody.
-            if (IsLocal)
+            if (FliesSquad)
             {
                 ScoreLocalKill(target, LocalPilotOf(hit));
             }
@@ -1453,16 +1454,16 @@ namespace Portfolio.Asteroids
 
         private void OnShotLanded(Shot shot)
         {
-            (IsLocal ? LocalScoreOf(shot.FiredBy) : score).ShotLanded();
+            (FliesSquad ? LocalScoreOf(shot.FiredBy) : score).ShotLanded();
         }
 
 
-        // The scene ship's own handlers below stand aside in local co-op, where every pilot's ship is heard on its own
-        // (AsteroidsGameManager.Local.cs).
+        // The scene ship's own handlers below stand aside while several pilots fly at this device (local co-op, a party of
+        // a room), where every pilot's ship is heard on its own (AsteroidsGameManager.Local.cs).
 
         private void OnVolleyFired(int count)
         {
-            if (!IsLocal)
+            if (!FliesSquad)
             {
                 score.ShotFired(count);
             }
@@ -1482,7 +1483,7 @@ namespace Portfolio.Asteroids
 
         private void OnCrystalCollected(PointReward crystal)
         {
-            if (IsLocal)
+            if (FliesSquad)
             {
                 return;
             }
@@ -1496,7 +1497,7 @@ namespace Portfolio.Asteroids
 
         private void OnLifeAwarded()
         {
-            if (IsLocal)
+            if (FliesSquad)
             {
                 return;
             }
@@ -1515,7 +1516,7 @@ namespace Portfolio.Asteroids
 
         private void OnWeaponChanged()
         {
-            if (!IsMissionActive || ship == null || IsLocal)
+            if (!IsMissionActive || ship == null || FliesSquad)
             {
                 return;
             }
@@ -1525,7 +1526,7 @@ namespace Portfolio.Asteroids
 
         private void OnShipDamaged(DamageInfo hit)
         {
-            if (IsLocal)
+            if (FliesSquad)
             {
                 return;
             }
@@ -1543,7 +1544,7 @@ namespace Portfolio.Asteroids
 
         private void OnShipDestroyed(AsteroidsPlayer lost)
         {
-            if (!IsMissionActive || IsLocal)
+            if (!IsMissionActive || FliesSquad)
             {
                 return;
             }
@@ -1646,7 +1647,7 @@ namespace Portfolio.Asteroids
 
         private void SyncScore()
         {
-            if (IsLocal && squad != null)
+            if (FliesSquad && squad != null)
             {
                 // The squad's score is the game's; every ship carries its own pilot's.
                 PlayerScore = squad.TeamScore;

@@ -13,12 +13,12 @@ namespace Portfolio.Asteroids.Server
 {
     public sealed partial class RemoteReducers : RemoteBase
     {
-        public delegate void SignalShipHandler(ReducerEventContext ctx, byte kind, float x, float y, float a, float b);
+        public delegate void SignalShipHandler(ReducerEventContext ctx, byte seat, byte kind, float x, float y, float a, float b);
         public event SignalShipHandler? OnSignalShip;
 
-        public void SignalShip(byte kind, float x, float y, float a, float b)
+        public void SignalShip(byte seat, byte kind, float x, float y, float a, float b)
         {
-            conn.InternalCallReducer(new Reducer.SignalShip(kind, x, y, a, b));
+            conn.InternalCallReducer(new Reducer.SignalShip(seat, kind, x, y, a, b));
         }
 
         public bool InvokeSignalShip(ReducerEventContext ctx, Reducer.SignalShip args)
@@ -37,6 +37,7 @@ namespace Portfolio.Asteroids.Server
             }
             OnSignalShip(
                 ctx,
+                args.Seat,
                 args.Kind,
                 args.X,
                 args.Y,
@@ -53,6 +54,8 @@ namespace Portfolio.Asteroids.Server
         [DataContract]
         public sealed partial class SignalShip : Reducer, IReducerArgs
         {
+            [DataMember(Name = "seat")]
+            public byte Seat;
             [DataMember(Name = "kind")]
             public byte Kind;
             [DataMember(Name = "x")]
@@ -65,6 +68,7 @@ namespace Portfolio.Asteroids.Server
             public float B;
 
             public SignalShip(
+                byte Seat,
                 byte Kind,
                 float X,
                 float Y,
@@ -72,6 +76,7 @@ namespace Portfolio.Asteroids.Server
                 float B
             )
             {
+                this.Seat = Seat;
                 this.Kind = Kind;
                 this.X = X;
                 this.Y = Y;

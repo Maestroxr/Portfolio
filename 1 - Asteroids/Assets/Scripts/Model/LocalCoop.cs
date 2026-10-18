@@ -126,15 +126,23 @@ namespace Portfolio.Asteroids
     }
 
 
-    /// <summary>One pilot of a local co-op mission: the seat, the score (or the money of a strike mission) and the ships.</summary>
+    /// <summary>
+    /// One pilot of a local co-op mission (or of a party of an online room at one device): the seat, the score (or the
+    /// money of a strike mission) and the ships.
+    /// </summary>
     public sealed class SquadPilot
     {
-        public SquadPilot(int seat, string name, Color color, int lives)
+        /// <summary>
+        /// A pilot with <paramref name="lives"/> ships. Their score is kept in <paramref name="score"/> when one is given
+        /// (the device's own pilot of a party keeps the mission's), else in a keeper of their own.
+        /// </summary>
+        public SquadPilot(int seat, string name, Color color, int lives, ScoreKeeper score = null)
         {
             Seat = seat;
             Name = name ?? string.Empty;
             Color = color;
             Lives = Mathf.Max(1, lives);
+            Score = score ?? new ScoreKeeper();
         }
 
         public int Seat { get; }
@@ -144,7 +152,7 @@ namespace Portfolio.Asteroids
         public Color Color { get; }
 
         /// <summary>The pilot's own score, kills, combo and accuracy; the money of a strike mission.</summary>
-        public ScoreKeeper Score { get; } = new ScoreKeeper();
+        public ScoreKeeper Score { get; }
 
         /// <summary>Ships left, the one flying included.</summary>
         public int Lives { get; private set; }
@@ -188,14 +196,19 @@ namespace Portfolio.Asteroids
     /// <summary>
     /// The pilots of a local co-op mission and how it goes for them: every pilot has a score and ships of their own (like
     /// the pilots of an online room), a pilot out of ships is out, and the mission is lost when every pilot is out. The
-    /// standings rank the pilots by score as the base server ranks a room (<see cref="Standings"/>).
+    /// standings rank the pilots by score as the base server ranks a room (<see cref="Standings"/>). The pilots of an
+    /// online room who fly at one device (the device's player and their companions) are a squad too: there the seats are
+    /// the seats of the room, and the mission goes on while a pilot of another device flies.
     /// </summary>
     public sealed class LocalSquad
     {
         private readonly List<SquadPilot> pilots = new List<SquadPilot>();
 
-        /// <summary>A squad of the playing seats of <paramref name="seats"/>, with <paramref name="lives"/> ships each.</summary>
-        public LocalSquad(IReadOnlyList<LocalSeat> seats, int lives)
+        /// <summary>
+        /// A squad of the playing seats of <paramref name="seats"/>, with <paramref name="lives"/> ships each. The first
+        /// pilot keeps their score in <paramref name="firstScore"/> when one is given (the device's own pilot of a party).
+        /// </summary>
+        public LocalSquad(IReadOnlyList<LocalSeat> seats, int lives, ScoreKeeper firstScore = null)
         {
             if (seats == null)
             {
@@ -203,7 +216,7 @@ namespace Portfolio.Asteroids
             }
             foreach (LocalSeat seat in seats)
             {
-                pilots.Add(new SquadPilot(seat.Index, seat.Name, seat.Color, lives));
+                pilots.Add(new SquadPilot(seat.Index, seat.Name, seat.Color, lives, pilots.Count == 0 ? firstScore : null));
             }
         }
 

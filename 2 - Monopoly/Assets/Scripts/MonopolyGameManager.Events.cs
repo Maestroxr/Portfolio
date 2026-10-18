@@ -97,7 +97,8 @@ namespace Portfolio.Monopoly
                         SaveMatch(true);
                         if (HumanCount > 1)
                         {
-                            bool yours = (IsOnlineMatch && here) || MonopolyStyle.IsYou(player);
+                            // "You" is the one person at this device; several people here are told apart by name.
+                            bool yours = IsOnlineMatch ? here && !SeveralPlayHere : MonopolyStyle.IsYou(player);
                             ui.Banner(yours ? L.T("YOUR TURN") : L.F("{0}'S TURN", MonopolyStyle.NameOf(player).ToUpperInvariant()), PlayerColor(e.player), 0.7f);
                         }
                     }

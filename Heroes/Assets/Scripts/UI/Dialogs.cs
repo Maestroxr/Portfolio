@@ -398,7 +398,8 @@ namespace Portfolio.Heroes.UI
         /// <summary>
         /// The end of a hot seat: who won (a person by name, or the computer), and the standings of every realm in its
         /// colour, with their towns, battles and the creatures they slew. Play Again starts the same setup over; nothing
-        /// counts toward the campaign.
+        /// counts toward the campaign. An online game several people played at this device ends the same way, a victory
+        /// when one of them won, and leads back to the room.
         /// </summary>
         public void ShowHotSeat(GameState state, int days)
         {
@@ -406,8 +407,9 @@ namespace Portfolio.Heroes.UI
             shownHotSeat = (state, days);
             ClearBody();
             ClearButtons();
+            bool online = Manager.IsOnlineGame;
             PlayerState winner = state.Player(state.winner);
-            bool personWon = winner != null && winner.human;
+            bool personWon = online ? Manager.WonHere(state) : winner != null && winner.human;
             Heading.text = Words.T(personWon ? "Victory" : "Defeat");
 
             TextMeshProUGUI verdict = UIKit.Heading(Body, "Verdict",
@@ -423,7 +425,10 @@ namespace Portfolio.Heroes.UI
             y -= 42f;
 
             Image plate = UIKit.Card(Body, "Standings");
-            List<PlayerState> standings = HotSeat.Standings(state);
+            // Online the realms stand in the order the room ranks its members.
+            List<PlayerState> standings = online && Manager.Game != null && Manager.Game.State == state
+                ? Manager.TableStandings()
+                : HotSeat.Standings(state);
             float height = 22f + (standings.Count + 1) * 40f;
             UIKit.Pin((RectTransform)plate.transform, new Vector2(0.5f, 1f), new Vector2(0f, y), new Vector2(780f, height));
             RectTransform rows = UIKit.Content(plate, 8f);
@@ -436,13 +441,16 @@ namespace Portfolio.Heroes.UI
             y -= height + 14f;
             Window.sizeDelta = new Vector2(Window.sizeDelta.x, Mathf.Max(400f, 70f - y + 24f + ButtonRow + 40f));
 
-            Button again = Answer("Play Again", () =>
+            if (!online)
             {
-                Close();
-                Manager.PlayHotSeatAgain();
-            });
-            UIKit.Fit((RectTransform)again.transform, 260f, ButtonRow - 4f);
-            Button leave = Answer("Back to the Title", Leave);
+                Button again = Answer("Play Again", () =>
+                {
+                    Close();
+                    Manager.PlayHotSeatAgain();
+                });
+                UIKit.Fit((RectTransform)again.transform, 260f, ButtonRow - 4f);
+            }
+            Button leave = Answer(online ? "Back to the Room" : "Back to the Title", Leave);
             UIKit.Fit((RectTransform)leave.transform, 300f, ButtonRow - 4f);
             Open();
         }

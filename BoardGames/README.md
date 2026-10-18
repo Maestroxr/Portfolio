@@ -140,6 +140,18 @@ games of a room. A player who leaves or loses the connection is played on by the
 ends. Nothing pauses an online game (Escape opens the match menu), and it earns no stars. The result leads back to the
 room.
 
+**Private rooms and players at one device.** A room can be private (*Who can join* in the lobby's form): it is not
+listed, and the players the host gives its code to enter with it. BaseGame's lobby also lets other people join at the
+device (*Players at this device*, signed in to an account of their own or as a guest) to play online through its
+connection, but a board game has two seats: a device with two players fills the table, and two people at one device
+playing each other is local play (*Two Players*). So such a room does not start, with or without a computer opponent
+(the base server refuses a room that needs two players, the game's module the one with a computer opponent, where no
+seat is left for the computer), a device with two players cannot enter a room somebody else is in, and tournaments are
+one player a device. The game is ready for several seats at one device all the same: the seats played at this device
+are a `DeviceSeats` (`Scripts/Model`), which the manager asks who acts for the people here (named, with the hand-over
+and the board turning as in local play, "(here)" in the panels), and the controller sends a command for any of their
+seats and reports the result of each.
+
 **Tournaments.** The lobby's Tournaments tab (BaseGame's) opens a cup of up to 64 entrants for one game, two a match:
 the bracket is drawn when the host starts it, every player's client goes to its match room by itself, and the winner
 goes on. A draw in a draughts or chess match is decided for the bracket only: the side with more material goes on, and
@@ -216,7 +228,8 @@ What differs per game is in its own file, through the same hooks (`XBegin`, `XEn
 - `Tests/Editor`: edit mode tests. `Model/Checkers`, `Model/Chess` and `Model/Backgammon`: the rules of each game
   (chess perft counts of the standard test positions, every backgammon play checked against a plain brute-force
   reference, endings, scoring), the commands and their text, two tables fed the same log staying in step, the
-  computer finishing games at every level and the stronger beating the weaker. The other files: the themes, the
+  computer finishing games at every level and the stronger beating the weaker; `Model/DeviceSeatsTests.cs`: the seats
+  an online table is played from at one device. The other files: the themes, the
   localization table, the campaign and its stars, games through their YAML saves and the local play rules. The model
   tests also run outside Unity: `dotnet test` in the `Tests` folder next to `Assets` (`BoardGames.Model.Tests.csproj`,
   on BaseGame's `ModelTests.props`).
@@ -256,7 +269,11 @@ arguments, and in a release player, nothing of it runs:
   against another player: the host opens a room (`-boardgames-level 0|1|2|3|4` picks the rule set: the three draughts,
   chess, backgammon) and starts it once the guest is ready; the guest leaves its first decision to the clock. Both play
   with the computer's Normal choice. `joinquits` leaves the game after a while, and the host plays on against the
-  computer. `hosttournament` and `jointournament` play a cup (`-boardgames-entrants`, four by default;
+  computer. `hostprivate` and `joinprivate` play a private room, entered with the code the host leaves in the folder.
+  `hostparty` brings a second player to the host's device first (`-gamebox-companions 1`, or a guest with
+  `-gamebox-guests 1 -gamebox-companions 0`): the two fill the table, so the start is refused, in the room as it is and
+  again with a computer opponent, and the tour photographs both refusals in the lobby and leaves; `joinparty` against
+  a `host` is refused as well (the room is full), and the tour writes the refusal down and quits. `hosttournament` and `jointournament` play a cup (`-boardgames-entrants`, four by default;
   `-boardgames-ready`, the seconds to show up for a match). Every action of the log is written down with the checksum
   of the table after it, and the logs of the players carry the same numbers line for line. Give each player its own
   `-gamebox-identity <slot>`, and try it on a server of your own (`spacetime start --listen-addr 127.0.0.1:3917`,
@@ -292,7 +309,8 @@ word.
 
 The game's [SpacetimeDB](https://spacetimedb.com) module is the folder `Server` next to `Assets` (`Server/Lib.cs` and
 `StdbModule.csproj`): the Gamebox base server of the BaseGame repository (`BaseServer`) plus this game's partial
-`Module`, which seats the table of two (`ConfigureRoom` checks the rule set and the clock, `OnRoomStarted`), checks the
+`Module`, which seats the table of two (`ConfigureRoom` checks the rule set and the clock, `OnRoomStarted`, which
+refuses the start when both seats are people at one device), checks the
 commands (`ValidateAction`: moves, backgammon rolls and cube actions and resignations, from the player of the seat or
 the host for a computer seat; the computer taking a seat is the server's own action), appends the timeout action
 (`OnTurnTimedOut`), hands the seat of a leaver to the computer (`OnMemberLeft`, `KeepPlaying`) and ranks the table

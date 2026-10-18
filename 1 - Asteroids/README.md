@@ -37,7 +37,9 @@ modes can be flown together online.
 - **Multiplayer.** The **Multiplayer** button of the mission select opens the lobby: up to four pilots fly a mission
   of the campaign together, each with their own ships, hull, weapons and score, against the same rocks and enemies.
   Kills score for the pilot who made them, a pickup goes to whoever reaches it first, and a pilot without ships watches
-  the others. The mission is won together, and lost when nobody flies any more.
+  the others. The mission is won together, and lost when nobody flies any more. A room can be private (entered with
+  its code), and several pilots can fly online from one computer, each with their own keys or pad (see
+  [Multiplayer](#multiplayer)).
 - **Pickups.** Crystals (points, and the goal of collection missions), repair kits, shield cells, spare ships, nova
   bombs, weapon crates and power-ups. A weapon crate switches to its weapon and raises the weapon level (up to four):
   Pulse Blaster, Scatter Cannon, Lancer Laser (pierces) and Seeker Missiles (home in). The timed power-ups are
@@ -237,7 +239,7 @@ with, that Arcade 80s replaces it, and that selecting it changes what the game r
 | `Scripts/Model/LocalCoop.cs`, `Scripts/Controller/AsteroidsGameManager.Local.cs`, `LocalShipInput.cs`, `Scripts/View/PilotTag.cs` | Local co-op (see Local co-op): the rules of the setup and the control scheme, the pilots' own scores and lives, a ship's input from its seat's controls, and the seat colour and name tag every co-op ship wears |
 | `Scripts/Controller/FieldReplication.cs`, `IFieldLink.cs`, `RemoteShip.cs` | Keeps the playfields in step: the simulator announces, updates and removes bodies, the others show them as puppets and report their hits, shots and claims; the stand-ins of the other ships |
 | `Scripts/Model/BodyCodec.cs`, `BodyRegistry.cs`, `FieldMath.cs`, `ShipPose.cs`, `CoopRules.cs` | The plain parts of it: what a body is on the wire, the net ids, distances on a field that wraps, the flags of a ship's pose, the options of a room |
-| `Scripts/Controller/AsteroidsOnlineTour.cs` | Development builds only: `-asteroids-online host <folder>` and `-asteroids-online join <folder>` fly a mission together between two running players (`-asteroids-level <index>`, `-asteroids-lives <n>`; for strike missions also `-asteroids-difficulty <0-2>` and `-asteroids-skip-to-boss <seconds>`) |
+| `Scripts/Controller/AsteroidsOnlineTour.cs` | Development builds only: `-asteroids-online host <folder>` and `-asteroids-online join <folder>` fly a mission together between two running players (`-asteroids-level <index>`, `-asteroids-lives <n>`; for strike missions also `-asteroids-difficulty <0-2>` and `-asteroids-skip-to-boss <seconds>`); `hostprivate` / `joinprivate` play a private room, `hostparty` / `joinparty` bring other pilots to the device (`-gamebox-companions <n>`, `-gamebox-guests <n>`) and fly every ship there; the host's room takes four pilots unless `-gamebox-room-players <n>` says otherwise; a room whose pilots are all at one device does not start (that is Local Play) |
 | `Scripts/Model/Strike/*` | Planet Strike's plain rules and data: `StrikeRules` (every number of the mode), `StrikeUnitRules` and `StrikeWeaponRules` (the unit and weapon tables), `StrikeArmory` (the Supply Room's catalogue and rules, and `StrikeLoadout`, a pilot's money, energy, shields and weapons), `ScrollDirector` (the scroll, the timeline of a level and the boss's arrival), `FlightPaths` (the aircraft's routes), `StrikeLevel` and `StrikeTheme` |
 | `Scripts/Controller/Strike/*` | The strike bodies (`StrikeAircraft`, `GroundUnit`, `StrikeBoss` with its `BossPart`s, `StrikeReward`, `EnemyBeam`), the pilot's weapons (`StrikeGunnery`, `PlayerBeam`) and `StrikeAutopilot` |
 | `Scripts/Controller/AsteroidsGameManager.Strike.cs`, `SpawnService.Strike.cs` | The strike mission's flow (the working copy of the pilot, money, stars, the fly-off, the Supply Room) and its spawning |
@@ -334,6 +336,22 @@ room's host simulates the world** exactly as in the single player game (waves, s
   they reach first, and banks the money of a won mission into their own pilot when their ship lands (no stars are
   given online). The Supply Room is not open inside a room. Boss health grows by half for every pilot after the
   first.
+- **Private rooms.** "Who can join" in the lobby's form opens a room that is not listed: the host copies its code and
+  sends it, and the others enter it under "Invited to a private room?". The mission plays as in any room.
+- **Several pilots at one device.** Under "Players at this device" in the lobby more pilots join the player at this
+  computer, signed in to accounts of their own or as guests; each holds a seat of the room, with their own name, ships,
+  score and place. The manager flies them as a party, with the machinery of local co-op (`LocalSquad`, wingmen,
+  `LocalShipInput`): the device's player flies the scene's ship and every other pilot a wingman, each in the colour of
+  their seat (the one the other devices show), with the keys or pad the lobby's **Controls** button gave them (the
+  local play bindings; with one pilot at the device the controls stay as they are). Every ship flown here sends its
+  pose, its shots, hits, signals and pickup claims under its pilot's seat (`DeviceSeats`; the server checks the seat is
+  the caller's or a companion's, `ActingMember`), the pilots of other devices get stand-ins and the pilots at this
+  device none, each pilot's score goes out for their seat, a pilot out of ships is done in the room, and this device
+  watches once all of its pilots are out. The HUD lists every pilot of the room with the hull and ships of those
+  flying here, and the results add the party's numbers up. In a planet strike every pilot of the party flies a copy of
+  the saved pilot's kit; a won mission pays the party's money into the saved pilot once when one of its ships lands,
+  and the device's own kit is banked when its ship is home. Tournaments take one player a device; the campaign progress
+  online is the device player's.
 
 ## Phones and tablets
 
@@ -373,7 +391,7 @@ who may write what, arbitrates pickups and ends the mission:
 | `PilotStats` (public) | Missions flown and won, the best score of a pilot. |
 | `SyncField(spawns, moves, exits, signals)` | The simulator's update of the playfield, in one call. |
 | `ReportMission`, `CompleteMission` | The simulator reports waves and objective, and the victory. |
-| `FireShots`, `ReportHits`, `SignalShip`, `ClaimBody` | What every pilot sends: shots to show, hits on puppets, signals of the ship, the claim on a pickup. |
+| `FireShots`, `ReportHits`, `SignalShip`, `ClaimBody` | What every pilot sends: shots to show, hits on puppets, signals of the ship, the claim on a pickup. The first argument is the seat they are for: the caller's own (`NoSeat`) or a companion's at the caller's device. |
 | `ConfigureRoom`, `OnRoomStarted`, `OnMemberLeft`, `OnRoomFinished`, `OnRoomCleared`, `OnUserDeleted` | The base server's extension points: the limits of a room, the mission row, the end when the simulator leaves, the stats, cleaning up. |
 
 - `Packages/manifest.json` references the SpacetimeDB SDK and the base server package

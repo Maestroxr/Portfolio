@@ -19,7 +19,8 @@ namespace Portfolio.EndlessRunner
     /// <summary>
     /// The run of one runner: how far it got, its coins and the points they are worth, its hearts and its power-ups. The
     /// game alone has one (the runner of the scene); a local race has one per seat, each with its own runner, camera and
-    /// HUD, and its own phase (running, over the line, out of hearts, watching).
+    /// HUD, and its own phase (running, over the line, out of hearts, watching), and so has an online race with several
+    /// runners at this device (a party), one per seat of the room played here.
     /// </summary>
     internal sealed class RunnerRun
     {
@@ -66,13 +67,16 @@ namespace Portfolio.EndlessRunner
         /// <summary>A point a meter, and the points of the coins.</summary>
         public float Score => Mathf.Floor(Distance) + CoinPoints;
 
-        /// <summary>The seat that plays the run in a local race, or null.</summary>
+        /// <summary>The seat that plays the run in a local race (or in a party online), or null.</summary>
         public LocalSeat Seat { get; set; }
 
-        /// <summary>The run on the scoreboard of a local race, or null.</summary>
+        /// <summary>The run on the scoreboard of a local race, or its runner of the room in a party online; or null.</summary>
         public Racer Racer { get; set; }
 
-        /// <summary>The run's HUD over its part of the screen in a local race, or null.</summary>
+        /// <summary>The score last reported to the room in a race online, or -1 before the first report.</summary>
+        public long ReportedScore { get; set; } = -1;
+
+        /// <summary>The run's HUD over its part of the screen in a local race (or a party), or null.</summary>
         public RunnerSeatHud Hud { get; set; }
 
         /// <summary>The run is over (across the line or out of hearts) and its player watches the others.</summary>
@@ -93,6 +97,7 @@ namespace Portfolio.EndlessRunner
             HeartsLost = 0;
             RecordAnnounced = false;
             Finished = false;
+            ReportedScore = -1;
             PhaseTime = 0f;
             ClearPowerUps();
         }

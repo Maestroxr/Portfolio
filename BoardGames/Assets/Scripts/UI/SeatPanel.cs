@@ -7,10 +7,11 @@ namespace Portfolio.BoardGames
 {
     /// <summary>
     /// The panel of one seat in the HUD: a badge in the side's colour, the player's name ("(you)" after the player at
-    /// this device online), the side's name (Light or Dark in draughts, White or Black in chess and backgammon), the
-    /// game's line about the seat (pieces taken, material, pips and checkers borne off) and a mark while it is the
-    /// seat's turn. The words come from the manager (<see cref="BoardGamesManager.SideName"/>,
-    /// <see cref="BoardGamesManager.SeatLine"/>), which writes them in the language shown.
+    /// this device online, "(here)" after a player who joined at this device), the side's name (Light or Dark in
+    /// draughts, White or Black in chess and backgammon), the game's line about the seat (pieces taken, material, pips
+    /// and checkers borne off) and a mark while it is the seat's turn. The words come from the manager
+    /// (<see cref="BoardGamesManager.SideName"/>, <see cref="BoardGamesManager.SeatLine"/>), which writes them in the
+    /// language shown.
     /// </summary>
     public sealed class SeatPanel : MonoBehaviour
     {
@@ -21,12 +22,16 @@ namespace Portfolio.BoardGames
         [SerializeField] private GameObject turnMark;
         [SerializeField] private GameObject kingIcon;
 
-        /// <summary>Whose panel it is: the name, the side's colour and words, and whether it is the player at this device.</summary>
-        public void Bind(string name, Color color, string sideWords, bool you)
+        /// <summary>
+        /// Whose panel it is: the name, the side's colour and words, and whether it is the player at this device
+        /// (<paramref name="you"/>) or another player who joined at this device online (<paramref name="here"/>); the
+        /// crown marks a seat played at this device either way.
+        /// </summary>
+        public void Bind(string name, Color color, string sideWords, bool you, bool here = false)
         {
             if (nameText != null)
             {
-                nameText.text = Standings.Who(name ?? "", you);
+                nameText.text = you ? Standings.Who(name ?? "", true) : here ? $"{name ?? ""} {L.T("(here)")}" : name ?? "";
             }
             if (badge != null)
             {
@@ -38,7 +43,7 @@ namespace Portfolio.BoardGames
             }
             if (kingIcon != null)
             {
-                kingIcon.SetActive(you);
+                kingIcon.SetActive(you || here);
             }
         }
 

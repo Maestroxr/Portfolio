@@ -12,6 +12,8 @@ using SpacetimeDB;
 /// or out of hearts calls <see cref="FinishRun"/>; the base server ranks the runners by score when the last one is
 /// done. The server does not know the levels of the game, so the host's client writes what matters of the track
 /// into the options of the room (its length and the coins on it), and the server holds the runners to that.
+/// Several people may race from one device (the companions of the base server): its connection claims and finishes
+/// for each of them, so both reducers name the seat they are about (<see cref="NoSeat"/> is the caller's own).
 ///
 /// After a change: publish the module, then generate the client bindings (Gamebox > Server in the Unity editor,
 /// or <c>spacetime publish</c> and <c>spacetime generate</c> in the project folder, which read spacetime.json).
@@ -150,18 +152,20 @@ public static partial class Module
     // ---------------------------------------------------------------------------------------------------
 
     /// <summary>
-    /// A runner touched a coin or gem. The first claim of a piece gets it; a later one is not an error, only late,
-    /// and so is a claim that arrives when the race is over or the runner is out.
+    /// A runner touched a coin or gem: the one at <paramref name="seat"/> of the caller's room, played at the caller's
+    /// device (<see cref="NoSeat"/> for the caller's own). The first claim of a piece gets it; a later one is not an
+    /// error, only late, and so is a claim that arrives when the race is over or the runner is out, or one for a seat
+    /// the caller does not play.
     /// </summary>
     [SpacetimeDB.Reducer]
-    public static void ClaimPiece(ReducerContext ctx, uint piece, byte value)
+    public static void ClaimPiece(ReducerContext ctx, byte seat, uint piece, byte value)
     {
         if (value == 0 || value > MaxPieceValue)
         {
             throw new Exception($"A piece is worth 1 to {MaxPieceValue} coins.");
         }
-        if (ctx.Db.RoomMember.Identity.Find(ctx.Sender) is not { Playing: true } member
-            || ctx.Db.Room.Id.Find(member.RoomId) is not { State: RoomState.Playing } room
+        if (ActingMember(ctx, seat) is not { } member
+            || ctx.Db.Room.Id.Find(member.RoomId) is not { } room
             || ctx.Db.RunnerRace.RoomId.Find(room.Id) is not { } race)
         {
             return;
@@ -180,7 +184,7 @@ public static partial class Module
             Key = key,
             RoomId = room.Id,
             Piece = piece,
-            Owner = ctx.Sender,
+            Owner = member.Identity,
             Seat = member.Seat,
             Value = value,
         });
@@ -189,14 +193,15 @@ public static partial class Module
     }
 
     /// <summary>
-    /// A runner is done: over the finish line, or out of hearts. The distance is kept for the records, the score
-    /// is held to what the distance and the coins of the runner can be worth, and the run ends as the base server's
-    /// <see cref="FinishPlaying"/> ends it: the race finishes when the last runner is done.
+    /// A runner is done: over the finish line, or out of hearts. The runner is the one at <paramref name="seat"/> of
+    /// the caller's room, played at the caller's device (<see cref="NoSeat"/> for the caller's own). The distance is
+    /// kept for the records, the score is held to what the distance and the coins of the runner can be worth, and the
+    /// run ends as the base server's <see cref="FinishPlaying"/> ends it: the race finishes when the last runner is done.
     /// </summary>
     [SpacetimeDB.Reducer]
-    public static void FinishRun(ReducerContext ctx, uint distance, long score)
+    public static void FinishRun(ReducerContext ctx, byte seat, uint distance, long score)
     {
-        var member = RequirePlayingMember(ctx, out var room);
+        var member = RequirePlayingActor(ctx, seat, out var room);
         if (ctx.Db.RunnerRace.RoomId.Find(room.Id) is { Length: > 0 } race)
         {
             distance = Math.Min(distance, race.Length + FinishMargin);
@@ -217,7 +222,7 @@ public static partial class Module
             stats.BestDistance = distance;
             ctx.Db.RunnerStats.Player.Update(stats);
         }
-        FinishPlaying(ctx, score);
+        FinishPlaying(ctx, member.Seat, score);
     }
 
     // ---------------------------------------------------------------------------------------------------

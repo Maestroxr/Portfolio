@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Gamebox;
 using Gamebox.Online;
+using Gamebox.UI;
 using UnityEngine;
 
 namespace Portfolio.MemoryCards
@@ -17,7 +18,18 @@ namespace Portfolio.MemoryCards
     /// leaves in the middle of the game. <c>-memorycards-mistakes 0.6</c> makes a player miss that often, so the turn
     /// changes hands, <c>-memorycards-bombs</c> lets it flip bombs, and the host's <c>-memorycards-level &lt;n&gt;</c> picks
     /// another of the levels a room can play. Run the players with <c>-gamebox-identity</c> to tell them apart, and
-    /// <c>-gamebox-server</c> / <c>-gamebox-database</c> for a test server. The roles <c>hosttournament</c> and
+    /// <c>-gamebox-server</c> / <c>-gamebox-database</c> for a test server.
+    ///
+    /// The roles <c>hostprivate</c> and <c>joinprivate</c> play the same game in a private room, entered with its code;
+    /// <c>hostparty</c> and <c>joinparty</c> bring other players to the device first (<c>-gamebox-companions</c>, one by
+    /// default, and <c>-gamebox-guests</c>), and the autopilot plays the turn of whichever player at the device has it.
+    /// The host's room takes <c>-memorycards-players</c> players (two by default) plus the party at its own device, so a
+    /// host that waits for a party from another device is told how many come (<c>-memorycards-players 3</c>).
+    /// <c>-memorycards-handover</c> has a party hand the device over between its players: the tour lifts the curtain for
+    /// each of them, with a picture of the first. The log names the seats: who sits where and at which device, every turn,
+    /// and the results.
+    ///
+    /// The roles <c>hosttournament</c> and
     /// <c>jointournament</c> play a tournament instead of a room: the host opens one (two a match, as many entrants as
     /// <c>-memorycards-entrants</c>, default 4, with <c>-memorycards-ready</c> seconds to show up for a match, default 30)
     /// and starts it once the others entered, and everybody plays their matches with the autopilot until they are out or
@@ -33,6 +45,8 @@ namespace Portfolio.MemoryCards
         private const string MistakesArgument = "-memorycards-mistakes";
         private const string BombsArgument = "-memorycards-bombs";
         private const string LevelArgument = "-memorycards-level";
+        private const string PlayersArgument = "-memorycards-players";
+        private const string HandOverArgument = "-memorycards-handover";
         private const string EntrantsArgument = "-memorycards-entrants";
         private const string ReadyArgument = "-memorycards-ready";
         private const string StartInArgument = "-memorycards-startin";
@@ -42,6 +56,7 @@ namespace Portfolio.MemoryCards
         private const int TurnSeconds = 10;
 
         private MemoryCardsGameManager manager;
+        private int handOvers;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Launch()
@@ -84,6 +99,12 @@ namespace Portfolio.MemoryCards
                 yield break;
             }
 
+            Server.TurnChanged += NoteTurn;
+            if (HasArgument(HandOverArgument))
+            {
+                manager.online.HandOverLocalSeats = true;
+                Note("the players at this device hand it over between their turns");
+            }
             if (Hosting)
             {
                 IReadOnlyList<RoomLevelChoice> choices = manager.online.LevelChoices;
@@ -94,7 +115,9 @@ namespace Portfolio.MemoryCards
                 }
                 int level = choices[Mathf.Clamp(NumberArgument(LevelArgument, LevelChoice), 0, choices.Count - 1)].Index;
                 string options = manager.online.ComposeOptions(level, RoomOptions.Write(RoomOptions.TurnOption, TurnSeconds));
-                yield return HostRoom("Tour room", level, options, 2);
+                // Room for the players the host waits for, and for the party at its own device.
+                int players = Mathf.Clamp(NumberArgument(PlayersArgument, VersusMatch.MinPlayers) + PartyExtras, VersusMatch.MinPlayers, VersusMatch.MaxPlayers);
+                yield return HostRoom("Tour room", level, options, (byte)players);
                 yield return Shot("01_room");
                 yield return WaitForGuests(1, 120f);
                 yield return new WaitForSeconds(0.5f);
@@ -114,13 +137,14 @@ namespace Portfolio.MemoryCards
                 yield return Fail("the game did not start");
                 yield break;
             }
-            Note("playing");
+            Note("playing; seats: " + string.Join(", ", Server.Members.Select(member => $"{member.Seat} {Server.NameOf(member.Identity)}{AtThisDevice(member)}")));
             var pilot = gameObject.AddComponent<MemoryCardsAutopilot>();
             pilot.manager = manager;
             pilot.mistakeRate = Mathf.Clamp01(NumberArgument(MistakesArgument, 0.1f));
             pilot.avoidBombs = !HasArgument(BombsArgument);
             pilot.interval = 0.55f;
             pilot.enabled = Role != "idle";
+            Coroutine curtains = StartCoroutine(LiftCurtains());
             yield return new WaitForSeconds(7f);
             yield return Shot("03_playing");
             if (Role == "quitter")
@@ -137,11 +161,17 @@ namespace Portfolio.MemoryCards
             yield return Shot("04_playing_later");
             yield return WaitFor(() => Over, 600f, "the end of the game");
             pilot.enabled = false;
+            StopCoroutine(curtains);
             yield return new WaitForSeconds(2.5f);
             yield return Shot("05_results");
-            Note($"result: {manager.State}; " + string.Join(", ", manager.Versus.Seats.Select(seat => $"{seat.Name} {seat.Score} ({seat.Sets} sets)")));
+            Note($"result: {manager.State}; " + string.Join(", ", manager.Versus.Seats.Select(seat =>
+                $"{seat.Name} {seat.Score} ({seat.Sets} sets){(manager.PlayedHere(seat.Seat) ? " at this device" : "")}")));
+            if (HasArgument(HandOverArgument))
+            {
+                Note($"hand-overs: {handOvers}");
+            }
             yield return WaitFor(() => Server.CurrentRoom != null && Server.CurrentRoom.Phase == RoomPhase.Finished, 30f, "the room to finish");
-            Note("places: " + string.Join(", ", Server.Members.Select(member => $"{Server.NameOf(member.Identity)} {member.Place}. with {member.Score}")));
+            Note("places: " + string.Join(", ", Server.Members.Select(member => $"{Server.NameOf(member.Identity)} {member.Place}. with {member.Score}{AtThisDevice(member)}")));
 
             manager.ReturnToLevelSelect();
             yield return new WaitForSeconds(1.5f);
@@ -152,6 +182,57 @@ namespace Portfolio.MemoryCards
             yield return new WaitForSeconds(1f);
             Note("done");
             Quit();
+        }
+
+        /// <summary>How the log marks a member: the player of this device, a player at it, or nothing for the others.</summary>
+        private string AtThisDevice(RoomMemberInfo member)
+        {
+            return Server.IsMe(member) ? " (this device)" : Server.IsLocal(member) ? " (at this device)" : "";
+        }
+
+        /// <summary>
+        /// Writes down every turn the server begins: its seat, the player, and whether they play at this device. The end of
+        /// the turns (no turn, when the game is over) is not one.
+        /// </summary>
+        private void NoteTurn(RoomTurnInfo turn)
+        {
+            if (turn == null)
+            {
+                return;
+            }
+            RoomMemberInfo member = Server.Members.FirstOrDefault(other => other.Seat == turn.Seat);
+            if (member != null && Server.CurrentRoom != null && Server.CurrentRoom.IsPlaying)
+            {
+                Note($"turn {turn.Number}: seat {turn.Seat} {Server.NameOf(member.Identity)}{AtThisDevice(member)}");
+            }
+        }
+
+        /// <summary>
+        /// The next player at this device takes the board whenever the hand-over screen asks for them, as a person would
+        /// (only with <c>-memorycards-handover</c>); the first screen is photographed.
+        /// </summary>
+        private IEnumerator LiftCurtains()
+        {
+            while (true)
+            {
+                TurnCurtain curtain = manager.GetComponent<TurnCurtain>();
+                if (curtain != null && curtain.IsShown)
+                {
+                    handOvers++;
+                    string seat = manager.Versus != null ? manager.Versus.CurrentSeat.Name : "?";
+                    Note($"hand-over {handOvers} to {seat}");
+                    if (handOvers == 1)
+                    {
+                        yield return Shot("03_handover");
+                    }
+                    yield return new WaitForSeconds(0.8f);
+                    if (curtain != null && curtain.IsShown)
+                    {
+                        curtain.Lift();
+                    }
+                }
+                yield return null;
+            }
         }
 
         /// <summary>A tournament of versus games: the host opens and starts it, everybody plays their matches with the autopilot.</summary>

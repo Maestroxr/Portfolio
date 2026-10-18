@@ -624,7 +624,7 @@ namespace Portfolio.Asteroids
             field.WorldTimeScale = 1f;
             SimulateShips(deltaTime);
             AdvanceScroll(deltaTime);
-            if (IsLocal)
+            if (FliesSquad)
             {
                 UpdateLocalPilots(deltaTime);
             }
@@ -682,10 +682,13 @@ namespace Portfolio.Asteroids
         }
 
 
-        /// <summary>The SHIELD LOW warning, from the working copy (not in local co-op, where the pilots list shows every pilot's energy).</summary>
+        /// <summary>
+        /// The SHIELD LOW warning, from the working copy (not with several pilots at this device, where the pilots list shows
+        /// every pilot's energy).
+        /// </summary>
         private void WatchPilot()
         {
-            if (working == null || IsLocal)
+            if (working == null || FliesSquad)
             {
                 return;
             }
@@ -771,7 +774,7 @@ namespace Portfolio.Asteroids
                     pilot.Ship.Simulation?.Stop();
                 }
             }
-            if (IsLocal ? AnyLocalShipAlive : ship.IsAlive)
+            if (FliesSquad ? AnyLocalShipAlive : ship.IsAlive)
             {
                 sounds?.FlyBy();
             }
@@ -810,9 +813,9 @@ namespace Portfolio.Asteroids
             flyOffTime += deltaTime;
             float t = Mathf.Clamp01(flyOffTime / StrikeRules.FlyOffTime);
             float top = Playground != null ? Playground.Top : StrikeRules.HalfSize.y;
-            if (IsLocal)
+            if (FliesSquad)
             {
-                // The ships of a local mission close up into a row and climb out side by side.
+                // The ships flown at this device close up into a row and climb out side by side.
                 Vector2 halfSize = Playground != null ? Playground.HalfSize : StrikeRules.HalfSize;
                 for (int i = 0; i < localPilots.Count; i++)
                 {
@@ -855,7 +858,9 @@ namespace Portfolio.Asteroids
         /// <summary>
         /// The ship of a won mission is home: the working copy with the mission's money becomes the saved pilot. In local
         /// co-op the ships are home when one of them is: only the money the squad earned goes into the saved pilot's
-        /// wallet (once), the rest of the saved pilot stays as it was (the pilots flew copies of its kit).
+        /// wallet (once), the rest of the saved pilot stays as it was (the pilots flew copies of its kit). A party of an
+        /// online room is home when one of its ships is too: the money every pilot at this device earned goes into the
+        /// wallet once, and the working copy of the device's own pilot becomes the saved pilot when their ship is home.
         /// </summary>
         private void Land()
         {
@@ -870,14 +875,15 @@ namespace Portfolio.Asteroids
                 progress?.SavePilot(Pilot);
                 return;
             }
-            if (landed || working == null || !ship.IsAlive)
+            bool party = IsParty;
+            if (landed || working == null || !(party ? AnyLocalShipAlive : ship.IsAlive))
             {
                 return;
             }
             landed = true;
             // The room's difficulty was for that room only.
             StrikeDifficulty own = Pilot.Difficulty;
-            Pilot.CommitMission(working, score.Score);
+            Pilot.CommitMission(!party || ship.IsAlive ? working : null, party ? squad.TeamScore : score.Score);
             Pilot.Difficulty = own;
             progress?.SavePilot(Pilot);
         }
@@ -958,7 +964,7 @@ namespace Portfolio.Asteroids
             var state = new StrikeHudState
             {
                 Wallet = walletAtStart,
-                MissionMoney = IsLocal && squad != null ? squad.TeamScore : score.Score,
+                MissionMoney = FliesSquad && squad != null ? squad.TeamScore : score.Score,
                 Energy = Mathf.Clamp01(working.Energy / StrikeRules.MaxEnergy),
                 Shield = working.PhaseShields > 0 ? Mathf.Clamp01(working.ShieldPoints / StrikeRules.PhaseShieldPoints) : 0f,
                 PhaseShields = working.PhaseShields,
@@ -987,15 +993,16 @@ namespace Portfolio.Asteroids
             {
                 hostilesDestroyed++;
             }
-            // The kill of a pilot on another device pays on their device; a local wingman's pays that pilot.
-            if (hit.Seat.HasValue && !IsLocal)
+            // The kill of a pilot on another device pays on their device; a wingman's at this device pays that pilot.
+            LocalPilot killer = FliesSquad ? LocalPilotOf(hit) : null;
+            if (hit.Seat.HasValue && killer == null)
             {
                 return;
             }
             int bounty = target is StrikeBoss && spawner != null && spawner.BossBounty > 0 ? spawner.BossBounty : target.Score;
             if (bounty > 0)
             {
-                AddMoney(bounty, target.Position, IsLocal ? LocalPilotOf(hit)?.Ship : null);
+                AddMoney(bounty, target.Position, killer?.Ship);
             }
         }
 
@@ -1021,8 +1028,9 @@ namespace Portfolio.Asteroids
 
 
         /// <summary>
-        /// Mission money that <paramref name="earner"/> earned: in local co-op it is that ship's pilot's (the first pilot's
-        /// when the ship is none of theirs), otherwise the mission's like any other.
+        /// Mission money that <paramref name="earner"/> earned: with several pilots at this device (local co-op, a party of a
+        /// room) it is that ship's pilot's (the first pilot's when the ship is none of theirs), otherwise the mission's like
+        /// any other.
         /// </summary>
         public void AddMoney(int amount, Vector2 at, AsteroidsPlayer earner)
         {
@@ -1030,14 +1038,14 @@ namespace Portfolio.Asteroids
             {
                 return;
             }
-            (IsLocal ? LocalScoreOf(earner) : score).Add(amount);
+            (FliesSquad ? LocalScoreOf(earner) : score).Add(amount);
             SyncScore();
             Color color = amount >= 10000 ? new Color(1f, 0.85f, 0.3f) : new Color(0.75f, 1f, 0.6f);
             effects?.Popup(at, $"${amount:N0}", color, amount >= 10000 ? 1.4f : amount >= 1000 ? 1f : 0.8f);
             // Money that comes in after the win is reported at once: the room is about to close.
             if (IsCoop && phase == MissionPhase.Victory)
             {
-                online?.ReportScoreNow(score.Score);
+                online?.ReportScoresNow();
             }
         }
 

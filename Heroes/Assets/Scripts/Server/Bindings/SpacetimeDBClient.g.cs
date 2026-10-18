@@ -29,7 +29,9 @@ namespace Portfolio.Heroes.Server
         public RemoteTables(DbConnection conn)
         {
             AddTable(Admin = new(conn));
+            AddTable(Companion = new(conn));
             AddTable(HeroesStats = new(conn));
+            AddTable(MyRoomCodes = new(conn));
             AddTable(MyTournamentCodes = new(conn));
             AddTable(PlayerData = new(conn));
             AddTable(Room = new(conn));
@@ -540,7 +542,9 @@ namespace Portfolio.Heroes.Server
         internal static string[] AllTablesSqlQueries() => new string[]
         {
             new QueryBuilder().From.Admin().ToSql(),
+            new QueryBuilder().From.Companion().ToSql(),
             new QueryBuilder().From.HeroesStats().ToSql(),
+            new QueryBuilder().From.MyRoomCodes().ToSql(),
             new QueryBuilder().From.MyTournamentCodes().ToSql(),
             new QueryBuilder().From.PlayerData().ToSql(),
             new QueryBuilder().From.Room().ToSql(),
@@ -561,7 +565,9 @@ namespace Portfolio.Heroes.Server
     public sealed class From
     {
         public global::SpacetimeDB.Table<Admin, AdminCols, AdminIxCols> Admin() => new("admin", new AdminCols("admin"), new AdminIxCols("admin"));
+        public global::SpacetimeDB.Table<Companion, CompanionCols, CompanionIxCols> Companion() => new("companion", new CompanionCols("companion"), new CompanionIxCols("companion"));
         public global::SpacetimeDB.Table<HeroesStats, HeroesStatsCols, HeroesStatsIxCols> HeroesStats() => new("heroes_stats", new HeroesStatsCols("heroes_stats"), new HeroesStatsIxCols("heroes_stats"));
+        public global::SpacetimeDB.Table<RoomCode, MyRoomCodesCols, MyRoomCodesIxCols> MyRoomCodes() => new("my_room_codes", new MyRoomCodesCols("my_room_codes"), new MyRoomCodesIxCols("my_room_codes"));
         public global::SpacetimeDB.Table<TournamentCode, MyTournamentCodesCols, MyTournamentCodesIxCols> MyTournamentCodes() => new("my_tournament_codes", new MyTournamentCodesCols("my_tournament_codes"), new MyTournamentCodesIxCols("my_tournament_codes"));
         public global::SpacetimeDB.Table<PlayerData, PlayerDataCols, PlayerDataIxCols> PlayerData() => new("player_data", new PlayerDataCols("player_data"), new PlayerDataIxCols("player_data"));
         public global::SpacetimeDB.Table<Room, RoomCols, RoomIxCols> Room() => new("room", new RoomCols("room"), new RoomIxCols("room"));
@@ -666,12 +672,16 @@ namespace Portfolio.Heroes.Server
                 Reducer.DeleteAccount args => Reducers.InvokeDeleteAccount(eventContext, args),
                 Reducer.EndRoom args => Reducers.InvokeEndRoom(eventContext, args),
                 Reducer.FinishPlaying args => Reducers.InvokeFinishPlaying(eventContext, args),
+                Reducer.InviteCompanion args => Reducers.InvokeInviteCompanion(eventContext, args),
+                Reducer.JoinDevice args => Reducers.InvokeJoinDevice(eventContext, args),
                 Reducer.JoinMatch args => Reducers.InvokeJoinMatch(eventContext, args),
                 Reducer.JoinRoom args => Reducers.InvokeJoinRoom(eventContext, args),
+                Reducer.JoinRoomByCode args => Reducers.InvokeJoinRoomByCode(eventContext, args),
                 Reducer.JoinTournament args => Reducers.InvokeJoinTournament(eventContext, args),
                 Reducer.JoinTournamentByCode args => Reducers.InvokeJoinTournamentByCode(eventContext, args),
                 Reducer.LeaveRoom args => Reducers.InvokeLeaveRoom(eventContext, args),
                 Reducer.LeaveTournament args => Reducers.InvokeLeaveTournament(eventContext, args),
+                Reducer.RemoveCompanion args => Reducers.InvokeRemoveCompanion(eventContext, args),
                 Reducer.ReportScore args => Reducers.InvokeReportScore(eventContext, args),
                 Reducer.SavePlayerData args => Reducers.InvokeSavePlayerData(eventContext, args),
                 Reducer.SetAvatar args => Reducers.InvokeSetAvatar(eventContext, args),

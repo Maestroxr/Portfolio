@@ -112,10 +112,10 @@ namespace Portfolio.BoardGames
             return game != null && WaitingForHuman && !table.IsOver;
         }
 
-        /// <summary>Whether <paramref name="seat"/> is played by a person at this device.</summary>
+        /// <summary>Whether <paramref name="seat"/> is played by a person at this device (online, one of the seats played here).</summary>
         private bool BackgammonPersonHere(int seat)
         {
-            return table != null && seat >= 0 && !table.IsComputer(seat) && (!IsOnlineGame || seat == LocalSeat);
+            return PlayedHere(seat);
         }
 
         // ------------------------------------------------------------------ the hooks
@@ -437,8 +437,9 @@ namespace Portfolio.BoardGames
             {
                 return null;
             }
-            bool alone = IsOnlineGame ? seat == LocalSeat : !IsHotSeat;
-            bool here = !IsOnlineGame || seat == LocalSeat;
+            // The one person at this device is asked to roll; one of several here, or somebody elsewhere, is named.
+            bool here = PlayedHere(seat);
+            bool alone = here && !SeveralHere;
             switch (game.Phase)
             {
                 case BackgammonPhase.Opening:

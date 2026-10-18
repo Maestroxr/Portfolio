@@ -10,8 +10,9 @@ using SpacetimeDB;
 /// a room in one order and stamps each with a random number, which the clients seed the dice of the action with.
 /// So this module knows no rules of Monopoly. It seats the table when a game starts (the base server's
 /// <see cref="RoomSeat"/>: the members of the room in seat order with the token each likes, then the computer players
-/// the options of the room ask for), checks who may act for which seat (a member for their own, the host for the
-/// computer players, whose moves the host's client works out), keeps the clock (when it runs out every client makes
+/// the options of the room ask for), checks who may act for which seat (a member for their own and for the players who
+/// signed in at their device, the host for the computer players, whose moves the host's client works out; all of it
+/// the base server's <see cref="CheckSeatAction"/>), keeps the clock (when it runs out every client makes
 /// the default move for whoever kept the table waiting), hands the seat of a player who leaves to the computer, and
 /// keeps statistics.
 ///

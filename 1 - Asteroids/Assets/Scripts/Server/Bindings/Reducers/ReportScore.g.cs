@@ -13,12 +13,12 @@ namespace Portfolio.Asteroids.Server
 {
     public sealed partial class RemoteReducers : RemoteBase
     {
-        public delegate void ReportScoreHandler(ReducerEventContext ctx, long score);
+        public delegate void ReportScoreHandler(ReducerEventContext ctx, byte seat, long score);
         public event ReportScoreHandler? OnReportScore;
 
-        public void ReportScore(long score)
+        public void ReportScore(byte seat, long score)
         {
-            conn.InternalCallReducer(new Reducer.ReportScore(score));
+            conn.InternalCallReducer(new Reducer.ReportScore(seat, score));
         }
 
         public bool InvokeReportScore(ReducerEventContext ctx, Reducer.ReportScore args)
@@ -37,6 +37,7 @@ namespace Portfolio.Asteroids.Server
             }
             OnReportScore(
                 ctx,
+                args.Seat,
                 args.Score
             );
             return true;
@@ -49,11 +50,17 @@ namespace Portfolio.Asteroids.Server
         [DataContract]
         public sealed partial class ReportScore : Reducer, IReducerArgs
         {
+            [DataMember(Name = "seat")]
+            public byte Seat;
             [DataMember(Name = "score")]
             public long Score;
 
-            public ReportScore(long Score)
+            public ReportScore(
+                byte Seat,
+                long Score
+            )
             {
+                this.Seat = Seat;
                 this.Score = Score;
             }
 

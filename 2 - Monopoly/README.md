@@ -28,8 +28,8 @@ the Free Parking jackpot and more.
   itself there), and the lobby's From a saved game opens a room that plays a saved match: each player's seat goes to
   the member of that name, the others take the seats people played, the rest are the computer's. Winning earns stars per mode:
   one for beating the computer players, two for beating three of them, three for beating three Hard ones.
-- **Play online** opens the lobby of the game's server: two to four people on devices of their own at one table,
-  against a clock (see Multiplayer).
+- **Play online** opens the lobby of the game's server: two to four people at one table, on devices of their own or
+  several of them at one device, against a clock, in a room anybody can join or a private one (see Multiplayer).
 
 ## Rules
 
@@ -116,6 +116,18 @@ clock. A player who leaves or loses the connection is played on by the computer;
 match ends and the richest player wins, as when the host ends the game. Nothing pauses an online match (Escape opens
 the match menu: back to the game, or leave), it is not saved and earns no stars. The results lead back to the room.
 
+**Private rooms and several people at one device.** A host who sets Who can join to Players I give the code to opens a
+private room: it is not listed, the room shows its six letter code (Copy the code), and the others enter it with
+Invited to a private room? in the lobby. Under Players at this device, other people can sit down at the same device
+and still play online, each signed in to an account of their own or as a guest with a name: each takes a seat of their
+own at the table, with their own token, cash and place in the results, and the device plays for whichever of them the
+table waits for. The decisions, the banner and the clock then call them by name rather than "you"; an offer one of
+them makes to another person at the same device is answered right there, after the hand-over. With Hand the device
+over between turns ticked in the lobby, a screen covers the board whenever the move passes from one person at the
+device to another (not between the bids of an auction, which are made in the open) until the next one takes it. A
+device with other players at it does not play tournaments, and the stars and records of the game's online progress
+are those of the player whose device it is.
+
 **How it is built.** The rules engine is deterministic given its random numbers, and every command of a player was a
 call of `MonopolyController` already, so an online match is played in step over the action log of the base server:
 
@@ -135,12 +147,22 @@ call of `MonopolyController` already, so an online match is played in step over 
   implements `IMonopolyCommands`, the interface the UI gives its commands to: `MonopolyController` applies them to
   the engine, the online controller sends them. `MonopolyGameManager.Online.cs` is the online half of the manager:
   it applies what arrives at once (the engine may run ahead of the board, which plays the events as ever and a little
-  faster while it is behind), offers a decision only to the player at this device once the board caught up, and on
+  faster while it is behind), offers a decision only to the players at this device once the board caught up, and on
   the host's client asks `BotBrain.Decide` for the move of a computer player and sends it like any other. Every
-  client reports the net worth of its player as the score of the room, and `FinishPlaying` when the match is over.
+  client reports the net worth of each of its players as their score in the room, and `FinishPlaying` per seat when
+  the match is over.
+- Several people at one device (the base's companions) are the seats of `LockstepSetup.TableSeats`: the manager keeps
+  them (`LocalSeats`), acts for the one the table waits for (`LockstepMatch.ActingSeat`, also the `TableSeat` the
+  controller sends for), offers decisions, management and answers to any of them, and asks the controller to hand the
+  device over (`OnlineGameController.HandOver`, the base's curtain) before another of them acts. The server needs
+  nothing of its own for it: the base's `CheckSeatAction` lets a device act for its companions' seats. The game's
+  `LocalPlay` rules exist only so the lobby offers the hand-over (seating a table at one device is the new game
+  screen's).
 - `MonopolyOnlineTour` plays a match by itself in a development player (`-monopoly-online host|join <folder>`, with
   `-gamebox-server`, `-gamebox-database` and `-gamebox-identity`): screenshots, and a log of every action with the
-  checksum of the match after it, to compare between the players.
+  checksum of the match after it, to compare between the players. The roles `hostprivate` / `joinprivate` play a
+  private room; `hostparty` / `joinparty` bring companions (`-gamebox-companions`, one by default) and guests
+  (`-gamebox-guests`) to the device and play every seat of it, lifting the hand-over screen as a person would.
 
 ## Phones and tablets
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Gamebox;
 using Gamebox.Lockstep;
 using Gamebox.Online;
+using Gamebox.UI;
 using UnityEngine;
 
 namespace Portfolio.Monopoly
@@ -13,7 +14,11 @@ namespace Portfolio.Monopoly
     /// but the action log of the server changes: the controller takes every action to it and tells the manager
     /// (<see cref="ILockstepHost{TCommand}"/>). What arrives is applied at once, so the rules engine may run ahead of
     /// the board, which plays the events as it does in a game at one device. The director offers a decision only to the
-    /// player at this device, and only once the board caught up; for everybody else it shows who the table waits for.
+    /// players at this device, and only once the board caught up; for everybody else it shows who the table waits for.
+    /// Several people may play at this device (the player whose device it is and the companions who signed in here,
+    /// <see cref="OnlineGameController.LocalSeats"/>): each holds a seat of their own, the device acts for whichever of
+    /// them the table waits for, an offer made to one of them is answered here, and the base's hand-over screen can
+    /// cover the board between their turns when the party asked for it (<see cref="OnlineGameController.HandOver"/>).
     /// The computer players are moved by the client of the host, through the log like everybody else. There is no
     /// saving and no pausing, and the results lead back to the room.
     /// </summary>
@@ -24,8 +29,8 @@ namespace Portfolio.Monopoly
         {
             /// <summary>The seats in the order of play; none of them is off.</summary>
             public MatchSetup Setup;
-            /// <summary>The seat of the player at this device.</summary>
-            public int LocalSeat;
+            /// <summary>The seats of the players at this device, in seat order: one, unless other players signed in here.</summary>
+            public IReadOnlyList<int> LocalSeats;
             /// <summary>The seed of the room: the decks are shuffled and the deeds dealt from it.</summary>
             public uint Seed;
             public int FirstPlayer;
@@ -42,19 +47,36 @@ namespace Portfolio.Monopoly
 
         private OnlineTable onlineTable;
         private LockstepMatch lockstep;
-        private int localSeat = -1;
+        private readonly List<int> localSeats = new List<int>();
         /// <summary>Counts what arrived from the server: the director looks at the table again when it changes.</summary>
         private int onlineVersion;
         private int reportedTurn = -1;
-        private int reportedWorth = -1;
+        /// <summary>The net worth the room was last told for every seat played here.</summary>
+        private readonly Dictionary<int, int> reportedWorth = new Dictionary<int, int>();
 
         public MonopolyOnlineController Online => online;
 
         /// <summary>Whether the match is played online, in step with the other players of a room.</summary>
         public bool IsOnlineMatch => lockstep != null;
 
-        /// <summary>The seat of the player at this device in an online match, else -1.</summary>
-        public int LocalSeat => localSeat;
+        /// <summary>
+        /// The seat the players at this device act for in an online match: the one the table waits for when a player here
+        /// holds it, else the first seat played here (the only one, unless other players signed in at this device); -1
+        /// outside an online match (<see cref="LockstepMatch.ActingSeat"/>).
+        /// </summary>
+        public int LocalSeat => lockstep != null ? lockstep.ActingSeat(localSeats) : -1;
+
+        /// <summary>The seats of the players at this device in an online match, in seat order; empty outside one.</summary>
+        public IReadOnlyList<int> LocalSeats => localSeats;
+
+        /// <summary>Whether <paramref name="seat"/> is played at this device in an online match.</summary>
+        public bool IsLocalSeat(int seat)
+        {
+            return lockstep != null && localSeats.Contains(seat);
+        }
+
+        /// <summary>Whether more than one person plays at this device: then the words of the match call them by name, not "you".</summary>
+        private bool SeveralPlayHere => localSeats.Count > 1;
 
         internal LockstepMatch Lockstep => lockstep;
 
@@ -67,7 +89,7 @@ namespace Portfolio.Monopoly
         /// <summary>Whether somebody at this device plays <paramref name="player"/>: no computer player, and online nobody elsewhere.</summary>
         private bool PlayedHere(PlayerState player)
         {
-            return !player.bot && (lockstep == null || player.index == localSeat);
+            return !player.bot && (lockstep == null || localSeats.Contains(player.index));
         }
 
         protected override IOnlineLobby OnlineLobby => online;
@@ -97,16 +119,23 @@ namespace Portfolio.Monopoly
                 return;
             }
             lockstep = started;
-            localSeat = table.LocalSeat;
+            localSeats.Clear();
+            if (table.LocalSeats != null)
+            {
+                localSeats.AddRange(table.LocalSeats);
+            }
             onlineVersion = 0;
             reportedTurn = -1;
-            reportedWorth = -1;
+            reportedWorth.Clear();
             BeginDirecting(lockstep.Match, fresh: true);
-            ui.Panel(localSeat)?.MarkAsLocal();
+            foreach (int seat in localSeats)
+            {
+                ui.Panel(seat)?.MarkAsLocal(!SeveralPlayHere);
+            }
             for (int i = 0; i < tokens.Count && i < Match.players.Count; i++)
             {
                 PlayerState player = Match.players[i];
-                tokens[i].Assign(i, player.bot ? PlayerControl.Computer : i == localSeat ? PlayerControl.Local : PlayerControl.Remote, player.name);
+                tokens[i].Assign(i, player.bot ? PlayerControl.Computer : localSeats.Contains(i) ? PlayerControl.Local : PlayerControl.Remote, player.name);
             }
         }
 
@@ -156,9 +185,10 @@ namespace Portfolio.Monopoly
                 return;
             }
             StopDirecting();
+            LiftCurtain();
             lockstep = null;
             onlineTable = null;
-            localSeat = -1;
+            localSeats.Clear();
             Match = null;
             ui.CloseAll();
             board.ClearHighlights();
@@ -179,7 +209,7 @@ namespace Portfolio.Monopoly
 
         LockstepTable<MatchCommand> ILockstepHost<MatchCommand>.Table => lockstep;
 
-        int ILockstepHost<MatchCommand>.TableSeat => localSeat;
+        int ILockstepHost<MatchCommand>.TableSeat => LocalSeat;
 
         string ILockstepHost<MatchCommand>.TurnCaption => OnlineCaption();
 
@@ -267,7 +297,7 @@ namespace Portfolio.Monopoly
                 return;
             }
             ui.Toast(MonopolyStyle.Say(PlayerAt(seat), "Time is up for {0}.", $"Time is up for {NamedObject(seat)}.", Named(seat)), MonopolyStyle.Red, Icons.Clock);
-            if (seat != localSeat)
+            if (!IsLocalSeat(seat))
             {
                 return;
             }
@@ -280,23 +310,35 @@ namespace Portfolio.Monopoly
         }
 
         /// <summary>
-        /// The room learns what the player at this device is worth as the turns pass (the score the members are ranked
-        /// by should the room end early), and that they are done once the match is over.
+        /// The room learns what every player at this device is worth as the turns pass (the score the members are ranked
+        /// by should the room end early), and that they are done once the match is over: each seat played here reports
+        /// for itself.
         /// </summary>
         private void ReportToRoom()
         {
-            int worth = localSeat >= 0 && localSeat < Match.players.Count ? Match.NetWorth(localSeat) : 0;
-            if (Match.IsOver)
+            bool reported = false;
+            foreach (int seat in localSeats)
             {
-                // The room gives the members the places of their seats, a computer player that won before them all.
-                int place = localSeat >= 0 && localSeat < Match.players.Count ? Match.players[localSeat].place : 0;
-                online.ReportTableFinished(Match.winner, place, worth);
+                if (seat < 0 || seat >= Match.players.Count)
+                {
+                    continue;
+                }
+                int worth = Match.NetWorth(seat);
+                if (Match.IsOver)
+                {
+                    // The room gives the members the places of their seats, a computer player that won before them all.
+                    online.ReportTableFinished(seat, Match.winner, Match.players[seat].place, worth);
+                }
+                else if (Match.turn != reportedTurn && (!reportedWorth.TryGetValue(seat, out int known) || worth != known))
+                {
+                    reportedWorth[seat] = worth;
+                    online.ReportSeatScore(seat, worth);
+                    reported = true;
+                }
             }
-            else if (Match.turn != reportedTurn && worth != reportedWorth)
+            if (reported)
             {
                 reportedTurn = Match.turn;
-                reportedWorth = worth;
-                online.ReportScore(worth);
             }
         }
 
@@ -336,7 +378,8 @@ namespace Portfolio.Monopoly
             }
             bool answer = lockstep.PendingOffer != null;
             string name = MonopolyStyle.NameOf(Match.players[seat]);
-            string caption = seat == localSeat ? answer ? L.T("Your answer") : L.T("Your move")
+            // "You" is the one person at this device; several people here are told apart by name.
+            string caption = IsLocalSeat(seat) && !SeveralPlayHere ? answer ? L.T("Your answer") : L.T("Your move")
                 : answer ? L.F("{0} answers", name) : L.F("{0}'s move", name);
             // The banner has room for a short line; long names get smaller letters.
             return caption.Length <= 17 ? caption : caption.Length <= 22 ? $"<size=80%>{caption}</size>" : $"<size=62%>{caption}</size>";
@@ -344,23 +387,53 @@ namespace Portfolio.Monopoly
 
         // ------------------------------------------------------------------ what the player may do
 
-        /// <summary>Whether the player at this device sits at <paramref name="seat"/> and the director waits for their decision.</summary>
+        /// <summary>Whether a player at this device sits at <paramref name="seat"/> and the director waits for their decision.</summary>
         internal bool OnlineDeciding(int seat)
         {
-            return lockstep != null && IsGameRunning && WaitingForHuman && seat == localSeat && lockstep.PendingOffer == null
+            return lockstep != null && IsGameRunning && WaitingForHuman && IsLocalSeat(seat) && lockstep.PendingOffer == null
                 && Match.Decider == seat && !Match.HasEvents;
         }
 
-        /// <summary>Whether the player at this device sits at <paramref name="seat"/> and may build, sell, mortgage or trade now.</summary>
+        /// <summary>Whether a player at this device sits at <paramref name="seat"/> and may build, sell, mortgage or trade now.</summary>
         internal bool OnlineManaging(int seat)
         {
-            return lockstep != null && IsGameRunning && seat == localSeat && lockstep.CanManage(seat) && !Match.HasEvents;
+            return lockstep != null && IsGameRunning && IsLocalSeat(seat) && lockstep.CanManage(seat) && !Match.HasEvents;
         }
 
-        /// <summary>Whether the offer on the table is for the player at this device to answer.</summary>
+        /// <summary>Whether the offer on the table is for a player at this device, sitting at <paramref name="seat"/>, to answer.</summary>
         internal bool OnlineAnswering(int seat)
         {
-            return lockstep != null && IsGameRunning && seat == localSeat && lockstep.PendingOffer != null && lockstep.PendingOffer.to == seat;
+            return lockstep != null && IsGameRunning && IsLocalSeat(seat) && lockstep.PendingOffer != null && lockstep.PendingOffer.to == seat;
+        }
+
+        /// <summary>
+        /// Before a player at this device acts: with several people here and the hand-over on, the base's curtain covers
+        /// the board until the player of <paramref name="seat"/> takes the device (<see cref="OnlineGameController.HandOver"/>);
+        /// otherwise it goes on at once. The curtain steps aside for the match menu by itself, and goes away should the
+        /// table stop waiting for the seat meanwhile (the clock ran it out); the director then looks at the table again.
+        /// </summary>
+        private IEnumerator PassTheDevice(int seat)
+        {
+            bool ready = false;
+            online.HandOverTo(seat, PlayerColor(seat), () => ready = true);
+            while (!ready && Match != null && lockstep != null && lockstep.Waiting == seat)
+            {
+                yield return null;
+            }
+            if (!ready)
+            {
+                LiftCurtain();
+            }
+        }
+
+        /// <summary>Takes the hand-over screen away, when it is up, without anybody taking the device.</summary>
+        private void LiftCurtain()
+        {
+            TurnCurtain curtain = GetComponent<TurnCurtain>();
+            if (curtain != null && curtain.IsShown)
+            {
+                curtain.Hide();
+            }
         }
 
         // ------------------------------------------------------------------ directing
@@ -408,10 +481,15 @@ namespace Portfolio.Monopoly
                 bool host = online.IsHost;
                 bool sending = online.AwaitingEcho;
                 float patience = float.PositiveInfinity;
-                if (seat != localSeat)
+                bool here = IsLocalSeat(seat);
+                // Popups of a turn that is over (the clock ended it) do not stay for somebody else's, not even for
+                // another person at this device.
+                if (ui.Manage.IsOpen && ui.Manage.Seat != seat)
                 {
-                    // Popups of a turn that is over (the clock ended it) do not stay for somebody else's.
                     ui.Manage.Close();
+                }
+                if (ui.Trade.IsOpen && ui.Trade.Seat != seat)
+                {
                     ui.Trade.Close();
                 }
 
@@ -419,9 +497,15 @@ namespace Portfolio.Monopoly
                 {
                     TradeOffer offer = lockstep.PendingOffer;
                     PlayerState from = Match.players[offer.from];
-                    if (seat == localSeat && !player.bot && !sending)
+                    if (here && !player.bot && !sending)
                     {
+                        // An offer made to somebody at this device is answered here, by them.
                         ui.Actions.Hide();
+                        yield return PassTheDevice(seat);
+                        if (!SameTable(version))
+                        {
+                            continue;
+                        }
                         ui.Offer.Show(Match, offer, ui.TokenSprite(from.token), accept => online.AnswerTrade(seat, accept));
                         WaitingForHuman = true;
                     }
@@ -480,7 +564,7 @@ namespace Portfolio.Monopoly
                         patience = Time.unscaledTime + ComputerMovePatience;
                     }
                 }
-                else if (seat != localSeat)
+                else if (!here)
                 {
                     ShowBotTurn(player);
                 }
@@ -491,6 +575,16 @@ namespace Portfolio.Monopoly
                 }
                 else
                 {
+                    // An auction is bid in the open, by whoever's turn to bid it is (the window names them): the device is
+                    // not handed over between the bids.
+                    if (Match.phase != MatchPhase.Auction)
+                    {
+                        yield return PassTheDevice(seat);
+                    }
+                    if (!SameTable(version))
+                    {
+                        continue;
+                    }
                     ShowDecision(player);
                     WaitingForHuman = true;
                 }

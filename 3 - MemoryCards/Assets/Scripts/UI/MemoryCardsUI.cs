@@ -693,10 +693,13 @@ namespace Portfolio.MemoryCards
             }
         }
 
-        /// <summary>The players of a versus game that starts. <paramref name="localSeat"/> is "you" online; -1 on one device.</summary>
-        public void ShowVersus(IReadOnlyList<VersusSeat> seats, int localSeat)
+        /// <summary>
+        /// The players of a versus game that starts. Online <paramref name="youSeat"/> is the device's own player ("you") and
+        /// <paramref name="hereSeats"/> the seats played at this device; -1 and null on one device.
+        /// </summary>
+        public void ShowVersus(IReadOnlyList<VersusSeat> seats, int youSeat, IReadOnlyList<int> hereSeats)
         {
-            versusHud?.Show(seats, localSeat);
+            versusHud?.Show(seats, youSeat, hereSeats);
         }
 
         public void UpdateVersus(IReadOnlyList<VersusSeat> seats, int currentSeat, float turnFraction, float secondsLeft)

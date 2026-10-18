@@ -13,12 +13,12 @@ namespace Portfolio.Asteroids.Server
 {
     public sealed partial class RemoteReducers : RemoteBase
     {
-        public delegate void FireShotsHandler(ReducerEventContext ctx, System.Collections.Generic.List<Portfolio.Asteroids.Server.ShotInfo> shots);
+        public delegate void FireShotsHandler(ReducerEventContext ctx, byte seat, System.Collections.Generic.List<Portfolio.Asteroids.Server.ShotInfo> shots);
         public event FireShotsHandler? OnFireShots;
 
-        public void FireShots(System.Collections.Generic.List<Portfolio.Asteroids.Server.ShotInfo> shots)
+        public void FireShots(byte seat, System.Collections.Generic.List<Portfolio.Asteroids.Server.ShotInfo> shots)
         {
-            conn.InternalCallReducer(new Reducer.FireShots(shots));
+            conn.InternalCallReducer(new Reducer.FireShots(seat, shots));
         }
 
         public bool InvokeFireShots(ReducerEventContext ctx, Reducer.FireShots args)
@@ -37,6 +37,7 @@ namespace Portfolio.Asteroids.Server
             }
             OnFireShots(
                 ctx,
+                args.Seat,
                 args.Shots
             );
             return true;
@@ -49,11 +50,17 @@ namespace Portfolio.Asteroids.Server
         [DataContract]
         public sealed partial class FireShots : Reducer, IReducerArgs
         {
+            [DataMember(Name = "seat")]
+            public byte Seat;
             [DataMember(Name = "shots")]
             public System.Collections.Generic.List<ShotInfo> Shots;
 
-            public FireShots(System.Collections.Generic.List<ShotInfo> Shots)
+            public FireShots(
+                byte Seat,
+                System.Collections.Generic.List<ShotInfo> Shots
+            )
             {
+                this.Seat = Seat;
                 this.Shots = Shots;
             }
 
