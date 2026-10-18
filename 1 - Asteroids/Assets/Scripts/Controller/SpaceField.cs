@@ -396,7 +396,7 @@ namespace Portfolio.Asteroids
                     {
                         continue;
                     }
-                    bool first = shot.HitCount == 0 && !shot.IsGhost;
+                    bool first = shot.HitCount == 0 && !shot.IsGhost && !shot.IsFragment;
                     shot.Hit(target);
                     if (first)
                     {
@@ -884,6 +884,19 @@ namespace Portfolio.Asteroids
         internal void NoteEntered(SpaceBody body)
         {
             HostileEntered?.Invoke(body);
+        }
+
+
+        /// <summary>
+        /// A shot found its mark outside the field's own collisions (a slug's swept hit, a flak shell's fuse): it counts as a
+        /// shot that landed, once, like the first hit of any other.
+        /// </summary>
+        internal void NoteLanded(Shot shot)
+        {
+            if (shot != null && !shot.IsGhost && !shot.IsFragment)
+            {
+                ShotLanded?.Invoke(shot);
+            }
         }
 
 

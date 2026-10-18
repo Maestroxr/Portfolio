@@ -129,12 +129,12 @@ namespace Portfolio.Asteroids.EditorTools
                 manager.field.terrain = terrain;
             }
 
+            // The strike tab shows one strike campaign at a time: its map has the columns and rows of the largest one.
             AsteroidsCampaign campaign = AsteroidsContentBuilder.Campaign;
-            int missions = campaign != null ? campaign.MissionCountOf(MissionMode.Strike) : 0;
-            int sectors = campaign != null ? campaign.SectorCountOf(MissionMode.Strike) : 0;
+            (int sectors, int perSector) = campaign != null && campaign.MissionCountOf(MissionMode.Strike) > 0 ? CampaignSelect.Layout(campaign, MissionMode.Strike) : (0, 0);
             if (canvas != null)
             {
-                AsteroidsInterfaceBuilder.BuildStrike(ui, canvas, camera, missions, sectors);
+                AsteroidsInterfaceBuilder.BuildStrike(ui, canvas, camera, perSector, sectors);
             }
         }
     }

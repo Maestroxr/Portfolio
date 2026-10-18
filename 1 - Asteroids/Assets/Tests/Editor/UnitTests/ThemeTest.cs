@@ -142,7 +142,8 @@ namespace Portfolio.Asteroids.Tests
             Assert.AreNotEqual(classic.Fonts.MaterialOf(TextRole.Body), arcade.Fonts.MaterialOf(TextRole.Body));
             Assert.AreNotEqual(classic.Fonts.MaterialOf(TextRole.Title), arcade.Fonts.MaterialOf(TextRole.Title));
             Assert.AreEqual(1, arcade.StrikeThemes.Count);
-            Assert.AreEqual(4, arcade.Sectors.Count);
+            Assert.GreaterOrEqual(arcade.Sectors.Count, 4);
+            Assert.AreEqual(classic.Sectors.Count, arcade.Sectors.Count, "Every Classic sector has its Arcade 80s look.");
             Assert.AreEqual("Portfolio/Asteroids/SynthwaveBackground", arcade.Backdrop.space.shader.name);
         }
 

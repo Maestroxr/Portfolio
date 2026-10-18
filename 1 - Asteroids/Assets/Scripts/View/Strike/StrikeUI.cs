@@ -14,7 +14,7 @@ namespace Portfolio.Asteroids
     /// money, LAUNCH and SUPPLY ROOM), the Supply Room overlay, the strike HUD, the strike results and the touch buttons
     /// WEAPON and MEGA. <see cref="AsteroidsInterfaceBuilder"/> builds it (BuildStrike).
     /// </summary>
-    public class StrikeUI : MonoBehaviour
+    public partial class StrikeUI : MonoBehaviour
     {
         private static readonly Color Good = new Color(0.55f, 1f, 0.65f);
         private static readonly Color Bad = new Color(1f, 0.42f, 0.35f);
@@ -43,6 +43,8 @@ namespace Portfolio.Asteroids
         [SerializeField] internal TMP_Text[] sectorGates = new TMP_Text[0];
         [Tooltip("The header and the path of each sector column, in pairs (hidden for the columns the campaign does not use).")]
         [SerializeField] internal GameObject[] sectorColumns = new GameObject[0];
+        [Tooltip("The mission nodes of a sector column; the nodes are numbered column by column.")]
+        [SerializeField] internal int nodesPerSector = 3;
         [SerializeField] internal Image detailAccent;
         [SerializeField] internal TMP_Text detailSector;
         [SerializeField] internal TMP_Text detailTitle;
@@ -201,6 +203,7 @@ namespace Portfolio.Asteroids
             Listen(sellTab, () => SetSelling(true));
             Listen(actionButton, OnAction);
             Listen(supplyBackButton, () => Game?.CloseSupply());
+            ListenCategories();
             Listen(resultMissions, () => Game?.ReturnToMissionSelect());
             Listen(resultSupply, () => Game?.OpenSupplyAfterResults());
             Listen(resultRetry, () => Game?.RetryMission());
@@ -351,21 +354,28 @@ namespace Portfolio.Asteroids
             {
                 SetActive(missionSelect, true);
             }
+            var nodeSummaries = summaries.ConvertAll(NodeSummary);
+            MissionSummary?[] placed = AsteroidsUI.PlaceOnMap(nodeSummaries, missionNodes, sectorTitles.Length, nodesPerSector);
             for (int i = 0; i < missionNodes.Length; i++)
             {
                 if (missionNodes[i] == null)
                 {
                     continue;
                 }
-                bool used = i < summaries.Count;
+                bool used = placed[i] != null;
                 missionNodes[i].gameObject.SetActive(used);
                 if (used)
                 {
-                    missionNodes[i].Show(NodeSummary(summaries[i]), summaries[i].Index == selected, StarFull, StarEmpty);
+                    missionNodes[i].Show(placed[i].Value, placed[i].Value.Index == selected, StarFull, StarEmpty);
                 }
             }
             ShowSectorHeaders(stars);
+            AsteroidsUI.FitPaths(sectorColumns, missionNodes, placed, nodesPerSector);
             SetLabel(starsTotal, $"{stars} / {maxStars}");
+            if (ui != null)
+            {
+                ui.ShowCampaign(MissionMode.Strike);
+            }
             SetLabel(walletText, pilot != null ? $"${pilot.Money:N0}" : "$0");
             if (emptyNote != null)
             {
@@ -396,42 +406,48 @@ namespace Portfolio.Asteroids
                 Unlocked = summary.Unlocked,
                 Stars = summary.Stars,
                 Sector = summary.Sector,
-                SectorTitle = summary.SectorTitle
+                SectorTitle = summary.SectorTitle,
+                SectorSlot = summary.SectorSlot,
+                SectorPosition = summary.SectorPosition
             };
         }
 
 
+        /// <summary>
+        /// The sector columns of the campaign shown: a header each with the sector's name and its gate (the stars of the
+        /// campaign it needs), the columns the campaign does not use hidden.
+        /// </summary>
         private void ShowSectorHeaders(int stars)
         {
-            var sectors = new List<StrikeMissionSummary>();
+            var sectors = new StrikeMissionSummary?[sectorTitles.Length];
             foreach (StrikeMissionSummary summary in summaries)
             {
-                if (!sectors.Exists(known => known.Sector == summary.Sector))
+                if (summary.SectorSlot >= 0 && summary.SectorSlot < sectors.Length && sectors[summary.SectorSlot] == null)
                 {
-                    sectors.Add(summary);
+                    sectors[summary.SectorSlot] = summary;
                 }
             }
             for (int i = 0; i < sectorColumns.Length; i++)
             {
                 if (sectorColumns[i] != null)
                 {
-                    sectorColumns[i].SetActive(i / 2 < sectors.Count);
+                    sectorColumns[i].SetActive(i / 2 < sectors.Length && sectors[i / 2] != null);
                 }
             }
             for (int i = 0; i < sectorTitles.Length; i++)
             {
-                bool used = i < sectors.Count;
+                bool used = sectors[i] != null;
                 if (sectorTitles[i] != null)
                 {
-                    sectorTitles[i].text = used ? sectors[i].SectorTitle.ToUpperInvariant() : string.Empty;
+                    sectorTitles[i].text = used ? sectors[i].Value.SectorTitle.ToUpperInvariant() : string.Empty;
                     if (used)
                     {
-                        sectorTitles[i].color = sectors[i].Accent;
+                        sectorTitles[i].color = sectors[i].Value.Accent;
                     }
                 }
                 if (i < sectorGates.Length && sectorGates[i] != null)
                 {
-                    int required = used ? sectors[i].SectorStars : 0;
+                    int required = used ? sectors[i].Value.SectorStars : 0;
                     sectorGates[i].text = !used ? string.Empty : required <= 0 ? T("OPEN") : stars >= required ? F("{0} STARS - OPEN", required) : F("NEEDS {0} STARS", required);
                     sectorGates[i].color = required <= 0 || stars >= required ? new Color(0.6f, 1f, 0.7f, 0.8f) : new Color(1f, 0.75f, 0.35f);
                 }
@@ -463,7 +479,7 @@ namespace Portfolio.Asteroids
             {
                 detailAccent.color = accent;
             }
-            SetLabel(detailSector, F("{0}  -  MISSION {1}", summary.SectorTitle.ToUpperInvariant(), summary.Number));
+            SetLabel(detailSector, AsteroidsUI.MissionLine(summary.CampaignTitle, summary.SectorTitle, summary.Number));
             if (detailSector != null)
             {
                 detailSector.color = accent;
@@ -523,6 +539,7 @@ namespace Portfolio.Asteroids
         {
             this.pilot = pilot;
             selectedItem = selected;
+            FollowCategory(selected);
             if (!IsSupplyOpen)
             {
                 // The Supply Room covers the whole screen: the mission select under it is hidden (its wallet and title
@@ -623,6 +640,7 @@ namespace Portfolio.Asteroids
         private void RefreshSupply()
         {
             Offers(pilot, selling, offers);
+            KeepCategory(offers, category);
             if (offers.Count > 0 && !offers.Exists(info => info.Item == selectedItem))
             {
                 selectedItem = offers[0].Item;
@@ -644,6 +662,7 @@ namespace Portfolio.Asteroids
             }
             SetTab(buyTab, !selling);
             SetTab(sellTab, selling);
+            RefreshCategories();
             if (supplyEmpty != null)
             {
                 supplyEmpty.gameObject.SetActive(offers.Count == 0);
@@ -944,6 +963,18 @@ namespace Portfolio.Asteroids
                 case StrikeItem.EnergyModule: return "ENERGY";
                 case StrikeItem.PhaseShield: return "PHASE SHIELD";
                 case StrikeItem.IonScanner: return "ION SCANNER";
+                case StrikeItem.FlakCannon: return "FLAK CANNON";
+                case StrikeItem.ClusterBombs: return "CLUSTER BOMBS";
+                case StrikeItem.Napalm: return "NAPALM";
+                case StrikeItem.SwarmRockets: return "SWARM ROCKETS";
+                case StrikeItem.ArcLightning: return "ARC LIGHTNING";
+                case StrikeItem.RailGun: return "RAIL GUN";
+                case StrikeItem.ArmorPlating: return "ARMOR PLATING";
+                case StrikeItem.RepairDrone: return "REPAIR DRONE";
+                case StrikeItem.Afterburner: return "AFTERBURNER";
+                case StrikeItem.SalvageMagnet: return "SALVAGE MAGNET";
+                case StrikeItem.WingmanDrones: return "WINGMAN DRONES";
+                case StrikeItem.RepairKit: return "REPAIR KIT";
                 default: return item.ToString().ToUpperInvariant();
             }
         }

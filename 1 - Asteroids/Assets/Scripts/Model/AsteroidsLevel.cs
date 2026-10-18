@@ -10,7 +10,7 @@ namespace Portfolio.Asteroids
     /// <see cref="duration"/> seconds.
     /// </summary>
     [Serializable]
-    public class WaveSpec
+    public partial class WaveSpec
     {
         [Tooltip("Announced when the wave starts; empty announces \"Wave n\".")]
         public string title;
@@ -37,12 +37,17 @@ namespace Portfolio.Asteroids
         [Tooltip("Seconds the wave lasts in survival missions.")]
         public float duration = 30f;
 
-        public int AsteroidCount => rocks + ores + magma + ice + crystals;
+        public int AsteroidCount => rocks + ores + magma + ice + crystals + CampaignAsteroids;
 
-        public int HazardCount => mines + bombs + comets + wells + saucers + wasps + pods;
+        public int HazardCount => mines + bombs + comets + wells + saucers + wasps + pods + CampaignHazards;
 
         public int Count(AsteroidKind kind)
         {
+            int? campaign = CampaignCount(kind);
+            if (campaign.HasValue)
+            {
+                return campaign.Value;
+            }
             switch (kind)
             {
                 case AsteroidKind.Ore: return ores;
@@ -55,6 +60,11 @@ namespace Portfolio.Asteroids
 
         public int Count(HazardKind kind)
         {
+            int? campaign = CampaignCount(kind);
+            if (campaign.HasValue)
+            {
+                return campaign.Value;
+            }
             switch (kind)
             {
                 case HazardKind.Mine: return mines;
@@ -111,7 +121,7 @@ namespace Portfolio.Asteroids
     /// ship, the boss that ends it, what the rocks and supply pods drop and the score that earns the third star.
     /// </summary>
     [CreateAssetMenu(fileName = "AsteroidsLevel", menuName = "Asteroids/Level", order = 2)]
-    public class AsteroidsLevel : GameLevel
+    public partial class AsteroidsLevel : GameLevel
     {
         [field: SerializeField]
         public AsteroidSettings Settings { get; private set; }
@@ -222,6 +232,10 @@ namespace Portfolio.Asteroids
             if ((objective == LevelObjective.Collect || objective == LevelObjective.Survive) && objectiveTarget <= 0)
             {
                 message = $"The {objective} objective needs a positive target.";
+                return false;
+            }
+            if (!IsCampaignObjectiveValid(out message))
+            {
                 return false;
             }
             return Settings.AreSettingsValid(out message);

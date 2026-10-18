@@ -161,6 +161,7 @@ namespace Portfolio.Asteroids
             ScoutChance = level != null ? Mathf.Clamp01(0.15f + level.Sector * 0.18f) : 0.3f;
             pendingComets.Clear();
             ConfigureStrike(level);
+            ConfigureFieldCampaign(level);
         }
 
 
@@ -281,7 +282,7 @@ namespace Portfolio.Asteroids
                 return null;
             }
             float speed = WeaponRules.Speed(type) * (type == WeaponType.Scatter ? Random.Range(0.85f, 1.15f) : 1f);
-            float inherit = type == WeaponType.Laser ? 0f : 0.35f;
+            float inherit = WeaponRules.Inherit(type);
             shot.Position = position;
             shot.Velocity = direction.normalized * speed + shipVelocity * inherit;
             shot.Lifetime = WeaponRules.Lifetime(type) * (type == WeaponType.Scatter ? Random.Range(0.85f, 1.1f) : 1f);
@@ -289,6 +290,7 @@ namespace Portfolio.Asteroids
             shot.Pierce = WeaponRules.Pierce(type, level);
             shot.BlastRadius = WeaponRules.BlastRadius(type);
             shot.FiredBy = shooter;
+            ConfigureArmoryShot(shot, type, level, shooter);
             field.Add(shot);
             field.Link?.ShotFired(shot, (byte)type, level);
             return shot;
@@ -336,9 +338,13 @@ namespace Portfolio.Asteroids
             shot.Velocity = velocity;
             shot.Lifetime = Mathf.Max(0.05f, lifetime);
             shot.Damage = 0f;
-            shot.Pierce = drone || strike ? 1 : WeaponRules.Pierce(type, level);
+            shot.Pierce = drone ? 1 : strike ? StrikeGhostPierce(kind) : WeaponRules.Pierce(type, level);
             shot.BlastRadius = drone || strike ? 0f : WeaponRules.BlastRadius(type);
             shot.IsGhost = true;
+            if (!drone && !strike)
+            {
+                ConfigureArmoryShot(shot, type, level, null);
+            }
             field.Add(shot);
             return shot;
         }
@@ -462,6 +468,14 @@ namespace Portfolio.Asteroids
             SpaceBody body = null;
             switch (kind)
             {
+                case HazardKind.SolarFlare:
+                case HazardKind.IonStorm:
+                case HazardKind.Sentry:
+                case HazardKind.Minelayer:
+                case HazardKind.Stalker:
+                case HazardKind.Corsair:
+                    body = SpawnFieldHazard(kind);
+                    break;
                 case HazardKind.Mine:
                 {
                     Vector2 position = InnerPoint(2.5f, 7f);
@@ -641,6 +655,13 @@ namespace Portfolio.Asteroids
                     return SpawnHazard(HazardKind.Saucer);
                 case MinionKind.Mine:
                     return SpawnMine(Clamp(position, 1f), Random.insideUnitCircle * 0.8f);
+                case MinionKind.Sentry:
+                case MinionKind.Stalker:
+                case MinionKind.IonStorm:
+                case MinionKind.Well:
+                case MinionKind.Minelayer:
+                case MinionKind.Corsair:
+                    return SpawnFieldMinion(kind, Clamp(position, 1f));
                 default:
                 {
                     Asteroid asteroid = SpawnAsteroid(asteroidKind, AsteroidSize.Medium, Clamp(position, 0.5f), outward, false);
@@ -705,7 +726,7 @@ namespace Portfolio.Asteroids
                     variant = reward.NetVariant;
                     return variant >= 0;
                 default:
-                    return DescribeStrike(body, ref kind, ref variant);
+                    return DescribeFieldCampaign(body, ref kind, ref variant) || DescribeStrike(body, ref kind, ref variant);
             }
         }
 
@@ -775,7 +796,7 @@ namespace Portfolio.Asteroids
                     break;
                 }
                 default:
-                    body = SpawnStrikePuppet(kind, variant);
+                    body = SpawnFieldCampaignPuppet(kind, variant) ?? SpawnStrikePuppet(kind, variant);
                     break;
             }
             if (body == null)
@@ -864,7 +885,7 @@ namespace Portfolio.Asteroids
                 case BodyKind.Wasp: return HazardKind.Wasp;
                 case BodyKind.Comet: return HazardKind.Comet;
                 case BodyKind.GravityWell: return HazardKind.GravityWell;
-                default: return null;
+                default: return FieldHazardOf(kind);
             }
         }
 

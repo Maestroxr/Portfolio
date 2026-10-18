@@ -248,6 +248,12 @@ namespace Portfolio.Asteroids
                     danger += ColumnRisk(from, direction, length, speed, beam.Position, beam.halfWidth + radius + safetyMargin) * 8f;
                     continue;
                 }
+                if (shot is EnemyShell shell)
+                {
+                    // A shell hurts only where it bursts: keep out of its ring.
+                    danger += Risk(from, direction, length, speed, shell.LandingSpot, Vector2.zero, shell.burst + radius + safetyMargin) * weight;
+                    continue;
+                }
                 danger += Risk(from, direction, length, speed, shot.Position, shot.Velocity, shot.Radius + radius + safetyMargin) * weight;
             }
 

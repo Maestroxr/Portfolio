@@ -1,0 +1,115 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25edec1141714089bb4a39576791ecca, type: 3}
+  m_Name: Mission5
+  m_EditorClassIdentifier: Skinnerboxes.Asteroids::Portfolio.Asteroids.AsteroidsLevel
+  <Index>k__BackingField: 26
+  <Title>k__BackingField: Static
+  quarry: 
+  quarryShare: 1
+  allyHull: 120
+  crossing: 45
+  scoutChance: 0.42000002
+  <Settings>k__BackingField: {fileID: 11400000, guid: 4d2ec2241d1dfdc42a7a8d6fb70d8b2a, type: 2}
+  description: An ion storm front rolls over the Reach. Hold on for a hundred seconds while the lightning hunts you.
+  introduces: Ion storms slow you down, drain your shield and call lightning.
+  hints:
+  - 'Stay out of the ion clouds: they drag you and drain your shield.'
+  - A ring marks where lightning will strike - get out of it.
+  touchHints: []
+  sector: 8
+  theme: {fileID: 11400000, guid: bb0ed386f0226014bb93de66a45a7310, type: 2}
+  themeRotation: []
+  wavesPerTheme: 5
+  objective: 1
+  objectiveTarget: 100
+  waves:
+  - metal: 0
+    hydra: 0
+    wrecks: 0
+    flares: 0
+    storms: 1
+    sentries: 0
+    minelayers: 0
+    stalkers: 0
+    corsairs: 1
+    title: 
+    rocks: 3
+    ores: 0
+    magma: 0
+    ice: 0
+    crystals: 0
+    mines: 0
+    bombs: 0
+    comets: 0
+    wells: 0
+    saucers: 0
+    wasps: 0
+    pods: 0
+    hazardInterval: 6
+    duration: 30
+  - metal: 2
+    hydra: 0
+    wrecks: 0
+    flares: 0
+    storms: 2
+    sentries: 0
+    minelayers: 0
+    stalkers: 0
+    corsairs: 2
+    title: 
+    rocks: 3
+    ores: 0
+    magma: 0
+    ice: 0
+    crystals: 0
+    mines: 0
+    bombs: 0
+    comets: 0
+    wells: 0
+    saucers: 0
+    wasps: 0
+    pods: 1
+    hazardInterval: 5
+    duration: 35
+  - metal: 2
+    hydra: 0
+    wrecks: 0
+    flares: 1
+    storms: 2
+    sentries: 0
+    minelayers: 0
+    stalkers: 0
+    corsairs: 2
+    title: 
+    rocks: 2
+    ores: 0
+    magma: 0
+    ice: 0
+    crystals: 0
+    mines: 0
+    bombs: 0
+    comets: 0
+    wells: 0
+    saucers: 0
+    wasps: 0
+    pods: 0
+    hazardInterval: 4.5
+    duration: 35
+  boss: {fileID: 0}
+  bossRotation: []
+  bossEvery: 10
+  asteroidLoot: {fileID: 11400000, guid: 759c17d5e784d374ba33282cca344a3d, type: 2}
+  lootChance: 0.075
+  podLoot: {fileID: 11400000, guid: a8f8c1c61d6c02a4682a02a83c66e1d4, type: 2}
+  scoreGoal: 16000
+  speedMultiplier: 1

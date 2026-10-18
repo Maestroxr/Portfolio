@@ -14,14 +14,14 @@ namespace Portfolio.Asteroids.EditorTools
         private static readonly Color TabIdle = Classic.tabIdle;
 
         /// <summary>The shop cards: one per item of the armory, whatever the list shows.</summary>
-        private const int ShopCardCount = 18;
+        private static int ShopCardCount => StrikeArmory.ItemCount;
 
         /// <summary>
         /// Builds the <see cref="StrikeUI"/> on the Asteroids canvas and wires it to <paramref name="ui"/>: the strike tab with
-        /// <paramref name="missionCount"/> missions in <paramref name="sectorCount"/> sectors, the Supply Room, the strike
-        /// HUD and touch buttons, the strike results.
+        /// a map of <paramref name="sectorCount"/> sector columns of <paramref name="perSector"/> missions (the largest strike
+        /// campaign's), the Supply Room, the strike HUD and touch buttons, the strike results.
         /// </summary>
-        public static void BuildStrike(AsteroidsUI ui, Transform canvas, Camera camera, int missionCount, int sectorCount)
+        public static void BuildStrike(AsteroidsUI ui, Transform canvas, Camera camera, int perSector, int sectorCount)
         {
             if (ui == null || canvas == null || ui.titleScreen == null || ui.hudScreen == null || ui.resultsScreen == null)
             {
@@ -41,19 +41,20 @@ namespace Portfolio.Asteroids.EditorTools
 
             // Until the campaign has its strike missions the map is laid out for the planned 3 sectors of 3.
             int sectors = sectorCount > 0 ? sectorCount : 3;
-            int missions = missionCount > 0 ? missionCount : 9;
+            int rows = perSector > 0 ? perSector : 3;
 
             Transform titleSafe = ui.titleScreen.transform.Find("SafeArea");
             Transform hudSafe = ui.hudScreen.transform.Find("SafeArea");
             Transform resultSafe = ui.resultsScreen.transform.Find("SafeArea");
             BuildModeTabs(titleSafe != null ? titleSafe : ui.titleScreen.transform, ui);
-            BuildStrikeSelect(ui.titleScreen.transform, strike, missions, sectors);
+            BuildStrikeSelect(ui.titleScreen.transform, strike, rows, sectors);
             BuildSupply(ui.titleScreen.transform, strike);
             BuildStrikeHud(ui.hudScreen.transform, hudSafe, strike);
             BuildStrikeResults(ui.resultsScreen.transform, strike);
             BuildStrikeTouch(ui, strike);
 
-            ui.fieldMenuParts = Children(titleSafe, "Details", "SectorMap", "Stars", "Controls", "TouchControls");
+            // The strike tab has its wallet where the field tab offers to reset the progress.
+            ui.fieldMenuParts = Children(titleSafe, "Details", "SectorMap", "Stars", "Controls", "TouchControls", "ResetProgress");
             ui.fieldHudParts = Children(hudSafe, "Score", "Mission", "Objective", "ObjectiveBack", "ObjectiveFill", "Lives", "ShipStatus", "Dash", "DashRing",
                 "Weapon", "PowerUps");
             // In local co-op the pilots list stands in for the parts about one ship.
@@ -86,7 +87,7 @@ namespace Portfolio.Asteroids.EditorTools
         private static Sprite[] ItemSprites()
         {
             var items = (StrikeItem[])System.Enum.GetValues(typeof(StrikeItem));
-            var sprites = new Sprite[(int)StrikeItem.IonScanner + 1];
+            var sprites = new Sprite[StrikeArmory.ItemCount];
             foreach (StrikeItem item in items)
             {
                 Sprite sprite = AsteroidsArtBuilder.StrikeIcon(item);
@@ -151,7 +152,7 @@ namespace Portfolio.Asteroids.EditorTools
         }
 
 
-        private static void BuildStrikeSelect(Transform titleScreen, StrikeUI strike, int missionCount, int sectorCount)
+        private static void BuildStrikeSelect(Transform titleScreen, StrikeUI strike, int perSector, int sectorCount)
         {
             CanvasGroup screen = Screen(titleScreen, "StrikeSelect");
             // Behind everything else of the title (the logo, the tabs and the buttons shared by both tabs), and so below
@@ -164,11 +165,11 @@ namespace Portfolio.Asteroids.EditorTools
             scrim.raycastTarget = false;
             Transform root = UIBuildUtils.CreateSafeArea(screen.transform);
 
-            // Wallet and stars
-            RectTransform wallet = Panel(root, "Wallet", new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-410f, -40f), new Vector2(360f, 96f));
+            // Wallet (under the stars, right of the campaign bar and the language flag) and stars
+            RectTransform wallet = Panel(root, "Wallet", new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-60f, -148f), new Vector2(330f, CampaignBarSize.y));
             Image(wallet, "Icon", StrikeIconOr("Money", "Crystal"), Color.white, new Vector2(0f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(52f, 0f), new Vector2(60f, 60f)).raycastTarget = false;
             strike.walletText = Text(wallet, "Money", "$10,000", 42f, Color.white, TextAlignmentOptions.Left, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(96f, 0f),
-                new Vector2(250f, 64f), titleFont);
+                new Vector2(220f, 64f), titleFont);
             AutoSize(strike.walletText, 24f, 42f);
             RectTransform stars = Panel(root, "StrikeStars", new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-60f, -40f), new Vector2(330f, 96f));
             Image(stars, "Icon", AsteroidsArtBuilder.Icon("Star"), Color.white, new Vector2(0f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(58f, 0f), new Vector2(72f, 72f)).raycastTarget = false;
@@ -176,19 +177,24 @@ namespace Portfolio.Asteroids.EditorTools
                 new Vector2(210f, 70f), titleFont);
 
             // Mission details
-            RectTransform details = Panel(root, "StrikeDetails", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(60f, -30f), new Vector2(620f, 660f));
+            RectTransform details = Panel(root, "StrikeDetails", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(60f, MapOffset), new Vector2(620f, 660f));
             Image accent = Image(details, "Accent", AsteroidsArtBuilder.Interface("Bar"), StrikeAccent, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(14f, 0f), new Vector2(8f, 600f), true);
             accent.raycastTarget = false;
             strike.detailAccent = accent;
-            strike.detailSector = Text(details, "Sector", "ARES FLATS - MISSION 1", 24f, StrikeAccent, TextAlignmentOptions.Left, new Vector2(0f, 1f), new Vector2(0f, 1f),
+            strike.detailSector = Text(details, "Sector", "SHADOW STRIKE - ARES FLATS - MISSION 1", 24f, StrikeAccent, TextAlignmentOptions.Left, new Vector2(0f, 1f), new Vector2(0f, 1f),
                 new Vector2(40f, -26f), new Vector2(560f, 34f), hudFont);
             strike.detailSector.characterSpacing = 4f;
+            // The campaign, the sector and the number make a long line: it shrinks to stay on it.
+            strike.detailSector.textWrappingMode = TextWrappingModes.NoWrap;
+            AutoSize(strike.detailSector, 14f, 24f);
             strike.detailTitle = Text(details, "Title", "Dust Devil", 54f, Color.white, TextAlignmentOptions.Left, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(40f, -62f),
                 new Vector2(560f, 70f), titleFont);
             AutoSize(strike.detailTitle, 32f, 54f);
             strike.detailStars = StarRow(details, "Stars", new Vector2(0f, 1f), new Vector2(40f, -145f), 54f, 62f);
             strike.detailDescription = Text(details, "Description", "Description", 23f, Soft, TextAlignmentOptions.TopLeft, new Vector2(0f, 1f), new Vector2(0f, 1f),
                 new Vector2(40f, -198f), new Vector2(550f, 92f), null, false);
+            // Four lines of story shrink to stay above the boss.
+            AutoSize(strike.detailDescription, 17f, 23f);
             strike.detailBoss = Text(details, "Boss", "BOSS  Sand Crawler", 24f, Color.white, TextAlignmentOptions.Left, new Vector2(0f, 1f), new Vector2(0f, 1f),
                 new Vector2(40f, -294f), new Vector2(550f, 34f), null);
             strike.detailGoals = Text(details, "Goals", "Goals", 21f, Soft, TextAlignmentOptions.TopLeft, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(40f, -334f),
@@ -207,17 +213,21 @@ namespace Portfolio.Asteroids.EditorTools
                 new Vector2(0f, 1f), new Vector2(40f, -482f), new Vector2(550f, 28f), null, false);
             strike.detailBest = Text(details, "Best", "Not flown yet", 22f, Gold, TextAlignmentOptions.Left, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(40f, -506f),
                 new Vector2(550f, 30f), null);
+            // A lock reason (which names the campaign) shrinks to stay on its line above the buttons.
+            AutoSize(strike.detailBest, 13f, 22f);
             strike.supplyButton = Button(details, "Supply", "SUPPLY", StrikeIconOr("SupplyRoom", "Hangar"), Blue, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(40f, 26f),
                 new Vector2(250f, 96f), 30f, out _);
             strike.launchButton = Button(details, "Launch", "LAUNCH", AsteroidsArtBuilder.Icon("Play"), Green, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-40f, 26f),
                 new Vector2(270f, 96f), 38f, out TextMeshProUGUI launchLabel);
             strike.launchLabel = launchLabel;
 
-            // Sector map: a column per sector, its missions zig-zagging down it.
-            RectTransform map = Rect(root, "StrikeMap", new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-60f, -30f), new Vector2(1150f, 660f));
+            // Sector map: a column per sector of the largest strike campaign, its missions zig-zagging down it (a smaller
+            // campaign leaves some unused).
+            RectTransform map = Rect(root, "StrikeMap", new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-60f, MapOffset), new Vector2(1150f, 660f));
             const float gap = 20f;
             float column = (1150f - gap * (sectorCount - 1)) / sectorCount;
-            int perSector = Mathf.Max(1, Mathf.CeilToInt(missionCount / (float)sectorCount));
+            perSector = Mathf.Max(1, perSector);
+            float row = perSector > 1 ? Mathf.Min(168f, (660f - 100f - 176f) / (perSector - 1)) : 0f;
             var nodes = new List<MissionNode>();
             var titles = new List<TMP_Text>();
             var gates = new List<TMP_Text>();
@@ -234,22 +244,23 @@ namespace Portfolio.Asteroids.EditorTools
                 gates.Add(Text(header, "Gate", "OPEN", 17f, Dim, TextAlignmentOptions.Center, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 10f),
                     new Vector2(column - 16f, 28f), null));
                 Image line = Image(map, $"Path{s + 1}", AsteroidsArtBuilder.Interface("Bar"), new Color(1f, 0.7f, 0.4f, 0.25f), new Vector2(0f, 1f), new Vector2(0.5f, 1f),
-                    new Vector2(x + column * 0.5f, -150f), new Vector2(6f, 340f), true);
+                    new Vector2(x + column * 0.5f, -150f), new Vector2(6f, row * (perSector - 1) + 4f), true);
                 line.raycastTarget = false;
                 columns.Add(header.gameObject);
                 columns.Add(line.gameObject);
-                for (int m = 0; m < perSector && nodes.Count < missionCount; m++)
+                for (int m = 0; m < perSector; m++)
                 {
                     float offset = m % 2 == 0 ? -60f : 60f;
-                    nodes.Add(HexNode(map, nodes.Count, new Vector2(x + column * 0.5f + offset, -176f - m * 168f)));
+                    nodes.Add(HexNode(map, nodes.Count, new Vector2(x + column * 0.5f + offset, -176f - m * row)));
                 }
             }
             strike.missionNodes = nodes.ToArray();
+            strike.nodesPerSector = perSector;
             strike.sectorTitles = titles.ToArray();
             strike.sectorGates = gates.ToArray();
             strike.sectorColumns = columns.ToArray();
             TextMeshProUGUI empty = Text(root, "Empty", "The strike campaign has no missions yet.", 34f, Soft, TextAlignmentOptions.Center, new Vector2(1f, 0.5f),
-                new Vector2(1f, 0.5f), new Vector2(-60f, -30f), new Vector2(1150f, 90f), hudFont);
+                new Vector2(1f, 0.5f), new Vector2(-60f, MapOffset), new Vector2(1150f, 90f), hudFont);
             empty.gameObject.SetActive(false);
             strike.emptyNote = empty.gameObject;
 
@@ -293,15 +304,8 @@ namespace Portfolio.Asteroids.EditorTools
             strike.sellTab = Button(root, "SellTab", "SELL", AsteroidsArtBuilder.Icon("Retry"), TabIdle, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(296f, -188f),
                 new Vector2(220f, 64f), 28f, out _);
 
-            RectTransform items = Rect(root, "Items", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(60f, -270f), new Vector2(1200f, 620f));
-            var grid = items.gameObject.AddComponent<GridLayoutGroup>();
-            grid.cellSize = new Vector2(388f, 92f);
-            grid.spacing = new Vector2(18f, 12f);
-            grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-            grid.constraintCount = 3;
-            grid.startCorner = GridLayoutGroup.Corner.UpperLeft;
-            grid.startAxis = GridLayoutGroup.Axis.Horizontal;
-            grid.childAlignment = TextAnchor.UpperLeft;
+            // The list: WEAPONS / GEAR pages in a grid that scrolls (AsteroidsInterfaceBuilder.Armory.cs).
+            RectTransform items = SupplyList(root, strike);
             var cards = new List<ShopCard>();
             for (int i = 0; i < ShopCardCount; i++)
             {

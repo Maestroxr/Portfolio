@@ -56,9 +56,11 @@ namespace Portfolio.Asteroids
         public override int MinPlayersLimit => CoopRules.MinPilots;
 
         /// <summary>
-        /// Every mission, the endless one included: the asteroid field missions numbered "1.", the planet strike missions
-        /// after them numbered "Strike 1." (a room plays those the host unlocked online: <see cref="OnlineGameController.LevelChoices"/>).
-        /// The list is made when the lobby first asks and stays as it is, because the lobby keeps the names it was built with.
+        /// Every mission, the endless one included, campaign by campaign: the asteroid field campaigns first (the endless
+        /// mission after the first of them), then the planet strike campaigns, each mission named with its campaign and its
+        /// number in it ("The Raider War 3. Titan", "Strike: Shadow Strike 2. Refinery Row"; a room plays those the host
+        /// unlocked online: <see cref="OnlineGameController.LevelChoices"/>). The list is made when the lobby first asks and
+        /// stays as it is, because the lobby keeps the names it was built with.
         /// </summary>
         public override IReadOnlyList<RoomLevelChoice> AllLevelChoices
         {
@@ -72,28 +74,58 @@ namespace Portfolio.Asteroids
                 // The titles are in the language shown: a new language lists them again.
                 levelChoices.Clear();
                 choicesLanguage = GameLanguages.Code;
-                int number = 0;
-                int strikeNumber = 0;
+                AsteroidsCampaign campaign = manager.AsteroidsCampaign;
+                if (campaign == null)
+                {
+                    return levelChoices;
+                }
+                var listed = new HashSet<int>();
+                foreach (MissionMode mode in new[] { MissionMode.Field, MissionMode.Strike })
+                {
+                    for (int arc = 0; arc < campaign.ArcCount(mode); arc++)
+                    {
+                        foreach (int index in campaign.MissionsOf(mode, arc))
+                        {
+                            AddChoice(index, listed);
+                        }
+                        if (mode == MissionMode.Field && arc == 0 && campaign.EndlessIndex >= 0)
+                        {
+                            AddChoice(campaign.EndlessIndex, listed);
+                        }
+                    }
+                }
+                // A mission outside every campaign still gets a place, after them.
                 for (int i = 0; i < manager.LevelCount; i++)
                 {
-                    AsteroidsLevel mission = manager.AsteroidsCampaign != null ? manager.AsteroidsCampaign.Mission(i) : null;
-                    if (mission == null)
-                    {
-                        continue;
-                    }
-                    bool strike = mission.Mode == MissionMode.Strike;
-                    if (strike)
-                    {
-                        strikeNumber++;
-                    }
-                    else if (!mission.IsEndless)
-                    {
-                        number++;
-                    }
-                    levelChoices.Add(new RoomLevelChoice(i, CoopRules.LevelTitle(mission, strike ? strikeNumber : number)));
+                    AddChoice(i, listed);
                 }
                 return levelChoices;
             }
+        }
+
+
+        /// <summary>Lists the mission at <paramref name="index"/> by its lobby name, once.</summary>
+        private void AddChoice(int index, HashSet<int> listed)
+        {
+            if (Asteroids.AsteroidsCampaign.Mission(index) != null && listed.Add(index))
+            {
+                levelChoices.Add(new RoomLevelChoice(index, LevelName(index)));
+            }
+        }
+
+
+        /// <summary>What the lobby and the room list call the mission at <paramref name="index"/> (with its campaign and number in it).</summary>
+        private string LevelName(int index)
+        {
+            AsteroidsGameManager manager = Asteroids;
+            AsteroidsCampaign campaign = manager != null ? manager.AsteroidsCampaign : null;
+            AsteroidsLevel mission = campaign != null ? campaign.Mission(index) : null;
+            if (mission == null)
+            {
+                return F("Mission {0}", index + 1);
+            }
+            string title = mission.IsEndless ? null : T(AsteroidsGameManager.CampaignTitle(campaign, mission.Mode, campaign.ArcOf(index)));
+            return CoopRules.LevelTitle(mission, CampaignSelect.Number(campaign, index), title);
         }
 
         /// <summary>
@@ -127,10 +159,11 @@ namespace Portfolio.Asteroids
         {
             AsteroidsGameManager manager = Asteroids;
             AsteroidsLevel mission = manager != null && manager.AsteroidsCampaign != null ? manager.AsteroidsCampaign.Mission(room.Level) : null;
-            string title = mission != null ? T(mission.Title) : F("Mission {0}", room.Level + 1);
+            // The mission as the level list names it: its campaign and its number in it ("Strike: ..." for a strike mission).
+            string title = LevelName(room.Level);
             if (mission != null && mission.Mode == MissionMode.Strike)
             {
-                return F("Strike: {0}, {1}", title, T(CoopRules.DifficultyTitle(CoopRules.Difficulty(room.Options))));
+                return F("{0}, {1}", title, T(CoopRules.DifficultyTitle(CoopRules.Difficulty(room.Options))));
             }
             int lives = CoopRules.Lives(room.Options);
             return lives == 1 ? F("{0}, 1 ship each", title) : F("{0}, {1} ships each", title, lives);
@@ -399,8 +432,8 @@ namespace Portfolio.Asteroids
                 Thrusting = ship.IsAlive && (ship.Mode == MissionMode.Strike || ship.Simulation.IsThrusting),
                 Dashing = ship.IsAlive && ship.IsDashing,
                 Invulnerable = ship.IsAlive && ship.InvulnerableTime > 0f,
-                Magnet = ship.IsAlive && ship.IsPowerUpActive(PowerUpType.Magnet),
-                Drones = ship.IsAlive && ship.IsPowerUpActive(PowerUpType.Drones),
+                Magnet = ship.IsAlive && (ship.IsPowerUpActive(PowerUpType.Magnet) || ship.HasSalvageMagnet),
+                Drones = ship.IsAlive && (ship.IsPowerUpActive(PowerUpType.Drones) || ship.HasStrikeDrones),
                 Hull = manager.LocalHullIndex,
                 Health = ship.MaxHealth > 0f ? Mathf.Clamp01(ship.Health / ship.MaxHealth) : 0f,
                 Shield = ship.MaxShield > 0f ? Mathf.Clamp01(ship.Shield / ship.MaxShield) : 0f,

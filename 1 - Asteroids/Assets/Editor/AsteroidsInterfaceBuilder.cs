@@ -39,7 +39,11 @@ namespace Portfolio.Asteroids.EditorTools
         private static Sprite panel;
         private static Sprite button;
 
-        public static void Build(AsteroidsUI ui, GameObject menu, Camera worldCamera, int missionCount, int sectorCount, int shipCount)
+        /// <summary>
+        /// Builds the canvas: the field mission select's map has <paramref name="sectorCount"/> sector columns of
+        /// <paramref name="perSector"/> missions (the largest field campaign's) and the endless node.
+        /// </summary>
+        public static void Build(AsteroidsUI ui, GameObject menu, Camera worldCamera, int perSector, int sectorCount, int shipCount)
         {
             titleFont = AsteroidsSceneBuilder.TitleFont;
             hudFont = AsteroidsSceneBuilder.HudFont;
@@ -57,7 +61,7 @@ namespace Portfolio.Asteroids.EditorTools
             Transform root = canvasObject.transform;
 
             BuildHud(root, ui);
-            BuildTitle(root, ui, missionCount, sectorCount);
+            BuildTitle(root, ui, perSector, sectorCount);
             BuildHangar(ui.titleScreen.transform, ui, shipCount);
             BuildResults(root, ui);
 
@@ -82,7 +86,7 @@ namespace Portfolio.Asteroids.EditorTools
             ui.worldCamera = worldCamera;
             ui.starFull = AsteroidsArtBuilder.Icon("Star");
             ui.starEmpty = AsteroidsArtBuilder.Icon("StarEmpty");
-            ui.weaponSprites = new[] { AsteroidsArtBuilder.Icon("Blaster"), AsteroidsArtBuilder.Icon("Laser"), AsteroidsArtBuilder.Icon("Scatter"), AsteroidsArtBuilder.Icon("Missile") };
+            ui.weaponSprites = System.Array.ConvertAll(AsteroidsArtBuilder.WeaponIconNames, AsteroidsArtBuilder.Icon);
             var previews = new List<Sprite>();
             foreach (var hull in AsteroidsArtBuilder.Hulls)
             {
@@ -272,7 +276,7 @@ namespace Portfolio.Asteroids.EditorTools
 
         // ------------------------------------------------------------------ mission select
 
-        private static void BuildTitle(Transform canvas, AsteroidsUI ui, int missionCount, int sectorCount)
+        private static void BuildTitle(Transform canvas, AsteroidsUI ui, int perSector, int sectorCount)
         {
             CanvasGroup screen = Screen(canvas, "MissionSelect");
             Transform root = screen.transform;
@@ -305,13 +309,21 @@ namespace Portfolio.Asteroids.EditorTools
             ui.resetProgressButton = TextButton(root, "ResetProgress", "Reset progress", new Vector2(1f, 1f), new Vector2(-60f, -168f), new Vector2(330f, 60f), 20f, out TextMeshProUGUI resetLabel);
             ui.resetProgressLabel = resetLabel;
 
+            // The campaign bar right of the mode tabs (AsteroidsInterfaceBuilder.Campaigns.cs).
+            BuildCampaignBar(root, ui);
+
             // Mission details
-            RectTransform details = Panel(root, "Details", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(60f, -30f), new Vector2(620f, 660f));
+            RectTransform details = Panel(root, "Details", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(60f, MapOffset), new Vector2(620f, 660f));
             Image accent = Image(details, "Accent", AsteroidsArtBuilder.Interface("Bar"), Cyan, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(14f, 0f), new Vector2(8f, 600f), true);
             accent.raycastTarget = false;
             ui.detailAccent = accent;
-            ui.detailSector = Text(details, "Sector", "KEPLER BELT - MISSION 1", 24f, Cyan, TextAlignmentOptions.Left, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(40f, -26f), new Vector2(560f, 34f), hudFont);
+            ui.detailSector = Text(details, "Sector", "THE RAIDER WAR - KEPLER BELT - MISSION 1", 24f, Cyan, TextAlignmentOptions.Left, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(40f, -26f), new Vector2(560f, 34f), hudFont);
             ui.detailSector.characterSpacing = 4f;
+            // The campaign, the sector and the number make a long line: it shrinks to stay on it.
+            ui.detailSector.textWrappingMode = TextWrappingModes.NoWrap;
+            ui.detailSector.enableAutoSizing = true;
+            ui.detailSector.fontSizeMin = 14f;
+            ui.detailSector.fontSizeMax = 24f;
             ui.detailTitle = Text(details, "Title", "First Light", 54f, Color.white, TextAlignmentOptions.Left, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(40f, -62f), new Vector2(560f, 70f), titleFont);
             ui.detailStars = StarRow(details, "Stars", new Vector2(0f, 1f), new Vector2(40f, -145f), 54f, 62f);
             ui.detailDescription = Text(details, "Description", "Description", 25f, Soft, TextAlignmentOptions.TopLeft, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(40f, -206f), new Vector2(550f, 120f), null, false);
@@ -321,14 +333,18 @@ namespace Portfolio.Asteroids.EditorTools
             ui.launchButton = Button(details, "Launch", "LAUNCH", AsteroidsArtBuilder.Icon("Play"), Green, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 26f), new Vector2(540f, 96f), 46f, out TextMeshProUGUI launchLabel);
             ui.launchLabel = launchLabel;
 
-            // Sector map
-            RectTransform map = Rect(root, "SectorMap", new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-60f, -30f), new Vector2(1150f, 660f));
+            // Sector map: the largest field campaign's columns of missions (a smaller campaign leaves some unused), then the
+            // endless mission along the bottom. The rows close up so the last row's names stay clear of the endless bar.
+            RectTransform map = Rect(root, "SectorMap", new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-60f, MapOffset), new Vector2(1150f, 660f));
             var nodes = new List<MissionNode>();
             var titles = new List<TMP_Text>();
             var gates = new List<TMP_Text>();
-            const float column = 272f;
+            var columns = new List<GameObject>();
             const float gap = 20.6f;
-            int perSector = sectorCount > 0 ? Mathf.Max(1, (missionCount - 1) / sectorCount) : 3;
+            sectorCount = Mathf.Max(1, sectorCount);
+            perSector = Mathf.Max(1, perSector);
+            float column = (1150f - gap * (sectorCount - 1)) / sectorCount;
+            float rowStep = perSector > 1 ? Mathf.Min(168f, (660f - 84f - 100f - 176f) / (perSector - 1)) : 0f;
             for (int s = 0; s < sectorCount; s++)
             {
                 float x = s * (column + gap);
@@ -341,18 +357,22 @@ namespace Portfolio.Asteroids.EditorTools
                 titles.Add(title);
                 gates.Add(Text(header, "Gate", "OPEN", 17f, Dim, TextAlignmentOptions.Center, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 10f), new Vector2(column - 16f, 28f), null));
                 Image line = Image(map, $"Path{s + 1}", AsteroidsArtBuilder.Interface("Bar"), new Color(0.4f, 0.8f, 1f, 0.25f), new Vector2(0f, 1f), new Vector2(0.5f, 1f),
-                    new Vector2(x + column * 0.5f, -150f), new Vector2(6f, 340f), true);
+                    new Vector2(x + column * 0.5f, -150f), new Vector2(6f, rowStep * (perSector - 1) + 4f), true);
                 line.raycastTarget = false;
+                columns.Add(header.gameObject);
+                columns.Add(line.gameObject);
                 for (int m = 0; m < perSector; m++)
                 {
                     float offset = m % 2 == 0 ? -34f : 34f;
-                    nodes.Add(HexNode(map, s * perSector + m, new Vector2(x + column * 0.5f + offset, -176f - m * 168f)));
+                    nodes.Add(HexNode(map, s * perSector + m, new Vector2(x + column * 0.5f + offset, -176f - m * rowStep)));
                 }
             }
-            nodes.Add(EndlessNode(map, missionCount - 1));
+            nodes.Add(EndlessNode(map, sectorCount * perSector));
             ui.missionNodes = nodes.ToArray();
             ui.sectorTitles = titles.ToArray();
             ui.sectorGates = gates.ToArray();
+            ui.sectorColumns = columns.ToArray();
+            ui.nodesPerSector = perSector;
 
             // Buttons
             RectTransform buttons = Rect(root, "Buttons", new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-60f, 34f), new Vector2(1210f, 84f));
@@ -691,8 +711,13 @@ namespace Portfolio.Asteroids.EditorTools
             briefingGroup.blocksRaycasts = false;
             briefingGroup.interactable = false;
             ui.briefingGroup = briefingGroup;
-            ui.briefingSector = Text(briefing, "Sector", "KEPLER BELT", 28f, Cyan, TextAlignmentOptions.Center, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), Vector2.zero, new Vector2(1400f, 40f), hudFont);
+            ui.briefingSector = Text(briefing, "Sector", "THE RAIDER WAR - KEPLER BELT - MISSION 1", 28f, Cyan, TextAlignmentOptions.Center, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), Vector2.zero, new Vector2(1400f, 40f), hudFont);
             ui.briefingSector.characterSpacing = 18f;
+            // The campaign, the sector and the number: a long line in a wide font shrinks to stay on it.
+            ui.briefingSector.textWrappingMode = TextWrappingModes.NoWrap;
+            ui.briefingSector.enableAutoSizing = true;
+            ui.briefingSector.fontSizeMin = 16f;
+            ui.briefingSector.fontSizeMax = 28f;
             ui.briefingTitle = Text(briefing, "Title", "FIRST LIGHT", 76f, Color.white, TextAlignmentOptions.Center, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -40f), new Vector2(1400f, 100f), titleFont);
             ui.briefingTitle.characterSpacing = 8f;
             ui.briefingObjective = Text(briefing, "Objective", "Clear 3 waves", 32f, Soft, TextAlignmentOptions.Center, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -150f), new Vector2(1400f, 50f), hudFont);

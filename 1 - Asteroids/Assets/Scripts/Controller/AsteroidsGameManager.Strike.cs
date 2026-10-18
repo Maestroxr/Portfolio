@@ -324,6 +324,7 @@ namespace Portfolio.Asteroids
         {
             menuMode = MissionMode.Strike;
             strikeMenuMission = LevelIndex;
+            RememberCampaign(LevelIndex);
             if (phase == MissionPhase.Menu && field != null)
             {
                 // The menu asteroids of the field tab would float over the ground.
@@ -381,13 +382,12 @@ namespace Portfolio.Asteroids
         }
 
 
-        /// <summary>The strike tab of the mission select, with its missions, the strike stars and the pilot.</summary>
+        /// <summary>The strike tab of the mission select, with the missions and stars of the strike campaign it shows, and the pilot.</summary>
         private void ShowStrikeMenu()
         {
             ui?.ShowMode(MissionMode.Strike);
-            AsteroidsCampaign sectors = AsteroidsCampaign;
-            int stars = sectors != null && progress != null ? sectors.TotalStars(progress, MissionMode.Strike) : 0;
-            int maxStars = sectors != null ? sectors.MaxStarsOf(MissionMode.Strike) : 0;
+            int stars = AsteroidsCampaign != null ? ShownCampaignStars(MissionMode.Strike) : 0;
+            int maxStars = AsteroidsCampaign != null ? ShownCampaignMaxStars(MissionMode.Strike) : 0;
             StrikeScreens?.ShowMissionSelect(BuildStrikeSummaries(), IsStrike ? LevelIndex : -1, stars, maxStars, Pilot);
             if (StrikeScreens != null && StrikeScreens.IsSupplyOpen)
             {
@@ -408,9 +408,8 @@ namespace Portfolio.Asteroids
             }
             if (menuMode == MissionMode.Strike)
             {
-                AsteroidsCampaign sectors = AsteroidsCampaign;
-                int stars = sectors != null && progress != null ? sectors.TotalStars(progress, MissionMode.Strike) : 0;
-                int maxStars = sectors != null ? sectors.MaxStarsOf(MissionMode.Strike) : 0;
+                int stars = AsteroidsCampaign != null ? ShownCampaignStars(MissionMode.Strike) : 0;
+                int maxStars = AsteroidsCampaign != null ? ShownCampaignMaxStars(MissionMode.Strike) : 0;
                 StrikeScreens.ShowMissionSelect(BuildStrikeSummaries(), IsStrike ? LevelIndex : -1, stars, maxStars, Pilot);
             }
         }
@@ -436,19 +435,22 @@ namespace Portfolio.Asteroids
         }
 
 
+        /// <summary>The missions of the strike campaign the strike tab shows.</summary>
         private List<StrikeMissionSummary> BuildStrikeSummaries()
         {
             var summaries = new List<StrikeMissionSummary>();
             AsteroidsCampaign sectors = AsteroidsCampaign;
+            int arc = ShownArc(MissionMode.Strike);
             int number = 0;
             for (int i = 0; i < LevelCount; i++)
             {
-                if (!(MissionAt(i) is StrikeLevel mission))
+                if (!(MissionAt(i) is StrikeLevel mission) || sectors != null && sectors.ArcOf(i) != arc)
                 {
                     continue;
                 }
                 number++;
                 AsteroidsCampaign.Sector sector = sectors != null ? sectors.SectorOf(i) : null;
+                (int sectorSlot, int sectorPosition) = CampaignSelect.Place(sectors, i);
                 Color accent = mission.Terrain != null ? AsteroidsThemes.Accent(mission.Terrain, new Color(1f, 0.6f, 0.25f))
                     : sector != null && sector.theme != null ? AsteroidsThemes.Accent(sector.theme, new Color(1f, 0.6f, 0.25f)) : new Color(1f, 0.6f, 0.25f);
                 summaries.Add(new StrikeMissionSummary
@@ -465,33 +467,35 @@ namespace Portfolio.Asteroids
                     Stars = progress != null ? progress.Stars(i) : 0,
                     BestMoney = progress != null ? progress.BestScore(i) : 0,
                     BossName = mission.BossPrefab != null ? T(mission.BossPrefab.DisplayName) : string.Empty,
-                    SectorStars = sector != null ? sector.starsRequired : 0
+                    SectorStars = sector != null ? sector.starsRequired : 0,
+                    CampaignTitle = T(CampaignTitle(sectors, MissionMode.Strike, arc)),
+                    SectorSlot = sectorSlot,
+                    SectorPosition = sectorPosition
                 });
             }
             return summaries;
         }
 
 
-        /// <summary>The first open strike mission without stars, or the last open one; -1 when there are no strike missions.</summary>
+        /// <summary>
+        /// The first open mission without stars of the strike campaign the device remembers, or its last open one; -1 when
+        /// there are no strike missions (AsteroidsGameManager.Campaigns.cs).
+        /// </summary>
         private int SuggestedStrikeMission()
         {
-            int suggested = -1;
+            int suggested = CampaignSelect.Suggested(AsteroidsCampaign, MissionMode.Strike, RememberedArc(MissionMode.Strike), progress);
+            if (suggested >= 0)
+            {
+                return suggested;
+            }
             for (int i = 0; i < LevelCount; i++)
             {
-                if (!(MissionAt(i) is StrikeLevel))
+                if (MissionAt(i) is StrikeLevel)
                 {
-                    continue;
-                }
-                if (suggested < 0 || IsUnlocked(i))
-                {
-                    suggested = i;
-                }
-                if (IsUnlocked(i) && (progress == null || progress.Stars(i) == 0))
-                {
-                    break;
+                    return i;
                 }
             }
-            return suggested;
+            return -1;
         }
 
 

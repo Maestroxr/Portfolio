@@ -7,7 +7,7 @@ namespace Portfolio.Asteroids
     /// the nova, telegraphs and the floating score numbers, and those of the strike mode (ground explosions that move
     /// with the scroll, the megabomb's flash, muzzle flashes).
     /// </summary>
-    public class SpaceEffects : MonoBehaviour
+    public partial class SpaceEffects : MonoBehaviour
     {
         [SerializeField] internal EffectPool explosion;
         [SerializeField] internal EffectPool rockDebris;

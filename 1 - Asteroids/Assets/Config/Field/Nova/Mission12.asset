@@ -1,0 +1,67 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25edec1141714089bb4a39576791ecca, type: 3}
+  m_Name: Mission12
+  m_EditorClassIdentifier: Skinnerboxes.Asteroids::Portfolio.Asteroids.AsteroidsLevel
+  <Index>k__BackingField: 33
+  <Title>k__BackingField: Sunbreaker
+  quarry: 
+  quarryShare: 1
+  allyHull: 120
+  crossing: 45
+  scoutChance: 0.66
+  <Settings>k__BackingField: {fileID: 11400000, guid: 487469a5a0740034ca0c5189529cd71f, type: 2}
+  description: 'The warlord himself, aboard the Sunbreaker: a flagship built around a cannon that drinks starlight. End his war before the star ends everything.'
+  introduces: 'The last boss of the Frontier: the Sunbreaker.'
+  hints:
+  - Its sun cannon sweeps a beam across the sector - watch the warning line and get behind it.
+  - Nova orbs burst into rings of fire. Shoot them early or give them room.
+  touchHints: []
+  sector: 10
+  theme: {fileID: 11400000, guid: 31ba1a6827b2fb0419c741076b9b6ef9, type: 2}
+  themeRotation: []
+  wavesPerTheme: 5
+  objective: 3
+  objectiveTarget: 0
+  waves:
+  - metal: 2
+    hydra: 0
+    wrecks: 0
+    flares: 0
+    storms: 0
+    sentries: 0
+    minelayers: 0
+    stalkers: 0
+    corsairs: 1
+    title: Flagship escort
+    rocks: 0
+    ores: 0
+    magma: 0
+    ice: 0
+    crystals: 0
+    mines: 0
+    bombs: 0
+    comets: 0
+    wells: 0
+    saucers: 0
+    wasps: 0
+    pods: 1
+    hazardInterval: 6
+    duration: 30
+  boss: {fileID: 8865036921416417900, guid: c5e782ede4fc8f843a542215378080f0, type: 3}
+  bossRotation: []
+  bossEvery: 10
+  asteroidLoot: {fileID: 11400000, guid: 68e652e6d2d7f644e9224ed7b933bd55, type: 2}
+  lootChance: 0.085
+  podLoot: {fileID: 11400000, guid: 0758662a494530d40afb07e6953982f2, type: 2}
+  scoreGoal: 44000
+  speedMultiplier: 1

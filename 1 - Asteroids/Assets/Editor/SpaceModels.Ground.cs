@@ -8,7 +8,9 @@ namespace Portfolio.Asteroids.EditorTools
     {
         Rock, Boulders, Shrub, Cactus, Palm, Tree, Bush, Fern, Building, Hangar, Tent, Tank, Dome, Pipe, CraterRim,
         Antenna, Barrels, Sandbags, Fence, Container, Solar, Lamp, Car, Wall, Bridge, Ridge, Hedge, Vent, Tower, Mark,
-        Crates, Spire, Tower2, Crystal, Stump
+        Crates, Spire, Tower2, Crystal, Stump,
+        // The worlds of the Iron Tide and Hive Fall campaigns (SpaceModels.StrikeCampaigns.cs).
+        Pine, Pod, Tendril, Shard, IceBlock
     }
 
 
@@ -159,6 +161,7 @@ namespace Portfolio.Asteroids.EditorTools
                 case PropKind.Tower2: CoolingTower(b, s, spot.Main, spot.Accent); break;
                 case PropKind.Crystal: Crystal(b, s, spot.Main, spot.Accent, random); break;
                 case PropKind.Stump: b.Tint(spot.Main).Cylinder(Vector3.zero, s.x * 0.5f, s.x * 0.42f, s.y, 7); break;
+                default: CampaignProp(b, spot, s, random); break;
             }
             b.Pop();
         }
@@ -622,7 +625,7 @@ namespace Portfolio.Asteroids.EditorTools
                 case StrikeUnit.LaserTower: return LaserTower();
                 case StrikeUnit.Depot: return Depot();
                 case StrikeUnit.Crate: return SupplyCrate();
-                default: return null;
+                default: return CampaignGroundUnit(unit);
             }
         }
 

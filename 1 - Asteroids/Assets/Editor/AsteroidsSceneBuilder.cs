@@ -116,10 +116,10 @@ namespace Portfolio.Asteroids.EditorTools
             ThemeKeys.StripMissingScripts(menu);
             GameMenuInstaller.MakeThemed(menu, GameType.Asteroids);
             GameMenuInstaller.EnsureComponent<AsteroidsMenuLook>(menu).ThemedGame = GameType.Asteroids;
-            // The field mission select shows the field missions (the endless one included) and sectors only.
-            int missions = campaign != null ? campaign.MissionCountOf(MissionMode.Field) : 13;
-            int sectors = campaign != null ? campaign.SectorCountOf(MissionMode.Field) : 4;
-            AsteroidsInterfaceBuilder.Build(ui, menu, camera, missions, sectors, AsteroidsArtBuilder.Hulls.Length);
+            // The field mission select shows one field campaign at a time: its map has the columns and rows of the largest
+            // field campaign (and the endless node besides).
+            (int sectors, int perSector) = campaign != null && campaign.MissionCountOf(MissionMode.Field) > 0 ? CampaignSelect.Layout(campaign, MissionMode.Field) : (4, 3);
+            AsteroidsInterfaceBuilder.Build(ui, menu, camera, perSector, sectors, AsteroidsArtBuilder.Hulls.Length);
 
             AsteroidsAssets.SetObject(controller, "UI", ui);
             AsteroidsAssets.SetObject(controller, "BaseManager", manager);
@@ -402,6 +402,9 @@ namespace Portfolio.Asteroids.EditorTools
             effects.telegraph = Pool<EffectPool>(pools, "Effects/Telegraph", 3);
             effects.popups = Pool<PopupPool>(pools, "Effects/ScorePopup", 36);
             BuildStrikePools(pools, spawner, effects);
+            BuildFieldCampaignPools(pools, spawner, effects);
+            BuildStrikeCampaignPools(pools, spawner, effects);
+            BuildArmoryPools(pools, spawner, effects);
         }
 
         /// <summary>
@@ -410,8 +413,26 @@ namespace Portfolio.Asteroids.EditorTools
         /// </summary>
         static partial void BuildStrikePools(Transform pools, SpawnService spawner, SpaceEffects effects);
 
+        /// <summary>The pools of the field campaigns' new enemies, hazards, rocks, shots and effects (AsteroidsSceneBuilder.FieldCampaigns.cs).</summary>
+        static partial void BuildFieldCampaignPools(Transform pools, SpawnService spawner, SpaceEffects effects);
+
+        /// <summary>The pools of the strike campaigns' new units, shots and effects (AsteroidsSceneBuilder.StrikeCampaigns.cs).</summary>
+        static partial void BuildStrikeCampaignPools(Transform pools, SpawnService spawner, SpaceEffects effects);
+
+        /// <summary>The pools of the new weapons' shots and pickups and the new items' effects (AsteroidsSceneBuilder.Armory.cs).</summary>
+        static partial void BuildArmoryPools(Transform pools, SpawnService spawner, SpaceEffects effects);
+
         /// <summary>The strike clips and music of the audio (AsteroidsSceneBuilder.Strike.cs).</summary>
         static partial void BuildStrikeAudio(AsteroidsAudio audio);
+
+        /// <summary>The clips (and any music) of the field campaigns (AsteroidsSceneBuilder.FieldCampaigns.cs).</summary>
+        static partial void BuildFieldCampaignAudio(AsteroidsAudio audio);
+
+        /// <summary>The clips (and any music) of the strike campaigns (AsteroidsSceneBuilder.StrikeCampaigns.cs).</summary>
+        static partial void BuildStrikeCampaignAudio(AsteroidsAudio audio);
+
+        /// <summary>The clips of the new weapons and items (AsteroidsSceneBuilder.Armory.cs).</summary>
+        static partial void BuildArmoryAudio(AsteroidsAudio audio);
 
         /// <summary>
         /// The strike parts of the scene before it is saved: the terrain object, the field's terrain reference and the strike
@@ -489,6 +510,9 @@ namespace Portfolio.Asteroids.EditorTools
             sounds.musicVolume = 0.42f;
             sounds.effectsVolume = 0.85f;
             BuildStrikeAudio(sounds);
+            BuildFieldCampaignAudio(sounds);
+            BuildStrikeCampaignAudio(sounds);
+            BuildArmoryAudio(sounds);
         }
 
         // ------------------------------------------------------------------ fonts

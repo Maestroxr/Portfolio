@@ -917,6 +917,7 @@ namespace Portfolio.Asteroids.EditorTools
             }
             Object.DestroyImmediate(standIn);
             Object.DestroyImmediate(holder);
+            ReportStrikeCampaigns(report);
             Debug.Log(report.ToString());
         }
     }

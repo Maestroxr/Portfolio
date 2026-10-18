@@ -21,6 +21,10 @@ namespace Portfolio.Asteroids
     /// A strike or boss step takes the strike mission's number (1 = the first strike mission, <c>strike:all</c> flies them
     /// all in order); a field step takes the campaign index of the field mission. The default plan is
     /// <c>menu,shop,strike:1,boss:1,field:0</c>.
+    /// The campaign steps of AsteroidsTour.Campaigns.cs fly the missions of one campaign of a mode by their number in it:
+    /// <c>field:c1</c> (the first mission of the second field campaign), <c>field:c1:4</c> (its fourth), <c>field:c1:all</c>,
+    /// and the same with <c>strike:</c> and <c>boss:</c>; <c>campaigns</c> pictures the mission select of every campaign of
+    /// both modes (switched with the campaign bar's rules).
     /// </summary>
     public partial class AsteroidsTour : MonoBehaviour
     {
@@ -150,11 +154,22 @@ namespace Portfolio.Asteroids
                     case "shop":
                         yield return Shop();
                         break;
+                    case "armory":
+                    case "kit":
+                    case "weapon":
+                    case "power":
+                    case "showcase":
+                        yield return ArmoryStep(parts);
+                        break;
                     case "strike":
                     case "boss":
                         bool boss = parts[0] == "boss";
                         List<int> strikes = StrikeMissions();
-                        if (argument == "all")
+                        if (IsCampaignArgument(argument))
+                        {
+                            yield return CampaignMissions(MissionMode.Strike, parts, boss);
+                        }
+                        else if (argument == "all")
                         {
                             for (int n = 1; n <= strikes.Count; n++)
                             {
@@ -167,7 +182,17 @@ namespace Portfolio.Asteroids
                         }
                         break;
                     case "field":
-                        yield return Field(ParseInt(argument, 0));
+                        if (IsCampaignArgument(argument))
+                        {
+                            yield return CampaignMissions(MissionMode.Field, parts, false);
+                        }
+                        else
+                        {
+                            yield return Field(ParseInt(argument, 0));
+                        }
+                        break;
+                    case "campaigns":
+                        yield return Campaigns();
                         break;
                     case "local":
                         yield return LocalField();
@@ -182,6 +207,12 @@ namespace Portfolio.Asteroids
                         break;
                     case "localstrike":
                         yield return LocalStrike();
+                        break;
+                    case "fly":
+                        yield return FlyStep(argument);
+                        break;
+                    case "gallery":
+                        yield return Gallery(ParseInt(argument, 0));
                         break;
                     default:
                         Note($"unknown step {step}");
@@ -361,8 +392,16 @@ namespace Portfolio.Asteroids
                 Note($"no strike mission {number} (the campaign has {strikes.Count})");
                 yield break;
             }
-            int index = strikes[number - 1];
-            string name = boss ? $"boss{number}" : $"m{number}";
+            yield return FlyStrike(strikes[number - 1], boss ? $"boss{number}" : $"m{number}", boss);
+        }
+
+
+        /// <summary>
+        /// Flies the strike mission at <paramref name="index"/> with the strike autopilot (skipped to the boss for a boss
+        /// step), its screenshots named after <paramref name="name"/>.
+        /// </summary>
+        private IEnumerator FlyStrike(int index, string name, bool boss)
+        {
             yield return ToMenu();
             if (money >= 0 && boss)
             {
@@ -682,18 +721,24 @@ namespace Portfolio.Asteroids
                 return;
             }
             // Beyond the campaign too: the tour's own test missions (and missions added later) leave no keys behind.
+            var keys = new List<string>();
             for (int i = 0; i < manager.LevelCount + 32; i++)
             {
-                foreach (string key in new[] { StarsKey(i), BestKey(i) })
+                keys.Add(StarsKey(i));
+                keys.Add(BestKey(i));
+            }
+            // The campaign each tab showed last (the campaign steps switch them).
+            keys.Add(ValueKey(AsteroidsProgress.CampaignKey(MissionMode.Field)));
+            keys.Add(ValueKey(AsteroidsProgress.CampaignKey(MissionMode.Strike)));
+            foreach (string key in keys)
+            {
+                if (disk.DoesKeyExist(key))
                 {
-                    if (disk.DoesKeyExist(key))
-                    {
-                        savedKeys[key] = disk.GetFloat(key);
-                    }
-                    else
-                    {
-                        missingKeys.Add(key);
-                    }
+                    savedKeys[key] = disk.GetFloat(key);
+                }
+                else
+                {
+                    missingKeys.Add(key);
                 }
             }
         }
@@ -749,6 +794,8 @@ namespace Portfolio.Asteroids
         private string StarsKey(int level) => $"{manager.Type}.Progress.L{level}.Stars";
 
         private string BestKey(int level) => $"{manager.Type}.Progress.L{level}.Best";
+
+        private string ValueKey(string name) => $"{manager.Type}.Progress.Value.{name}";
 
 
         private IEnumerator Shot(string name)

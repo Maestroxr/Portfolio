@@ -236,8 +236,8 @@ namespace Portfolio.Asteroids.EditorTools
             aircraft.burstGap = info.BurstGap;
             aircraft.interval = info.Interval;
             aircraft.barrels = barrelList.ToArray();
-            aircraft.turnRate = unit == StrikeUnit.Transport || unit == StrikeUnit.Bomber ? 90f : unit == StrikeUnit.Kamikaze ? 540f : 300f;
-            aircraft.bankAmount = unit == StrikeUnit.Gunship ? 0.08f : 0.2f;
+            aircraft.turnRate = unit == StrikeUnit.Transport || unit == StrikeUnit.Bomber || unit == StrikeUnit.Cruiser ? 90f : unit == StrikeUnit.Kamikaze || unit == StrikeUnit.Mite ? 540f : 300f;
+            aircraft.bankAmount = unit == StrikeUnit.Gunship || unit == StrikeUnit.Cruiser ? 0.08f : 0.2f;
             aircraft.shotKind = info.ShotKind;
             aircraft.fireInterval = info.Interval;
             aircraft.shotSpeed = StrikeUnitRules.Shot(info.ShotKind).Speed;

@@ -370,7 +370,7 @@ namespace Portfolio.Asteroids.EditorTools
 
         private static Sprite[] WeaponIcons(Func<string, Sprite> iconOf)
         {
-            return new[] { iconOf("Blaster"), iconOf("Laser"), iconOf("Scatter"), iconOf("Missile") };
+            return AsteroidsArtBuilder.WeaponIconNames.Select(iconOf).ToArray();
         }
 
         private static IEnumerable<GameObject> Prefabs(string folder)

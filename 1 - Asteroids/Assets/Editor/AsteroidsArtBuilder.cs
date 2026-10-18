@@ -21,7 +21,10 @@ namespace Portfolio.Asteroids.EditorTools
         public const string StarSparrow = "Art/StarSparrow";
         public const string RockPack = "Art/AsteroidsPack/Assets";
 
-        public static readonly string[] SectorNames = { "Kepler", "Crimson", "Frost", "Void" };
+        public static readonly string[] SectorNames =
+        {
+            "Kepler", "Crimson", "Frost", "Void", "Ember", "IonReach", "IronShoals", "Corona", "WreckRift", "Phantom", "HydraNebula", "Gate"
+        };
 
         /// <summary>The hangar: name, StarSparrow model, material colour, engine colour.</summary>
         public static readonly (string name, string model, string material, Color engine)[] Hulls =
@@ -56,6 +59,10 @@ namespace Portfolio.Asteroids.EditorTools
             BuildStrikeArt();
             Progress("Ground art", 0.95f);
             BuildGroundArt();
+            Progress("Campaign art", 0.96f);
+            BuildFieldCampaignArt();
+            BuildStrikeCampaignArt();
+            BuildArmoryArt();
             Progress("Theme art", 0.98f);
             BuildThemeArt();
             AssetDatabase.SaveAssets();
@@ -67,6 +74,19 @@ namespace Portfolio.Asteroids.EditorTools
 
         /// <summary>The art of the strike mode's ground: terrain, ground units, props, decals (AsteroidsArtBuilder.Ground.cs).</summary>
         static partial void BuildGroundArt();
+
+        /// <summary>
+        /// The art of the second and third asteroid field campaigns: their sectors' textures and planets, enemies, hazards,
+        /// rocks and bosses (AsteroidsArtBuilder.FieldCampaigns.cs). Runs before the theme art, so what it makes in the
+        /// Classic folders gets its counterparts in the generated themes.
+        /// </summary>
+        static partial void BuildFieldCampaignArt();
+
+        /// <summary>The art of the second and third planet strike campaigns: worlds, units, bosses (AsteroidsArtBuilder.StrikeCampaigns.cs).</summary>
+        static partial void BuildStrikeCampaignArt();
+
+        /// <summary>The art of the new weapons of both modes and the new Supply Room items: shots, pickups, icons, sounds (AsteroidsArtBuilder.Armory.cs).</summary>
+        static partial void BuildArmoryArt();
 
         private static void Progress(string step, float value)
         {

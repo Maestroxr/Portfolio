@@ -16,7 +16,7 @@ namespace Portfolio.Asteroids
     /// (<see cref="PlayerBase.IsRemote"/>, moved by a <see cref="RemoteShip"/>): they are never simulated and take no
     /// damage here, and only mirror what their owner reports (<see cref="Mirror"/>).
     /// </summary>
-    public class AsteroidsPlayer : PlayerBase, ILocalTransformAdapter
+    public partial class AsteroidsPlayer : PlayerBase, ILocalTransformAdapter
     {
         public const int MaxBombs = 3;
 
@@ -475,7 +475,7 @@ namespace Portfolio.Asteroids
             }
             weaponLossCooldown = Mathf.Max(0f, weaponLossCooldown - deltaTime);
             Vector2 move = controls ? commands.Move : Vector2.zero;
-            float maxSpeed = StrikeRules.ShipMaxSpeed(PlayerSettings);
+            float maxSpeed = StrikeRules.ShipMaxSpeed(PlayerSettings) * StrikeSpeedFactor;
             flight.Fly(move, maxSpeed, deltaTime);
             flight.StepFree(deltaTime);
             if (Field != null && Field.Playground != null)
@@ -517,6 +517,7 @@ namespace Portfolio.Asteroids
                     gunnery.Megabomb(this);
                 }
                 RegenerateEnergy(gunnery, deltaTime);
+                TickStrikeEquipment(gunnery, deltaTime);
             }
             if (visuals != null)
             {
@@ -650,6 +651,10 @@ namespace Portfolio.Asteroids
             {
                 return false;
             }
+            if (AbsorbedByAegis(hit, continuous))
+            {
+                return true;
+            }
             float amount = hit.Amount;
             if (Shield > 0f)
             {
@@ -695,7 +700,7 @@ namespace Portfolio.Asteroids
             {
                 return false;
             }
-            float amount = StrikeDamage(hit.Amount, loadout.Difficulty, PlayerSettings != null ? PlayerSettings.HullMultiplier : 1f);
+            float amount = StrikeDamage(hit.Amount, loadout.Difficulty, PlayerSettings != null ? PlayerSettings.HullMultiplier : 1f) * loadout.ArmorFactor;
             bool shielded = loadout.PhaseShields > 0;
             int shieldsBefore = loadout.PhaseShields;
             float taken = loadout.AbsorbDamage(amount);
@@ -882,6 +887,10 @@ namespace Portfolio.Asteroids
             if (type == PowerUpType.Drones)
             {
                 SetDrones(true);
+            }
+            if (type == PowerUpType.Aegis)
+            {
+                Shield = MaxShield;
             }
             if (!wasActive)
             {

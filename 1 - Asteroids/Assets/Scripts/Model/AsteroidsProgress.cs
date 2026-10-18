@@ -37,6 +37,30 @@ namespace Portfolio.Asteroids
             set => SetValue(ShipKey, value);
         }
 
+        /// <summary>The campaign of <paramref name="mode"/> the mission select showed last (0 = the first), kept on the device.</summary>
+        public int ShownCampaign(MissionMode mode)
+        {
+            return System.Math.Max(0, Value(CampaignKey(mode)));
+        }
+
+        /// <summary>
+        /// Remembers <paramref name="arc"/> as the campaign of <paramref name="mode"/> the mission select shows (written only
+        /// when it changes: a device that never left the first campaign keeps no value).
+        /// </summary>
+        public void SetShownCampaign(MissionMode mode, int arc)
+        {
+            if (ShownCampaign(mode) != System.Math.Max(0, arc))
+            {
+                SetValue(CampaignKey(mode), arc);
+            }
+        }
+
+        /// <summary>The named value of the campaign a mode's mission select shows ("FieldCampaign", "StrikeCampaign").</summary>
+        internal static string CampaignKey(MissionMode mode)
+        {
+            return mode == MissionMode.Strike ? "StrikeCampaign" : "FieldCampaign";
+        }
+
         public int EndlessBestWave => (int)Record(EndlessWaveKey);
 
         public int EndlessBestScore => (int)Record(EndlessScoreKey);
@@ -139,10 +163,10 @@ namespace Portfolio.Asteroids
             ResetPilot();
         }
 
-        /// <summary>Forgets every star, score, record, the hangar choice and the strike pilot.</summary>
+        /// <summary>Forgets every star, score, record, the hangar choice, the campaigns shown and the strike pilot.</summary>
         public void ResetAll(int levelCount)
         {
-            var values = new List<string> { ShipKey };
+            var values = new List<string> { ShipKey, CampaignKey(MissionMode.Field), CampaignKey(MissionMode.Strike) };
             values.AddRange(PilotValues());
             Reset(levelCount, new[] { EndlessWaveKey, EndlessScoreKey }, values);
         }
@@ -153,10 +177,13 @@ namespace Portfolio.Asteroids
             Set($"Value.{name}", value);
         }
 
-        /// <summary>The items kept as counts of their own (megabombs and phase shields have theirs, the energy module is none).</summary>
+        /// <summary>
+        /// The items kept as counts of their own (megabombs and phase shields have theirs, the energy module is none): every
+        /// item by its name, so a pilot saved before the armory's items existed loads with none of them.
+        /// </summary>
         private static IEnumerable<StrikeItem> ItemsKept()
         {
-            for (var item = StrikeItem.MachineGun; item <= StrikeItem.IonScanner; item++)
+            for (var item = StrikeItem.MachineGun; (int)item < StrikeArmory.ItemCount; item++)
             {
                 if (item != StrikeItem.MegaBomb && item != StrikeItem.PhaseShield && item != StrikeItem.EnergyModule)
                 {

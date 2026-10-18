@@ -7,7 +7,7 @@ namespace Portfolio.Asteroids
     /// hit it (dashing when it is close), keeps away from mines and black holes, grabs pickups when it is safe and
     /// sets off a nova bomb when swamped. Add it to the ship in play mode to watch or test a mission end to end.
     /// </summary>
-    public class AsteroidsAutopilot : MonoBehaviour, IShipInput
+    public partial class AsteroidsAutopilot : MonoBehaviour, IShipInput
     {
         [SerializeField] internal float lookAhead = 1.1f;
         [SerializeField] internal float safetyMargin = 0.9f;
@@ -131,6 +131,7 @@ namespace Portfolio.Asteroids
                     escape = -offset.normalized;
                 }
             }
+            FieldThreats(field, player, position, ref soonest, ref escape);
 
             if (soonest < lookAhead)
             {
@@ -161,7 +162,7 @@ namespace Portfolio.Asteroids
                     pickup = rewards[i];
                 }
             }
-            Shootable prey = field.NearestTarget(position, 60f);
+            Shootable prey = FieldPrey(field, position);
             if (pickup != null && (prey == null || playground.Delta(position, prey.Position).sqrMagnitude > 16f))
             {
                 Vector2 toPickup = playground.Delta(position, pickup.Position);
@@ -176,7 +177,8 @@ namespace Portfolio.Asteroids
                 Brake = velocity.magnitude > 1f;
                 return;
             }
-            Vector2 offsetToPrey = playground.Delta(position, prey.Position);
+            // Shots do not wrap: aim across the field, never through an edge.
+            Vector2 offsetToPrey = prey.Position - position;
             float shotSpeed = WeaponRules.Speed(player.Weapons.Type);
             float lead = offsetToPrey.magnitude / Mathf.Max(5f, shotSpeed);
             Vector2 aim = offsetToPrey + (prey.Velocity - velocity) * lead;

@@ -1,16 +1,17 @@
 # Portfolio - Asteroids
 
-A sci-fi take on Asteroids: fly a starfighter around a wrapping playfield, shatter five kinds of rocks, dodge mines,
-cluster bombs, comets and black holes, fight flying saucers, alien wasps and four bosses, and collect crystals, weapon
-upgrades, shields and power-ups. A campaign of twelve missions in four sectors (three stars each) introduces one new
-thing per mission, the hangar unlocks three more ships with the stars you earn, and an endless mode runs through every
-sector until you run out of ships.
+A sci-fi take on Asteroids: fly a starfighter around a wrapping playfield, shatter many kinds of rocks, dodge mines,
+cluster bombs, comets and black holes, fight flying saucers, alien wasps and bosses, and collect crystals, weapon
+upgrades, shields and power-ups. Three campaigns of twelve missions in four sectors each (three stars a mission) bring
+in one new thing per mission: **The Raider War**, then **Nova Frontier** and **The Last Gate** (see
+[Campaigns](#campaigns)). The hangar unlocks three more ships with the stars you earn, and an endless mode runs
+through the sectors until you run out of ships.
 
 A second mode, **Planet Strike**, is a vertical scroller in the manner of Raptor: Call of the Shadows. The ship flies
-low over the surface of three worlds while the ground scrolls under it, shoots down aircraft and destroys ground
-targets for money, buys and sells weapons and shields in the Supply Room between missions, and meets a boss at the
-end of every mission of the nine-mission campaign **SHADOW STRIKE** (see [Planet Strike](#planet-strike)). Both
-modes can be flown together online.
+low over the surface of alien worlds while the ground scrolls under it, shoots down aircraft and destroys ground
+targets for money, buys and sells weapons and equipment in the Supply Room between missions, and meets a boss at the
+end of every mission of its three nine-mission campaigns, **Shadow Strike**, **Iron Tide** and **Hive Fall** (see
+[Planet Strike](#planet-strike)). Both modes can be flown together online.
 
 ## Playing
 
@@ -39,15 +40,44 @@ modes can be flown together online.
   Kills score for the pilot who made them, a pickup goes to whoever reaches it first, and a pilot without ships watches
   the others. The mission is won together, and lost when nobody flies any more.
 - **Pickups.** Crystals (points, and the goal of collection missions), repair kits, shield cells, spare ships, nova
-  bombs, weapon crates and power-ups. A weapon crate switches to its weapon and raises the weapon level (up to four):
-  Pulse Blaster, Scatter Cannon, Lancer Laser (pierces) and Seeker Missiles (home in). The timed power-ups are
-  Overdrive (double fire rate), Tractor Magnet (pulls pickups in), Chrono Field (slows everything but you) and Wing
-  Drones (two drones fight at your side).
+  bombs, weapon crates and power-ups. A weapon crate switches to its weapon and raises the weapon level (up to four).
+  The eight weapons:
+
+  | Weapon | What it does |
+  | --- | --- |
+  | Pulse Blaster | Fast bolts, up to five abreast |
+  | Scatter Cannon | A shotgun cone of pellets |
+  | Lancer Laser | A lance that pierces two to five targets |
+  | Seeker Missiles | Missiles that home in and burst |
+  | Arc Caster | A spark whose lightning jumps on to two to four more targets nearby (one to three sparks) |
+  | Rail Driver | A slow, very fast slug that goes through 4 to 12 targets in its line (two slugs at level 4) |
+  | Flak Burster | Shells that burst into a fan of shrapnel near a target or at the end of their range (one to three shells) |
+  | Ion Wave | A slow crescent that widens as it flies and passes through four to eight targets |
+
+  The timed power-ups are Overdrive (double fire rate), Tractor Magnet (pulls pickups in), Chrono Field (slows
+  everything but you), Wing Drones (two drones fight at your side), Phase Rounds (every shot passes through two more
+  targets) and Aegis Barrier (the shield takes every hit and the hull none). The endless mode deals out all of them;
+  the later campaigns bring in the new weapons in their own missions.
 - **Score.** Kills in quick succession build a combo that multiplies their points (x2 from 5 kills up to x5 from 40).
   Every ship left at the end of a mission is worth a bonus.
 - **Stars.** Complete the mission, lose no ships, and reach the mission's score goal (shown on the mission select).
-  Missions unlock in order, a sector's first mission also needs a number of stars, and the ships in the hangar unlock
-  with the total stars. The endless mode opens after three completed missions and keeps your best wave and score.
+  Missions unlock in order within their campaign, a sector's first mission also needs a number of stars of its
+  campaign, and the ships in the hangar unlock with the total stars of every campaign of both modes. The endless mode
+  opens after three completed missions and keeps your best wave and score.
+
+### Campaigns
+
+The mission select shows one campaign of the tab's mode at a time. The **campaign bar** right of the mode tabs names
+it, tells its story and has an arrow at each end to the campaign before and after it (Page Up and Page Down do the
+same); the star counter at the top right counts the stars of the campaign shown, and the sector map shows its sectors
+and missions only (the endless mission goes with the first field campaign). Switching to a campaign selects its next
+mission to fly (its first open mission without stars), the selection keeps the campaign it belongs to, and each tab
+remembers its campaign on the device. A campaign is open from the start unless it says how many stars of its mode open
+it; within a campaign the missions open one after another and the sectors behind the stars of that campaign. Next
+after a campaign's last mission goes back to the mission select. The details and the briefing name the campaign with
+the sector ("THE RAIDER WAR - KEPLER BELT - MISSION 1").
+
+#### The Raider War
 
 | # | Mission | Sector | Objective | New |
 | --- | --- | --- | --- | --- |
@@ -65,10 +95,78 @@ modes can be flown together online.
 | 12 | Dreadnought | Void Core | Destroy the boss | Boss: Dreadnought |
 | - | Deep Field | all four | Endless | Sectors change every 5 waves, a boss every 10 |
 
+#### Nova Frontier
+
+Beyond the Void Core a dying star is about to go nova. Escort the colony convoys out through its flares and storms, and
+break the warlord who hunts them. Open from the start; its sectors open with 0, 3, 8 and 15 of its own stars.
+
+| # | Mission | Sector | Objective | New |
+| --- | --- | --- | --- | --- |
+| 1 | Dying Light | Ember Drift | Clear 3 waves | Solar flares |
+| 2 | Iron Rain | Ember Drift | Clear 3 waves | Iron rocks |
+| 3 | Slag Titan | Ember Drift | Destroy the boss | Boss: Slag Titan (the Rock Titan's iron cousin; calls flares) |
+| 4 | Convoy | Ion Reach (3 stars) | Escort 2 freighters | Escort missions, corsairs, Arc Caster |
+| 5 | Static | Ion Reach | Survive 100 seconds | Ion storms and their lightning |
+| 6 | Storm Herald | Ion Reach | Destroy the boss | Boss: Storm Herald (circles the sector, lightning, storms) |
+| 7 | Gun Line | Iron Shoals (8 stars) | Clear 3 waves | Sentry guns, Rail Driver |
+| 8 | Holdout | Iron Shoals | Defend the station for 1:50 | Defence missions, minelayers |
+| 9 | Bastion | Iron Shoals | Destroy the boss | Boss: Bastion (lances, sentries, mine bays) |
+| 10 | Bounty | Corona (15 stars) | Destroy 6 marked targets | Hunt missions (marked corsairs) |
+| 11 | Exodus | Corona | Escort 3 freighters | Everything at once |
+| 12 | Sunbreaker | Corona | Destroy the boss | Boss: Sunbreaker (sweeping sun cannon, flares, nova orbs) |
+
+#### The Last Gate
+
+In a rift strewn with the wrecks of a forgotten war, an ancient gate is waking. Fight through the graveyard and what
+comes through it, and close the gate for good. Open from the start; its sectors open with 0, 4, 10 and 17 of its stars.
+
+| # | Mission | Sector | Objective | New |
+| --- | --- | --- | --- | --- |
+| 1 | Graveyard | Wreck Rift | Clear 3 waves | Wreckage (salvage, fuel tanks), Flak Burster |
+| 2 | Salvage Rights | Wreck Rift | Collect 30 crystals | Salvage under fire |
+| 3 | Scrap Leviathan | Wreck Rift | Destroy the boss | Boss: Scrap Leviathan (a black-hole maw, wreckage, minelayers) |
+| 4 | Ghost Signal | Phantom Reach (4 stars) | Clear 3 waves | Phase stalkers |
+| 5 | Ghost Hunt | Phantom Reach | Destroy 8 marked targets | Marked stalkers in ion storms |
+| 6 | Wraith Matriarch | Phantom Reach | Destroy the boss | Boss: Wraith Matriarch (blinks from place to place) |
+| 7 | Overgrowth | Hydra Nebula (10 stars) | Clear 3 waves | Hydra rocks |
+| 8 | Lifeline | Hydra Nebula | Escort 2 freighters | Escort through hydra fields |
+| 9 | The Hydra | Hydra Nebula | Destroy the boss | Boss: The Hydra (heals when you let up) |
+| 10 | Threshold | The Gate (17 stars) | Defend the station for 2:10 | The gate's defenders |
+| 11 | Last Stand | The Gate | Survive 150 seconds | Everything the rift has |
+| 12 | The Gatekeeper | The Gate | Destroy the boss | Boss: The Gatekeeper (four phases, everything) |
+
+The endless mission (Deep Field) also rotates through the eight new sectors and sends the eight new bosses after the
+first campaign's four.
+
+#### What the later field campaigns add
+
+- **Rocks.** Iron rocks take half damage from shots and half again more from blasts (shoot the mines and magma next to
+  them). Hydra rocks split in three, and a small piece that is left alone swells and grows back into a medium one.
+  Wreckage holds salvage crystals, and a piece with a glowing red fuel tank explodes like magma.
+- **Hazards.** A solar flare first lights up the edge it comes from, then a wall of fire sweeps across the whole sector
+  (a dash goes through it unharmed). An ion storm drifts through the sector, drags the ships inside it, drains their
+  shields and calls lightning (a ring warns where it strikes).
+- **Enemies.** Sentry guns (their muzzle glows before a burst), minelayers (they cross the sector sowing mines), phase
+  stalkers (they blink in next to their prey, fire a fan of bolts and blink out; out of phase they cannot be hurt) and
+  corsairs (raider fighters that circle their prey and go for freighters and stations first).
+- **Objectives.** *Escort*: freighters cross the sector one after the other; a freighter that gets through pays a bonus
+  for its hull, one that is destroyed fails the mission. *Defend*: a station must stand until the timer runs out.
+  *Hunt*: destroy a number of marked enemies (a gold reticle; worth double). Freighters and stations are no targets:
+  the pilots' shots pass them by, but enemy fire, beams, lightning, rocks, mines, comets and blasts hurt them; a bar
+  over them shows their hull, and the HUD line shows it too.
+- **Bosses.** Three new movements (circling the sector, blinking, holding the middle) and six new attacks (lightning,
+  lances and fans of lances that warn with a thin line, sweeping beams, solar flares, nova orbs that burst into rings of
+  plasma), black-hole maws, regeneration (at most 15% of the hull per phase) and phase calls on the HUD.
+- **Music.** Each campaign has a battle loop of its own.
+- **Difficulty.** Both campaigns are harder than the Raider War, and the Last Gate harder than Nova Frontier: faster
+  rocks, denser waves and bosses that keep several attacks going at once. Score goals (the third star) are about 55%
+  of what the autopilot scores, as in the first campaign.
+
 ## Planet Strike
 
-The PLANET STRIKE tab of the mission select holds the second campaign. Its rules follow Raptor (checked against the
-released source of the DOS game) wherever they make sense here.
+The PLANET STRIKE tab of the mission select holds the strike campaigns, one at a time like the field tab (the campaign
+bar switches them; one pilot, with its money and kit, flies all of them). Its rules follow Raptor (checked
+against the released source of the DOS game) wherever they make sense here.
 
 | Control | Keyboard | Gamepad | Touch |
 | --- | --- | --- | --- |
@@ -92,29 +190,52 @@ released source of the DOS game) wherever they make sense here.
   craters. Weapons hit air units, ground units or both. Fuel tanks and depots explode and set off their neighbours.
 - **Weapons.** The machine gun, the plasma cannon and the micro missiles fire whenever you fire; one special weapon,
   chosen with the WEAPON key, fires with them: dumbfire missiles, an auto-tracking mini-gun, a laser turret, missile
-  pods, air-to-air and air-to-ground missiles, bombs, a pulse cannon, the deathray and the twin laser. The megabomb
-  clears every enemy shot and hits everything on screen.
+  pods, air-to-air and air-to-ground missiles, bombs, a pulse cannon, the deathray, the twin laser, the flak cannon
+  (shells that burst into shrapnel near aircraft), cluster bombs (a canister that scatters six bomblets), napalm (ground
+  that burns for three seconds), swarm rockets (six small homing rockets), arc lightning (a spark whose lightning jumps
+  to four more targets) and the rail gun (a slug through everything in its line, boss parts included). The WEAPON key
+  cycles through the owned specials in this order. The megabomb clears every enemy shot and hits everything on screen.
+- **Gear.** Armor plating (up to three plates, each takes 10% off every hit), the repair drone (1 energy every 2.5 s,
+  firing or not, on every difficulty), the afterburner (15% faster), the salvage magnet (pickups and credits drift to
+  the ship from 14 m), wingman drones (two drones circle the ship and fire strike rounds at the nearest enemy) and
+  emergency repair kits (up to three; one restores 40 energy by itself when the energy drops below 25).
 - **Bosses.** Every mission ends with a boss made of parts: turrets, launchers and modules die one by one, and a part
   (or the core) behind a shield opens once the parts of the tier before it are gone. The scroll stops for the fight.
   Without the Ion Scanner the boss bar shows only the boss's name.
 - **Difficulty** (on the mission details): Rookie halves the damage you take and the bosses' health, Veteran is the
   campaign as designed, Elite adds more enemies and stops the energy from regenerating.
-- **Stars.** Complete the mission; destroy 70% of the hostiles that came on screen; take at most 30 damage. The second
-  and third sectors need 4 and 10 strike stars.
+- **Stars.** Complete the mission; destroy 70% of the hostiles that came on screen; take at most 30 damage. A sector of
+  a campaign needs stars of that campaign (in Shadow Strike the second and third sectors need 4 and 10).
 
-The Supply Room (a button on the mission details and on the results) buys and sells at half price:
+The Supply Room (a button on the mission details and on the results) buys and sells at half price. Its list has two
+pages, **WEAPONS** and **GEAR** (the tabs next to BUY and SELL), each by price in a grid of three columns that scrolls
+(wheel or finger) when a page holds more than six rows:
 
-| Item | Price | | Item | Price |
+| Weapons | Price | | Gear | Price |
 | --- | --- | --- | --- | --- |
-| Energy (25 points) | 10,000 | | Air/Ground Missiles | 110,000 |
-| Ion Scanner | 10,000 | | Dumbfire Missiles | 145,200 |
-| Megabomb (up to 5) | 32,250 | | Micro-Missile Launcher | 175,600 |
-| Air/Air Missiles | 63,500 | | Missile Pods | 204,950 |
-| Phase Shield (up to 5) | 78,500 | | Auto-Track Mini-Gun | 250,650 |
-| Plasma Cannon | 78,800 | | Laser Turret | 512,850 |
-| Bombs | 98,200 | | Pulse Cannon | 725,000 |
-| | | | Deathray | 950,000 |
-| | | | Twin Laser | 1,750,000 |
+| Air/Air Missiles | 63,500 | | Ion Scanner | 10,000 |
+| Plasma Cannon | 78,800 | | Energy (25 points) | 10,000 |
+| Bombs | 98,200 | | Megabomb (up to 5) | 32,250 |
+| Air/Ground Missiles | 110,000 | | Emergency Repair Kit (up to 3) | 42,000 |
+| Flak Cannon | 135,000 | | Salvage Magnet | 55,000 |
+| Dumbfire Missiles | 145,200 | | Phase Shield (up to 5) | 78,500 |
+| Micro-Missile Launcher | 175,600 | | Afterburner | 88,000 |
+| Missile Pods | 204,950 | | Armor Plating (up to 3) | 120,000 |
+| Cluster Bombs | 236,000 | | Repair Drone | 380,000 |
+| Auto-Track Mini-Gun | 250,650 | | Wingman Drones | 470,000 |
+| Napalm | 298,000 | | | |
+| Swarm Rockets | 465,000 | | | |
+| Laser Turret | 512,850 | | | |
+| Arc Lightning | 640,000 | | | |
+| Pulse Cannon | 725,000 | | | |
+| Deathray | 950,000 | | | |
+| Rail Gun | 1,180,000 | | | |
+| Twin Laser | 1,750,000 | | | |
+
+The cheaper new items (at or below 145,200: the flak cannon, armor plating, the afterburner, the salvage magnet and
+repair kits) can also be found in crates; the early missions of Iron Tide and Hive Fall hide some.
+
+#### Shadow Strike
 
 | # | Mission | World | Boss | New |
 | --- | --- | --- | --- | --- |
@@ -127,6 +248,52 @@ The Supply Room (a button on the mission details and on the results) buys and se
 | 7 | Moonbase | Outer Colonies (moon), 10 stars | Dome Fortress | Laser towers |
 | 8 | Magma Works | Outer Colonies (volcanic) | Foundry Crawler | Heavy armour, lava lakes |
 | 9 | Shadow Station | Outer Colonies (station) | The Shadow | Three rings of defence, three phases |
+
+Iron Tide and Hive Fall are open from the start, each with its own sector gates at 0, 4 and 10 of its stars. They share
+the strike pilot (money and kit) with Shadow Strike: the first missions of both suit a pilot with little more than the
+machine gun, the later ones expect what a pilot buys on the way.
+
+#### Iron Tide
+
+After the Shadow, the Kranemark Consortium sends its private war fleet to take the free worlds: over the ice of Boreas,
+the islands of Thalassa and the open ocean.
+
+| # | Mission | World | Boss | New |
+| --- | --- | --- | --- | --- |
+| 1 | Cold Open | Boreas Shelf (glacier) | Glacier Hauler | Drone swarms, SAM sites (seeker rockets) |
+| 2 | Whiteout | Boreas Shelf | Frost Battery | Artillery (shells burst where you were, a red ring marks the spot), walkers |
+| 3 | Pack Ice | Boreas Shelf (pack ice) | Icebreaker | Floes and leads, destroyers, missile cruisers |
+| 4 | Coral Strand | Thalassa Reach (islands), 4 stars | Gale Carrier | Shield generators (nothing under their dome can be hurt), a carrier that launches drones |
+| 5 | Lagoon Run | Thalassa Reach | Reef Bastion | Destroyer convoys, transports |
+| 6 | Twin Wakes | Thalassa Reach (open sea) | Sea Wolves | A pack of two boats without a core |
+| 7 | Harbour Lights | The Iron Deep (city at night), 10 stars | Drydock | Shield domes in the streets, walkers, SAM nests |
+| 8 | Armada | The Iron Deep (open sea) | Battleship | Destroyer lines; three tiers, three phases |
+| 9 | Leviathan | The Iron Deep | Leviathan | The flagship: wing guns, hangars and sweepers, the reactor crown |
+
+#### Hive Fall
+
+Something has eaten the colony of Mireth: an alien Hive, grown over its world, its crystal wastes and the orbital Halo.
+
+| # | Mission | World | Boss | New |
+| --- | --- | --- | --- | --- |
+| 1 | First Contact | The Broodlands (hive) | Brood Mound | Stingers (spores that drift after you), spitters |
+| 2 | Hatchery | The Broodlands | Spore Towers | Hive spawners (launch stingers a few times), acid pools; a boss without a core |
+| 3 | Burrows | The Broodlands (nests) | Burrow Wyrm | Mite swarms that dive at you; tail, neck, head |
+| 4 | Glass Desert | Shard Wastes (crystal), 4 stars | Shard Colossus | Prism pylons (glow, then a ring of needles) |
+| 5 | Prism Lanes | Shard Wastes (crystal fields) | Prism Array | Lanes between crystal forests; a boss without a core |
+| 6 | Singing Spires | Shard Wastes | Resonator | A turning ring of emitters |
+| 7 | Ring Breach | The Halo (ring station), 10 stars | Halo Gate | The Halo's deck and its breaches onto space |
+| 8 | Brood Ship | The Halo | Brood Ship | Maws, stinger sacs, sweeping spines |
+| 9 | Heart of the Hive | The Broodlands | Hive Mother | Two turning rings, three phases |
+
+- **New ground and air.** Five worlds (Glacier, Reef, Hive, Crystal, Halo) and four kinds of ground (pack ice, islands,
+  hive nests, crystal fields), twelve units (drone, missile cruiser, stinger, mite; SAM site, artillery, walker, shield
+  generator, destroyer, hive spawner, spitter, prism), four enemy shots (artillery shell, spore, crystal needle, seeker
+  rocket), four attack patterns (rings, sweeping fans, artillery barrages, launches of aircraft) and three flight paths
+  (a figure of eight for swarms, a wide weave, a hook up the side). Fifteen of the eighteen bosses are new; the Frost
+  Battery, the Prism Array and the Halo Gate are rebuilt on the Dome Fortress's, the Twin Silos' and the Shadow's frames.
+- **Arcade 80s.** As before, every strike mission of every campaign flies over the one Grid world, which draws every kind
+  of ground (the new ones too); the new units and bosses are drawn as neon wire like the others.
 
 ## Base game integration
 
@@ -141,7 +308,7 @@ The game is built on the base classes of the BaseGame package (`com.skinnerboxes
 | `GameUI` | `AsteroidsUI` |
 | `SettingsUI` | `AsteroidsSettingsUI` |
 | `GameSettings` | `AsteroidSettings` |
-| `Campaign` | `AsteroidsCampaign` (`Config/Campaign/AsteroidsCampaign.asset`): sectors with star gates, the endless unlock |
+| `Campaign` | `AsteroidsCampaign` (`Config/Campaign/AsteroidsCampaign.asset`): the campaigns of both modes (`Arc`), their sectors with star gates, the endless unlock |
 | `GameLevel` | `AsteroidsLevel`: objective, waves, boss, sector theme, loot tables and score goal |
 | `CampaignProgress` | `AsteroidsProgress`: stars and best score per mission, the endless record, the chosen ship |
 | `PrefabPool<T>` | `AsteroidPool`, `EnemyPool`, `HazardPool`, `ShotPool`, `LootablePool`, `ExplodablePool`, `RewardPool`, `EffectPool`, `PopupPool` |
@@ -242,7 +409,12 @@ with, that Arcade 80s replaces it, and that selecting it changes what the game r
 | `Scripts/Controller/Strike/*` | The strike bodies (`StrikeAircraft`, `GroundUnit`, `StrikeBoss` with its `BossPart`s, `StrikeReward`, `EnemyBeam`), the pilot's weapons (`StrikeGunnery`, `PlayerBeam`) and `StrikeAutopilot` |
 | `Scripts/Controller/AsteroidsGameManager.Strike.cs`, `SpawnService.Strike.cs` | The strike mission's flow (the working copy of the pilot, money, stars, the fly-off, the Supply Room) and its spawning |
 | `Scripts/View/Strike/*` | The scrolling ground (`StrikeTerrain`, `TerrainTile`; the ground sits a little behind the air layer and `DepthLayer` / `DepthAnchor` place it so it lines up with its logical position under the perspective camera), the aircraft's `DropShadow`s, and `StrikeUI` (the strike tab, the Supply Room, the HUD and the results) |
-| `Scripts/Controller/AsteroidsTour.cs` | Development builds only: `-asteroids-tour <folder>` flies a plan (`-asteroids-tour-plan menu,shop,strike:1,boss:1,field:0`, or `strike:all`) with the autopilot and takes screenshots (`-asteroids-tour-god`, `-asteroids-tour-speed`, `-asteroids-tour-money`); it puts the saved progress back afterwards |
+| `Scripts/Model/CampaignSelect.cs`, `Scripts/View/CampaignSwitcher.cs`, `Scripts/Controller/AsteroidsGameManager.Campaigns.cs` | The campaigns of the mission select: which mission a campaign selects, a mission's number and place on its campaign's map, the map that holds the largest campaign of a mode; the campaign bar; the manager's campaign of each tab, the switching and the remembering |
+| `Scripts/Model/*.FieldCampaigns.cs` | The rules of the later field campaigns' rocks (`AsteroidRules`), the wave counts and mission settings (`WaveSpec`, `AsteroidsLevel`: quarry, ally hull, crossing time), the objectives (`MissionObjective`: their measure is `Survived`, so co-op reports and saved missions need nothing new) |
+| `SolarFlare`, `IonStorm`, `CampaignEnemy` (`Sentry`, `Minelayer`, `PhaseStalker`, `Corsair`), `Ally`, `ZoneShot`, `FieldBeam`, `NovaOrb` | The later field campaigns' hazards, enemies, freighters and stations, lightning, lances and sweep beams, nova orbs; with the partials `Asteroid`, `Boss`, `SpawnService`, `AsteroidsGameManager`, `AsteroidsAutopilot` and `AsteroidsTour` `.FieldCampaigns.cs` |
+| `Scripts/Controller/Armory/*` | The armory's shots: `ArcShot` (lightning jumps from what the spark hits), `RailShot` (a swept slug), `BurstShot` (shells and canisters that burst into fragments: flak shrapnel, bomblets, napalm fire), `FireShot` (burning ground that rides the scroll), `WaveShot` (the widening crescent) |
+| `*.Armory.cs` partials | `SpawnService` (level numbers of the new field weapons, fragments, ghost pierce), `AsteroidsPlayer` (Aegis Barrier, the strike gear: armor, afterburner, repair drone, repair kits, wingman drones, salvage magnet), `SpaceEffects` + `View/LightningArc.cs` (bolts of lightning), `AsteroidsAudio`, `StrikeUI` (the Supply Room's pages), `AsteroidsTour` (armory steps). In the model, `WeaponRules` has eight weapons and their tricks (chains, fragments, growth), `StrikeWeaponRules.Specials` is the cycling order of the 16 specials and `StrikeArmory` the 30-item catalogue with the gear's numbers |
+| `Scripts/Controller/AsteroidsTour.cs`, `AsteroidsTour.Campaigns.cs`, `AsteroidsTour.Armory.cs` | Development builds only: `-asteroids-tour <folder>` flies a plan (`-asteroids-tour-plan menu,shop,strike:1,boss:1,field:0`, or `strike:all`) with the autopilot and takes screenshots (`-asteroids-tour-god`, `-asteroids-tour-speed`, `-asteroids-tour-money`); it puts the saved progress back afterwards. `campaigns` pictures the mission select of every campaign of both modes, and `field:c1:all`, `strike:c2:3` or `boss:c0` fly missions of one campaign by their number in it. `armory` pictures the Supply Room's pages before and after buying every new item, `kit:<item>[+<item>...][:<n>]` gives the pilot items and flies strike mission n, `weapon:<type>[:<level>[:<index>]]` and `power:<type>[:<index>]` fly a field mission with a weapon or power-up, and `showcase` fires each new field weapon once into a cluster of rocks. `fly:<index>` flies a field mission to its end (`fly:arcs` every mission of the later field campaigns, `fly:local<index>` as a local co-op match of two pilots on the autopilot; it logs the outcome, the score and what hurt the ship), and `gallery:<index>` shows every new rock, enemy, ally, hazard, beam and boss in a quiet field |
 
 A strike mission keeps the playfield in screen space: the camera and the playfield stay where they are (a fixed 16:9
 field that does not wrap), the ground moves down under it, and ground units carry the scroll in their motion while
@@ -256,7 +428,7 @@ Everything the game shows is generated by the editor code in `Assets/Editor` (me
   packs in `Art/`, low-poly models built in code (`MeshBuilder`, `SpaceModels`: saucers, drones, pickups, ice and
   crystal rocks), the sound effects and three music loops from a small synthesizer, and the hangar pictures.
 - **Rebuild Prefabs**: the hangar ships, rocks, hazards, enemies, shots, pickups, effects and the four bosses.
-- **Rebuild Campaign**: the four sector themes, the loot tables, the twelve missions and the endless mode, the
+- **Rebuild Campaign**: the sector themes, the loot tables, the campaigns with their missions and the endless mode, the
   post-processing profile and the launcher entry.
 - **Rebuild Themes**: the Classic and Arcade 80s theme assets and the game definition's list of themes (see Themes).
 - **Rebuild Scene**: `Scenes/Asteroids.unity` with its lighting, backdrop, pools, effects, audio and interface.
@@ -270,6 +442,20 @@ Everything the game shows is generated by the editor code in `Assets/Editor` (me
   - campaign: the six `Config/Strike/Themes`, the nine `Config/Strike/Level{n}` (each laid out tile by tile, with
     ground units only where their tile allows them) and the three strike sectors;
   - scene: the strike pools, audio, the terrain object and the strike interface.
+- The later field campaigns have their parts in the `*.FieldCampaigns.cs` files next to the builders: the art
+  (`Art/Field`: planets and stars, textures, models from `SpaceModels`, sounds and music from `SpaceSounds`), the
+  prefabs, the scene's pools and the content (both campaigns, their sectors in both themes, drop tables, the endless
+  rotation).
+- The later strike campaigns have their parts in the `*.StrikeCampaigns.cs` files next to the builders
+  (`AsteroidsContentBuilder.StrikeCampaigns.cs`: the two campaigns, their missions and their filler;
+  `AsteroidsArtBuilder.StrikeCampaigns.cs`: the five worlds and the tile layouts of the new kinds of ground;
+  `AsteroidsPrefabBuilder.StrikeCampaigns.cs` and `.StrikeCampaignBosses.cs`: units, shots and the eighteen bosses;
+  `SpaceModels.StrikeCampaigns.cs` and `.StrikeCampaignBosses.cs`: their models), with the levels in
+  `Config/Strike/IronTide/Level{n}` and `Config/Strike/HiveFall/Level{n}` and the rules in
+  `Scripts/Model/Strike/StrikeCampaignRules.cs`, `Enemy.StrikeCampaigns.cs` (the new attack patterns), `EnemyShell`,
+  `UnitLauncher` and `ShieldGenerator`. The armory's weapons and items have theirs in the `*.Armory.cs` files.
+- Build Everything does not import the words: after editing `Localization/Asteroids.csv` run **Import Words**
+  (`-executeMethod Portfolio.Asteroids.EditorTools.AsteroidsBuildMenu.ImportWords`).
 - `AsteroidsBuildMenu.BuildEverythingBatch` runs Build Everything from the command line
   (`-executeMethod Portfolio.Asteroids.EditorTools.AsteroidsBuildMenu.BuildEverythingBatch`) and exits with 1 when a
   level is not valid or a prefab is missing. **Debug** also has "Strike: Add 2,000,000" and "Strike: Reset Pilot".
@@ -318,14 +504,22 @@ room's host simulates the world** exactly as in the single player game (waves, s
 - **What a pilot does to the world** goes to the simulator: a shot that hits a puppet is reported (`ReportHits`) and
   the simulator applies it with that pilot as the attacker, so splits, loot and the score for the kill follow from
   there; a pickup is claimed (`ClaimBody`) and the server gives it to the first claimer; shots and nova bombs are shown
-  to the others (`FireShots`, `SignalShip`). Enemy shots are puppets that hit the local ship on every client, and
+  to the others (`FireShots`, `SignalShip`; the new field weapons travel as their weapon numbers like the old ones and
+  the strike specials as ghost kinds 31 to 39, shells burst on every client into ghost fragments of their own, and the
+  wingman drones and the salvage magnet show on the stand-ins through the pose's bits). The later field campaigns' bodies
+  travel as body kinds 15 to 21 (a marked enemy as variant 1, a freighter or station with its kind and full hull) and
+  their beams and strikes as enemy shot kinds 10 to 13; every client burns its own ship with them, and only the
+  simulator hurts the freighters and stations. A lost freighter or station fails the mission for every pilot. Enemy shots are puppets that hit the local ship on every client, and
   blasts go out as signals every client applies to its own ship.
 - **The mission.** The playfield has one fixed size (16:9 at the usual height) that the camera fits on any screen. Every
   pilot has the ships the host set for the room; a pilot without ships reports their score and watches. The simulator
   reports waves and objective for the others' HUD and says when the mission is won; it is lost when nobody flies any
   more, and abandoned when the host leaves. The Chrono Field does not slow a shared world. Online missions do not pause
   (the pause button opens the match menu), are not saved and leave the campaign progress as it is.
-- **Planet Strike together.** The lobby lists the strike missions as "Strike n." next to the asteroid missions (one
+- **Missions in the lobby.** The lobby lists every mission campaign by campaign, named with its campaign and its number
+  in it: "The Raider War 3. Titan", the endless mission after the first field campaign, then "Strike: Shadow Strike 2.
+  Refinery Row" and the other strike campaigns.
+- **Planet Strike together.** The lobby lists the strike missions after the asteroid missions (one
   list of room levels), with a "Strike difficulty" option. The host simulates the scroll, the aircraft, the ground
   units and the boss as above; it also sends the scroll distance four times a second, and the other clients ease their
   ground toward it. Ground units move with each client's own ground, so they stay on it however the scroll changes.

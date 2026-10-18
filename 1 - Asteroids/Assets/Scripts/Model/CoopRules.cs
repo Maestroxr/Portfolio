@@ -88,6 +88,23 @@ namespace Portfolio.Asteroids
             return mission.IsEndless ? F("{0} (endless)", T(mission.Title)) : $"{number}. {T(mission.Title)}";
         }
 
+        /// <summary>
+        /// What the lobby calls mission number <paramref name="number"/> of the campaign named <paramref name="campaign"/>
+        /// (in the language shown; null or empty for none, which reads as <see cref="LevelTitle(AsteroidsLevel, int)"/>):
+        /// "The Raider War 3. Title" for an asteroid field mission, "Title (endless)", or "Strike: Shadow Strike 2. Title" for
+        /// a planet strike mission. With every campaign of both modes in one list, the campaign keeps the numbers apart.
+        /// </summary>
+        public static string LevelTitle(AsteroidsLevel mission, int number, string campaign)
+        {
+            if (mission == null || mission.IsEndless || string.IsNullOrEmpty(campaign))
+            {
+                return LevelTitle(mission, number);
+            }
+            return mission.Mode == MissionMode.Strike
+                ? F("Strike: {0} {1}. {2}", campaign, number, T(mission.Title))
+                : F("{0} {1}. {2}", campaign, number, T(mission.Title));
+        }
+
         /// <summary>The colour of a seat: the halo of the ship, its name and its line on the HUD.</summary>
         public static Color SeatColor(int seat)
         {

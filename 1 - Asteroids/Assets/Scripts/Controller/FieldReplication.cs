@@ -653,7 +653,7 @@ namespace Portfolio.Asteroids
 
         private static float HealthOf(SpaceBody body)
         {
-            return body is Shootable shootable ? shootable.Health : 0f;
+            return body is Shootable shootable ? shootable.Health : body is Ally ally ? ally.Hull : 0f;
         }
 
 
@@ -863,6 +863,9 @@ namespace Portfolio.Asteroids
                 case Enemy enemy:
                     enemy.Invulnerable = BodyCodec.Has(flags, BodyFlags.Shielded);
                     enemy.ShowWarning(BodyCodec.Has(flags, BodyFlags.Warning));
+                    break;
+                case Ally ally:
+                    ally.ShowHull(row.Health);
                     break;
             }
         }

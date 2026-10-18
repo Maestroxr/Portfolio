@@ -1,0 +1,117 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25edec1141714089bb4a39576791ecca, type: 3}
+  m_Name: Mission1
+  m_EditorClassIdentifier: Skinnerboxes.Asteroids::Portfolio.Asteroids.AsteroidsLevel
+  <Index>k__BackingField: 22
+  <Title>k__BackingField: Dying Light
+  quarry: 
+  quarryShare: 1
+  allyHull: 120
+  crossing: 45
+  scoutChance: 0.3
+  <Settings>k__BackingField: {fileID: 11400000, guid: 49e6a27b0b41fca43b725ca5c493da80, type: 2}
+  description: The Void Core is behind you; ahead, a red giant is dying. Its flares sweep the Ember Drift - clear the rocks from the convoy lanes.
+  introduces: Solar flares sweep across the sector. Dash through the fire.
+  hints:
+  - The edge of the screen glows before a flare. Its wall of fire crosses the whole sector.
+  - A dash (SHIFT) carries you through the fire unharmed - so does a full shield, at a price.
+  touchHints:
+  - 
+  - A DASH carries you through the fire unharmed - so does a full shield, at a price.
+  sector: 7
+  theme: {fileID: 11400000, guid: 49fd1a08a44a5db48ad0b9fd36247f70, type: 2}
+  themeRotation: []
+  wavesPerTheme: 5
+  objective: 0
+  objectiveTarget: 0
+  waves:
+  - metal: 0
+    hydra: 0
+    wrecks: 0
+    flares: 1
+    storms: 0
+    sentries: 0
+    minelayers: 0
+    stalkers: 0
+    corsairs: 0
+    title: 
+    rocks: 3
+    ores: 0
+    magma: 0
+    ice: 0
+    crystals: 0
+    mines: 0
+    bombs: 0
+    comets: 0
+    wells: 0
+    saucers: 0
+    wasps: 0
+    pods: 1
+    hazardInterval: 6
+    duration: 30
+  - metal: 0
+    hydra: 0
+    wrecks: 0
+    flares: 2
+    storms: 0
+    sentries: 0
+    minelayers: 0
+    stalkers: 0
+    corsairs: 0
+    title: 
+    rocks: 4
+    ores: 1
+    magma: 0
+    ice: 0
+    crystals: 0
+    mines: 0
+    bombs: 0
+    comets: 0
+    wells: 0
+    saucers: 0
+    wasps: 0
+    pods: 0
+    hazardInterval: 5
+    duration: 30
+  - metal: 0
+    hydra: 0
+    wrecks: 0
+    flares: 2
+    storms: 0
+    sentries: 0
+    minelayers: 0
+    stalkers: 0
+    corsairs: 0
+    title: 
+    rocks: 4
+    ores: 0
+    magma: 1
+    ice: 0
+    crystals: 0
+    mines: 0
+    bombs: 0
+    comets: 0
+    wells: 0
+    saucers: 0
+    wasps: 0
+    pods: 1
+    hazardInterval: 5
+    duration: 30
+  boss: {fileID: 0}
+  bossRotation: []
+  bossEvery: 10
+  asteroidLoot: {fileID: 11400000, guid: 4bfd4eccb142b3a4dbc195ba6b9269ab, type: 2}
+  lootChance: 0.07
+  podLoot: {fileID: 11400000, guid: 56d42406eead1f341b219167d6de4c6b, type: 2}
+  scoreGoal: 13000
+  speedMultiplier: 1

@@ -24,7 +24,8 @@ namespace Portfolio.Asteroids
             new[]
             {
                 FlightPath.StraightDown, FlightPath.DiveLeft, FlightPath.Swoop, FlightPath.Zigzag, FlightPath.CrossLeft, FlightPath.SweepDown,
-                FlightPath.HoverTop, FlightPath.HoverMid, FlightPath.RiseUp, FlightPath.Arc, FlightPath.Spiral, FlightPath.Strafe
+                FlightPath.HoverTop, FlightPath.HoverMid, FlightPath.RiseUp, FlightPath.Arc, FlightPath.Spiral, FlightPath.Strafe,
+                FlightPath.Swarm, FlightPath.Weave, FlightPath.Hook
             };
 
 
@@ -67,6 +68,18 @@ namespace Portfolio.Asteroids
                 case FlightPath.Strafe:
                     // Dives on the left, levels out low and strafes across to the right side.
                     return Points(-0.5f, Outside, -0.5f, 0.3f, -0.35f, -0.3f, 0f, -0.45f, 0.5f, -0.45f, OutsideSide, -0.4f);
+                case FlightPath.Swarm:
+                    // Comes down left of the reference point into a figure of eight across the upper screen (about 18 x 3.4 m),
+                    // which a repeating flight loops from the second waypoint; a linear one leaves at the top left.
+                    return Points(-0.25f, Outside, -0.25f, 0.62f, -0.5f, 0.45f, -0.25f, 0.28f, 0f, 0.45f, 0.25f, 0.62f, 0.5f, 0.45f, 0.25f, 0.28f,
+                        0f, 0.45f, -0.25f, 0.62f);
+                case FlightPath.Weave:
+                    // Weaves down the screen in one wide, slow S (about 9 m to either side) and leaves at the bottom.
+                    return Points(-0.3f, Outside, 0f, 0.9f, 0.35f, 0.7f, 0.5f, 0.5f, 0.35f, 0.3f, 0f, 0.1f, -0.35f, -0.1f, -0.5f, -0.3f, -0.35f, -0.5f, 0f, -0.7f,
+                        0.2f, -0.9f, 0.35f, -Outside);
+                case FlightPath.Hook:
+                    // Dives down the right side, hooks round low across the screen and climbs out of the top.
+                    return Points(0.85f, Outside, 0.85f, 0.3f, 0.72f, -0.45f, 0.35f, -0.65f, 0f, -0.35f, -0.12f, 0.35f, -0.15f, Outside);
                 default:
                     return Points(0f, Outside, 0f, 0.4f, 0f, -0.6f, 0f, -Outside);
             }
@@ -115,6 +128,7 @@ namespace Portfolio.Asteroids
             {
                 case FlightPath.HoverTop:
                 case FlightPath.Spiral:
+                case FlightPath.Swarm:
                     return 1;
                 case FlightPath.HoverMid:
                     return 2;

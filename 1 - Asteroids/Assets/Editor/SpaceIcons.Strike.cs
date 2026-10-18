@@ -155,7 +155,7 @@ namespace Portfolio.Asteroids.EditorTools
                 case StrikeItem.IonScanner:
                     return ScannerIcon(size);
                 default:
-                    throw new ArgumentException($"No strike icon for {item}.", nameof(item));
+                    return ArmoryItemIcon(item) ?? throw new ArgumentException($"No strike icon for {item}.", nameof(item));
             }
         }
 

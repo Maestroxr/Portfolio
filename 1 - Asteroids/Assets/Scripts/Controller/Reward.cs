@@ -86,7 +86,7 @@ namespace Portfolio.Asteroids
                 Velocity *= Mathf.Clamp01(1f - deltaTime * 0.8f);
                 return;
             }
-            float range = ship.IsPowerUpActive(PowerUpType.Magnet) ? 14f : attractRange;
+            float range = ship.IsPowerUpActive(PowerUpType.Magnet) ? 14f : ship.HasSalvageMagnet ? StrikeArmory.SalvageMagnetRange : attractRange;
             // The field's pull (the free flight after a strike boss) reaches across the screen and pulls hard.
             bool fieldPull = Field.PickupPull > range;
             range = Mathf.Max(range, Field.PickupPull);

@@ -6,7 +6,7 @@ namespace Portfolio.Asteroids
     /// Base class of the enemies: a shootable with a fire timer and helpers to aim at the ship. Destroyed enemies go
     /// up in a fireball and drop what their drop table gives.
     /// </summary>
-    public abstract class Enemy : Shootable
+    public abstract partial class Enemy : Shootable
     {
         [SerializeField] internal float fireInterval = 1.6f;
         [SerializeField] internal float shotSpeed = 9f;
@@ -163,6 +163,10 @@ namespace Portfolio.Asteroids
         {
             SpawnService spawner = Field != null ? Field.Spawner : null;
             if (spawner == null || pattern == AttackPattern.None || IsPuppet)
+            {
+                return;
+            }
+            if (FireCampaignVolley(pattern, kind, shots, muzzles))
             {
                 return;
             }

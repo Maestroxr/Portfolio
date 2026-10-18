@@ -42,6 +42,25 @@ namespace Portfolio.Asteroids
         public float BurstDamage;
         /// <summary>Its projectiles leave smoke.</summary>
         public bool Smoke;
+        /// <summary>The armory's weapons: the cone (degrees) its barrels fan over (the swarm rockets).</summary>
+        public float Spread;
+        /// <summary>How many targets one projectile passes through (the rail gun's slug: everything in its line).</summary>
+        public int Pierce;
+        /// <summary>Degrees per second its projectiles turn toward a target (the swarm rockets); 0 flies straight.</summary>
+        public float Homing;
+        /// <summary>How many more targets the lightning of a hit jumps to (the arc lightning), how far, and the damage of the first jump.</summary>
+        public int Chains;
+        public float ChainRange;
+        public float ChainDamage;
+        /// <summary>
+        /// What its projectile bursts into (the flak shell's shards, the cluster canister's bomblets, the napalm canister's
+        /// fire): how many, of which kind, and their damage (a bomblet's blast, the fire's burn per tick).
+        /// </summary>
+        public int Fragments;
+        public StrikeShotKind FragmentKind;
+        public float FragmentDamage;
+        /// <summary>The flak shell bursts when an aircraft comes this close (m).</summary>
+        public float FuseRadius;
 
         public bool Fires => Rate > 0f;
     }
@@ -53,21 +72,42 @@ namespace Portfolio.Asteroids
         /// <summary>Time in which accelerating projectiles reach their top speed; a tuning value, not from Raptor.</summary>
         public const float AccelerationTime = 0.5f;
 
-        /// <summary>The first and last special weapons, in cycling order.</summary>
+        /// <summary>The first and last special weapons of the first block (3 to 13); the armory's follow in <see cref="Specials"/>.</summary>
         public const StrikeItem FirstSpecial = StrikeItem.Dumbfire;
         public const StrikeItem LastSpecial = StrikeItem.TwinLaser;
+
+        /// <summary>The first and last of the armory's special weapons (18 to 23).</summary>
+        public const StrikeItem FirstArmorySpecial = StrikeItem.FlakCannon;
+        public const StrikeItem LastArmorySpecial = StrikeItem.RailGun;
 
         /// <summary>The always-on weapons in firing order.</summary>
         public static readonly StrikeItem[] AlwaysOn = { StrikeItem.MachineGun, StrikeItem.PlasmaCannon, StrikeItem.MicroMissiles };
 
+        /// <summary>Every special weapon in cycling order: the first block in enum order, then the armory's.</summary>
+        public static readonly StrikeItem[] Specials = BuildSpecials();
+
         public static bool IsWeapon(StrikeItem item)
         {
-            return item <= StrikeItem.TwinLaser;
+            return item <= StrikeItem.TwinLaser || IsSpecial(item);
         }
 
         public static bool IsSpecial(StrikeItem item)
         {
-            return item >= FirstSpecial && item <= LastSpecial && item != StrikeItem.PowerDisrupter;
+            return item >= FirstSpecial && item <= LastSpecial && item != StrikeItem.PowerDisrupter
+                || item >= FirstArmorySpecial && item <= LastArmorySpecial;
+        }
+
+        private static StrikeItem[] BuildSpecials()
+        {
+            var specials = new System.Collections.Generic.List<StrikeItem>();
+            for (var item = FirstSpecial; item <= LastArmorySpecial; item++)
+            {
+                if (IsSpecial(item))
+                {
+                    specials.Add(item);
+                }
+            }
+            return specials.ToArray();
         }
 
         public static ItemGroup Group(StrikeItem item)
@@ -139,10 +179,69 @@ namespace Portfolio.Asteroids
                     return Ray(item, 140f, 1, 0f);
                 case StrikeItem.TwinLaser:
                     return Ray(item, 233f, 2, 1.6f);
+                case StrikeItem.FlakCannon:
+                {
+                    // Shells that burst into six shards when an aircraft comes within 1.8 m, or at the end of their climb.
+                    StrikeWeaponInfo info = Gun(item, ItemGroup.Special, Altitude.Air, 0.65f, 3f, 22f, 22f, 2, 0.9f, StrikeShotKind.FlakShell, 0.85f);
+                    info.ShotRadius = 0.25f;
+                    info.Fragments = 6;
+                    info.FragmentKind = StrikeShotKind.FlakShard;
+                    info.FragmentDamage = 2f;
+                    info.FuseRadius = 1.8f;
+                    return info;
+                }
+                case StrikeItem.ClusterBombs:
+                {
+                    // Climbs like a bomb, then scatters six bomblets that burst on the ground around it (the burst is a bomblet's).
+                    StrikeWeaponInfo info = Gun(item, ItemGroup.Special, Altitude.Ground, 1.5f, 0f, 6f, 6f, 1, 0f, StrikeShotKind.ClusterShell, 0.85f);
+                    info.Fragments = 6;
+                    info.FragmentKind = StrikeShotKind.Bomblet;
+                    info.FragmentDamage = 22f;
+                    info.BurstRadius = 1.7f;
+                    info.BurstDamage = 22f;
+                    return info;
+                }
+                case StrikeItem.Napalm:
+                {
+                    // Climbs like a bomb, then leaves a patch of ground (the burst radius) burning: 8 a tick to every ground unit in it.
+                    StrikeWeaponInfo info = Gun(item, ItemGroup.Special, Altitude.Ground, 1.25f, 0f, 7f, 7f, 1, 0f, StrikeShotKind.NapalmCanister, 0.7f);
+                    info.Fragments = 1;
+                    info.FragmentKind = StrikeShotKind.NapalmFire;
+                    info.FragmentDamage = 8f;
+                    info.BurstRadius = 2f;
+                    return info;
+                }
+                case StrikeItem.SwarmRockets:
+                {
+                    // Six small rockets fanned over 70 degrees that find their own targets.
+                    StrikeWeaponInfo info = Gun(item, ItemGroup.Special, Altitude.Both, 0.9f, 3.5f, 12f, 26f, 6, 0.42f, StrikeShotKind.SwarmRocket, 1.6f);
+                    info.Spread = 70f;
+                    info.Homing = 260f;
+                    info.Smoke = true;
+                    return info;
+                }
+                case StrikeItem.ArcLightning:
+                {
+                    StrikeWeaponInfo info = Gun(item, ItemGroup.Special, Altitude.Both, 0.32f, 6f, 40f, 40f, 1, 0f, StrikeShotKind.ArcBolt, 0.6f);
+                    info.ShotRadius = 0.3f;
+                    info.Chains = 4;
+                    info.ChainRange = 6f;
+                    info.ChainDamage = 4.5f;
+                    return info;
+                }
+                case StrikeItem.RailGun:
+                {
+                    // A slug that goes through everything in its line, the parts of a boss included.
+                    StrikeWeaponInfo info = Gun(item, ItemGroup.Special, Altitude.Both, 0.75f, 55f, 80f, 80f, 1, 0f, StrikeShotKind.RailSlug, 0.35f);
+                    info.ShotRadius = 0.35f;
+                    info.Pierce = 99;
+                    return info;
+                }
                 case StrikeItem.MegaBomb:
                     return new StrikeWeaponInfo { Item = item, Group = ItemGroup.Consumable, Mask = Altitude.Both };
                 case StrikeItem.EnergyModule:
                 case StrikeItem.PhaseShield:
+                case StrikeItem.RepairKit:
                     return new StrikeWeaponInfo { Item = item, Group = ItemGroup.Consumable, Mask = Altitude.None };
                 default:
                     return new StrikeWeaponInfo { Item = item, Group = ItemGroup.Equipment, Mask = Altitude.None };
@@ -166,7 +265,8 @@ namespace Portfolio.Asteroids
                 BarrelSpacing = spacing,
                 ShotKind = kind,
                 Lifetime = lifetime,
-                ShotRadius = 0.15f
+                ShotRadius = 0.15f,
+                Pierce = 1
             };
         }
 

@@ -37,6 +37,14 @@ namespace Portfolio.Asteroids
         Kamikaze = 5,
         /// <summary>A big slow transport: spreads of bolts; always drops its event's pickup.</summary>
         Transport = 6,
+        /// <summary>A small attack drone of the Iron Tide: flies in swarms, now and then a shot of flak.</summary>
+        Drone = 7,
+        /// <summary>A heavy missile cruiser of the Iron Tide: seeker rockets, then spreads of bolts.</summary>
+        Cruiser = 8,
+        /// <summary>A flying bug of the Hive: spits spores that drift after the pilot.</summary>
+        Stinger = 9,
+        /// <summary>A small bug of the Hive: unarmed, comes in swarms that dive at the pilot.</summary>
+        Mite = 10,
 
         /// <summary>A gun emplacement: aimed flak.</summary>
         Turret = 16,
@@ -61,13 +69,30 @@ namespace Portfolio.Asteroids
         /// <summary>A supply depot: explodes, damages the ground units around it and always drops its pickup.</summary>
         Depot = 26,
         /// <summary>A small ground container that holds an item pickup in the open.</summary>
-        Crate = 27
+        Crate = 27,
+        /// <summary>A surface-to-air launcher: seeker rockets that turn after the pilot.</summary>
+        SamSite = 28,
+        /// <summary>A howitzer: shells that burst where the pilot was when it fired (the spot is marked).</summary>
+        Artillery = 29,
+        /// <summary>A walking gun platform: drives like a tank, bursts of flak from twin guns.</summary>
+        Walker = 30,
+        /// <summary>Unarmed: while it stands, the ground units around it cannot be hurt (its dome shows how far).</summary>
+        ShieldGenerator = 31,
+        /// <summary>A warship: drives on water, bursts of flak and rockets.</summary>
+        Destroyer = 32,
+        /// <summary>A hive nest: launches stingers while it is on screen, a few times.</summary>
+        HiveSpawner = 33,
+        /// <summary>An organic turret of the Hive: bursts of spores.</summary>
+        Spitter = 34,
+        /// <summary>A crystal pylon: glows, then fires a ring of crystal needles.</summary>
+        Prism = 35
     }
 
 
     /// <summary>
     /// Everything the Supply Room sells and the pilot can own. Weapons 0 to 13 (0-2 always on, 3-13 specials), then the
-    /// consumables and the equipment. The numbers are saved in the progress: append only.
+    /// consumables and the equipment (14-17), then the armory's specials (18-23) and its equipment and consumables
+    /// (24-29). The numbers are saved in the progress: append only.
     /// </summary>
     public enum StrikeItem : byte
     {
@@ -90,7 +115,31 @@ namespace Portfolio.Asteroids
         MegaBomb = 14,
         EnergyModule = 15,
         PhaseShield = 16,
-        IonScanner = 17
+        IonScanner = 17,
+        /// <summary>A special: shells that burst into shrapnel near aircraft. Air only.</summary>
+        FlakCannon = 18,
+        /// <summary>A special: a canister that scatters bomblets over the ground. Ground only.</summary>
+        ClusterBombs = 19,
+        /// <summary>A special: canisters that leave the ground burning for a few seconds. Ground only.</summary>
+        Napalm = 20,
+        /// <summary>A special: a salvo of six small homing rockets. Air and ground.</summary>
+        SwarmRockets = 21,
+        /// <summary>A special: a spark whose lightning jumps from target to target. Air and ground.</summary>
+        ArcLightning = 22,
+        /// <summary>A special: a slug that goes through everything in its line. Air and ground.</summary>
+        RailGun = 23,
+        /// <summary>Equipment (up to 3): every plate takes a share off every hit.</summary>
+        ArmorPlating = 24,
+        /// <summary>Equipment: repairs energy slowly, firing or not, on every difficulty.</summary>
+        RepairDrone = 25,
+        /// <summary>Equipment: the ship flies faster.</summary>
+        Afterburner = 26,
+        /// <summary>Equipment: pickups and credits drift to the ship from far away.</summary>
+        SalvageMagnet = 27,
+        /// <summary>Equipment: two drones circle the ship and fire at the nearest enemy.</summary>
+        WingmanDrones = 28,
+        /// <summary>A consumable (up to 3): restores energy by itself when the energy runs low.</summary>
+        RepairKit = 29
     }
 
 
@@ -118,7 +167,10 @@ namespace Portfolio.Asteroids
         RiseUp = 8,
         Arc = 9,
         Spiral = 10,
-        Strafe = 11
+        Strafe = 11,
+        Swarm = 12,
+        Weave = 13,
+        Hook = 14
     }
 
 
@@ -161,7 +213,15 @@ namespace Portfolio.Asteroids
         Sea = 6,
         Base = 7,
         City = 8,
-        Field = 9
+        Field = 9,
+        /// <summary>Pack ice: floes in dark water, open leads between them.</summary>
+        Ice = 10,
+        /// <summary>Open sea with small islands.</summary>
+        Islands = 11,
+        /// <summary>A hive nest: organic mounds and brood pits.</summary>
+        Nest = 12,
+        /// <summary>A field of tall crystal clusters with lanes between them.</summary>
+        Crystals = 13
     }
 
 
@@ -195,7 +255,15 @@ namespace Portfolio.Asteroids
         /// <summary>Sky mines that drift down.</summary>
         Mines = 8,
         /// <summary>The big plasma balls of the field mode.</summary>
-        HeavyPlasma = 9
+        HeavyPlasma = 9,
+        /// <summary>A ring of shots in every direction, every other ring turned by half a step.</summary>
+        Ring = 10,
+        /// <summary>A small fan that sweeps from side to side over time (a hose of shots).</summary>
+        Sweep = 11,
+        /// <summary>Artillery shells that burst where the nearest pilot is when they are fired.</summary>
+        Barrage = 12,
+        /// <summary>Launches aircraft (the unit's <see cref="UnitLauncher"/>).</summary>
+        Launch = 13
     }
 
 
@@ -213,7 +281,23 @@ namespace Portfolio.Asteroids
         Bomb = 8,
         /// <summary>Cut with the Power Disrupter; the value is kept.</summary>
         DisrupterOrb = 9,
-        Pulse = 10
+        Pulse = 10,
+        /// <summary>The flak cannon's shell; it bursts into <see cref="FlakShard"/>s.</summary>
+        FlakShell = 11,
+        /// <summary>A piece of a burst flak shell (each client bursts its own shells: never sent).</summary>
+        FlakShard = 12,
+        /// <summary>The cluster bombs' canister; it scatters <see cref="Bomblet"/>s.</summary>
+        ClusterShell = 13,
+        /// <summary>A bomblet of a cluster canister (never sent).</summary>
+        Bomblet = 14,
+        /// <summary>The napalm canister; it leaves a <see cref="NapalmFire"/> on the ground.</summary>
+        NapalmCanister = 15,
+        /// <summary>A burning patch of ground (never sent).</summary>
+        NapalmFire = 16,
+        SwarmRocket = 17,
+        /// <summary>The arc lightning's spark; its lightning jumps on from what it hits.</summary>
+        ArcBolt = 18,
+        RailSlug = 19
     }
 
 
