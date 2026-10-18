@@ -7,7 +7,8 @@ namespace Portfolio.Heroes.Tests
 {
     /// <summary>
     /// A game of Heroes in a named save: the whole state of a game well under way (heroes out on the map, towns built,
-    /// fights fought) goes into the YAML of a save file and comes back exactly as it was.
+    /// fights fought) goes into the YAML of a save file and comes back exactly as it was. It needs the engine's
+    /// JsonUtility and BaseGame's saves, so it runs in the editor only (dotnet test leaves this folder out).
     /// </summary>
     public class SavedGameTests
     {

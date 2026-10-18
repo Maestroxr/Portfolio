@@ -6,7 +6,8 @@ namespace Portfolio.Heroes
     /// <summary>
     /// Plays the adventure map for a computer player, one command at a time: build and recruit in the towns, hand the
     /// garrison to a visiting hero, hire heroes, and send every hero after the thing most worth its trouble (value per
-    /// day of travel), fighting only what it can beat with room to spare. Ends the turn when nothing is left to do.
+    /// day of travel), fighting only what it can beat with room to spare. In a scenario the person loses with their town,
+    /// it marches on that town as soon as it is strong enough. Ends the turn when nothing is left to do.
     /// </summary>
     public sealed class AdventureAI
     {
@@ -309,6 +310,7 @@ namespace Portfolio.Heroes
                     Consider(town.cell, 25000 + defense / 2);
                 }
             }
+            MarchOnTheKeptTown(game, me, hero, strength, daily, ref best, ref bestScore);
             if (best >= 0)
             {
                 MovePlan plan = game.PlanPath(hero, best);
@@ -328,6 +330,117 @@ namespace Portfolio.Heroes
                 return best;
             }
             return Explore(game, hero, cost, false);
+        }
+
+        /// <summary>
+        /// A scenario the person loses with their first town (<see cref="LossKind.LoseTown"/>): once the first week is
+        /// over (they gather their armies in it) the computer players against them march on that town from anywhere on
+        /// the map, fighting their way through what bars it, and storm it as soon as a hero of theirs is a little stronger
+        /// than what defends it, bolder than they are with any other town. Without such a scenario (online, a skirmish)
+        /// nothing changes.
+        /// </summary>
+        private static void MarchOnTheKeptTown(HeroesGame game, PlayerState me, HeroState hero, int strength, int daily, ref int best, ref long bestScore)
+        {
+            GameState state = game.State;
+            TownState town = state.rules.loss == LossKind.LoseTown ? state.Town(state.rules.lossValue) : null;
+            PlayerState holder = town != null ? state.Player(town.owner) : null;
+            if (holder == null || !holder.human || game.SameTeam(town.owner, me.index) || state.Week < 2)
+            {
+                return;
+            }
+            long defense = game.Strength(town.garrison) + Buildings.Towers(town) * 1500L;
+            HeroState keeper = game.Visitor(town);
+            if (keeper != null)
+            {
+                defense += game.Strength(keeper);
+            }
+            if (strength * 100L <= defense * 115L)
+            {
+                return;
+            }
+            int goal = town.cell;
+            MovePlan march = game.PlanPath(hero, goal);
+            if (march == null)
+            {
+                // Wandering armies bar the way (a guarded pass): the first of them on it is fought first, if it can be,
+                // by walking up to it.
+                MapObject guard = FirstGuardOnTheWay(game, hero.cell, town.cell, out goal);
+                if (guard == null || !CanBeat(game, strength, Creatures.Get(guard.subtype).Value * (long)guard.amount, me.aiLevel))
+                {
+                    return;
+                }
+                march = game.PlanPath(hero, goal);
+            }
+            if (march == null || march.Cells.Count == 0 || march.Today == 0)
+            {
+                return;
+            }
+            long days10 = 10 + march.Cost[march.Cost.Count - 1] * 10L / daily;
+            long score = (40000 + defense / 2) * 100 / days10;
+            if (score > bestScore)
+            {
+                bestScore = score;
+                best = goal;
+            }
+        }
+
+        /// <summary>
+        /// The wandering army that stands first on the shortest way over open land from <paramref name="from"/> to
+        /// <paramref name="to"/> (on it, or guarding a cell of it), with the cell of the way where it attacks
+        /// (<paramref name="fightAt"/>); null when nothing does or there is no way at all.
+        /// </summary>
+        private static MapObject FirstGuardOnTheWay(HeroesGame game, int from, int to, out int fightAt)
+        {
+            fightAt = -1;
+            HexGrid grid = game.Grid;
+            var came = new int[grid.Count];
+            for (int i = 0; i < came.Length; i++)
+            {
+                came[i] = -2;
+            }
+            var queue = new Queue<int>();
+            queue.Enqueue(from);
+            came[from] = -1;
+            var around = new List<int>(6);
+            while (queue.Count > 0 && came[to] == -2)
+            {
+                int cell = queue.Dequeue();
+                grid.Neighbors(cell, around);
+                foreach (int next in around)
+                {
+                    if (came[next] != -2 || !game.Map.Open(next))
+                    {
+                        continue;
+                    }
+                    MapObject there = game.State.ObjectAt(next);
+                    if (there != null && there.kind != ObjectKind.Monster && next != to)
+                    {
+                        continue;
+                    }
+                    came[next] = cell;
+                    queue.Enqueue(next);
+                }
+            }
+            if (came[to] == -2)
+            {
+                return null;
+            }
+            var way = new List<int>();
+            for (int cell = to; cell != from; cell = came[cell])
+            {
+                way.Add(cell);
+            }
+            for (int i = way.Count - 1; i >= 0; i--)
+            {
+                MapObject there = game.State.ObjectAt(way[i]);
+                MapObject guard = there != null && there.kind == ObjectKind.Monster ? there : game.GuardOf(way[i]);
+                if (guard != null)
+                {
+                    fightAt = way[i];
+                    return guard;
+                }
+            }
+            return null;
         }
 
         private static bool CanBeat(HeroesGame game, long mine, long theirs, int level)

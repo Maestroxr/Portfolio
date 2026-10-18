@@ -5,11 +5,13 @@ using UnityEngine;
 namespace Portfolio.Heroes.EditorTools
 {
     /// <summary>
-    /// The content of the game as assets: the default settings, the eight chapters of the campaign and the skirmish
-    /// maps that can also be played online. Every scenario is a <see cref="MapSpec"/> the generator lays out the same
-    /// way every time from its seed, so a chapter is the same land for everybody who plays it.
+    /// The content of the game as assets: the default settings, the three campaigns (the eight chapters of the first,
+    /// then the skirmish maps that can also be played online, then the chapters of the other two, in
+    /// HeroesContentBuilder.Campaigns.cs) and the list of the campaigns. Every scenario is a <see cref="MapSpec"/> the
+    /// generator lays out the same way every time from its seed, so a chapter is the same land for everybody who plays
+    /// it. A scenario keeps its place in the list for good: saved games and the progress know it by it.
     /// </summary>
-    internal static class HeroesContentBuilder
+    internal static partial class HeroesContentBuilder
     {
         private const string SettingsPath = "Content/HeroesSettings.asset";
         private const string CampaignPath = "Content/HeroesCampaign.asset";
@@ -23,6 +25,8 @@ namespace Portfolio.Heroes.EditorTools
         {
             HeroesSettings settings = Settings();
             List<HeroesLevel> levels = Scenarios();
+            PaleCoven(levels);
+            IronjawOath(levels);
             HeroesCampaign campaign = HeroesAssets.Load<HeroesCampaign>(CampaignPath);
             if (campaign == null)
             {
@@ -30,10 +34,39 @@ namespace Portfolio.Heroes.EditorTools
                 HeroesAssets.EnsureFolderOf(CampaignPath);
                 AssetDatabase.CreateAsset(campaign, HeroesAssets.Path(CampaignPath));
             }
-            campaign.Configure("The Shattered Crown", new List<Gamebox.GameLevel>(levels));
+            campaign.Configure(Arcs(), new List<Gamebox.GameLevel>(levels));
             EditorUtility.SetDirty(campaign);
             AssetDatabase.SaveAssets();
-            Debug.Log($"Heroes: content built ({levels.Count} scenarios, settings {(settings != null ? "ok" : "missing")}).");
+            Debug.Log($"Heroes: content built ({levels.Count} scenarios in {campaign.ArcCount} campaigns, settings {(settings != null ? "ok" : "missing")}).");
+        }
+
+        /// <summary>The campaigns, in the order of their tabs; a chapter names its campaign by its place here.</summary>
+        private static List<HeroesCampaign.Arc> Arcs()
+        {
+            return new List<HeroesCampaign.Arc>
+            {
+                new HeroesCampaign.Arc
+                {
+                    title = "The Shattered Crown",
+                    tab = "The Crown",
+                    faction = Faction.Castle,
+                    description = "A lord driven from his lands wins them back, and finds the crown of the realm in pieces."
+                },
+                new HeroesCampaign.Arc
+                {
+                    title = "The Pale Coven",
+                    tab = "The Coven",
+                    faction = Faction.Necropolis,
+                    description = "The knights burned the coven's tower, but its mistress lived. Raise the drowned, gather the scattered covens and take the night back."
+                },
+                new HeroesCampaign.Arc
+                {
+                    title = "The Ironjaw Oath",
+                    tab = "The Clans",
+                    faction = Faction.Stronghold,
+                    description = "The clans lost the war for the crown and quarrel over its bones. Grom swears the old oath: one chief, one horde, one war."
+                },
+            };
         }
 
         private static HeroesSettings Settings()
@@ -52,7 +85,7 @@ namespace Portfolio.Heroes.EditorTools
         // ------------------------------------------------------------------ the scenarios
 
         private static HeroesLevel Level(int index, string file, string title, MapSpec map, string goal, string intro,
-            string outro, int threeStars, int twoStars, bool skirmish, Vector2 position)
+            string outro, int threeStars, int twoStars, bool skirmish, Vector2 position, int arc = 0, string loss = "")
         {
             string path = $"Content/Scenarios/{file}.asset";
             HeroesLevel level = HeroesAssets.Load<HeroesLevel>(path);
@@ -67,6 +100,7 @@ namespace Portfolio.Heroes.EditorTools
             HeroesAssets.SetString(level, "<Title>k__BackingField", title);
             HeroesAssets.SetInt(level, "<Index>k__BackingField", index);
             level.Configure(map, goal, intro, outro, threeStars, twoStars, skirmish, position);
+            level.ConfigureStory(arc, loss);
             EditorUtility.SetDirty(level);
             return level;
         }
@@ -96,6 +130,8 @@ namespace Portfolio.Heroes.EditorTools
                 monsters = monsters,
                 water = water,
                 theme = theme,
+                // The theme is the land most neutral zones have (3 snow, 4 swamp...); 0 is a mix of lands.
+                themeTerrain = theme > 0 ? (TerrainType)theme : TerrainType.Grass,
                 neutralTowns = players.Length > 2 ? 2 : 1,
                 startingGold = 10000
             };
@@ -126,6 +162,8 @@ namespace Portfolio.Heroes.EditorTools
                 Player(Faction.Castle, true, 0),
                 Player(Faction.Necropolis, false, 1, 1, "The Pale Coven"));
             second.rules.victory = VictoryKind.CaptureTown;
+            // The coven's own town: without a tag the goal would be whichever town was placed last.
+            second.rules.victoryTag = "player:1";
             levels.Add(Level(1, "02_SaltMarches", "The Salt Marches", second,
                 "Take the coven's town in the marshes.",
                 "Something in the marshes raises the drowned. Follow the road east and put an end to whoever is calling them.",

@@ -1,0 +1,77 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2889f78791f059b499b1411c0a8eb318, type: 3}
+  m_Name: C2_4_LongNight
+  m_EditorClassIdentifier: Skinnerboxes.Heroes::Portfolio.Heroes.HeroesLevel
+  <Index>k__BackingField: 15
+  <Title>k__BackingField: The Long Night
+  <Map>k__BackingField:
+    name: The Long Night
+    columns: 44
+    rows: 48
+    seed: 1504
+    players:
+    - faction: 1
+      human: 1
+      aiLevel: 1
+      team: 0
+      hero: 15
+      buildings: 04000000010000000d0000000e000000i
+      name: You
+      homeX: 500
+      homeY: 150
+    - faction: 0
+      human: 0
+      aiLevel: 1
+      team: 1
+      hero: 4
+      buildings: 0d000000i
+      name: The Holy Order
+      homeX: 160
+      homeY: 840
+    - faction: 0
+      human: 0
+      aiLevel: 2
+      team: 1
+      hero: 0
+      buildings: 0d0000000e000000i
+      name: The King's Marshal
+      homeX: 840
+      homeY: 840
+    zonesPerPlayer: 1
+    neutralTowns: 2
+    treasure: 2
+    monsters: 2
+    water: 0
+    theme: 1
+    themeTerrain: 3
+    themeShare: 100
+    rules:
+      victory: 5
+      victoryValue: 29
+      victoryTag: 
+      loss: 3
+      lossValue: 0
+      dayLimit: 0
+      battleStyle: 0
+    specials: []
+    startingGold: 12000
+    woods: 0
+  <Intro>k__BackingField: The crusade has come. Two armies march on the coven's town, and the nights grow long. Hold the walls for four weeks, until the winter breaks them for you.
+  <Outro>k__BackingField: The snow takes what you left of them. The crusade breaks against your walls, and the roads home are long.
+  <Goal>k__BackingField: Hold out for four weeks.
+  <Loss>k__BackingField: Your town must not fall.
+  <ThreeStarDays>k__BackingField: 21
+  <TwoStarDays>k__BackingField: 29
+  <IsSkirmish>k__BackingField: 0
+  <MapPosition>k__BackingField: {x: 640, y: 560}
+  <Arc>k__BackingField: 1

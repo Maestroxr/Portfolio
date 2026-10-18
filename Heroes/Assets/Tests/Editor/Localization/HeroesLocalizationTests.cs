@@ -10,7 +10,9 @@ namespace Portfolio.Heroes.Tests
 {
     /// <summary>
     /// The Hebrew of Heroes: every word of the game's table has its Hebrew, and every key the code asks the table for
-    /// (a literal given to Words.T / Words.F, a shape of the rules' lines in Words.Templates) is in the table.
+    /// (a literal given to Words.T / Words.F, a shape of the rules' lines in Words.Templates) is in the table, and so is
+    /// every word of the campaigns (their names and descriptions, and of every scenario its title, story, goal, how it
+    /// is lost and the names of its realms).
     /// </summary>
     public class HeroesLocalizationTests
     {
@@ -91,6 +93,48 @@ namespace Portfolio.Heroes.Tests
                 }
             }
             Assert.IsEmpty(missing, "Keys the code uses that the table lacks:\n" + string.Join("\n", missing));
+        }
+
+        [Test]
+        public void EveryWordOfTheCampaignsIsInTheTable()
+        {
+            HashSet<string> keys = TableKeys();
+            var missing = new SortedSet<string>();
+            void Check(string text, string where)
+            {
+                if (!string.IsNullOrEmpty(text) && Words.HasLetters(text) && !keys.Contains(text.Trim()))
+                {
+                    missing.Add($"{text.Trim()}   ({where})");
+                }
+            }
+            foreach (string guid in AssetDatabase.FindAssets("t:HeroesCampaign"))
+            {
+                var campaign = AssetDatabase.LoadAssetAtPath<HeroesCampaign>(AssetDatabase.GUIDToAssetPath(guid));
+                if (campaign == null)
+                {
+                    continue;
+                }
+                foreach (HeroesCampaign.Arc arc in campaign.Arcs)
+                {
+                    Check(arc.title, "a campaign");
+                    Check(arc.tab, arc.title);
+                    Check(arc.description, arc.title);
+                }
+                for (int i = 0; i < campaign.Count; i++)
+                {
+                    HeroesLevel level = campaign.Scenario(i);
+                    Check(level.Title, $"scenario {i}");
+                    Check(level.Goal, level.Title);
+                    Check(level.Loss, level.Title);
+                    Check(level.Intro, level.Title);
+                    Check(level.Outro, level.Title);
+                    foreach (PlayerSpec seat in level.Map.players)
+                    {
+                        Check(seat.name, level.Title);
+                    }
+                }
+            }
+            Assert.IsEmpty(missing, "Words of the campaigns the table lacks:\n" + string.Join("\n", missing));
         }
 
         [Test]

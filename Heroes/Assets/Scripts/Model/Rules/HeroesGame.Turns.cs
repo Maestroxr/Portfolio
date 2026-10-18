@@ -297,19 +297,37 @@ namespace Portfolio.Heroes
                         break;
                     }
                 }
-                bool lost = (noHeroes && player.towns.Count == 0) || player.daysWithoutTown >= 7;
-                if (player.human && State.rules.loss == LossKind.LoseHero && State.rules.lossValue >= 0)
-                {
-                    HeroState hero = State.Hero(State.rules.lossValue);
-                    if (hero != null && hero.owner == player.index && !hero.alive)
-                    {
-                        lost = true;
-                    }
-                }
+                bool lost = (noHeroes && player.towns.Count == 0) || player.daysWithoutTown >= 7 || LostWhatMustBeKept(player);
                 if (lost)
                 {
                     Eliminate(player);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Whether the person lost what the scenario tells them to keep: the hero it names (once he has left the map he is
+        /// nobody's, so it is enough that he is off it) or their first town (taken by anyone else, or left without a
+        /// banner). Both belong to the first person at the table, as the generator chose them; the computer players have
+        /// nothing of the kind to keep.
+        /// </summary>
+        private bool LostWhatMustBeKept(PlayerState player)
+        {
+            ScenarioRules rules = State.rules;
+            if (!player.human || rules.lossValue < 0 || player != State.players.Find(seat => seat.human))
+            {
+                return false;
+            }
+            switch (rules.loss)
+            {
+                case LossKind.LoseHero:
+                    HeroState hero = State.Hero(rules.lossValue);
+                    return hero != null && !hero.alive;
+                case LossKind.LoseTown:
+                    TownState town = State.Town(rules.lossValue);
+                    return town != null && town.owner != player.index;
+                default:
+                    return false;
             }
         }
 
@@ -445,6 +463,15 @@ namespace Portfolio.Heroes
                         }
                     }
                     return false;
+                case VictoryKind.Survive:
+                    return player.human && State.day >= rules.victoryValue;
+                case VictoryKind.DefeatHero:
+                {
+                    HeroState foe = State.Hero(rules.victoryValue);
+                    return player.human && foe != null && !foe.alive;
+                }
+                case VictoryKind.HoldTowns:
+                    return player.human && player.towns.Count >= Math.Max(1, rules.victoryValue);
                 default:
                     return false;
             }

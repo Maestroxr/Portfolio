@@ -1,0 +1,94 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2889f78791f059b499b1411c0a8eb318, type: 3}
+  m_Name: C3_6_Kingsgate
+  m_EditorClassIdentifier: Skinnerboxes.Heroes::Portfolio.Heroes.HeroesLevel
+  <Index>k__BackingField: 24
+  <Title>k__BackingField: The Kingsgate
+  <Map>k__BackingField:
+    name: The Kingsgate
+    columns: 48
+    rows: 54
+    seed: 2406
+    players:
+    - faction: 2
+      human: 1
+      aiLevel: 1
+      team: 0
+      hero: 16
+      buildings: 
+      name: You
+      homeX: 200
+      homeY: 160
+    - faction: 0
+      human: 0
+      aiLevel: 2
+      team: 1
+      hero: 0
+      buildings: 
+      name: The King's Host
+      homeX: 800
+      homeY: 840
+    zonesPerPlayer: 1
+    neutralTowns: 1
+    treasure: 3
+    monsters: 2
+    water: 1
+    theme: 1
+    themeTerrain: 3
+    themeShare: 90
+    rules:
+      victory: 1
+      victoryValue: 0
+      victoryTag: kingsgate
+      loss: 2
+      lossValue: 0
+      dayLimit: 75
+      battleStyle: 0
+    specials:
+    - kind: 2
+      x: 520
+      y: 540
+      creature: 4
+      count: 24
+      artifact: -1
+      faction: 0
+      building: 3
+      resource: 0
+      tag: kingsgate
+      guard: -1
+      guardCount: 0
+      owner: 1
+    - kind: 5
+      x: 340
+      y: 380
+      creature: -1
+      count: 0
+      artifact: -1
+      faction: 3
+      building: 14
+      resource: 0
+      tag: 
+      guard: -1
+      guardCount: 0
+      owner: -1
+    startingGold: 10000
+    woods: 30
+  <Intro>k__BackingField: The Kingsgate is the only road through the mountains to the capital, and the king's best knights hold it. Take it before the snows close the passes.
+  <Outro>k__BackingField: The Kingsgate is yours, and beyond it the capital lies open. The king sends a herald. Grom sends the herald back without his trumpet.
+  <Goal>k__BackingField: Take the Kingsgate.
+  <Loss>k__BackingField: Win by day 75.
+  <ThreeStarDays>k__BackingField: 45
+  <TwoStarDays>k__BackingField: 62
+  <IsSkirmish>k__BackingField: 0
+  <MapPosition>k__BackingField: {x: 1000, y: 320}
+  <Arc>k__BackingField: 2

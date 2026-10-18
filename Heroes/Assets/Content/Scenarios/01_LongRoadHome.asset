@@ -27,6 +27,8 @@ MonoBehaviour:
       hero: -1
       buildings: 
       name: You
+      homeX: -1
+      homeY: -1
     - faction: 2
       human: 0
       aiLevel: 0
@@ -34,6 +36,8 @@ MonoBehaviour:
       hero: -1
       buildings: 
       name: The Ironjaw Clan
+      homeX: -1
+      homeY: -1
     zonesPerPlayer: 1
     neutralTowns: 1
     treasure: 2
@@ -41,6 +45,7 @@ MonoBehaviour:
     water: 0
     theme: 0
     themeTerrain: 0
+    themeShare: 70
     rules:
       victory: 0
       victoryValue: 0
@@ -51,10 +56,13 @@ MonoBehaviour:
       battleStyle: 0
     specials: []
     startingGold: 10000
+    woods: 0
   <Intro>k__BackingField: The raiders came in the spring and took the valley while the King's armies were away. You have a town, a handful of militia, and a road that leads home.
   <Outro>k__BackingField: 'The valley is yours again. Word comes from the capital: the King is dead, and the crown is broken.'
   <Goal>k__BackingField: Drive the Ironjaw raiders out of the valley.
+  <Loss>k__BackingField: 
   <ThreeStarDays>k__BackingField: 28
   <TwoStarDays>k__BackingField: 45
   <IsSkirmish>k__BackingField: 0
   <MapPosition>k__BackingField: {x: 240, y: 640}
+  <Arc>k__BackingField: 0

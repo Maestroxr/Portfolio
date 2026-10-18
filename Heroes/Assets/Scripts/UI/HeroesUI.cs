@@ -668,7 +668,7 @@ namespace Portfolio.Heroes.UI
 
         /// <summary>
         /// A new day is announced with the name of the realm whose turn it is: the banner says it as a turn, "Your turn"
-        /// for the player at this device. Any other line is shown as it is.
+        /// for the player at this device, with the days a scenario of a deadline has left. Any other line is shown as it is.
         /// </summary>
         private string TurnLine(string body)
         {
@@ -681,11 +681,60 @@ namespace Portfolio.Heroes.UI
             {
                 if (player.name == body)
                 {
-                    // In a hot seat every person is called by name.
-                    return player.index == manager.Viewer && !manager.IsHotSeat ? Words.T("Your turn") : Words.F("{0}'s turn", Words.Name(player.name));
+                    if (player.index != manager.Viewer || manager.IsHotSeat)
+                    {
+                        // In a hot seat every person is called by name.
+                        return Words.F("{0}'s turn", Words.Name(player.name));
+                    }
+                    string left = DaysLeft(false);
+                    return left.Length > 0 ? $"{Words.T("Your turn")}  -  {left}" : Words.T("Your turn");
                 }
             }
             return Words.Sentence(body);
+        }
+
+        /// <summary>
+        /// What the scenario asks of the player at this device, for the tooltip of the date: the task, what loses it
+        /// besides losing everything, and the days left when it has a deadline.
+        /// </summary>
+        public string TaskText()
+        {
+            HeroesLevel scenario = manager != null && !manager.IsOnlineGame ? manager.Scenario : null;
+            string text = scenario != null ? Words.T(scenario.Goal) : Words.T("Take the land.");
+            if (scenario != null && !string.IsNullOrEmpty(scenario.Loss))
+            {
+                text += "\n" + $"{Words.T("Beware")}: {Words.T(scenario.Loss)}";
+            }
+            string left = DaysLeft(true);
+            return left.Length > 0 ? text + "\n" + left : text;
+        }
+
+        /// <summary>
+        /// The days left to a scenario's deadline, as a line: the days to hold out until a day that wins it, or (always,
+        /// or in its last two weeks) the days left to win before a day limit; empty without a deadline.
+        /// </summary>
+        private string DaysLeft(bool always)
+        {
+            GameState state = Game?.State;
+            if (state == null || manager.IsOnlineGame)
+            {
+                return "";
+            }
+            ScenarioRules rules = state.rules;
+            if (rules.victory == VictoryKind.Survive && rules.victoryValue > state.day)
+            {
+                int days = rules.victoryValue - state.day;
+                return days == 1 ? Words.T("One more day to hold out.") : Words.F("{0} more days to hold out.", days);
+            }
+            if (rules.loss == LossKind.TimeLimit && rules.dayLimit > 0)
+            {
+                int days = rules.dayLimit - state.day + 1;
+                if (days > 0 && (always || days <= 14))
+                {
+                    return days == 1 ? Words.T("The last day to win.") : Words.F("{0} days left to win.", days);
+                }
+            }
+            return "";
         }
 
         public void ShowTurn(int who)

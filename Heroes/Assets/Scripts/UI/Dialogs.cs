@@ -370,7 +370,8 @@ namespace Portfolio.Heroes.UI
 
     /// <summary>
     /// What the scenario came to: won or lost, in how many days, and at one device how many stars of the chapter that is
-    /// worth. Online it says how the realm of the player at this device fared and leads back to the room.
+    /// worth, how its story goes on, and the way on to the next chapter of its campaign (or to try a lost one again).
+    /// Online it says how the realm of the player at this device fared and leads back to the room.
     /// </summary>
     public sealed class ResultsBox : Dialog
     {
@@ -515,6 +516,19 @@ namespace Portfolio.Heroes.UI
                 UIKit.Pin(starRow, new Vector2(0.5f, 1f), new Vector2(0f, y), starRow.sizeDelta);
                 y -= 108f;
             }
+            if (chapter && won && !string.IsNullOrEmpty(scenario.Outro))
+            {
+                // How the story goes on, as the chapter tells it.
+                // Room for three lines, the words made smaller should they need more (the window is not up yet, so
+                // they cannot be measured).
+                TextMeshProUGUI outro = UIKit.Label(Body, "Outro", scenario.Outro.Trim(), 23f, UIKit.Ink, TextAlignmentOptions.Center);
+                outro.fontStyle = FontStyles.Italic;
+                outro.enableAutoSizing = true;
+                outro.fontSizeMax = 23f;
+                outro.fontSizeMin = 16f;
+                UIKit.Pin((RectTransform)outro.transform, new Vector2(0.5f, 1f), new Vector2(0f, y), new Vector2(740f, 92f));
+                y -= 92f + 12f;
+            }
 
             Image plate = UIKit.Card(Body, "Record");
             var plateRect = UIKit.Pin((RectTransform)plate.transform, new Vector2(0.5f, 1f), new Vector2(0f, y), new Vector2(560f, 150f));
@@ -545,12 +559,31 @@ namespace Portfolio.Heroes.UI
 
             Button leave = Answer(online ? "Back to the Room" : "Back to the Title", Leave);
             UIKit.Fit((RectTransform)leave.transform, 300f, ButtonRow - 4f);
+            // A chapter won leads on to the next of its campaign; one lost can be tried again.
+            HeroesCampaign campaign = Manager.Campaign as HeroesCampaign;
+            int next = chapter && won && campaign != null ? campaign.NextChapter(Manager.LevelIndex) : -1;
+            int again = chapter && !won ? Manager.LevelIndex : -1;
+            if (next >= 0 || again >= 0)
+            {
+                Button onward = Answer(next >= 0 ? "Next Chapter" : "Try Again", () => Begin(next >= 0 ? next : again));
+                UIKit.Fit((RectTransform)onward.transform, 300f, ButtonRow - 4f);
+                UIKit.Look(onward.GetComponentInChildren<TextMeshProUGUI>(), TextLook.Gold);
+            }
             Open();
             if (starRow != null)
             {
                 // Only once the window is open: a coroutine cannot start on an object that is off.
                 StartCoroutine(PopStars(starRow));
             }
+        }
+
+        /// <summary>Leaves the finished chapter for the title and begins the chapter <paramref name="level"/> from there, as the campaign screen would.</summary>
+        private void Begin(int level)
+        {
+            Close();
+            Manager.ReturnToTitle();
+            Manager.Progress.RememberChapter(level);
+            Manager.BeginScenario(null, level);
         }
 
         /// <summary>The way out of a finished game: to the room of an online game, else to the title screen.</summary>

@@ -1,0 +1,77 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2889f78791f059b499b1411c0a8eb318, type: 3}
+  m_Name: C3_5_FireOnTheWalls
+  m_EditorClassIdentifier: Skinnerboxes.Heroes::Portfolio.Heroes.HeroesLevel
+  <Index>k__BackingField: 23
+  <Title>k__BackingField: Fire on the Walls
+  <Map>k__BackingField:
+    name: Fire on the Walls
+    columns: 46
+    rows: 50
+    seed: 2305
+    players:
+    - faction: 2
+      human: 1
+      aiLevel: 1
+      team: 0
+      hero: 16
+      buildings: 04000000010000000d0000000e000000i
+      name: You
+      homeX: 500
+      homeY: 150
+    - faction: 0
+      human: 0
+      aiLevel: 1
+      team: 1
+      hero: 1
+      buildings: 0d0000000e000000i
+      name: The King's Host
+      homeX: 160
+      homeY: 840
+    - faction: 1
+      human: 0
+      aiLevel: 2
+      team: 1
+      hero: 15
+      buildings: 0d000000i
+      name: The Pale Coven
+      homeX: 840
+      homeY: 840
+    zonesPerPlayer: 1
+    neutralTowns: 2
+    treasure: 2
+    monsters: 2
+    water: 1
+    theme: 1
+    themeTerrain: 0
+    themeShare: 80
+    rules:
+      victory: 5
+      victoryValue: 36
+      victoryTag: 
+      loss: 3
+      lossValue: 0
+      dayLimit: 0
+      battleStyle: 0
+    specials: []
+    startingGold: 12000
+    woods: 0
+  <Intro>k__BackingField: The king has had enough of the clans, and for once the dead agree with him. Two armies march on your town. The clans will come, but not before the fifth week is out. Hold until they do.
+  <Outro>k__BackingField: The clans pour over the hills on the thirty-sixth day, and the besiegers find out how far it is to home.
+  <Goal>k__BackingField: Hold out for five weeks.
+  <Loss>k__BackingField: Your town must not fall.
+  <ThreeStarDays>k__BackingField: 28
+  <TwoStarDays>k__BackingField: 36
+  <IsSkirmish>k__BackingField: 0
+  <MapPosition>k__BackingField: {x: 860, y: 380}
+  <Arc>k__BackingField: 2

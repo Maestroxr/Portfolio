@@ -27,6 +27,8 @@ MonoBehaviour:
       hero: -1
       buildings: 
       name: You
+      homeX: -1
+      homeY: -1
     - faction: 1
       human: 0
       aiLevel: 1
@@ -34,6 +36,8 @@ MonoBehaviour:
       hero: -1
       buildings: 
       name: Barrow Wardens
+      homeX: -1
+      homeY: -1
     - faction: 2
       human: 0
       aiLevel: 1
@@ -41,13 +45,16 @@ MonoBehaviour:
       hero: -1
       buildings: 
       name: Grave Diggers
+      homeX: -1
+      homeY: -1
     zonesPerPlayer: 1
     neutralTowns: 2
     treasure: 3
     monsters: 2
     water: 1
     theme: 6
-    themeTerrain: 0
+    themeTerrain: 6
+    themeShare: 70
     rules:
       victory: 4
       victoryValue: 23
@@ -69,11 +76,15 @@ MonoBehaviour:
       tag: crown
       guard: 13
       guardCount: 6
+      owner: -1
     startingGold: 10000
+    woods: 0
   <Intro>k__BackingField: The old kings were buried with their crowns. One of them is worth more than the rest, and you are not the only one digging.
   <Outro>k__BackingField: The Crown of Dragons is yours. It is heavier than it looks.
   <Goal>k__BackingField: Find the Crown of Dragons in the barrows.
+  <Loss>k__BackingField: 
   <ThreeStarDays>k__BackingField: 40
   <TwoStarDays>k__BackingField: 60
   <IsSkirmish>k__BackingField: 0
   <MapPosition>k__BackingField: {x: 560, y: 500}
+  <Arc>k__BackingField: 0

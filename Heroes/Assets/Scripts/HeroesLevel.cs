@@ -19,6 +19,9 @@ namespace Portfolio.Heroes
 
         [field: SerializeField] public string Goal { get; private set; } = "Defeat all enemies.";
 
+        /// <summary>How the chapter is lost besides losing everything ("Ysolde must not fall."), or empty.</summary>
+        [field: SerializeField] public string Loss { get; private set; } = "";
+
         /// <summary>Win by these days for three and two stars (one for any win).</summary>
         [field: SerializeField] public int ThreeStarDays { get; private set; } = 60;
 
@@ -29,6 +32,9 @@ namespace Portfolio.Heroes
 
         /// <summary>Where the chapter sits on the campaign map, in thousandths of its width and height.</summary>
         [field: SerializeField] public Vector2 MapPosition { get; private set; } = new Vector2(500, 500);
+
+        /// <summary>The campaign of <see cref="HeroesCampaign.Arcs"/> the chapter belongs to (0, the first, for a skirmish map).</summary>
+        [field: SerializeField] public int Arc { get; private set; }
 
         public override bool IsLevelValid(out string message)
         {
@@ -67,6 +73,13 @@ namespace Portfolio.Heroes
             TwoStarDays = twoStars;
             IsSkirmish = skirmish;
             MapPosition = position;
+        }
+
+        /// <summary>Puts the chapter in the campaign <paramref name="arc"/>, lost as <paramref name="loss"/> says (empty: only by losing everything).</summary>
+        public void ConfigureStory(int arc, string loss)
+        {
+            Arc = arc;
+            Loss = loss ?? "";
         }
 #endif
     }

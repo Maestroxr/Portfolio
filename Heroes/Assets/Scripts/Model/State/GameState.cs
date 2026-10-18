@@ -465,20 +465,30 @@ namespace Portfolio.Heroes
         public int value;
     }
 
+    /// <summary>How a scenario is won. The values are saved with a game: only ever append.</summary>
     public enum VictoryKind
     {
         DefeatAll = 0,
         CaptureTown = 1,
         DefeatMonster = 2,
         GatherGold = 3,
-        FindArtifact = 4
+        FindArtifact = 4,
+        /// <summary>Still standing when the day <see cref="ScenarioRules.victoryValue"/> begins.</summary>
+        Survive = 5,
+        /// <summary>A hero of another realm (<see cref="ScenarioRules.victoryValue"/>, his id) is off the map: beaten, fled, or his realm fallen.</summary>
+        DefeatHero = 6,
+        /// <summary>Holding <see cref="ScenarioRules.victoryValue"/> towns at once.</summary>
+        HoldTowns = 7
     }
 
+    /// <summary>How a scenario is lost besides losing everything. The values are saved with a game: only ever append.</summary>
     public enum LossKind
     {
         LoseAll = 0,
         LoseHero = 1,
-        TimeLimit = 2
+        TimeLimit = 2,
+        /// <summary>The town <see cref="ScenarioRules.lossValue"/> (the first town of the person) is taken.</summary>
+        LoseTown = 3
     }
 
     /// <summary>Where armies fight when they meet. It is fixed for a whole game and the same on every device of a table.</summary>
@@ -495,10 +505,16 @@ namespace Portfolio.Heroes
     public sealed class ScenarioRules
     {
         public VictoryKind victory = VictoryKind.DefeatAll;
-        /// <summary>Town id, monster tag index, gold amount or artifact, depending on the victory.</summary>
+        /// <summary>Town id, monster tag index, gold amount, artifact, day, hero id or number of towns, depending on the victory.</summary>
         public int victoryValue;
+        /// <summary>
+        /// What the victory refers to by name: the tag of a special town or monster, or "player:N" for the first town
+        /// (or, for <see cref="VictoryKind.DefeatHero"/>, the starting hero) of seat N. The generator turns it into
+        /// <see cref="victoryValue"/>.
+        /// </summary>
         public string victoryTag = "";
         public LossKind loss = LossKind.LoseAll;
+        /// <summary>The hero (<see cref="LossKind.LoseHero"/>) or the town (<see cref="LossKind.LoseTown"/>) the person must keep, set by the generator.</summary>
         public int lossValue;
         /// <summary>The day by which the scenario must be won, or 0.</summary>
         public int dayLimit;

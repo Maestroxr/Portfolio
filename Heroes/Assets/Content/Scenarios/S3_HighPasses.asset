@@ -27,6 +27,8 @@ MonoBehaviour:
       hero: -1
       buildings: 
       name: You
+      homeX: -1
+      homeY: -1
     - faction: 0
       human: 0
       aiLevel: 1
@@ -34,13 +36,16 @@ MonoBehaviour:
       hero: -1
       buildings: 
       name: Castle
+      homeX: -1
+      homeY: -1
     zonesPerPlayer: 1
     neutralTowns: 1
     treasure: 3
     monsters: 3
     water: 0
     theme: 3
-    themeTerrain: 0
+    themeTerrain: 3
+    themeShare: 70
     rules:
       victory: 0
       victoryValue: 0
@@ -51,10 +56,13 @@ MonoBehaviour:
       battleStyle: 0
     specials: []
     startingGold: 10000
+    woods: 0
   <Intro>k__BackingField: 
   <Outro>k__BackingField: 
   <Goal>k__BackingField: Take the passes.
+  <Loss>k__BackingField: 
   <ThreeStarDays>k__BackingField: 35
   <TwoStarDays>k__BackingField: 55
   <IsSkirmish>k__BackingField: 1
   <MapPosition>k__BackingField: {x: 700, y: 300}
+  <Arc>k__BackingField: 0

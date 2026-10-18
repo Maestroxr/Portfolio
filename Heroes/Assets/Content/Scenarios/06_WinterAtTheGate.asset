@@ -27,6 +27,8 @@ MonoBehaviour:
       hero: -1
       buildings: 
       name: You
+      homeX: -1
+      homeY: -1
     - faction: 1
       human: 0
       aiLevel: 2
@@ -34,6 +36,8 @@ MonoBehaviour:
       hero: -1
       buildings: 
       name: The Pale Coven
+      homeX: -1
+      homeY: -1
     - faction: 2
       human: 0
       aiLevel: 2
@@ -41,13 +45,16 @@ MonoBehaviour:
       hero: -1
       buildings: 
       name: Ironjaw Remnant
+      homeX: -1
+      homeY: -1
     zonesPerPlayer: 1
     neutralTowns: 2
     treasure: 2
     monsters: 3
     water: 0
     theme: 3
-    themeTerrain: 0
+    themeTerrain: 3
+    themeShare: 70
     rules:
       victory: 0
       victoryValue: 0
@@ -58,10 +65,13 @@ MonoBehaviour:
       battleStyle: 0
     specials: []
     startingGold: 10000
+    woods: 0
   <Intro>k__BackingField: Snow closes the pass in a month. Until then, everything that wants the capital has to come through you.
   <Outro>k__BackingField: The snow closes the pass behind the last of them.
   <Goal>k__BackingField: Hold the pass against both armies.
+  <Loss>k__BackingField: 
   <ThreeStarDays>k__BackingField: 50
   <TwoStarDays>k__BackingField: 72
   <IsSkirmish>k__BackingField: 0
   <MapPosition>k__BackingField: {x: 960, y: 560}
+  <Arc>k__BackingField: 0

@@ -17,10 +17,17 @@ namespace Portfolio.Heroes
         /// <summary>Buildings the town starts with beyond the village hall and fort.</summary>
         public List<BuildingId> buildings = new List<BuildingId>();
         public string name = "";
+        /// <summary>Where the home lies, in thousandths of the map's width and height from the bottom left, or -1 for the place the number of seats gives it.</summary>
+        public int homeX = -1;
+        public int homeY = -1;
 
         public PlayerSpec Clone()
         {
-            return new PlayerSpec { faction = faction, human = human, aiLevel = aiLevel, team = team, hero = hero, buildings = new List<BuildingId>(buildings), name = name };
+            return new PlayerSpec
+            {
+                faction = faction, human = human, aiLevel = aiLevel, team = team, hero = hero, buildings = new List<BuildingId>(buildings), name = name,
+                homeX = homeX, homeY = homeY
+            };
         }
     }
 
@@ -52,6 +59,8 @@ namespace Portfolio.Heroes
         /// <summary>Guards placed next to it (a creature and a count), for artifacts and treasures.</summary>
         public CreatureId guard = CreatureId.None;
         public int guardCount;
+        /// <summary>For a town: the seat that holds it from the start, or -1 for a town of the wilds.</summary>
+        public int owner = -1;
     }
 
     /// <summary>
@@ -78,10 +87,17 @@ namespace Portfolio.Heroes
         /// <summary>0 a mix of lands, else the terrain most neutral zones have (a winter map, a desert).</summary>
         public int theme;
         public TerrainType themeTerrain = TerrainType.Grass;
+        /// <summary>How many neutral zones in a hundred have the theme's land, when the map has a theme (the others a land of their own).</summary>
+        public int themeShare = 70;
         public ScenarioRules rules = new ScenarioRules();
         public List<SpecialSpec> specials = new List<SpecialSpec>();
         /// <summary>Gold the people start with (the computer players by their level).</summary>
         public int startingGold = 10000;
+        /// <summary>
+        /// How wooded the land is beyond the usual: 0 as always, more for a forest (up to about 150, thick woods), less for
+        /// open plains (down to about -150).
+        /// </summary>
+        public int woods;
 
         public MapSpec Clone()
         {
