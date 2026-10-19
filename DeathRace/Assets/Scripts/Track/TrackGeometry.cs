@@ -39,8 +39,12 @@ namespace Portfolio.DeathRace
         /// <summary>The braking <see cref="SafeSpeed"/> assumes (m/s^2).</summary>
         public const float Braking = 16f;
 
+        /// <summary>
+        /// The lengths of an ordinary lap: the first nine tracks run 700-1,100 m; the faster cars of the harder leagues
+        /// get up to 1,500 m (Gridlock Boulevard, the longest, is 1,385 m).
+        /// </summary>
         public const float MinLength = 600f;
-        public const float MaxLength = 1100f;
+        public const float MaxLength = 1500f;
         public const float ArenaMinLength = 400f;
         public const float ArenaMaxLength = 520f;
         public const float MinWidth = 12f;

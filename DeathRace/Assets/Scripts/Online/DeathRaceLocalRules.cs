@@ -9,8 +9,9 @@ namespace Portfolio.DeathRace
     /// Split screen: what Death Race offers two to four people at one device (BaseGame's local play setup), and how the
     /// setup they made becomes a race. Everybody drives at once on controls of their own (<see cref="DeathRaceControls"/>);
     /// a seat may be the computer's (an AI car at the seat's level), and computer cars can fill the grid to four. The
-    /// options: the track (only the tracks this device has opened), the laps, the car everybody drives (the same car for
-    /// a fair race, or a random car per seat for a wild one) and how good the cars that fill the grid are.
+    /// options: the track (only the tracks this device has opened, of all twelve), the laps, the car everybody drives (any
+    /// of the twelve, the same car for a fair race, or a random car per seat for a wild one) and how good the cars that
+    /// fill the grid are.
     /// <see cref="BuildSetup"/> turns a match into the <see cref="RaceSetup"/> the director runs; it is plain code, so the
     /// tests build setups without a scene.
     /// </summary>
@@ -35,6 +36,9 @@ namespace Portfolio.DeathRace
 
         /// <summary>How well a computer car drives at each level of <see cref="LocalPlayRules.ComputerLevels"/>.</summary>
         public static readonly float[] LevelSkills = { 0.3f, 0.55f, 0.85f };
+
+        /// <summary>How many of each special weapon (oil, EMP, mortar) every car of a split screen race carries.</summary>
+        public const int SpecialsPerSeat = 1;
 
         /// <summary>The car a first setup drives: a mid-field car that can win against anything on the list.</summary>
         public const CarModel DefaultCar = CarModel.Viper;
@@ -132,10 +136,10 @@ namespace Portfolio.DeathRace
         /// <summary>
         /// The race of <paramref name="match"/>: the people and the computer seats in their seat order, then the computer
         /// cars that fill the grid. Every car carries the same load (one level of every upgrade, three mines, two rockets,
-        /// three nitro charges), so only the drivers make the difference; a computer car drives at its seat's level. The
-        /// people get the views of the split screen in their seat order. <paramref name="translate"/> turns the English
-        /// names of the drivers who fill the grid into the language shown; <paramref name="fillerColor"/> gives the colour
-        /// of the roster driver with that index (the look's rival colours).
+        /// three nitro charges and one of each special weapon), so only the drivers make the difference; a computer car
+        /// drives at its seat's level. The people get the views of the split screen in their seat order.
+        /// <paramref name="translate"/> turns the English names of the drivers who fill the grid into the language shown;
+        /// <paramref name="fillerColor"/> gives the colour of the roster driver with that index (the look's rival colours).
         /// </summary>
         public RaceSetup BuildSetup(LocalMatch match, int seed, Func<string, string> translate = null, Func<int, Color> fillerColor = null)
         {
@@ -207,13 +211,21 @@ namespace Portfolio.DeathRace
             return LevelSkills[Mathf.Clamp(level, 0, LevelSkills.Length - 1)];
         }
 
-        /// <summary>The load every car of a split screen race carries: one level of every upgrade and a few of everything.</summary>
+        /// <summary>
+        /// The load every car of a split screen race carries: one level of every upgrade, a few of everything and
+        /// <see cref="SpecialsPerSeat"/> of each special weapon, the oil slick armed first.
+        /// </summary>
         public static CarLoadout Loadout(CarModel model)
         {
             CarLoadout loadout = CarLoadout.Upgraded(model, 1);
             loadout.mines = 3;
             loadout.rockets = 2;
             loadout.nitro = 3;
+            foreach (SpecialKind kind in (SpecialKind[])Enum.GetValues(typeof(SpecialKind)))
+            {
+                loadout.SetSpecials(kind, SpecialsPerSeat);
+            }
+            loadout.special = SpecialKind.Oil;
             return loadout;
         }
 

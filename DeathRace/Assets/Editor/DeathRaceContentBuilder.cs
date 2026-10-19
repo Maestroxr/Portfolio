@@ -22,7 +22,7 @@ namespace Portfolio.DeathRace.EditorTools
         public const string Database = "skinnerboxes-deathrace";
 
         public const string DisplayName = "Death Race";
-        public const string Description = "Armed cars, nine deadly tracks and a ladder of twenty drivers: race, shoot and ram your way to the top, and spend the prize money on a better car.";
+        public const string Description = "Armed cars, twelve deadly tracks and three leagues of twenty drivers: race, shoot and ram your way to the top, and spend the prize money on a better car.";
 
         public static DeathRaceSettings DefaultSettings => DeathRaceAssets.Require<DeathRaceSettings>(DefaultSettingsPath);
 
@@ -55,7 +55,10 @@ namespace Portfolio.DeathRace.EditorTools
             });
         }
 
-        /// <summary>One level per track, in the order of the track table: the level's index is the track's.</summary>
+        /// <summary>
+        /// One level per track (all twelve: Track1 to Track12), in the order of the track table: the level's index is the
+        /// track's, so the levels of the harder leagues' tracks (9-11) come after the Crucible's.
+        /// </summary>
         private static void BuildCampaign()
         {
             var levels = new List<GameLevel>();

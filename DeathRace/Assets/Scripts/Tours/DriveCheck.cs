@@ -20,7 +20,9 @@ namespace Portfolio.DeathRace
     /// Options: <c>-deathrace-drivecheck-track &lt;i&gt;[,&lt;j&gt;...]|all</c> (default 0), <c>-deathrace-drivecheck-car
     /// &lt;model&gt;</c> (the person's car), <c>-deathrace-drivecheck-skill &lt;0..1&gt;</c> (of the driver in the person's seat,
     /// default 0.8), <c>-deathrace-drivecheck-rivals &lt;0..1&gt;</c> (the computer cars' skill), <c>-deathrace-drivecheck-rivalcar
-    /// &lt;model&gt;</c> (the computer cars' car), <c>-deathrace-drivecheck-laps
+    /// &lt;model&gt;</c> (the computer cars' car), <c>-deathrace-drivecheck-level &lt;n&gt;</c> (every part of every car at upgrade level
+    /// n, capped per car: 5 is the fastest a car gets), <c>-deathrace-drivecheck-unhurt 1</c> (no car takes damage, so
+    /// every race runs its laps to the end however hard the field fights), <c>-deathrace-drivecheck-laps
     /// &lt;n&gt;</c>, <c>-deathrace-drivecheck-speed &lt;x&gt;</c> (time scale, at most 3), <c>-deathrace-drivecheck-shots
     /// &lt;seconds&gt;</c> (between screenshots, default 6, 0 = none), <c>-deathrace-drivecheck-timeout &lt;seconds&gt;</c> (per race,
     /// default 480), <c>-deathrace-drivecheck-attract &lt;seconds&gt;</c> (watch the cars behind the menu first),
@@ -34,6 +36,8 @@ namespace Portfolio.DeathRace
         public const string SkillArgument = "-deathrace-drivecheck-skill";
         public const string RivalsArgument = "-deathrace-drivecheck-rivals";
         public const string RivalCarArgument = "-deathrace-drivecheck-rivalcar";
+        public const string LevelArgument = "-deathrace-drivecheck-level";
+        public const string UnhurtArgument = "-deathrace-drivecheck-unhurt";
         public const string LapsArgument = "-deathrace-drivecheck-laps";
         public const string SpeedArgument = "-deathrace-drivecheck-speed";
         public const string ShotsArgument = "-deathrace-drivecheck-shots";
@@ -43,7 +47,11 @@ namespace Portfolio.DeathRace
 
         private const float StandingsEvery = 10f;
 
+        /// <summary>Wall hits are counted per stretch of this many metres of the track, to find where cars hit them.</summary>
+        private const float WallBin = 25f;
+
         private readonly Dictionary<Car, CarLog> cars = new Dictionary<Car, CarLog>();
+        private readonly SortedDictionary<int, int> wallsAt = new SortedDictionary<int, int>();
         private string folder;
         private StreamWriter log;
         private DeathRaceManager manager;
@@ -54,6 +62,7 @@ namespace Portfolio.DeathRace
         private float speed = 1f;
         private float pilotSkill = 0.8f;
         private float rivalSkill = -1f;
+        private bool unhurt;
 
         /// <summary>What the check counts of one car during a race.</summary>
         private sealed class CarLog
@@ -96,11 +105,13 @@ namespace Portfolio.DeathRace
             speed = Mathf.Clamp(Number(SpeedArgument, 1f), 0.25f, 3f);
             pilotSkill = Mathf.Clamp01(Number(SkillArgument, 0.8f));
             rivalSkill = Number(RivalsArgument, -1f);
+            unhurt = Number(UnhurtArgument, 0f) > 0f;
             float shotEvery = Number(ShotsArgument, 6f);
             float timeout = Mathf.Max(30f, Number(TimeoutArgument, 480f));
             float attract = Number(AttractArgument, 0f);
             int split = Mathf.Clamp((int)Number(SplitArgument, 1f), 1, 4);
-            Note($"drivecheck: speed {speed}, pilot skill {pilotSkill}, rivals {(rivalSkill < 0f ? "as set up" : rivalSkill.ToString("0.00"))}, screen {Screen.width}x{Screen.height}, split {split}");
+            Note($"drivecheck: speed {speed}, pilot skill {pilotSkill}, rivals {(rivalSkill < 0f ? "as set up" : rivalSkill.ToString("0.00"))}, screen {Screen.width}x{Screen.height}, split {split}" +
+                 (unhurt ? ", unhurt" : ""));
 
             float waited = 0f;
             while (manager == null && waited < 30f)
@@ -188,8 +199,20 @@ namespace Portfolio.DeathRace
                 setup.Mode = RaceMode.Local;
                 setup.Entrants[0].Viewport = 0;
             }
+            int level = (int)Number(LevelArgument, -1f);
+            if (level >= 0)
+            {
+                foreach (RaceEntrant entrant in setup.Entrants)
+                {
+                    foreach (UpgradeKind kind in (UpgradeKind[])Enum.GetValues(typeof(UpgradeKind)))
+                    {
+                        entrant.Loadout.SetLevel(kind, level);
+                    }
+                }
+            }
 
             cars.Clear();
+            wallsAt.Clear();
             result = null;
             manager.Director.Started += OnStarted;
             manager.Director.Finished += OnFinished;
@@ -206,7 +229,8 @@ namespace Portfolio.DeathRace
             Note($"race: track {track} {race.Track.Layout.Name} ({race.Track.Path.Length:0} m, {race.Laps} laps, line {race.Line.Length:0} m), {race.Setup.Mode}, {race.Setup.Difficulty}");
             foreach (Car each in race.Cars)
             {
-                Note($"  seat {each.Entrant.Seat} {each.Entrant.Name}: {each.Entrant.Driver} {each.Loadout.model} skill {each.Entrant.Skill:0.00}, grid P{each.Racer.Place}");
+                Note($"  seat {each.Entrant.Seat} {each.Entrant.Name}: {each.Entrant.Driver} {each.Loadout.model} engine {each.Loadout.engine} " +
+                     $"(top {each.Loadout.Stats().TopSpeed:0.0} m/s) skill {each.Entrant.Skill:0.00}, grid P{each.Racer.Place}");
             }
 
             float start = Time.unscaledTime;
@@ -260,6 +284,15 @@ namespace Portfolio.DeathRace
                 Note($"  seat {each.Entrant.Seat}: top {counts.TopSpeed:0.0} m/s, average {counts.SpeedSum / Mathf.Max(1, counts.Samples):0.0}, off road {counts.OffRoad:0.0} s, " +
                      $"walls {counts.WallHits}, cars {counts.CarHits}, firing {counts.Firing:0.0} s, dealt {counts.DamageDealt:0}, taken {counts.DamageTaken:0}, {driver}");
             }
+            if (wallsAt.Count > 0)
+            {
+                var places = new StringBuilder();
+                foreach (KeyValuePair<int, int> place in wallsAt)
+                {
+                    places.Append($" {place.Key}m x{place.Value}");
+                }
+                Note($"  walls hit at:{places}");
+            }
             yield return new WaitForSecondsRealtime(2.5f);
             Shot($"race{track}_result");
             manager.Director.Started -= OnStarted;
@@ -285,6 +318,11 @@ namespace Portfolio.DeathRace
                 {
                     car.Driver = new AiDriver(pilotSkill, 4242 + car.Entrant.Seat);
                 }
+                if (unhurt && car.Health != null)
+                {
+                    // Judged elsewhere, as an online puppet is: hits still show, but nothing wrecks the car.
+                    car.Health.Authoritative = false;
+                }
                 if (car.Driver is AiDriver computer)
                 {
                     computer.Stuck += (stuckCar, what) =>
@@ -308,6 +346,8 @@ namespace Portfolio.DeathRace
                         if (collision.collider.gameObject.layer == DeathRaceLayers.Wall)
                         {
                             counts.WallHits++;
+                            int bin = Mathf.FloorToInt(watched.TrackDistance / WallBin) * (int)WallBin;
+                            wallsAt[bin] = wallsAt.TryGetValue(bin, out int hits) ? hits + 1 : 1;
                         }
                         else if (collision.collider.GetComponentInParent<Car>() != null)
                         {

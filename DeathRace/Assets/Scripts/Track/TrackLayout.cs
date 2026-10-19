@@ -13,7 +13,19 @@ namespace Portfolio.DeathRace
         Containers = 1,
 
         /// <summary>A wall of old tyres stacked behind the barrier, where a corner catches the careless.</summary>
-        Tyres = 2
+        Tyres = 2,
+
+        /// <summary>A refinery's storage tank: a squat drum with a dome, a band of paint and a stair round it.</summary>
+        StorageTank = 3,
+
+        /// <summary>A rack of pipes on steel frames running along the back of the barrier (refineries).</summary>
+        PipeRack = 4,
+
+        /// <summary>A pile-up of burnt-out cars shoved against the barrier (the city's gridlock).</summary>
+        Wrecks = 5,
+
+        /// <summary>Rocks an avalanche brought down onto the roadside, capped with snow.</summary>
+        Boulders = 6
     }
 
     /// <summary>
@@ -54,7 +66,7 @@ namespace Portfolio.DeathRace
             /// <summary>+1 left of the direction of travel, -1 right.</summary>
             public float Side;
 
-            /// <summary>How far behind the barrier it stands, in metres (0 = the kind's own distance).</summary>
+            /// <summary>How far behind the barrier it stands (to its near edge for a tank), in metres (0 = the kind's own distance).</summary>
             public float Offset;
 
             public SetPiece(SetPieceKind kind, float distance, float side, float offset = 0f)
