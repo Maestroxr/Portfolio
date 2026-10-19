@@ -1,0 +1,381 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 490cd761e6db4fde92e15090f14e1624, type: 3}
+  m_Name: Nightfall
+  m_EditorClassIdentifier: Skinnerboxes.DeathRace::Portfolio.DeathRace.DeathRaceTheme
+  displayName: Nightfall
+  description: 'Night racing under neon: headlights, glowing barriers, wet asphalt.'
+  preview: {fileID: 21300000, guid: 0f922927096e0b94c90a956df555be32, type: 3}
+  screenshot: {fileID: 21300000, guid: 0ab5185e5faab494bbdca7ccd4dead75, type: 3}
+  fonts:
+    body: {fileID: 11400000, guid: 01c05420d5eb14d44aef3c15e10067a8, type: 2}
+    bodyMaterial: {fileID: -1585107696645120833, guid: 01c05420d5eb14d44aef3c15e10067a8, type: 2}
+    title: {fileID: 11400000, guid: 04625a37b2e30b846acec5576635d2a9, type: 2}
+    titleMaterial: {fileID: 2100000, guid: ba4a0f797aa8e674f8c483d700cfe03e, type: 2}
+  menu:
+    backdrop: {fileID: 21300000, guid: 79990ff972fdf1c4591c31eebb279125, type: 3}
+    backdropColor: {r: 1, g: 1, b: 1, a: 1}
+    window: {fileID: 21300000, guid: 7feea7841bd379645800f95a71d20d1a, type: 3}
+    windowColor: {r: 1, g: 1, b: 1, a: 1}
+    tileWindow: 0
+    settingsWindow: {fileID: 21300000, guid: 7feea7841bd379645800f95a71d20d1a, type: 3}
+    headerBanner: {fileID: 21300000, guid: f5edb35106775cb4181a0f0a765f4a5c, type: 3}
+    rowsBackground: {fileID: 21300000, guid: 79f2a46c46ae66849b20c81b5a682214, type: 3}
+    rowsColor: {r: 1, g: 1, b: 1, a: 0.9}
+    rowBackground: {fileID: 21300000, guid: 36d959035019fa3459134eb731d20e77, type: 3}
+    rowColor: {r: 1, g: 1, b: 1, a: 1}
+    button: {fileID: 21300000, guid: 67f5b8ad770c1ab4f8cfe84872efb7ab, type: 3}
+    buttonHover: {fileID: 21300000, guid: 1ae0e59073bebf64db44ef9410cd3edf, type: 3}
+    buttonPressed: {fileID: 21300000, guid: 517214f79e58456408747d18d40d772e, type: 3}
+    buttonDisabled: {fileID: 21300000, guid: 03ab8aa0c5662a1478cf8dc629b63c6c, type: 3}
+    arrowButton: {fileID: 21300000, guid: 4bfb9bfdcd24ff74887d41d13d309396, type: 3}
+    inputBox: {fileID: 21300000, guid: af56adef7d54b904a8733fab5be6369d, type: 3}
+    inputColor: {r: 1, g: 1, b: 1, a: 1}
+    inputTextColor: {r: 0.9098039, g: 0.95686275, b: 1, a: 1}
+    track: {fileID: 21300000, guid: e431e3f899bb48449ae007fc07e0ff74, type: 3}
+    fill: {fileID: 21300000, guid: 9d6e2f24c0e4cb64398334d5cde1df57, type: 3}
+    fillColor: {r: 0.18431373, g: 0.89411765, b: 1, a: 1}
+    knob: {fileID: 21300000, guid: fd859254b483e814d92f469195313adc, type: 3}
+    checkBox: {fileID: 21300000, guid: a56030d1dc24bd444a590a23013d51e9, type: 3}
+    checkMark: {fileID: 21300000, guid: 6aabe23af071c2845a99f3642ce7cc40, type: 3}
+    headerColor: {r: 0.9098039, g: 0.95686275, b: 1, a: 1}
+    textColor: {r: 0.9098039, g: 0.95686275, b: 1, a: 1}
+    valueColor: {r: 0.18431373, g: 0.89411765, b: 1, a: 1}
+    buttonTextColor: {r: 0.91764706, g: 0.972549, b: 1, a: 1}
+    errorColor: {r: 1, g: 0.24705882, b: 0.41568628, a: 1}
+  lobby:
+    font: {fileID: 11400000, guid: 01c05420d5eb14d44aef3c15e10067a8, type: 2}
+    bodyFont: {fileID: 11400000, guid: 4e4bff973adc9384f85a139587b1f11b, type: 2}
+    dim: {r: 0.007843138, g: 0.011764706, b: 0.039215688, a: 0.8}
+    window: {r: 0.05490196, g: 0.07450981, b: 0.14117648, a: 0.97}
+    row: {r: 0.10980392, g: 0.14117648, b: 0.2509804, a: 1}
+    accent: {r: 0.05490196, g: 0.56078434, b: 0.6901961, a: 1}
+    good: {r: 0.12156863, g: 0.6392157, b: 0.41568628, a: 1}
+    warn: {r: 0.8392157, g: 0.2, b: 0.30980393, a: 1}
+    text: {r: 0.9098039, g: 0.95686275, b: 1, a: 1}
+    muted: {r: 0.56078434, g: 0.6392157, b: 0.76862746, a: 1}
+    buttonText: {r: 0.91764706, g: 0.972549, b: 1, a: 1}
+    windowSprite: {fileID: 21300000, guid: 7feea7841bd379645800f95a71d20d1a, type: 3}
+    rowSprite: {fileID: 21300000, guid: 36d959035019fa3459134eb731d20e77, type: 3}
+    buttonSprite: {fileID: 0}
+    inputSprite: {fileID: 21300000, guid: af56adef7d54b904a8733fab5be6369d, type: 3}
+    tileSprites: 0
+    replaceSprites: 1
+    spriteTint: 0
+  slots:
+    sprites:
+    - key: Ammo
+      value: {fileID: 21300000, guid: 64d9b137eda3bec488a2c1577b9766c8, type: 3}
+    - key: Mine
+      value: {fileID: 21300000, guid: 7e97ae34ecf95904bb6e865f2251286a, type: 3}
+    - key: Rocket
+      value: {fileID: 21300000, guid: 49fc73c24654424469f2e6083b64c747, type: 3}
+    - key: Nitro
+      value: {fileID: 21300000, guid: 23785db614e670b4c9029912f248d9b5, type: 3}
+    - key: Cash
+      value: {fileID: 21300000, guid: b5a2151b9cd1e8e4787276c7cf07e99d, type: 3}
+    - key: Repair
+      value: {fileID: 21300000, guid: c429305f6654c14429fdf7f65c9fa787, type: 3}
+    - key: Health
+      value: {fileID: 21300000, guid: f4bf29ae7764193438e132e0fc39e69a, type: 3}
+    - key: Flag
+      value: {fileID: 21300000, guid: 54c171ddc628412449c733a59363f89e, type: 3}
+    - key: Skull
+      value: {fileID: 21300000, guid: 80fafbaf6688d654dbb087649e29d808, type: 3}
+    - key: Engine
+      value: {fileID: 21300000, guid: 65ab7ae7b825c1941a9b113ef0953917, type: 3}
+    - key: Tyres
+      value: {fileID: 21300000, guid: ff0210c5346c36541b256ff3d1eedb4a, type: 3}
+    - key: Armour
+      value: {fileID: 21300000, guid: 83265f4cf3ead0043a4af16e81dddd0c, type: 3}
+    - key: Spikes
+      value: {fileID: 21300000, guid: c65b52ae58b4edb46aca44ae19b0eaee, type: 3}
+    - key: Piercing
+      value: {fileID: 21300000, guid: 433aa461d01c10041947ba22aefe0de1, type: 3}
+    - key: Sabotage
+      value: {fileID: 21300000, guid: f1486000caf0ff842837961ab93236ae, type: 3}
+    - key: Trophy
+      value: {fileID: 21300000, guid: 16b09756bf65e434c98da1bac48924fa, type: 3}
+    - key: Star
+      value: {fileID: 21300000, guid: ff15a666d18b22947aa7b280a930cfb1, type: 3}
+    - key: Lock
+      value: {fileID: 21300000, guid: 581c5f7a08e2a3943a4c88fdec6a27da, type: 3}
+    - key: Car
+      value: {fileID: 21300000, guid: e454921f3393f444090af0a891434352, type: 3}
+    - key: Timer
+      value: {fileID: 21300000, guid: 0bb2979bc86c72742b3be5094d4efbdf, type: 3}
+    - key: Window
+      value: {fileID: 21300000, guid: 7feea7841bd379645800f95a71d20d1a, type: 3}
+    - key: Panel
+      value: {fileID: 21300000, guid: 79f2a46c46ae66849b20c81b5a682214, type: 3}
+    - key: Row
+      value: {fileID: 21300000, guid: 36d959035019fa3459134eb731d20e77, type: 3}
+    - key: Button
+      value: {fileID: 21300000, guid: 67f5b8ad770c1ab4f8cfe84872efb7ab, type: 3}
+    - key: ButtonHover
+      value: {fileID: 21300000, guid: 1ae0e59073bebf64db44ef9410cd3edf, type: 3}
+    - key: ButtonPressed
+      value: {fileID: 21300000, guid: 517214f79e58456408747d18d40d772e, type: 3}
+    - key: ButtonDisabled
+      value: {fileID: 21300000, guid: 03ab8aa0c5662a1478cf8dc629b63c6c, type: 3}
+    - key: Arrow
+      value: {fileID: 21300000, guid: 4bfb9bfdcd24ff74887d41d13d309396, type: 3}
+    - key: Banner
+      value: {fileID: 21300000, guid: f5edb35106775cb4181a0f0a765f4a5c, type: 3}
+    - key: Track
+      value: {fileID: 21300000, guid: e431e3f899bb48449ae007fc07e0ff74, type: 3}
+    - key: Fill
+      value: {fileID: 21300000, guid: 9d6e2f24c0e4cb64398334d5cde1df57, type: 3}
+    - key: Knob
+      value: {fileID: 21300000, guid: fd859254b483e814d92f469195313adc, type: 3}
+    - key: CheckBox
+      value: {fileID: 21300000, guid: a56030d1dc24bd444a590a23013d51e9, type: 3}
+    - key: CheckMark
+      value: {fileID: 21300000, guid: 6aabe23af071c2845a99f3642ce7cc40, type: 3}
+    - key: InputBox
+      value: {fileID: 21300000, guid: af56adef7d54b904a8733fab5be6369d, type: 3}
+    - key: BarFrame
+      value: {fileID: 21300000, guid: 41d7971a7d3180745a3463e2f678b33f, type: 3}
+    - key: BarFill
+      value: {fileID: 21300000, guid: 95bcf9d07a66dd34fa0bc129583d7811, type: 3}
+    - key: Backdrop
+      value: {fileID: 21300000, guid: 79990ff972fdf1c4591c31eebb279125, type: 3}
+    materials: []
+    textures:
+    - key: reflection
+      value: {fileID: 8900000, guid: ca0d1706af34e9e4aa8671ad0a439c89, type: 3}
+    prefabs: []
+    meshes: []
+    fonts: []
+    clips: []
+    colors:
+    - key: Second
+      value: {r: 1, g: 0.24705882, b: 0.78431374, a: 1}
+    - key: Good
+      value: {r: 0.36078432, g: 1, b: 0.627451, a: 1}
+    - key: Muted
+      value: {r: 0.56078434, g: 0.6392157, b: 0.76862746, a: 1}
+    - key: Plate
+      value: {r: 0.05490196, g: 0.07450981, b: 0.14117648, a: 1}
+    - key: PlateDark
+      value: {r: 0.02745098, g: 0.039215688, b: 0.078431375, a: 1}
+  night: 1
+  sunColor: {r: 0.56078434, g: 0.65882355, b: 1, a: 1}
+  sunIntensity: 0.6
+  sunEuler: {x: 52, y: 196, z: 0}
+  ambientSky: {r: 0.23529412, g: 0.29803923, b: 0.54901963, a: 1}
+  ambientEquator: {r: 0.16470589, g: 0.17254902, b: 0.3529412, a: 1}
+  ambientGround: {r: 0.06666667, g: 0.06666667, b: 0.1254902, a: 1}
+  background: {r: 0.03137255, g: 0.039215688, b: 0.08627451, a: 1}
+  fog: 1
+  fogStart: 80
+  fogEnd: 420
+  volume: {fileID: 11400000, guid: cf36fb60d0dab6c448fec9d94c3576ef, type: 2}
+  carPalette: {fileID: 2100000, guid: d4d3891349e57104d8549fd63150d9c4, type: 2}
+  carPaint: {fileID: 2100000, guid: c4072719296533f43917d0ec012aba9f, type: 2}
+  carWreck: {fileID: 2100000, guid: 587abefffe0454f418b78d49322aa231, type: 2}
+  seatColors:
+  - {r: 0.8980392, g: 0.22352941, b: 0.20784314, a: 1}
+  - {r: 0.18431373, g: 0.41960785, b: 1, a: 1}
+  - {r: 1, g: 0.8235294, b: 0.12156863, a: 1}
+  - {r: 0.36078432, g: 0.79607844, b: 0.1764706, a: 1}
+  rivalColors:
+  - {r: 0.8980392, g: 0.22352941, b: 0.20784314, a: 1}
+  - {r: 0.18431373, g: 0.41960785, b: 1, a: 1}
+  - {r: 1, g: 0.8235294, b: 0.12156863, a: 1}
+  - {r: 0.36078432, g: 0.79607844, b: 0.1764706, a: 1}
+  - {r: 1, g: 0.47843137, b: 0.101960786, a: 1}
+  - {r: 0.60784316, g: 0.3019608, b: 1, a: 1}
+  - {r: 0.13333334, g: 0.827451, b: 0.93333334, a: 1}
+  - {r: 1, g: 0.30980393, b: 0.6392157, a: 1}
+  - {r: 0.95686275, g: 0.94509804, b: 0.91764706, a: 1}
+  - {r: 0.5411765, g: 0.5764706, b: 0.6392157, a: 1}
+  - {r: 0.078431375, g: 0.72156864, b: 0.6509804, a: 1}
+  - {r: 0.7882353, g: 0.63529414, b: 0.15294118, a: 1}
+  - {r: 0.5254902, g: 0.78431374, b: 1, a: 1}
+  - {r: 0.18039216, g: 0.61960787, b: 0.30980393, a: 1}
+  - {r: 0.6901961, g: 0.1882353, b: 0.2901961, a: 1}
+  - {r: 0.76862746, g: 0.6392157, b: 1, a: 1}
+  - {r: 0.78431374, g: 0.4, b: 0.22745098, a: 1}
+  - {r: 0.5529412, g: 0.9411765, b: 0.7529412, a: 1}
+  - {r: 0.29803923, g: 0.35686275, b: 0.83137256, a: 1}
+  - {r: 0.9098039, g: 0.76862746, b: 0.627451, a: 1}
+  biomes:
+  - ground: {fileID: 2100000, guid: 7d01aae13584a8d45b8c2d2e2e117193, type: 2}
+    road: {fileID: 2100000, guid: 74de5f8aad9135648a3cca2cc2e35a16, type: 2}
+    shoulder: {fileID: 2100000, guid: 58ac13d6bb9100a4d8b946eca18198a8, type: 2}
+    curb: {fileID: 2100000, guid: 42e0cfd07aec4164ead70268995e2af8, type: 2}
+    barrier: {fileID: 2100000, guid: bd006e26d340f0f439d5ccdfd76d363f, type: 2}
+    line: {fileID: 2100000, guid: e67f8b70ce30d4e4abdadfc8f1f7d02c, type: 2}
+    props:
+    - {fileID: 1728977197144727901, guid: 2909e88e350549b4689fbd9202e0c7e9, type: 3}
+    - {fileID: 1797864591658105144, guid: 08ac1296de4db8541bb223385a2a2464, type: 3}
+    - {fileID: 3711028696595733593, guid: 28be136a011cce5478f969c885e69342, type: 3}
+    - {fileID: 4919190808072024025, guid: 4e6b65cd6d9b99f479d2da69f06ff14f, type: 3}
+    - {fileID: 4714618712700497957, guid: e6ee510d2d4746347b740a865457f6f5, type: 3}
+    - {fileID: 627468017964449661, guid: 7de2c71a9ff26ee47ad731129627a42d, type: 3}
+    - {fileID: 2866092791035497844, guid: bfe2bb7be07d3944f8be90007a3b2914, type: 3}
+    - {fileID: 6461450024313375134, guid: 91f5b698e28d797439cba208f3d6fd55, type: 3}
+    - {fileID: 1421538096489013490, guid: 6530e05e36a9f4043977f49b9e29f6e5, type: 3}
+    - {fileID: 8983680837336158568, guid: f41b412fc2233f64c81816ea7e3df867, type: 3}
+    - {fileID: 7718433362885425511, guid: c26b41425b20414479be2590895878cc, type: 3}
+    - {fileID: 8021574298006667093, guid: 594fb90375617a947949811090cc1de1, type: 3}
+    landmarks:
+    - {fileID: 5156169791095880828, guid: d15369fdda70afe4a8034e6deb55d038, type: 3}
+    - {fileID: 588720139209658093, guid: ab59d4af6e135be4a94658578b4f75e8, type: 3}
+    - {fileID: 873158230957159023, guid: e0b473f7f5c21ae48b739cd72b25ce3f, type: 3}
+    lamp: {fileID: 1612551238498408509, guid: 7739fb0f77faa9547930d597cb95f90d, type: 3}
+    minimapRoad: {r: 1, g: 0.827451, b: 0.65882355, a: 1}
+    minimapEdge: {r: 0.101960786, g: 0.05490196, b: 0.07058824, a: 1}
+    groundTint: {r: 1, g: 1, b: 1, a: 1}
+    fogColor: {r: 0.11764706, g: 0.078431375, b: 0.14117648, a: 1}
+    propDensity: 1
+  - ground: {fileID: 2100000, guid: ae4c202381d93354f87ca35780a514ea, type: 2}
+    road: {fileID: 2100000, guid: 68e9e1421f6c761458b50b68d3b95672, type: 2}
+    shoulder: {fileID: 2100000, guid: c551f0814896d7b428805fc3512f0409, type: 2}
+    curb: {fileID: 2100000, guid: 769dc80934ecbee48993123791b2f02d, type: 2}
+    barrier: {fileID: 2100000, guid: f559d29fb9481b54aa3fa20817658d8a, type: 2}
+    line: {fileID: 2100000, guid: c27471c3d9af70e45bfe7691b9aa5455, type: 2}
+    props:
+    - {fileID: 8991243690959294248, guid: 18531a869537d594b98253a524e295f3, type: 3}
+    - {fileID: 4562236557844972940, guid: 1f599b8d530842043bc077c13502cfab, type: 3}
+    - {fileID: 7982234466106559952, guid: d68e53932a81e8f479457f87120a91df, type: 3}
+    - {fileID: 6112408283909298311, guid: 7411317bc3ba7c645839f8d36d1f8e00, type: 3}
+    - {fileID: 7610279556053622281, guid: c027bef915563b346bf24d3cdaea87c5, type: 3}
+    - {fileID: 4987731316418392617, guid: 65126037fe793be4ca1c79267f4097ff, type: 3}
+    - {fileID: 8442487572260932197, guid: b441cfecb592b0d4db2a73085129297d, type: 3}
+    - {fileID: 7493789717763117813, guid: e5c566064e49d0b4c9cbfbcb7122f612, type: 3}
+    - {fileID: 2815385452194371897, guid: 04e270dd7d0fe4f4d89e5ec0d2c0470c, type: 3}
+    - {fileID: 5248037040793795752, guid: 14ad068087f81454cb6a5e80af081b73, type: 3}
+    - {fileID: 1823880860731988810, guid: 8b6dca7f1c6d80f45be37744ecd612fa, type: 3}
+    - {fileID: 3402886131090407051, guid: 25f9d165b22a49944bcb195c2d3e81af, type: 3}
+    landmarks:
+    - {fileID: 9130942822626179112, guid: d38df67edcf03e4469c9f7f6e44c8605, type: 3}
+    - {fileID: 1951688738354171826, guid: 5d7849f68b1efb9499fb16ef0558baab, type: 3}
+    - {fileID: 3495535734889643702, guid: 18fda58a109dbd34f9e4169354a9679b, type: 3}
+    lamp: {fileID: 3530857413056368445, guid: 93e201e929603aa4d93096b479da611a, type: 3}
+    minimapRoad: {r: 0.8862745, g: 1, b: 0.6901961, a: 1}
+    minimapEdge: {r: 0.047058824, g: 0.07058824, b: 0.0627451, a: 1}
+    groundTint: {r: 1, g: 1, b: 1, a: 1}
+    fogColor: {r: 0.07058824, g: 0.101960786, b: 0.10980392, a: 1}
+    propDensity: 1.15
+  - ground: {fileID: 2100000, guid: fc085d4820cf98f44a8cb2d3081c52a7, type: 2}
+    road: {fileID: 2100000, guid: 75ed403f93b1b8f4d86271859f45409b, type: 2}
+    shoulder: {fileID: 2100000, guid: 390acf7aae2143a49867103513f4111a, type: 2}
+    curb: {fileID: 2100000, guid: dea58861757912342bf27af47acf637d, type: 2}
+    barrier: {fileID: 2100000, guid: 265d76d9bce7b6948b1c51e1fc093a6a, type: 2}
+    line: {fileID: 2100000, guid: 250d06e4d21b2de42a47f18b28c0cf8e, type: 2}
+    props:
+    - {fileID: 1421060133257749158, guid: dbe763dfbe61cdd4fb78908fc79f8f98, type: 3}
+    - {fileID: 2568347073397922219, guid: 611fe14083774954ba220cd1062ad789, type: 3}
+    - {fileID: 2639175490129126412, guid: a7bda7cfc9921e940add22afc6cbfe18, type: 3}
+    - {fileID: 1171373793675831017, guid: 75d021c8a42f1bb4fafa39a77ec93749, type: 3}
+    - {fileID: 7819929184499152673, guid: c96982b263d4c0047a6cb6a9868e2603, type: 3}
+    - {fileID: 1840548689636160614, guid: 255df41eb0145f147b7ded9377690482, type: 3}
+    - {fileID: 913934439018946756, guid: 68d1d4171900ec346989038634c665e7, type: 3}
+    - {fileID: 8426173968157088770, guid: 40dcdd4ffb9042741a04ac64177208ae, type: 3}
+    - {fileID: 7884307861076881669, guid: 81905c2b9b9d23443966362ef64e5b44, type: 3}
+    - {fileID: 4098321936812006333, guid: a5566a09a035ff643b3e8719310540df, type: 3}
+    - {fileID: 5410667454354153257, guid: ded22da010866ba4c88d6e18c50d2fe4, type: 3}
+    - {fileID: 3450817323705717011, guid: 3f468ac51da6f8348ac4012b08297c2a, type: 3}
+    landmarks:
+    - {fileID: 7974579614969123230, guid: 2832fa84aa81afc4785fa1d327e4173f, type: 3}
+    - {fileID: 6309571132199346115, guid: 4cc5c662a36de3b4f81283c09932b7d3, type: 3}
+    - {fileID: 879675700895578127, guid: fb07c25b65c0dea4a9e9daf4180da1a9, type: 3}
+    lamp: {fileID: 6516389527717595801, guid: ee067ce1f81c82746864bfd60096b785, type: 3}
+    minimapRoad: {r: 0.7490196, g: 0.9647059, b: 1, a: 1}
+    minimapEdge: {r: 0.03137255, g: 0.0627451, b: 0.1254902, a: 1}
+    groundTint: {r: 1, g: 1, b: 1, a: 1}
+    fogColor: {r: 0.0627451, g: 0.101960786, b: 0.18039216, a: 1}
+    propDensity: 0.95
+  - ground: {fileID: 2100000, guid: 379fe1a1a27488d469d36bf6ec51c3ec, type: 2}
+    road: {fileID: 2100000, guid: 3043d5fbb495c424e943410f4b6b7c07, type: 2}
+    shoulder: {fileID: 2100000, guid: 74d1f2d27073d4d41ac5965065a2d6c1, type: 2}
+    curb: {fileID: 2100000, guid: b75832c2cbfe8374e8fad19f3546b64b, type: 2}
+    barrier: {fileID: 2100000, guid: 48e4e561fb1ec544dba027eb47fd503a, type: 2}
+    line: {fileID: 2100000, guid: 91e77029d70ad9c4590725b9e550a9fc, type: 2}
+    props:
+    - {fileID: 6462294259887729601, guid: d2cf3751c9a623f469db827743a59b8d, type: 3}
+    - {fileID: 1318423348861209316, guid: f29ce9d289c418e458c61bb85889c0d5, type: 3}
+    - {fileID: 2725979196853888768, guid: 9813b37531bad12409433aeeed0b10b1, type: 3}
+    - {fileID: 8303485818817587109, guid: 8a65c074781d2484aba322dcce6776dc, type: 3}
+    - {fileID: 3058283819811916900, guid: 25c1ab1670f54df4eb148b57630c0b65, type: 3}
+    - {fileID: 4532904627637304091, guid: 18aa39a55b73e4945919a317afd2bf9c, type: 3}
+    - {fileID: 6236106018200837499, guid: ac2a52e7f03124245bbfb822e6d6c716, type: 3}
+    - {fileID: 1790768146480902196, guid: d49ab99c25881cc4a959c31b81653344, type: 3}
+    - {fileID: 255197162537525117, guid: e2304741baae3364aa96bf6081875491, type: 3}
+    - {fileID: 8312756433655440227, guid: 0b80b3aa2177ba74fbbdcc7794495118, type: 3}
+    - {fileID: 8807343858229665776, guid: 1bc4079ba40d49842aeadd5208302f13, type: 3}
+    - {fileID: 1498787997475778575, guid: 456898944ab43ec46b471f65f5bbff4d, type: 3}
+    landmarks:
+    - {fileID: 7624921703780568905, guid: 19b2337fee44584488ff7e5ebf14edb0, type: 3}
+    - {fileID: 683420984924416393, guid: a1a33cc3d39b9cb45b81b11e7d6fe793, type: 3}
+    - {fileID: 6675047894392279762, guid: bd3ede86231574e4ea0974a0982a6c3a, type: 3}
+    lamp: {fileID: 7488915473567133347, guid: 3be247e72caf18d40935d1a171ac9da6, type: 3}
+    minimapRoad: {r: 1, g: 0.76862746, b: 0.9411765, a: 1}
+    minimapEdge: {r: 0.07058824, g: 0.03137255, b: 0.10980392, a: 1}
+    groundTint: {r: 1, g: 1, b: 1, a: 1}
+    fogColor: {r: 0.078431375, g: 0.047058824, b: 0.13333334, a: 1}
+    propDensity: 1.2
+  propPalette: {fileID: 2100000, guid: ab6b30c883c94c04f90d3d8cdd5cd3e4, type: 2}
+  tracer: {r: 1, g: 0.74, b: 0.32, a: 1}
+  muzzle: {r: 1, g: 0.68, b: 0.28, a: 1}
+  explosion: {r: 1, g: 0.5, b: 0.16, a: 1}
+  sparks: {r: 1, g: 0.78, b: 0.4, a: 1}
+  hudPanel: {fileID: 21300000, guid: 79f2a46c46ae66849b20c81b5a682214, type: 3}
+  barFrame: {fileID: 21300000, guid: 41d7971a7d3180745a3463e2f678b33f, type: 3}
+  barFill: {fileID: 21300000, guid: 95bcf9d07a66dd34fa0bc129583d7811, type: 3}
+  iconAmmo: {fileID: 21300000, guid: 64d9b137eda3bec488a2c1577b9766c8, type: 3}
+  iconMine: {fileID: 21300000, guid: 7e97ae34ecf95904bb6e865f2251286a, type: 3}
+  iconRocket: {fileID: 21300000, guid: 49fc73c24654424469f2e6083b64c747, type: 3}
+  iconNitro: {fileID: 21300000, guid: 23785db614e670b4c9029912f248d9b5, type: 3}
+  iconCash: {fileID: 21300000, guid: b5a2151b9cd1e8e4787276c7cf07e99d, type: 3}
+  iconRepair: {fileID: 21300000, guid: c429305f6654c14429fdf7f65c9fa787, type: 3}
+  iconHealth: {fileID: 21300000, guid: f4bf29ae7764193438e132e0fc39e69a, type: 3}
+  iconFlag: {fileID: 21300000, guid: 54c171ddc628412449c733a59363f89e, type: 3}
+  iconSkull: {fileID: 21300000, guid: 80fafbaf6688d654dbb087649e29d808, type: 3}
+  carPictures:
+  - {fileID: 21300000, guid: 80682275836af074cb31cd0393616c89, type: 3}
+  - {fileID: 21300000, guid: 7b6cad558bda5914eb93b80692bbace1, type: 3}
+  - {fileID: 21300000, guid: 71cc7b6e20f79eb4393d2245755a5381, type: 3}
+  - {fileID: 21300000, guid: 3d6ccbec305a6da4383782562a256f36, type: 3}
+  - {fileID: 21300000, guid: 2f77accded92a69448c483c6a74fceca, type: 3}
+  - {fileID: 21300000, guid: bcefe8935e534ee4da9eb242344e307f, type: 3}
+  upgradePictures:
+  - {fileID: 21300000, guid: 2f8af49933a4cdf498c6b73ddac36778, type: 3}
+  - {fileID: 21300000, guid: d3dbe7c3186d7ce48b6c3aabd4745368, type: 3}
+  - {fileID: 21300000, guid: c3feea4a9afdc2b419d5ae7d17d21ad0, type: 3}
+  driverPortraits:
+  - {fileID: 21300000, guid: 67fd93a4eb188944799cc1e3615e0986, type: 3}
+  - {fileID: 21300000, guid: 0d3bceb9fc96a304f8c3459d32b1c428, type: 3}
+  - {fileID: 21300000, guid: 5f62eb0eb36ccab42b005a6fc0404f6f, type: 3}
+  - {fileID: 21300000, guid: 2e328db55ae25fd4398443aeddd900b3, type: 3}
+  - {fileID: 21300000, guid: 383a412d1c8608e4c8d9cacc1c0a3cd0, type: 3}
+  - {fileID: 21300000, guid: 07216f095acb6164faad3c4e0fbaa03e, type: 3}
+  - {fileID: 21300000, guid: 6c1477567eed3bf458f67179c8ca571d, type: 3}
+  - {fileID: 21300000, guid: 1030dd58b3604eb428ddb1047b22860c, type: 3}
+  - {fileID: 21300000, guid: d55864b237198fd46b2f65f9a73ea513, type: 3}
+  - {fileID: 21300000, guid: 4ebb9a43faa5b1440b958fe243fd351f, type: 3}
+  - {fileID: 21300000, guid: 6098a1c34f40c8447b756e170b176617, type: 3}
+  - {fileID: 21300000, guid: f115f6c70da759a48bfa67ca13830367, type: 3}
+  - {fileID: 21300000, guid: a09b2f847873118459e03687e920a4d5, type: 3}
+  - {fileID: 21300000, guid: 9b0e56570e04fa144aef308e4b5e60ad, type: 3}
+  - {fileID: 21300000, guid: cc126009ba8ccdd4fbea08c1ba437890, type: 3}
+  - {fileID: 21300000, guid: b439d3883d1d3f246a73368af4a36a6f, type: 3}
+  - {fileID: 21300000, guid: 7dfd7f4792dc80a42bdc3a397fc39cd5, type: 3}
+  - {fileID: 21300000, guid: e36bd8e90b8e43e469e71a634166f1f9, type: 3}
+  - {fileID: 21300000, guid: c74bd67a47f9e134190275c688f3bcc8, type: 3}
+  - {fileID: 21300000, guid: 4157addfe065af14fa545a02a180dc1b, type: 3}
+  - {fileID: 21300000, guid: 6ef4bd862ce9f8545949eaa746e2b37b, type: 3}
+  hudText: {r: 0.91764706, g: 0.9647059, b: 1, a: 1}
+  hudAccent: {r: 0.18431373, g: 0.89411765, b: 1, a: 1}
+  hudWarn: {r: 1, g: 0.24705882, b: 0.41568628, a: 1}

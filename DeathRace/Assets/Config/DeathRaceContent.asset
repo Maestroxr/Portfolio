@@ -1,0 +1,69 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c2115b6599c45f495857e1cda4d4900, type: 3}
+  m_Name: DeathRaceContent
+  m_EditorClassIdentifier: Skinnerboxes.DeathRace::Portfolio.DeathRace.DeathRaceContent
+  carPrefabs:
+  - {fileID: 9088064680695021791, guid: 8e5f349b40cdb344382541d1cd47af32, type: 3}
+  - {fileID: 1025182527864450584, guid: ba60ecdaabf0f164cafea901bc362345, type: 3}
+  - {fileID: 5568151367555701304, guid: 4a2fd796b224d38419c75c5c24fa4ec3, type: 3}
+  - {fileID: 2082812125280972796, guid: ab0b0cf14b5c85a4b8f4e9afbfb59776, type: 3}
+  - {fileID: 6141275993014936847, guid: 2407d6e72ad23a149b8dd41a99400b11, type: 3}
+  - {fileID: 9132755492544285223, guid: 5ced94ebea249bd43a260bba95ec80aa, type: 3}
+  mine: {fileID: 5867865995761979649, guid: 37b3344a47297c849a3970d9a023704d, type: 3}
+  rocket: {fileID: 2929051935440101728, guid: d048fed2ff9f3054fba336a68967be8a, type: 3}
+  pickups:
+  - {fileID: 6638183341047015915, guid: 2e2a1e8dbff35854a9e7f4ddcdae4a04, type: 3}
+  - {fileID: 1701229417416892731, guid: aff2fb63431fa134cbecf198dbd2ee7d, type: 3}
+  - {fileID: 6177645910697836725, guid: 11ed3bb851bf68346b08c7df6be3cdbf, type: 3}
+  - {fileID: 3972618005017405415, guid: 04b533194a1a26a4d82dbb0b0eb1017d, type: 3}
+  explosion: {fileID: 7250540140382657315, guid: 653e9456d8b9d49479891cde5c9de1b8, type: 3}
+  bigExplosion: {fileID: 6281706653162919976, guid: 19c91d9f3d4041c42a3e375cfff72e6d, type: 3}
+  sparks: {fileID: 7237159264039278478, guid: c3f1092472b036141a6dc6cae6a78a26, type: 3}
+  smoke: {fileID: 3037850601591894897, guid: d9d20353a54a197479339e01ea447887, type: 3}
+  blackSmoke: {fileID: 4953592103522673748, guid: 092676be06b2f3e469fad07cadc9eb7a, type: 3}
+  muzzleFlash: {fileID: 8806853638285528039, guid: b6889f6474014c94dbba25236aa4c4f6, type: 3}
+  fire: {fileID: 1447910206867433902, guid: 4c47a814f9b1ffb4485db97428122691, type: 3}
+  nitroFlame: {fileID: 3148758368934216136, guid: debf1f2d3bc7fb34fb449d14d94efda3, type: 3}
+  dust: {fileID: 2460247774467116330, guid: 87e68d63b27b76948b0df95a083509a8, type: 3}
+  scorch: {fileID: 9045587197343408108, guid: 3790a36d5c207ba4d84024e6c14f7a8e, type: 3}
+  tracer: {fileID: 2100000, guid: 816502406dab72f4281a4ad79385db1c, type: 2}
+  skid: {fileID: 2100000, guid: 1abe164a00a49704bac1dee104a621a0, type: 2}
+  sounds:
+    engine: {fileID: 8300000, guid: 921f106915d7f7949ac857ed1924ff97, type: 3}
+    skid: {fileID: 8300000, guid: a0410367dc0c4a8478f34b145537d467, type: 3}
+    gun: {fileID: 8300000, guid: e3f5c7997df81ab44b32d9ec12fc9e41, type: 3}
+    ricochet: {fileID: 8300000, guid: 7b5983250311f984e81b3dac19f620b7, type: 3}
+    impact: {fileID: 8300000, guid: 88197bb8ebbb9984aa7b09a1eb091530, type: 3}
+    scrape: {fileID: 8300000, guid: 967821bbf816377459ab62eb37d3a6a9, type: 3}
+    explosion: {fileID: 8300000, guid: 83e5a865a27ad5c40bb1d381e008b40b, type: 3}
+    bigExplosion: {fileID: 8300000, guid: d01f212a7bfe88e4fb2666cb2bbf686e, type: 3}
+    mineDrop: {fileID: 8300000, guid: 8d012efa042aa144ba71d9d17f70389a, type: 3}
+    mineArm: {fileID: 8300000, guid: dd8d34aeff1b4a84fb3a5d7c12e07f3d, type: 3}
+    rocketLaunch: {fileID: 8300000, guid: 03799d82377390943aca5383c9118b0a, type: 3}
+    nitro: {fileID: 8300000, guid: 3ea07a40e9684934f9c02615fdd0d615, type: 3}
+    pickupCash: {fileID: 8300000, guid: f8e1e47ddec5eda40b29a607c891014a, type: 3}
+    pickupRepair: {fileID: 8300000, guid: ef806e4d01e1ea74aa62124f196d03fd, type: 3}
+    pickupAmmo: {fileID: 8300000, guid: 7ec71205ed8a0044883a626fb0cf3030, type: 3}
+    pickupNitro: {fileID: 8300000, guid: 1945c038cbc673b48948cf8eb9cf90d6, type: 3}
+    countdown: {fileID: 8300000, guid: 1bbf701ad4cead44d9e1cd55b3474df4, type: 3}
+    go: {fileID: 8300000, guid: 43fec2e70bc4e20488140436c44cc449, type: 3}
+    lap: {fileID: 8300000, guid: 6eafc442d2b910348802ce6984f21c87, type: 3}
+    finish: {fileID: 8300000, guid: 7b9ad4113781a484d8fed2ec0e04af3f, type: 3}
+    wreckJingle: {fileID: 8300000, guid: c9ef4433febb45a4d8860a6720fbc1af, type: 3}
+    victory: {fileID: 8300000, guid: 710386ee82fd2d94993ec79c3774e2dd, type: 3}
+    buy: {fileID: 8300000, guid: 6516c78e556a4cc4baae87486960fa05, type: 3}
+    sell: {fileID: 8300000, guid: b259191dc671a2946852ac2e6b9d84e7, type: 3}
+    deny: {fileID: 8300000, guid: 715b730e07336b64691f84abcb077559, type: 3}
+    click: {fileID: 8300000, guid: f25d9bf5a12024a4fa7347a326ac89d9, type: 3}
+    menuMusic: {fileID: 8300000, guid: a6634dc32ee2cf34aadf9ed56d6cfd01, type: 3}
+    raceMusic: {fileID: 8300000, guid: 4782d45174616cb4ebf336079fd8c3ae, type: 3}
