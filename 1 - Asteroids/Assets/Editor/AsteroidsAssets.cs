@@ -1,3 +1,4 @@
+using Gamebox.Editor;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -86,7 +87,7 @@ namespace Portfolio.Asteroids.EditorTools
         }
 
         /// <summary>Writes a mesh asset, replacing the geometry of an existing one.</summary>
-        public static Mesh SaveMesh(MeshBuilder builder, string relative)
+        public static Mesh SaveMesh(LowPolyBuilder builder, string relative)
         {
             EnsureFolderOf(relative);
             string path = Path(relative);

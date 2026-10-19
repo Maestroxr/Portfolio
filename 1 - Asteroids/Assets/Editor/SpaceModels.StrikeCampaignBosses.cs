@@ -1,3 +1,4 @@
+using Gamebox.Editor;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -15,7 +16,7 @@ namespace Portfolio.Asteroids.EditorTools
         // ------------------------------------------------------------------ helpers
 
         /// <summary>A flat outline (x right, y toward the nose) extruded <paramref name="height"/> up from <paramref name="bottom"/>.</summary>
-        private static void Slab(MeshBuilder b, IList<Vector2> outline, float bottom, float height)
+        private static void Slab(LowPolyBuilder b, IList<Vector2> outline, float bottom, float height)
         {
             b.Push(new Vector3(0f, bottom + height * 0.5f, 0f), Quaternion.Euler(90f, 0f, 0f));
             b.Prism(outline, height);
@@ -38,7 +39,7 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>A socket ring for a part on a deck.</summary>
-        private static void Socket(MeshBuilder b, Vector3 at, float radius)
+        private static void Socket(LowPolyBuilder b, Vector3 at, float radius)
         {
             b.Color(Swatch.Trim);
             b.Cylinder(at, radius, radius * 0.96f, 0.1f, 16);
@@ -49,9 +50,9 @@ namespace Portfolio.Asteroids.EditorTools
         // ------------------------------------------------------------------ Iron Tide parts
 
         /// <summary>A howitzer head: a boxy mantlet and one long barrel with a muzzle brake along +Z (muzzle at (0, 0.45, 3.1)).</summary>
-        public static MeshBuilder HowitzerHead()
+        public static LowPolyBuilder HowitzerHead()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.Hull);
             b.BeveledBox(new Vector3(0f, 0.42f, -0.1f), new Vector3(1.3f, 0.62f, 1.5f), 0.14f);
             b.Color(Swatch.Orange);
@@ -66,9 +67,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>A SAM rack head: four tubes in a tilted box along +Z, orange caps (muzzles at (+-0.25, 0.85, 1)).</summary>
-        public static MeshBuilder SamRack()
+        public static LowPolyBuilder SamRack()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.Gunmetal);
             b.Cylinder(Vector3.zero, 0.5f, 0.45f, 0.2f, 12);
             b.Push(new Vector3(0f, 0.6f, 0.1f), Quaternion.Euler(-20f, 0f, 0f));
@@ -91,9 +92,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>A sweeping gun: a squat drum with three short barrels along +Z and a glowing band (muzzles at (-0.3..0.3, 0.4, 1.3)).</summary>
-        public static MeshBuilder SweepGun()
+        public static LowPolyBuilder SweepGun()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.HullDark);
             b.Cylinder(Vector3.zero, 0.75f, 0.68f, 0.55f, 14);
             b.Color(Swatch.GlowOrange);
@@ -110,9 +111,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>A hangar bay module: an armoured box with split doors over a lit launch well (aircraft launch from it).</summary>
-        public static MeshBuilder HangarBay()
+        public static LowPolyBuilder HangarBay()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.HullDark);
             b.BeveledBox(new Vector3(0f, 0.35f, 0f), new Vector3(2.4f, 0.7f, 2.8f), 0.12f);
             b.Color(Swatch.Black);
@@ -133,9 +134,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>A radar dome on a ring of armour: the Iron Tide's command core, its dish glowing orange.</summary>
-        public static MeshBuilder Radome(float radius)
+        public static LowPolyBuilder Radome(float radius)
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.Gunmetal);
             b.Cylinder(Vector3.zero, radius * 1.1f, radius * 1.05f, 0.5f, 20);
             b.Color(Swatch.Orange);
@@ -160,9 +161,9 @@ namespace Portfolio.Asteroids.EditorTools
         /// The Glacier Hauler: a tracked ice hauler 11 m long with a cab at the front, two cargo tanks, a reactor well in the
         /// middle; deck at 2.0, sockets for turrets at (+-1.75, 2.2) and SAM racks at (+-1.75, -3.9).
         /// </summary>
-        public static MeshBuilder HaulerHull()
+        public static LowPolyBuilder HaulerHull()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             for (int side = -1; side <= 1; side += 2)
             {
                 float x = side * 2.95f;
@@ -217,9 +218,9 @@ namespace Portfolio.Asteroids.EditorTools
         /// 1.4, sockets along its middle line for the bow turret (+5.2), the forward howitzer (+2.9), launchers (+-1.3, -3.6)
         /// and a stern turret (-5.8).
         /// </summary>
-        public static MeshBuilder IcebreakerHull()
+        public static LowPolyBuilder IcebreakerHull()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             List<Vector2> outline = ShipOutline(15f, 5.2f, 2.2f);
             b.Color(Swatch.Navy);
             Slab(b, outline, 0f, 1f);
@@ -267,9 +268,9 @@ namespace Portfolio.Asteroids.EditorTools
         /// The Gale Carrier: a flying wing 14 m across with a raised bridge in the middle, a hangar socket in each wing
         /// root (+-3.6, -0.4), flak sockets at the wing tips (+-5.6, 1.6) and four engines at the trailing edge.
         /// </summary>
-        public static MeshBuilder CarrierHull()
+        public static LowPolyBuilder CarrierHull()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             var wing = new List<Vector2>
             {
                 new Vector2(0f, 3.8f), new Vector2(2.2f, 3.2f), new Vector2(7.2f, 1.4f), new Vector2(7.4f, 0.4f), new Vector2(6.8f, -1.6f),
@@ -316,9 +317,9 @@ namespace Portfolio.Asteroids.EditorTools
         /// The Reef Bastion: an octagonal sea fort 13 m across on a reef of rocks, gun towers at its four corners
         /// (+-4.3, +-3.1, deck 1.9), two gun pits in the front wall (+-2, 4.4) and the keep in the middle (the core).
         /// </summary>
-        public static MeshBuilder AtollFortress()
+        public static LowPolyBuilder AtollFortress()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.Rock);
             b.Blob(new Vector3(0f, 0.15f, 0f), new Vector3(7.2f, 0.5f, 6f), 1, 0.12f, 5101);
             var outline = new List<Vector2>();
@@ -364,9 +365,9 @@ namespace Portfolio.Asteroids.EditorTools
         /// The Sea Wolves: two attack hydrofoils 7.5 m long side by side (x +-3.6), each riding on its foils with a turret
         /// socket at its bow (z +1.9) and a launcher socket at its stern (z -2.2), deck at 1.25.
         /// </summary>
-        public static MeshBuilder Hydrofoils()
+        public static LowPolyBuilder Hydrofoils()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             List<Vector2> outline = ShipOutline(7.5f, 2.6f, 1.6f);
             for (int side = -1; side <= 1; side += 2)
             {
@@ -409,9 +410,9 @@ namespace Portfolio.Asteroids.EditorTools
         /// The Drydock: a dock basin 14 x 10 m between two concrete walls (deck 2.2), a half-built hull inside it and a
         /// gantry crane across it whose cab is the core; sockets on the walls at (+-5.7, +-2.6).
         /// </summary>
-        public static MeshBuilder Drydock()
+        public static LowPolyBuilder Drydock()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.Black);
             b.Box(new Vector3(0f, 0.02f, 0f), new Vector3(9f, 0.04f, 10.4f));
             for (int side = -1; side <= 1; side += 2)
@@ -459,9 +460,9 @@ namespace Portfolio.Asteroids.EditorTools
         /// The Battleship: 18 m long, a raised citadel with the bridge tower in the middle (the core), two main turret
         /// barbettes on its middle line (+-4.6) and secondary sockets along its sides (+-1.4 at +-7 and +-2.4); deck 1.5.
         /// </summary>
-        public static MeshBuilder BattleshipHull()
+        public static LowPolyBuilder BattleshipHull()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             List<Vector2> outline = ShipOutline(18.5f, 5.8f, 3f);
             b.Color(Swatch.Navy);
             Slab(b, outline, 0f, 1.1f);
@@ -515,9 +516,9 @@ namespace Portfolio.Asteroids.EditorTools
         /// broad wings with six gun sockets along their edges, hangar and sweeper sockets inboard, and a glowing reactor
         /// crown in the middle (the core).
         /// </summary>
-        public static MeshBuilder LeviathanHull()
+        public static LowPolyBuilder LeviathanHull()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             var wing = new List<Vector2>
             {
                 new Vector2(0f, 5.2f), new Vector2(3f, 3.6f), new Vector2(9.4f, 1.2f), new Vector2(9.6f, -0.6f), new Vector2(8.4f, -2.4f),
@@ -571,9 +572,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>The Leviathan's reactor crown: armoured petals round a glowing core, lifted over the hull (the core's look).</summary>
-        public static MeshBuilder ReactorCrown()
+        public static LowPolyBuilder ReactorCrown()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.Gunmetal);
             b.Cylinder(Vector3.zero, 1.9f, 1.7f, 0.5f, 18);
             b.Color(Swatch.GlowOrange);
@@ -595,9 +596,9 @@ namespace Portfolio.Asteroids.EditorTools
         // ------------------------------------------------------------------ Hive parts
 
         /// <summary>A hive maw: a fleshy neck that ends in a ringed mouth along +Z, glowing inside (muzzle at (0, 0.55, 1.15)).</summary>
-        public static MeshBuilder HiveMaw()
+        public static LowPolyBuilder HiveMaw()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.Purple);
             b.Sphere(new Vector3(0f, 0.3f, 0f), new Vector3(0.8f, 0.42f, 0.8f), 5, 12);
             b.Rod(new Vector3(0f, 0.45f, 0.1f), new Vector3(0f, 0.55f, 0.8f), 0.36f, 10, true, 0.3f);
@@ -617,9 +618,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>A spore sac: a swollen pod on a root collar with glowing veins and a mouth on top (the launchers and spore pods).</summary>
-        public static MeshBuilder SporeSac(float size)
+        public static LowPolyBuilder SporeSac(float size)
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Push(Vector3.zero, Quaternion.identity, Vector3.one * size);
             b.Color(Swatch.Basalt);
             b.Torus(new Vector3(0f, 0.1f, 0f), 0.8f, 0.16f, 14, 5);
@@ -642,9 +643,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>A hive heart: a pulsing knot of flesh in a cage of chitin ribs, glowing green in its seams (the Hive's cores).</summary>
-        public static MeshBuilder HiveHeart(float radius)
+        public static LowPolyBuilder HiveHeart(float radius)
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.GlowGreen);
             b.Sphere(new Vector3(0f, radius * 0.55f, 0f), new Vector3(radius * 0.6f, radius * 0.5f, radius * 0.6f), 6, 12);
             b.Color(Swatch.DarkRed);
@@ -664,9 +665,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>A segment of the Burrow Wyrm: a ringed armour plate over a fleshy body, spines along its back.</summary>
-        public static MeshBuilder WyrmSegment(float radius)
+        public static LowPolyBuilder WyrmSegment(float radius)
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.Purple);
             b.Sphere(new Vector3(0f, radius * 0.45f, 0f), new Vector3(radius, radius * 0.55f, radius * 0.85f), 6, 14);
             b.Color(Swatch.CrystalDark);
@@ -684,9 +685,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>The Burrow Wyrm's head: an armoured skull with four mandibles round a glowing maw along +Z.</summary>
-        public static MeshBuilder WyrmHead()
+        public static LowPolyBuilder WyrmHead()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.Purple);
             b.Sphere(new Vector3(0f, 0.9f, -0.3f), new Vector3(1.9f, 1f, 1.7f), 7, 16);
             b.Color(Swatch.Basalt);
@@ -716,9 +717,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>A spore tower: a tall ribbed column of flesh from a root ring, crowned by a sac with a glowing mouth.</summary>
-        public static MeshBuilder SporeTower()
+        public static LowPolyBuilder SporeTower()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.Basalt);
             b.Torus(new Vector3(0f, 0.15f, 0f), 1.35f, 0.28f, 16, 5);
             b.Color(Swatch.Purple);
@@ -745,9 +746,9 @@ namespace Portfolio.Asteroids.EditorTools
         // ------------------------------------------------------------------ Hive hulls
 
         /// <summary>The Brood Mound: a mound of flesh 10 m across under a chitin crust, ribs and egg sacs on its flanks, a well for the heart.</summary>
-        public static MeshBuilder BroodMound()
+        public static LowPolyBuilder BroodMound()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.Basalt);
             b.Blob(new Vector3(0f, 0.2f, 0f), new Vector3(5.4f, 0.6f, 4.6f), 1, 0.14f, 6201);
             b.Color(Swatch.Purple);
@@ -773,9 +774,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>The Spore Towers' ground: a fleshy ridge 13 m long joining two tower roots at x = +-4.2, sac sockets at (+-1.4, -1).</summary>
-        public static MeshBuilder TowerRidge()
+        public static LowPolyBuilder TowerRidge()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.Basalt);
             b.Blob(new Vector3(0f, 0.15f, 0f), new Vector3(7f, 0.4f, 3.2f), 1, 0.15f, 6301);
             b.Color(Swatch.Purple);
@@ -794,9 +795,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>The Burrow Wyrm's burrow: a crater of torn ground the wyrm rises from (at the tail, z = -7.5).</summary>
-        public static MeshBuilder Burrow()
+        public static LowPolyBuilder Burrow()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.RockDark);
             b.Torus(new Vector3(0f, 0.2f, -7.5f), 3f, 0.8f, 18, 6);
             b.Color(Swatch.Basalt);
@@ -815,9 +816,9 @@ namespace Portfolio.Asteroids.EditorTools
         /// of membrane wings, maw sockets at the front (+-1.9, 3.4), sac sockets on the wings (+-4.6, 0.2) and spine sockets
         /// at the back (+-2.2, -3.6); deck 1.3.
         /// </summary>
-        public static MeshBuilder BroodShipBody()
+        public static LowPolyBuilder BroodShipBody()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             for (int pair = 0; pair < 2; pair++)
             {
                 for (int side = -1; side <= 1; side += 2)
@@ -859,9 +860,9 @@ namespace Portfolio.Asteroids.EditorTools
         /// The Hive Mother: a queen 12 m long lying in her nest, her head at +Z: a vast ringed abdomen behind, a thorax with
         /// folded legs, a crowned head over the heart's well (the core); her rings of sacs and maws turn above her.
         /// </summary>
-        public static MeshBuilder HiveMotherBody()
+        public static LowPolyBuilder HiveMotherBody()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.RockDark);
             b.Blob(new Vector3(0f, 0.1f, 0f), new Vector3(7.6f, 0.5f, 7.2f), 1, 0.15f, 6501);
             b.Color(Swatch.Purple);
@@ -910,9 +911,9 @@ namespace Portfolio.Asteroids.EditorTools
         // ------------------------------------------------------------------ crystal parts and hulls
 
         /// <summary>A crystal prism part: a tall six-sided crystal on a dark foot, a glowing core (muzzle at (0, 1.3, 0)).</summary>
-        public static MeshBuilder CrystalPrism(float size)
+        public static LowPolyBuilder CrystalPrism(float size)
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Push(Vector3.zero, Quaternion.identity, Vector3.one * size);
             b.Color(Swatch.Basalt);
             b.Cylinder(Vector3.zero, 0.8f, 0.7f, 0.25f, 6);
@@ -938,9 +939,9 @@ namespace Portfolio.Asteroids.EditorTools
         /// The Shard Colossus: a giant of crystal lying in wait, 13 m across: a faceted body of dark glass and rose crystal,
         /// two arms reaching forward (laser sockets at their ends, (+-4.8, 2.6)), shoulder sockets (+-2.8, -0.6), deck 1.6.
         /// </summary>
-        public static MeshBuilder ColossusBody()
+        public static LowPolyBuilder ColossusBody()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.Basalt);
             b.Blob(new Vector3(0f, 0.3f, -0.5f), new Vector3(4.2f, 0.9f, 3.4f), 1, 0.18f, 7101);
             b.Color(Swatch.CrystalDark);
@@ -971,9 +972,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>The Colossus's heart, its core: a cluster of glowing crystal round a white-hot centre.</summary>
-        public static MeshBuilder CrystalHeart(float radius)
+        public static LowPolyBuilder CrystalHeart(float radius)
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.GlowWhite);
             b.Sphere(new Vector3(0f, radius * 0.5f, 0f), radius * 0.4f, 5, 10);
             for (int i = 0; i < 7; i++)
@@ -995,9 +996,9 @@ namespace Portfolio.Asteroids.EditorTools
         /// The Resonator's base: a crystal-grown platform 12 m across (deck 1.2) under the rings; a ring of crystal
         /// segments (<see cref="CrystalRing"/>) turns above it, the core in the middle.
         /// </summary>
-        public static MeshBuilder ResonatorBase()
+        public static LowPolyBuilder ResonatorBase()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             var outline = new List<Vector2>();
             for (int i = 0; i < 12; i++)
             {
@@ -1025,9 +1026,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>A ring of crystal segments lying in the XZ plane, <paramref name="radius"/> across the middle, with <paramref name="mounts"/> mounts.</summary>
-        public static MeshBuilder CrystalRing(float radius, int mounts)
+        public static LowPolyBuilder CrystalRing(float radius, int mounts)
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             int segments = mounts * 3;
             for (int i = 0; i < segments; i++)
             {

@@ -1,3 +1,4 @@
+using Gamebox.Editor;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -151,7 +152,7 @@ namespace Portfolio.Asteroids.EditorTools
             };
             foreach ((string name, PropKind kind, Vector3 size, GroundSwatch main, GroundSwatch accent) in props)
             {
-                var builder = new MeshBuilder();
+                var builder = new LowPolyBuilder();
                 SpaceModels.Prop(builder, new PropSpot { Kind = kind, Size = size, Main = main, Accent = accent, Seed = name.Length * 97 });
                 Mesh mesh = AsteroidsAssets.SaveMesh(builder, $"Art/Ground/Models/Props/{name}.asset");
                 var root = new GameObject(name);

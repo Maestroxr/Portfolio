@@ -1,3 +1,4 @@
+using Gamebox.Editor;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -69,6 +70,18 @@ namespace Portfolio.Asteroids.EditorTools
                 pixels[index] = emission ? color * Mathf.Min(1f, entry.Value.glow) : color;
             }
             return pixels;
+        }
+    }
+
+    /// <summary>
+    /// The palette's colours on BaseGame's <see cref="LowPolyBuilder"/> (the builder this game once carried a copy of):
+    /// faces from now on take the colour of <paramref name="swatch"/>.
+    /// </summary>
+    internal static class PaletteBuilding
+    {
+        public static LowPolyBuilder Color(this LowPolyBuilder builder, Swatch swatch)
+        {
+            return builder.Color(Palette.UV(swatch));
         }
     }
 }

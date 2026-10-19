@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Gamebox;
+using Gamebox.Economy;
 using Gamebox.UI;
 using UnityEngine;
 using Gamebox.Lockstep;
@@ -206,6 +207,9 @@ namespace Portfolio.Monopoly
             }
             // The match deals and starts first; its opening events (dealt deeds, the first turn) play once directing starts.
             match.Start();
+            // Lucky Start (the shop): the people at the table get their bonus from the bank, which the board plays as the
+            // money flying in. A match of a room gets none (StartOnlineMatch): every client simulates it alike.
+            match.GiveStartingBonus(MonopolyShop.StartingCashBonus(local: !InSession, owned: CloudEconomy.Owns(MonopolyShop.LuckyStartId)));
             BeginDirecting(match, fresh: true);
         }
 

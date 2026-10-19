@@ -187,6 +187,30 @@ namespace Portfolio.Monopoly
             BeginTurn();
         }
 
+        /// <summary>
+        /// Hands every person at the table (not the computer players) <paramref name="amount"/> from the bank on top of
+        /// the starting cash: the Lucky Start perk of the shop, given once the match started (the start hands out the
+        /// starting cash over anything before it). Nothing happens for no amount.
+        /// </summary>
+        public void GiveStartingBonus(int amount)
+        {
+            if (amount <= 0)
+            {
+                return;
+            }
+            if (phase == MatchPhase.Setup)
+            {
+                throw new InvalidOperationException("The starting bonus is given once the match started.");
+            }
+            foreach (PlayerState player in players)
+            {
+                if (!player.bot)
+                {
+                    Transfer(Party.Bank, player.index, amount, "Lucky start");
+                }
+            }
+        }
+
         private CardDeck ShuffledDeck(CardDeckKind kind)
         {
             List<CardData> cards = board.Deck(kind);

@@ -1,3 +1,4 @@
+using Gamebox.Editor;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -13,9 +14,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         // ------------------------------------------------------------------ the courier
 
         /// <summary>Jeans, a dark jacket with the hood down, a zipper and a messenger bag at the hip. Pivot at the hips.</summary>
-        public static MeshBuilder Torso()
+        public static LowPolyBuilder Torso()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(Swatch.Denim).BeveledBox(new Vector3(0f, 0.04f, 0f), new Vector3(0.32f, 0.14f, 0.2f), 0.03f);
             m.Color(Swatch.JacketDark).Box(new Vector3(0f, 0.1f, 0f), new Vector3(0.33f, 0.04f, 0.21f));
             m.Color(Swatch.Jacket).BeveledBox(new Vector3(0f, 0.32f, 0f), new Vector3(0.36f, 0.42f, 0.24f), 0.05f);
@@ -35,9 +36,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>An adult head with stubble, a beanie and a tired look. Pivot at the neck.</summary>
-        public static MeshBuilder Head()
+        public static LowPolyBuilder Head()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             var c = new Vector3(0f, 0.15f, 0.01f);
             m.Color(Swatch.Skin).Sphere(c, new Vector3(0.125f, 0.15f, 0.13f), 10, 14);
             m.Push(c + new Vector3(0f, -0.02f, 0.015f), Quaternion.Euler(180f, 0f, 0f));
@@ -57,9 +58,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>The jacket sleeve from the shoulder to the elbow. Pivot at the shoulder.</summary>
-        public static MeshBuilder UpperArm()
+        public static LowPolyBuilder UpperArm()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(Swatch.Jacket).Sphere(Vector3.zero, 0.066f, 6, 10);
             m.Color(Swatch.Jacket).Cylinder(new Vector3(0f, -0.28f, 0f), 0.05f, 0.062f, 0.28f, 10, true, true, false);
             m.Color(Swatch.ConeWhite).Cylinder(new Vector3(0f, -0.1f, 0f), 0.058f, 0.06f, 0.02f, 10, true, false, false);
@@ -67,9 +68,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>The lower sleeve, its cuff and a bare hand. Pivot at the elbow.</summary>
-        public static MeshBuilder Forearm()
+        public static LowPolyBuilder Forearm()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(Swatch.Jacket).Sphere(Vector3.zero, 0.052f, 6, 10);
             m.Color(Swatch.Jacket).Cylinder(new Vector3(0f, -0.16f, 0f), 0.046f, 0.052f, 0.16f, 10, true, false, false);
             m.Color(Swatch.JacketDark).Cylinder(new Vector3(0f, -0.19f, 0f), 0.054f, 0.054f, 0.035f, 10, true);
@@ -79,9 +80,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A jeans leg down to the knee. Pivot at the hip.</summary>
-        public static MeshBuilder Thigh()
+        public static LowPolyBuilder Thigh()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(Swatch.Denim).Sphere(Vector3.zero, 0.085f, 6, 10);
             m.Color(Swatch.Denim).Cylinder(new Vector3(0f, -0.42f, 0f), 0.07f, 0.085f, 0.42f, 10, true, true, false);
             m.Color(Swatch.DenimDark).Box(new Vector3(0f, -0.1f, 0.078f), new Vector3(0.06f, 0.08f, 0.01f));
@@ -89,9 +90,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>The lower jeans leg and a low sneaker; the sole touches the ground in the rest pose. Pivot at the knee.</summary>
-        public static MeshBuilder Shin()
+        public static LowPolyBuilder Shin()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(Swatch.Denim).Sphere(Vector3.zero, 0.068f, 6, 8);
             m.Color(Swatch.Denim).Cylinder(new Vector3(0f, -0.36f, 0f), 0.055f, 0.066f, 0.36f, 10, true, false, false);
             m.Color(Swatch.DenimDark).Cylinder(new Vector3(0f, -0.39f, 0f), 0.058f, 0.058f, 0.03f, 10, true);
@@ -106,9 +107,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         // ------------------------------------------------------------------ obstacles
 
         /// <summary>A sawhorse road block with reflective boards and a warning lamp, 1 m high. Pivot at the middle of its base.</summary>
-        public static MeshBuilder RoadBlock()
+        public static LowPolyBuilder RoadBlock()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             const float post = 1.0f;
             for (int side = -1; side <= 1; side += 2)
             {
@@ -135,9 +136,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A scaffold to slide under: tube posts, a plywood panel with warning tape, planks on top. Pivot at the middle of its base.</summary>
-        public static MeshBuilder Scaffold()
+        public static LowPolyBuilder Scaffold()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             const float post = 1.18f;
             for (int side = -1; side <= 1; side += 2)
             {
@@ -158,7 +159,7 @@ namespace Portfolio.EndlessRunner.EditorTools
                     new Vector2(x, board.yMin), new Vector2(x + 0.22f, board.yMin),
                     new Vector2(x + 0.22f + board.height, board.yMax), new Vector2(x + board.height, board.yMax)
                 };
-                List<Vector2> clipped = MeshBuilder.Clip(stripe, board);
+                List<Vector2> clipped = LowPolyBuilder.Clip(stripe, board);
                 if (clipped.Count >= 3)
                 {
                     m.Color(Swatch.NeonAmber).Prism(clipped, 0.02f, new Vector3(0f, 0f, -0.01f));
@@ -178,9 +179,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A steel dumpster with its lid ajar and a bag of trash on top, 2.2 m high. Pivot at the middle of its base.</summary>
-        public static MeshBuilder Dumpster()
+        public static LowPolyBuilder Dumpster()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(Swatch.Container3).BeveledBox(new Vector3(0f, 1.05f, 0f), new Vector3(1.9f, 1.5f, 1.6f), 0.04f);
             for (int side = -1; side <= 1; side += 2)
             {
@@ -203,16 +204,16 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>Two vending machines side by side, their fronts lit, 2.1 m high. Pivot at the middle of its base.</summary>
-        public static MeshBuilder VendingMachines()
+        public static LowPolyBuilder VendingMachines()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             VendingMachine(m, new Vector3(-0.47f, 0f, 0f), Swatch.NeonCyan, Swatch.Container2);
             VendingMachine(m, new Vector3(0.47f, 0f, 0f), Swatch.NeonPink, Swatch.Container1);
             return m;
         }
 
         /// <summary>One vending machine, 0.9 m wide and 2.05 m high, its glass front toward -z.</summary>
-        public static void VendingMachine(MeshBuilder m, Vector3 bottom, Swatch light, Swatch livery)
+        public static void VendingMachine(LowPolyBuilder m, Vector3 bottom, Swatch light, Swatch livery)
         {
             m.Color(Swatch.SteelDark).BeveledBox(bottom + new Vector3(0f, 1.025f, 0f), new Vector3(0.9f, 2.05f, 0.85f), 0.03f);
             m.Color(Swatch.Iron).Box(bottom + new Vector3(0f, 0.08f, 0f), new Vector3(0.92f, 0.16f, 0.87f));
@@ -237,9 +238,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         /// A delivery truck to run on, 2.4 m high: a flat-nosed cab and a cargo box in a company livery. Pivot at the
         /// middle of its front bottom edge.
         /// </summary>
-        public static MeshBuilder BoxTruck(float length, Swatch body, Swatch stripe)
+        public static LowPolyBuilder BoxTruck(float length, Swatch body, Swatch stripe)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             const float width = 2.3f;
             const float top = 2.4f;
             const float bottom = 0.45f;
@@ -284,9 +285,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         /// A subway car to run on, 2.4 m high: steel sides, a row of lit windows, doors and a stripe in the colour of
         /// its line. Pivot at the middle of its front bottom edge.
         /// </summary>
-        public static MeshBuilder SubwayCar(float length, Swatch line)
+        public static LowPolyBuilder SubwayCar(float length, Swatch line)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             const float width = 2.3f;
             const float top = 2.4f;
             const float bottom = 0.45f;
@@ -327,7 +328,7 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>Twin wheels under a wagon-sized vehicle, at the given distances along z.</summary>
-        private static void Wheels(MeshBuilder m, float length, float[] axles)
+        private static void Wheels(LowPolyBuilder m, float length, float[] axles)
         {
             foreach (float z in axles)
             {
@@ -342,7 +343,7 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>Service rungs on the front face, the way the classic wagons have them: the runner climbs them off the ramp.</summary>
-        private static void Rungs(MeshBuilder m, float top)
+        private static void Rungs(LowPolyBuilder m, float top)
         {
             for (int side = -1; side <= 1; side += 2)
             {
@@ -355,9 +356,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A steel loading ramp with grip bars and hazard edges, up to truck height. Pivot at the middle of its lower edge.</summary>
-        public static MeshBuilder LoadingRamp(float width, float height, float length)
+        public static LowPolyBuilder LoadingRamp(float width, float height, float length)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(Swatch.SteelDark).Wedge(width - 0.2f, height - 0.08f, length);
             float slope = Mathf.Sqrt(length * length + height * height);
             float angle = Mathf.Atan2(height, length) * Mathf.Rad2Deg;
@@ -390,9 +391,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A steel plate bridge with pipe railings across a chasm. Pivot at the middle of its near end.</summary>
-        public static MeshBuilder SteelBridge(float length)
+        public static LowPolyBuilder SteelBridge(float length)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(Swatch.Steel).Box(new Vector3(0f, -0.06f, length * 0.5f), new Vector3(2.3f, 0.1f, length));
             for (float z = 0.25f; z < length; z += 0.45f)
             {
@@ -414,9 +415,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>Body of a runaway mail cart stacked with parcels. Pivot at the middle of its base; it rolls toward -z.</summary>
-        public static MeshBuilder MailCart()
+        public static LowPolyBuilder MailCart()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(Swatch.Iron).Box(new Vector3(0f, 0.3f, 0f), new Vector3(1.3f, 0.12f, 1.8f));
             m.Color(Swatch.Steel).Box(new Vector3(0f, 0.5f, 0f), new Vector3(1.6f, 0.06f, 2.0f));
             foreach (Vector3 corner in new[] { new Vector3(-0.78f, 0f, -0.98f), new Vector3(0.78f, 0f, -0.98f), new Vector3(-0.78f, 0f, 0.98f), new Vector3(0.78f, 0f, 0.98f) })
@@ -453,9 +454,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         // ------------------------------------------------------------------ pickups and pads
 
         /// <summary>A credit chip: a dark steel disc with a glowing ring and a hexagon socket. Pivot at its centre.</summary>
-        public static MeshBuilder CreditChip()
+        public static LowPolyBuilder CreditChip()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Push(Vector3.zero, Quaternion.Euler(90f, 0f, 0f));
             m.Color(Swatch.Chip).Cylinder(new Vector3(0f, -0.05f, 0f), 0.4f, 0.4f, 0.1f, 24, true);
             m.Color(Swatch.ChipRim).Torus(new Vector3(0f, 0.05f, 0f), 0.36f, 0.03f, 24, 6);
@@ -469,9 +470,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A hydraulic lift pad: a steel base with hazard ring and pistons. Pivot at the middle of its base.</summary>
-        public static MeshBuilder LiftPadBase()
+        public static LowPolyBuilder LiftPadBase()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(Swatch.SteelDark).Cylinder(Vector3.zero, 0.98f, 0.92f, 0.16f, 18);
             m.Color(Swatch.NeonAmber).Torus(new Vector3(0f, 0.17f, 0f), 0.86f, 0.06f, 22, 6);
             for (int i = 0; i < 6; i++)
@@ -485,9 +486,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A finish gantry of steel lattice, a lit sign and a chequered line. Pivot on the finish line.</summary>
-        public static MeshBuilder FinishGantry()
+        public static LowPolyBuilder FinishGantry()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             const float pillarX = 5.1f;
             const float beamY = 6.0f;
             for (int side = -1; side <= 1; side += 2)

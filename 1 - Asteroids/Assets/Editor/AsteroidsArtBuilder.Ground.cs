@@ -1,3 +1,4 @@
+using Gamebox.Editor;
 using System;
 using System.Collections.Generic;
 using UnityEditor;
@@ -311,7 +312,7 @@ namespace Portfolio.Asteroids.EditorTools
                 m.SetFloat("_Gloss", theme.Gloss);
                 m.enableInstancing = false;
             });
-            var props = new MeshBuilder();
+            var props = new LowPolyBuilder();
             foreach (PropSpot spot in plan.Props)
             {
                 SpaceModels.Prop(props, spot);

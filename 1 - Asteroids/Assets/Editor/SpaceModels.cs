@@ -1,10 +1,11 @@
+using Gamebox.Editor;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace Portfolio.Asteroids.EditorTools
 {
     /// <summary>
-    /// The procedural models of the Asteroids module, built with <see cref="MeshBuilder"/> and coloured through the
+    /// The procedural models of the Asteroids module, built with <see cref="LowPolyBuilder"/> and coloured through the
     /// palette: saucers, supply pods, drones, crystals, the frame of a pickup, ice and void-crystal asteroids, and the
     /// flat meshes of flames and rings. Models are built with +Y toward the camera and +Z as their nose; prefabs turn
     /// them with a -90 degree rotation about X so the nose points up the screen.
@@ -12,9 +13,9 @@ namespace Portfolio.Asteroids.EditorTools
     internal static partial class SpaceModels
     {
         /// <summary>A flying saucer: lens-shaped hull, rim band, glass dome, underside glow. Its rim lights are <see cref="SaucerLights"/>.</summary>
-        public static MeshBuilder Saucer(bool scout)
+        public static LowPolyBuilder Saucer(bool scout)
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             Swatch hull = scout ? Swatch.DarkRed : Swatch.Hull;
             Swatch lower = scout ? Swatch.HullDark : Swatch.Panel;
             b.Color(lower);
@@ -39,9 +40,9 @@ namespace Portfolio.Asteroids.EditorTools
         }
 
         /// <summary>The ring of lights around a saucer's rim (spins on its own).</summary>
-        public static MeshBuilder SaucerLights(bool scout, int count = 12)
+        public static LowPolyBuilder SaucerLights(bool scout, int count = 12)
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             for (int i = 0; i < count; i++)
             {
                 float angle = i * Mathf.PI * 2f / count;
@@ -52,9 +53,9 @@ namespace Portfolio.Asteroids.EditorTools
         }
 
         /// <summary>A supply capsule lying along +Z with glowing bands and fins.</summary>
-        public static MeshBuilder SupplyPod()
+        public static LowPolyBuilder SupplyPod()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Push(Vector3.zero, Quaternion.Euler(90f, 0f, 0f));
             b.Color(Swatch.White);
             b.Cylinder(new Vector3(0f, -0.5f, 0f), 0.36f, 0.36f, 1f, 16, true, false, false);
@@ -78,9 +79,9 @@ namespace Portfolio.Asteroids.EditorTools
         }
 
         /// <summary>A small wing drone: dark core, trim ring and a glowing eye.</summary>
-        public static MeshBuilder Drone()
+        public static LowPolyBuilder Drone()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.HullDark);
             b.Sphere(Vector3.zero, 0.2f, 6, 10, true);
             b.Color(Swatch.Chrome);
@@ -94,9 +95,9 @@ namespace Portfolio.Asteroids.EditorTools
         }
 
         /// <summary>A cut crystal (a stretched bipyramid), the collectible that ore rocks drop.</summary>
-        public static MeshBuilder Gem(Swatch facet, Swatch light)
+        public static LowPolyBuilder Gem(Swatch facet, Swatch light)
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             const int sides = 6;
             var ring = new Vector3[sides];
             for (int i = 0; i < sides; i++)
@@ -118,9 +119,9 @@ namespace Portfolio.Asteroids.EditorTools
         }
 
         /// <summary>The hexagonal frame around a pickup's glowing core.</summary>
-        public static MeshBuilder PickupFrame()
+        public static LowPolyBuilder PickupFrame()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             const int sides = 6;
             b.Color(Swatch.Chrome);
             for (int i = 0; i < sides; i++)
@@ -143,9 +144,9 @@ namespace Portfolio.Asteroids.EditorTools
         /// <summary>
         /// A chunk of ice: a jagged, faceted body in three shades with a few crystal spikes, about one unit in radius.
         /// </summary>
-        public static MeshBuilder IceChunk(int seed)
+        public static LowPolyBuilder IceChunk(int seed)
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             var random = new System.Random(seed);
             b.Color(Swatch.Ice);
             FacetedBlob(b, new Vector3(0.85f, 0.78f, 0.82f), 1, 0.2f, seed, random, Swatch.IceLight, Swatch.Ice, Swatch.IceDeep);
@@ -163,18 +164,18 @@ namespace Portfolio.Asteroids.EditorTools
         /// A rock of an old vector arcade game: a jagged, faceted body of large flat faces (80 at one subdivision), about one
         /// unit in radius, for the edge shader of a theme to outline.
         /// </summary>
-        public static MeshBuilder VectorRock(int seed, int subdivisions)
+        public static LowPolyBuilder VectorRock(int seed, int subdivisions)
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             var random = new System.Random(seed);
             FacetedBlob(b, new Vector3(0.9f, 0.82f, 0.86f), subdivisions, 0.24f, seed, random, Swatch.Rock, Swatch.RockDark, Swatch.Basalt);
             return b;
         }
 
         /// <summary>A void crystal: a dark rock core bristling with glowing violet and magenta crystals.</summary>
-        public static MeshBuilder CrystalRock(int seed)
+        public static LowPolyBuilder CrystalRock(int seed)
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             var random = new System.Random(seed);
             FacetedBlob(b, new Vector3(0.7f, 0.65f, 0.68f), 1, 0.25f, seed, random, Swatch.CrystalCore, Swatch.Basalt, Swatch.CrystalDark);
             int spikes = 6 + random.Next(3);
@@ -190,7 +191,7 @@ namespace Portfolio.Asteroids.EditorTools
         }
 
         /// <summary>A jittered, subdivided icosahedron whose faces get one of three shades.</summary>
-        private static void FacetedBlob(MeshBuilder b, Vector3 radii, int subdivisions, float jitter, int seed, System.Random random,
+        private static void FacetedBlob(LowPolyBuilder b, Vector3 radii, int subdivisions, float jitter, int seed, System.Random random,
             Swatch light, Swatch mid, Swatch dark)
         {
             float t = (1f + Mathf.Sqrt(5f)) / 2f;
@@ -254,7 +255,7 @@ namespace Portfolio.Asteroids.EditorTools
         }
 
         /// <summary>A hexagonal crystal prism growing along <paramref name="direction"/> with a pointed tip.</summary>
-        private static void Spike(MeshBuilder b, Vector3 root, Vector3 direction, float radius, float length, Swatch body, Swatch tip)
+        private static void Spike(LowPolyBuilder b, Vector3 root, Vector3 direction, float radius, float length, Swatch body, Swatch tip)
         {
             Quaternion rotation = Quaternion.FromToRotation(Vector3.up, direction);
             b.Push(root, rotation);

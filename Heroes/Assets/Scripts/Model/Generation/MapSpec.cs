@@ -20,13 +20,17 @@ namespace Portfolio.Heroes
         /// <summary>Where the home lies, in thousandths of the map's width and height from the bottom left, or -1 for the place the number of seats gives it.</summary>
         public int homeX = -1;
         public int homeY = -1;
+        /// <summary>Gold the seat starts with on top of the map's: what the person who plays it brings along (a perk of the shop).</summary>
+        public int extraGold;
+        /// <summary>Levels the seat's starting hero has beyond the first, gained the usual way (a perk of the shop).</summary>
+        public int extraLevels;
 
         public PlayerSpec Clone()
         {
             return new PlayerSpec
             {
                 faction = faction, human = human, aiLevel = aiLevel, team = team, hero = hero, buildings = new List<BuildingId>(buildings), name = name,
-                homeX = homeX, homeY = homeY
+                homeX = homeX, homeY = homeY, extraGold = extraGold, extraLevels = extraLevels
             };
         }
     }

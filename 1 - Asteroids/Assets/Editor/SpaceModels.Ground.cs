@@ -1,3 +1,4 @@
+using Gamebox.Editor;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -48,17 +49,17 @@ namespace Portfolio.Asteroids.EditorTools
         {
             Height = height;
             ShadowRadius = shadowRadius;
-            Body = new MeshBuilder();
+            Body = new LowPolyBuilder();
             Body.Push(new Vector3(0f, 0f, height * 0.5f), FaceCamera);
         }
 
         /// <summary>Turns a model built with +Y up and +Z forward so it faces the camera with its nose up the screen.</summary>
         public static readonly Quaternion FaceCamera = Quaternion.Euler(-90f, 0f, 0f);
 
-        public readonly MeshBuilder Body;
-        public MeshBuilder Turret;
+        public readonly LowPolyBuilder Body;
+        public LowPolyBuilder Turret;
         public Vector3 TurretPivot;
-        public MeshBuilder Spinner;
+        public LowPolyBuilder Spinner;
         public Vector3 SpinnerPivot;
         public readonly List<Vector3> Muzzles = new List<Vector3>();
         /// <summary>Where the attack warning glows (model space); null for none.</summary>
@@ -70,9 +71,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>A part turning about its own pivot (a turret, a dish), built in the view frame around the pivot.</summary>
-        public static MeshBuilder Part()
+        public static LowPolyBuilder Part()
         {
-            var builder = new MeshBuilder();
+            var builder = new LowPolyBuilder();
             builder.Push(Vector3.zero, FaceCamera);
             return builder;
         }
@@ -96,7 +97,7 @@ namespace Portfolio.Asteroids.EditorTools
         private const GroundSwatch UnitMark = GroundSwatch.EnemyRed;
 
         /// <summary>Sets the face colour to a ground palette swatch (the ground palette has the same layout as the main one).</summary>
-        public static MeshBuilder Tint(this MeshBuilder builder, GroundSwatch swatch)
+        public static LowPolyBuilder Tint(this LowPolyBuilder builder, GroundSwatch swatch)
         {
             return builder.Color((Swatch)(int)swatch);
         }
@@ -119,7 +120,7 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>Adds <paramref name="spot"/> to a tile's prop mesh (tile frame: x right, y up the screen, -z up from the ground).</summary>
-        public static void Prop(MeshBuilder b, PropSpot spot)
+        public static void Prop(LowPolyBuilder b, PropSpot spot)
         {
             b.Push(new Vector3(spot.Position.x, spot.Position.y, 0f), Quaternion.Euler(0f, 0f, spot.Yaw) * Quaternion.Euler(-90f, 0f, 0f));
             var random = new System.Random(spot.Seed);
@@ -174,13 +175,13 @@ namespace Portfolio.Asteroids.EditorTools
 
         // ------------------------------------------------------------------ nature
 
-        private static void Rock(MeshBuilder b, Vector3 s, GroundSwatch main, int seed)
+        private static void Rock(LowPolyBuilder b, Vector3 s, GroundSwatch main, int seed)
         {
             b.Tint(main).Blob(new Vector3(0f, s.y * 0.35f, 0f), new Vector3(s.x * 0.5f, s.y * 0.65f, s.z * 0.5f), 1, 0.28f, seed);
         }
 
 
-        private static void Boulders(MeshBuilder b, Vector3 s, GroundSwatch main, GroundSwatch accent, System.Random random)
+        private static void Boulders(LowPolyBuilder b, Vector3 s, GroundSwatch main, GroundSwatch accent, System.Random random)
         {
             int count = 3 + random.Next(3);
             for (int i = 0; i < count; i++)
@@ -194,7 +195,7 @@ namespace Portfolio.Asteroids.EditorTools
         }
 
 
-        private static void Shrub(MeshBuilder b, Vector3 s, GroundSwatch main, System.Random random)
+        private static void Shrub(LowPolyBuilder b, Vector3 s, GroundSwatch main, System.Random random)
         {
             int count = 4 + random.Next(3);
             for (int i = 0; i < count; i++)
@@ -208,7 +209,7 @@ namespace Portfolio.Asteroids.EditorTools
         }
 
 
-        private static void Cactus(MeshBuilder b, Vector3 s, System.Random random)
+        private static void Cactus(LowPolyBuilder b, Vector3 s, System.Random random)
         {
             float r = s.x * 0.12f;
             b.Tint(GroundSwatch.Cactus).Cylinder(Vector3.zero, r, r * 0.9f, s.y * 0.92f, 7, true);
@@ -229,7 +230,7 @@ namespace Portfolio.Asteroids.EditorTools
         }
 
 
-        private static void Palm(MeshBuilder b, Vector3 s, System.Random random)
+        private static void Palm(LowPolyBuilder b, Vector3 s, System.Random random)
         {
             float lean = Range(random, 0.1f, 0.3f) * s.x;
             var top = new Vector3(lean, s.y * 0.82f, 0f);
@@ -252,7 +253,7 @@ namespace Portfolio.Asteroids.EditorTools
         }
 
 
-        private static void Tree(MeshBuilder b, Vector3 s, GroundSwatch main, GroundSwatch accent, System.Random random)
+        private static void Tree(LowPolyBuilder b, Vector3 s, GroundSwatch main, GroundSwatch accent, System.Random random)
         {
             b.Tint(GroundSwatch.Trunk).Cylinder(Vector3.zero, s.x * 0.06f, s.x * 0.04f, s.y * 0.5f, 5);
             int blobs = 3 + random.Next(3);
@@ -267,7 +268,7 @@ namespace Portfolio.Asteroids.EditorTools
         }
 
 
-        private static void Fern(MeshBuilder b, Vector3 s, GroundSwatch main, System.Random random)
+        private static void Fern(LowPolyBuilder b, Vector3 s, GroundSwatch main, System.Random random)
         {
             int leaves = 6;
             var center = new Vector3(0f, s.y * 0.3f, 0f);
@@ -285,7 +286,7 @@ namespace Portfolio.Asteroids.EditorTools
         }
 
 
-        private static void Ridge(MeshBuilder b, Vector3 s, GroundSwatch main, GroundSwatch accent, System.Random random)
+        private static void Ridge(LowPolyBuilder b, Vector3 s, GroundSwatch main, GroundSwatch accent, System.Random random)
         {
             int count = 4 + random.Next(3);
             for (int i = 0; i < count; i++)
@@ -299,7 +300,7 @@ namespace Portfolio.Asteroids.EditorTools
         }
 
 
-        private static void Hedge(MeshBuilder b, Vector3 s, GroundSwatch main, System.Random random)
+        private static void Hedge(LowPolyBuilder b, Vector3 s, GroundSwatch main, System.Random random)
         {
             int count = Mathf.Max(2, Mathf.RoundToInt(s.x / 0.7f));
             for (int i = 0; i < count; i++)
@@ -311,7 +312,7 @@ namespace Portfolio.Asteroids.EditorTools
         }
 
 
-        private static void CraterRim(MeshBuilder b, Vector3 s, GroundSwatch main, int seed)
+        private static void CraterRim(LowPolyBuilder b, Vector3 s, GroundSwatch main, int seed)
         {
             float major = s.x * 0.42f;
             b.Push(Vector3.zero, Quaternion.identity, new Vector3(1f, s.y / (s.x * 0.08f), s.z / s.x));
@@ -320,7 +321,7 @@ namespace Portfolio.Asteroids.EditorTools
         }
 
 
-        private static void Crystal(MeshBuilder b, Vector3 s, GroundSwatch main, GroundSwatch accent, System.Random random)
+        private static void Crystal(LowPolyBuilder b, Vector3 s, GroundSwatch main, GroundSwatch accent, System.Random random)
         {
             int count = 3 + random.Next(3);
             for (int i = 0; i < count; i++)
@@ -335,7 +336,7 @@ namespace Portfolio.Asteroids.EditorTools
 
         // ------------------------------------------------------------------ buildings
 
-        private static void Building(MeshBuilder b, Vector3 s, GroundSwatch walls, GroundSwatch roof, System.Random random, bool lit)
+        private static void Building(LowPolyBuilder b, Vector3 s, GroundSwatch walls, GroundSwatch roof, System.Random random, bool lit)
         {
             b.Tint(walls).Box(new Vector3(0f, s.y * 0.45f, 0f), new Vector3(s.x, s.y * 0.9f, s.z));
             b.Tint(roof).Box(new Vector3(0f, s.y * 0.92f, 0f), new Vector3(s.x - 0.12f, s.y * 0.06f, s.z - 0.12f));
@@ -369,7 +370,7 @@ namespace Portfolio.Asteroids.EditorTools
         }
 
 
-        private static void Hangar(MeshBuilder b, Vector3 s, GroundSwatch main, GroundSwatch accent)
+        private static void Hangar(LowPolyBuilder b, Vector3 s, GroundSwatch main, GroundSwatch accent)
         {
             b.Push(new Vector3(0f, 0f, -s.z * 0.5f), Quaternion.Euler(90f, 0f, 0f), new Vector3(s.x * 0.5f, s.z, s.y));
             b.Tint(main).Cylinder(Vector3.zero, 1f, 1f, 1f, 14, false, true, true, 0f);
@@ -379,7 +380,7 @@ namespace Portfolio.Asteroids.EditorTools
         }
 
 
-        private static void Tent(MeshBuilder b, Vector3 s, GroundSwatch main)
+        private static void Tent(LowPolyBuilder b, Vector3 s, GroundSwatch main)
         {
             var a = new Vector3(-s.x * 0.5f, 0f, -s.z * 0.5f);
             var c = new Vector3(s.x * 0.5f, 0f, -s.z * 0.5f);
@@ -395,7 +396,7 @@ namespace Portfolio.Asteroids.EditorTools
         }
 
 
-        private static void StorageTank(MeshBuilder b, Vector3 s, GroundSwatch main, GroundSwatch accent)
+        private static void StorageTank(LowPolyBuilder b, Vector3 s, GroundSwatch main, GroundSwatch accent)
         {
             float r = s.x * 0.5f;
             b.Tint(main).Cylinder(Vector3.zero, r, r, s.y * 0.85f, 16, true);
@@ -405,7 +406,7 @@ namespace Portfolio.Asteroids.EditorTools
         }
 
 
-        private static void Dome(MeshBuilder b, Vector3 s, GroundSwatch main, GroundSwatch accent)
+        private static void Dome(LowPolyBuilder b, Vector3 s, GroundSwatch main, GroundSwatch accent)
         {
             b.Tint(accent).Cylinder(Vector3.zero, s.x * 0.52f, s.x * 0.5f, s.y * 0.12f, 18);
             b.Tint(main).Sphere(new Vector3(0f, s.y * 0.12f, 0f), new Vector3(s.x * 0.47f, s.y * 0.88f, s.z * 0.47f), 6, 18, false, 0.5f);
@@ -413,7 +414,7 @@ namespace Portfolio.Asteroids.EditorTools
         }
 
 
-        private static void PipeRun(MeshBuilder b, Vector3 s, GroundSwatch main, GroundSwatch accent)
+        private static void PipeRun(LowPolyBuilder b, Vector3 s, GroundSwatch main, GroundSwatch accent)
         {
             float r = Mathf.Min(0.18f, s.y * 0.35f);
             for (int i = -1; i <= 1; i += 2)
@@ -430,7 +431,7 @@ namespace Portfolio.Asteroids.EditorTools
         }
 
 
-        private static void Antenna(MeshBuilder b, Vector3 s, GroundSwatch main, GroundSwatch accent)
+        private static void Antenna(LowPolyBuilder b, Vector3 s, GroundSwatch main, GroundSwatch accent)
         {
             b.Tint(GroundSwatch.ConcreteDark).Box(new Vector3(0f, 0.05f, 0f), new Vector3(s.x * 0.5f, 0.1f, s.z * 0.5f));
             b.Tint(main).Rod(Vector3.zero, new Vector3(0f, s.y, 0f), 0.05f, 5);
@@ -444,7 +445,7 @@ namespace Portfolio.Asteroids.EditorTools
         }
 
 
-        private static void Barrels(MeshBuilder b, Vector3 s, GroundSwatch main, GroundSwatch accent, System.Random random)
+        private static void Barrels(LowPolyBuilder b, Vector3 s, GroundSwatch main, GroundSwatch accent, System.Random random)
         {
             int count = 3 + random.Next(4);
             float r = 0.2f;
@@ -456,7 +457,7 @@ namespace Portfolio.Asteroids.EditorTools
         }
 
 
-        private static void Sandbags(MeshBuilder b, Vector3 s, GroundSwatch main, System.Random random)
+        private static void Sandbags(LowPolyBuilder b, Vector3 s, GroundSwatch main, System.Random random)
         {
             int count = Mathf.Max(2, Mathf.RoundToInt(s.x / 0.5f));
             for (int row = 0; row < 2; row++)
@@ -471,7 +472,7 @@ namespace Portfolio.Asteroids.EditorTools
         }
 
 
-        private static void Fence(MeshBuilder b, Vector3 s, GroundSwatch main)
+        private static void Fence(LowPolyBuilder b, Vector3 s, GroundSwatch main)
         {
             int posts = Mathf.Max(2, Mathf.RoundToInt(s.x / 1.5f) + 1);
             b.Tint(main);
@@ -485,7 +486,7 @@ namespace Portfolio.Asteroids.EditorTools
         }
 
 
-        private static void Container(MeshBuilder b, Vector3 s, GroundSwatch main, GroundSwatch accent)
+        private static void Container(LowPolyBuilder b, Vector3 s, GroundSwatch main, GroundSwatch accent)
         {
             b.Tint(main).Box(new Vector3(0f, s.y * 0.5f, 0f), s);
             b.Tint(accent);
@@ -498,7 +499,7 @@ namespace Portfolio.Asteroids.EditorTools
         }
 
 
-        private static void Solar(MeshBuilder b, Vector3 s, GroundSwatch main, GroundSwatch accent)
+        private static void Solar(LowPolyBuilder b, Vector3 s, GroundSwatch main, GroundSwatch accent)
         {
             b.Tint(accent).Box(new Vector3(0f, s.y * 0.3f, 0f), new Vector3(0.08f, s.y * 0.6f, 0.08f));
             b.Push(new Vector3(0f, s.y * 0.75f, 0f), Quaternion.Euler(-20f, 0f, 0f));
@@ -509,7 +510,7 @@ namespace Portfolio.Asteroids.EditorTools
         }
 
 
-        private static void Lamp(MeshBuilder b, Vector3 s, GroundSwatch main, GroundSwatch accent)
+        private static void Lamp(LowPolyBuilder b, Vector3 s, GroundSwatch main, GroundSwatch accent)
         {
             b.Tint(main).Rod(Vector3.zero, new Vector3(0f, s.y, 0f), 0.04f, 5);
             b.Rod(new Vector3(0f, s.y, 0f), new Vector3(0f, s.y, s.z * 0.5f), 0.03f, 4);
@@ -517,7 +518,7 @@ namespace Portfolio.Asteroids.EditorTools
         }
 
 
-        private static void Car(MeshBuilder b, Vector3 s, GroundSwatch main)
+        private static void Car(LowPolyBuilder b, Vector3 s, GroundSwatch main)
         {
             b.Tint(GroundSwatch.Rubber).Box(new Vector3(0f, s.y * 0.2f, 0f), new Vector3(s.x * 1.02f, s.y * 0.3f, s.z * 0.8f));
             b.Tint(main).BeveledBox(new Vector3(0f, s.y * 0.4f, 0f), new Vector3(s.x, s.y * 0.4f, s.z), 0.06f);
@@ -526,7 +527,7 @@ namespace Portfolio.Asteroids.EditorTools
         }
 
 
-        private static void Bridge(MeshBuilder b, Vector3 s, GroundSwatch main, GroundSwatch accent)
+        private static void Bridge(LowPolyBuilder b, Vector3 s, GroundSwatch main, GroundSwatch accent)
         {
             b.Tint(GroundSwatch.Asphalt).Box(new Vector3(0f, s.y - 0.06f, 0f), new Vector3(s.x - 0.4f, 0.12f, s.z));
             b.Tint(main).Box(new Vector3(0f, s.y - 0.2f, 0f), new Vector3(s.x, 0.16f, s.z));
@@ -547,7 +548,7 @@ namespace Portfolio.Asteroids.EditorTools
         }
 
 
-        private static void Vent(MeshBuilder b, Vector3 s, GroundSwatch main, GroundSwatch accent)
+        private static void Vent(LowPolyBuilder b, Vector3 s, GroundSwatch main, GroundSwatch accent)
         {
             b.Tint(main).BeveledBox(new Vector3(0f, s.y * 0.4f, 0f), new Vector3(s.x, s.y * 0.8f, s.z), 0.06f);
             b.Tint(GroundSwatch.Black).Cylinder(new Vector3(0f, s.y * 0.8f, 0f), Mathf.Min(s.x, s.z) * 0.35f, Mathf.Min(s.x, s.z) * 0.35f, 0.02f, 12);
@@ -562,7 +563,7 @@ namespace Portfolio.Asteroids.EditorTools
         }
 
 
-        private static void Tower(MeshBuilder b, Vector3 s, GroundSwatch main, GroundSwatch accent)
+        private static void Tower(LowPolyBuilder b, Vector3 s, GroundSwatch main, GroundSwatch accent)
         {
             b.Tint(main).BeveledBox(new Vector3(0f, s.y * 0.35f, 0f), new Vector3(s.x, s.y * 0.7f, s.z), 0.05f);
             b.Tint(GroundSwatch.Glass).BeveledBox(new Vector3(0f, s.y * 0.82f, 0f), new Vector3(s.x * 1.15f, s.y * 0.24f, s.z * 1.15f), 0.04f);
@@ -571,7 +572,7 @@ namespace Portfolio.Asteroids.EditorTools
         }
 
 
-        private static void Crates(MeshBuilder b, Vector3 s, GroundSwatch main, GroundSwatch accent, System.Random random)
+        private static void Crates(LowPolyBuilder b, Vector3 s, GroundSwatch main, GroundSwatch accent, System.Random random)
         {
             int count = 2 + random.Next(3);
             for (int i = 0; i < count; i++)
@@ -586,7 +587,7 @@ namespace Portfolio.Asteroids.EditorTools
         }
 
 
-        private static void Spire(MeshBuilder b, Vector3 s, GroundSwatch main, GroundSwatch accent, System.Random random)
+        private static void Spire(LowPolyBuilder b, Vector3 s, GroundSwatch main, GroundSwatch accent, System.Random random)
         {
             int count = 2 + random.Next(3);
             for (int i = 0; i < count; i++)
@@ -598,7 +599,7 @@ namespace Portfolio.Asteroids.EditorTools
         }
 
 
-        private static void CoolingTower(MeshBuilder b, Vector3 s, GroundSwatch main, GroundSwatch accent)
+        private static void CoolingTower(LowPolyBuilder b, Vector3 s, GroundSwatch main, GroundSwatch accent)
         {
             float r = s.x * 0.5f;
             b.Tint(main).Cylinder(Vector3.zero, r, r * 0.72f, s.y * 0.6f, 18, true, true, false);
@@ -633,7 +634,7 @@ namespace Portfolio.Asteroids.EditorTools
         private static UnitModel GunTurret()
         {
             var m = new UnitModel(0.78f, 1.15f) { Turret = UnitModel.Part(), TurretPivot = new Vector3(0f, 0.46f, 0f) };
-            MeshBuilder b = m.Body;
+            LowPolyBuilder b = m.Body;
             b.Tint(GroundSwatch.ConcreteDark).Cylinder(Vector3.zero, 1.05f, 0.92f, 0.22f, 8, false, true, true, Mathf.PI / 8f);
             b.Tint(GroundSwatch.Concrete).Cylinder(new Vector3(0f, 0.22f, 0f), 0.92f, 0.86f, 0.03f, 8, false, false, true, Mathf.PI / 8f);
             b.Tint(UnitMark);
@@ -643,7 +644,7 @@ namespace Portfolio.Asteroids.EditorTools
                 b.Box(new Vector3(Mathf.Cos(angle) * 0.72f, 0.26f, Mathf.Sin(angle) * 0.72f), new Vector3(0.18f, 0.02f, 0.18f));
             }
             b.Tint(UnitMetal).Cylinder(new Vector3(0f, 0.25f, 0f), 0.55f, 0.5f, 0.12f, 12);
-            MeshBuilder t = m.Turret;
+            LowPolyBuilder t = m.Turret;
             t.Tint(UnitHull).Sphere(Vector3.zero, new Vector3(0.5f, 0.3f, 0.52f), 5, 12, false, 0.55f);
             t.Tint(UnitDark).BeveledBox(new Vector3(0f, 0.08f, 0.38f), new Vector3(0.5f, 0.2f, 0.3f), 0.05f);
             t.Tint(UnitMetal);
@@ -661,7 +662,7 @@ namespace Portfolio.Asteroids.EditorTools
         private static UnitModel FlakSite()
         {
             var m = new UnitModel(0.72f, 1.35f) { Turret = UnitModel.Part(), TurretPivot = new Vector3(0f, 0.2f, 0f) };
-            MeshBuilder b = m.Body;
+            LowPolyBuilder b = m.Body;
             b.Tint(GroundSwatch.ConcreteDark).Cylinder(Vector3.zero, 1.25f, 1.2f, 0.06f, 14);
             var random = new System.Random(1701);
             int bags = 14;
@@ -677,7 +678,7 @@ namespace Portfolio.Asteroids.EditorTools
                 b.Tint(i % 2 == 0 ? GroundSwatch.Khaki : GroundSwatch.Canvas).Blob(Vector3.zero, new Vector3(0.14f, 0.16f, 0.3f), 0, 0.12f, random.Next());
                 b.Pop();
             }
-            MeshBuilder t = m.Turret;
+            LowPolyBuilder t = m.Turret;
             t.Tint(UnitMetal).Cylinder(Vector3.zero, 0.42f, 0.38f, 0.14f, 10);
             t.Tint(UnitHull).BeveledBox(new Vector3(0f, 0.28f, 0.05f), new Vector3(0.78f, 0.26f, 0.7f), 0.05f);
             for (int side = -1; side <= 1; side += 2)
@@ -698,7 +699,7 @@ namespace Portfolio.Asteroids.EditorTools
         private static UnitModel Tank()
         {
             var m = new UnitModel(0.8f, 1.25f) { Turret = UnitModel.Part(), TurretPivot = new Vector3(0f, 0.58f, -0.12f) };
-            MeshBuilder b = m.Body;
+            LowPolyBuilder b = m.Body;
             for (int side = -1; side <= 1; side += 2)
             {
                 b.Tint(GroundSwatch.Rubber).BeveledBox(new Vector3(side * 0.6f, 0.17f, 0f), new Vector3(0.34f, 0.34f, 2.2f), 0.09f);
@@ -712,7 +713,7 @@ namespace Portfolio.Asteroids.EditorTools
             b.Tint(UnitHull).BeveledBox(new Vector3(0f, 0.3f, 0f), new Vector3(0.9f, 0.3f, 2f), 0.07f);
             b.Tint(UnitDark).Box(new Vector3(0f, 0.455f, -0.78f), new Vector3(0.7f, 0.02f, 0.36f));
             b.Tint(UnitMark).Box(new Vector3(0f, 0.455f, 0.82f), new Vector3(0.62f, 0.02f, 0.12f));
-            MeshBuilder t = m.Turret;
+            LowPolyBuilder t = m.Turret;
             t.Tint(UnitHull).BeveledBox(new Vector3(0f, 0f, 0f), new Vector3(0.82f, 0.24f, 1f), 0.1f);
             t.Tint(UnitDark).Cylinder(new Vector3(0.2f, 0.12f, -0.2f), 0.13f, 0.12f, 0.06f, 8);
             t.Tint(UnitMetal).Rod(new Vector3(0f, 0.02f, 0.45f), new Vector3(0f, 0.02f, 1.52f), 0.065f, 7);
@@ -726,7 +727,7 @@ namespace Portfolio.Asteroids.EditorTools
         private static UnitModel Truck()
         {
             var m = new UnitModel(0.66f, 0.95f);
-            MeshBuilder b = m.Body;
+            LowPolyBuilder b = m.Body;
             b.Tint(GroundSwatch.Rubber);
             foreach (float z in new[] { 0.62f, -0.2f, -0.62f })
             {
@@ -753,7 +754,7 @@ namespace Portfolio.Asteroids.EditorTools
         private static UnitModel Bunker()
         {
             var m = new UnitModel(0.62f, 1.8f);
-            MeshBuilder b = m.Body;
+            LowPolyBuilder b = m.Body;
             var outline = new List<Vector2>();
             for (int i = 0; i < 8; i++)
             {
@@ -793,7 +794,7 @@ namespace Portfolio.Asteroids.EditorTools
         private static UnitModel FuelTank()
         {
             var m = new UnitModel(0.86f, 1.2f);
-            MeshBuilder b = m.Body;
+            LowPolyBuilder b = m.Body;
             b.Tint(GroundSwatch.ConcreteDark).Cylinder(Vector3.zero, 1.12f, 1.1f, 0.06f, 16);
             b.Tint(GroundSwatch.ConcreteLight).Cylinder(new Vector3(0f, 0.06f, 0f), 0.92f, 0.92f, 0.58f, 18, true);
             b.Tint(GroundSwatch.EnemyRed).Cylinder(new Vector3(0f, 0.36f, 0f), 0.925f, 0.925f, 0.14f, 18, true, false, false);
@@ -815,14 +816,14 @@ namespace Portfolio.Asteroids.EditorTools
         private static UnitModel Radar()
         {
             var m = new UnitModel(0.9f, 1.3f) { Spinner = UnitModel.Part(), SpinnerPivot = new Vector3(0f, 0.62f, 0f) };
-            MeshBuilder b = m.Body;
+            LowPolyBuilder b = m.Body;
             b.Tint(GroundSwatch.ConcreteDark).Box(new Vector3(0f, 0.03f, 0f), new Vector3(2.2f, 0.06f, 2.2f));
             b.Tint(UnitHull).BeveledBox(new Vector3(-0.35f, 0.22f, -0.3f), new Vector3(1.1f, 0.34f, 1f), 0.05f);
             b.Tint(UnitMark).Box(new Vector3(-0.35f, 0.395f, -0.3f), new Vector3(0.7f, 0.01f, 0.18f));
             b.Tint(UnitMetal).Cylinder(new Vector3(0.35f, 0f, 0.35f), 0.2f, 0.12f, 0.62f, 8);
             b.Tint(GroundSwatch.Rubber).Box(new Vector3(0.7f, 0.12f, -0.6f), new Vector3(0.4f, 0.24f, 0.4f));
             m.SpinnerPivot = new Vector3(0.35f, 0.62f, 0.35f);
-            MeshBuilder s = m.Spinner;
+            LowPolyBuilder s = m.Spinner;
             s.Push(new Vector3(0f, 0.08f, 0f), Quaternion.Euler(28f, 0f, 0f));
             s.Tint(GroundSwatch.White).Sphere(new Vector3(0f, 0.25f, 0f), new Vector3(0.95f, 0.25f, 0.62f), 3, 14, false, 0.45f);
             s.Tint(GroundSwatch.Metal).Rod(new Vector3(0f, 0.05f, 0f), new Vector3(0f, 0.5f, 0.1f), 0.03f, 4);
@@ -836,7 +837,7 @@ namespace Portfolio.Asteroids.EditorTools
         private static UnitModel Gunboat()
         {
             var m = new UnitModel(0.66f, 1.3f) { Turret = UnitModel.Part(), TurretPivot = new Vector3(0f, 0.44f, 0.62f) };
-            MeshBuilder b = m.Body;
+            LowPolyBuilder b = m.Body;
             var outline = new List<Vector2>
             {
                 new Vector2(0f, 1.55f), new Vector2(0.38f, 1.05f), new Vector2(0.56f, 0.3f), new Vector2(0.56f, -1.2f),
@@ -859,7 +860,7 @@ namespace Portfolio.Asteroids.EditorTools
             b.Tint(UnitMetal).Rod(new Vector3(0f, 0.59f, -0.45f), new Vector3(0f, 0.66f, -0.45f), 0.03f, 4);
             b.Tint(UnitMark).Box(new Vector3(0f, 0.6f, -0.35f), new Vector3(0.4f, 0.01f, 0.4f));
             b.Tint(GroundSwatch.Black).Box(new Vector3(0f, 0.35f, -1.2f), new Vector3(0.5f, 0.04f, 0.2f));
-            MeshBuilder t = m.Turret;
+            LowPolyBuilder t = m.Turret;
             t.Tint(UnitHull).Cylinder(new Vector3(0f, -0.1f, 0f), 0.26f, 0.22f, 0.18f, 10);
             t.Tint(UnitMetal);
             for (int side = -1; side <= 1; side += 2)
@@ -874,7 +875,7 @@ namespace Portfolio.Asteroids.EditorTools
         private static UnitModel Hut()
         {
             var m = new UnitModel(0.76f, 1.2f);
-            MeshBuilder b = m.Body;
+            LowPolyBuilder b = m.Body;
             b.Tint(GroundSwatch.Tan).Box(new Vector3(0f, 0.22f, 0f), new Vector3(1.7f, 0.44f, 1.4f));
             b.Tint(GroundSwatch.WoodDark).Box(new Vector3(0.4f, 0.18f, 0.71f), new Vector3(0.36f, 0.34f, 0.02f));
             var a = new Vector3(-0.95f, 0.42f, -0.82f);
@@ -909,7 +910,7 @@ namespace Portfolio.Asteroids.EditorTools
         private static UnitModel LaserTower()
         {
             var m = new UnitModel(0.92f, 1.3f) { Glow = new Vector3(0f, 0.86f, 0f) };
-            MeshBuilder b = m.Body;
+            LowPolyBuilder b = m.Body;
             b.Tint(GroundSwatch.PlateDark).BeveledBox(new Vector3(0f, 0.14f, 0f), new Vector3(1.9f, 0.28f, 1.9f), 0.12f);
             b.Tint(GroundSwatch.Hazard);
             for (int i = 0; i < 4; i++)
@@ -936,7 +937,7 @@ namespace Portfolio.Asteroids.EditorTools
         private static UnitModel Depot()
         {
             var m = new UnitModel(0.9f, 2.6f);
-            MeshBuilder b = m.Body;
+            LowPolyBuilder b = m.Body;
             b.Tint(GroundSwatch.ConcreteDark).Box(new Vector3(0f, 0.03f, 0f), new Vector3(5f, 0.06f, 4.2f));
             b.Tint(GroundSwatch.Hazard);
             for (int i = 0; i < 10; i++)
@@ -969,7 +970,7 @@ namespace Portfolio.Asteroids.EditorTools
         private static UnitModel SupplyCrate()
         {
             var m = new UnitModel(0.6f, 0.8f);
-            MeshBuilder b = m.Body;
+            LowPolyBuilder b = m.Body;
             b.Tint(GroundSwatch.Hazard).BeveledBox(new Vector3(0f, 0.28f, 0f), new Vector3(1.1f, 0.56f, 1.1f), 0.05f);
             b.Tint(GroundSwatch.HazardDark);
             b.Box(new Vector3(0f, 0.565f, 0f), new Vector3(1.0f, 0.01f, 0.16f));

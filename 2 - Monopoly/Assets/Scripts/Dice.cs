@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using Gamebox;
+using Gamebox.Economy;
 using UnityEngine;
 
 namespace Portfolio.Monopoly
@@ -25,6 +26,50 @@ namespace Portfolio.Monopoly
         [SerializeField] private Transform[] shadows = new Transform[0];
 
         public event Action Bounced;
+
+        /// <summary>The gold of Golden Dice (the shop), laid over the white dice.</summary>
+        private static readonly Color Gold = new Color(1f, 0.84f, 0.2f);
+        private bool golden;
+
+        private void OnEnable()
+        {
+            CloudEconomy.Changed += Gild;
+            Gild();
+        }
+
+        private void OnDisable()
+        {
+            CloudEconomy.Changed -= Gild;
+        }
+
+        /// <summary>
+        /// Golden Dice (the shop): while the account owns it the two white dice are tinted gold over whatever material the
+        /// theme gives them (a property block outlives the theme's swaps); otherwise they keep their look. The red speed
+        /// die stays as it is.
+        /// </summary>
+        private void Gild()
+        {
+            bool owned = CloudEconomy.Owns(MonopolyShop.GoldenDiceId);
+            if (owned == golden)
+            {
+                return;
+            }
+            golden = owned;
+            var block = new MaterialPropertyBlock();
+            if (owned)
+            {
+                block.SetColor("_BaseColor", Gold);
+                block.SetColor("_Color", Gold);
+            }
+            foreach (Transform die in new[] { dieA, dieB })
+            {
+                Renderer renderer = die != null ? die.GetComponent<Renderer>() : null;
+                if (renderer != null)
+                {
+                    renderer.SetPropertyBlock(block);
+                }
+            }
+        }
 
         private void LateUpdate()
         {

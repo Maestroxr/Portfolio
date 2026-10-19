@@ -1,3 +1,4 @@
+using Gamebox.Editor;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -16,9 +17,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         /// A city block: a box of floors with rows of windows (some of them lit), a parapet, a roof box and a water
         /// tank. <paramref name="lit"/> is the share of windows with a light on.
         /// </summary>
-        public static MeshBuilder Tower(int seed, float width, float depth, int floors, Swatch wall, float lit)
+        public static LowPolyBuilder Tower(int seed, float width, float depth, int floors, Swatch wall, float lit)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             var random = new System.Random(seed);
             const float floorHeight = 3.2f;
             float height = floors * floorHeight;
@@ -39,7 +40,7 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>Rows of windows on all four faces of a block; a lit window is a warm box standing off the wall.</summary>
-        private static void Windows(MeshBuilder m, System.Random random, float width, float depth, int floors, float floorHeight, float lit)
+        private static void Windows(LowPolyBuilder m, System.Random random, float width, float depth, int floors, float floorHeight, float lit)
         {
             const float pitch = 2.2f;
             for (int floor = 0; floor < floors; floor++)
@@ -65,7 +66,7 @@ namespace Portfolio.EndlessRunner.EditorTools
             }
         }
 
-        private static void WaterTank(MeshBuilder m, Vector3 bottom, float size)
+        private static void WaterTank(LowPolyBuilder m, Vector3 bottom, float size)
         {
             for (int i = 0; i < 4; i++)
             {
@@ -80,9 +81,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A two floor shop with a lit window, an awning and a neon sign box over the door.</summary>
-        public static MeshBuilder Shopfront(int seed, Swatch neon)
+        public static LowPolyBuilder Shopfront(int seed, Swatch neon)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             var random = new System.Random(seed);
             m.Color(Swatch.Brick).Box(new Vector3(0f, 3.5f, 0f), new Vector3(7f, 7f, 6f));
             m.Color(Swatch.ConcreteDark).Box(new Vector3(0f, 7.15f, 0f), new Vector3(7.3f, 0.3f, 6.3f));
@@ -106,9 +107,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A parked taxi beside the curb: a yellow cab with a roof sign and its lights on. Along z.</summary>
-        public static MeshBuilder Taxi(int seed)
+        public static LowPolyBuilder Taxi(int seed)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             bool dark = new System.Random(seed).Next(3) == 0;
             Swatch body = dark ? Swatch.Iron : Swatch.TaxiYellow;
             Swatch trim = dark ? Swatch.Tar : Swatch.TaxiDark;
@@ -136,9 +137,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A precast concrete barrier, 2 m long, along z.</summary>
-        public static MeshBuilder ConcreteBarrier()
+        public static LowPolyBuilder ConcreteBarrier()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Push(Vector3.zero, Quaternion.Euler(0f, 90f, 0f));
             m.Color(Swatch.Concrete).Prism(new[]
             {
@@ -153,9 +154,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A street lamp for the left side of the road, its arm over the curb (+x), with a cool white light.</summary>
-        public static MeshBuilder StreetLamp(Swatch light)
+        public static LowPolyBuilder StreetLamp(Swatch light)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(Swatch.ConcreteDark).Cylinder(Vector3.zero, 0.22f, 0.18f, 0.35f, 8);
             m.Color(Swatch.SteelDark).Cylinder(new Vector3(0f, 0.35f, 0f), 0.09f, 0.06f, 5.4f, 8, true);
             m.Color(Swatch.SteelDark).Rod(new Vector3(0f, 5.6f, 0f), new Vector3(1.4f, 5.9f, 0f), 0.05f, 6);
@@ -169,9 +170,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A fire hydrant.</summary>
-        public static MeshBuilder Hydrant()
+        public static LowPolyBuilder Hydrant()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(Swatch.ConcreteDark).Cylinder(Vector3.zero, 0.2f, 0.16f, 0.15f, 8);
             m.Color(Swatch.Container1).Cylinder(new Vector3(0f, 0.15f, 0f), 0.14f, 0.13f, 0.65f, 8, true);
             m.Color(Swatch.Container1).Sphere(new Vector3(0f, 0.82f, 0f), new Vector3(0.15f, 0.12f, 0.15f), 5, 8);
@@ -181,9 +182,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A pair of trash cans and a stack of boxes against a wall.</summary>
-        public static MeshBuilder TrashCans(int seed)
+        public static LowPolyBuilder TrashCans(int seed)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             var random = new System.Random(seed);
             for (int i = 0; i < 2; i++)
             {
@@ -198,9 +199,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A billboard on two posts, lit from below, its face toward -z.</summary>
-        public static MeshBuilder Billboard(int seed)
+        public static LowPolyBuilder Billboard(int seed)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             var random = new System.Random(seed);
             m.Push(Vector3.zero, Quaternion.Euler(0f, -90f, 0f));
             Swatch[] paints = { Swatch.Container1, Swatch.Container2, Swatch.TileGreen, Swatch.Tarp };
@@ -219,9 +220,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         // ------------------------------------------------------------------ subway
 
         /// <summary>A 6 m stretch of tiled tunnel wall with a pillar, a cable tray and a service light, for the left side.</summary>
-        public static MeshBuilder TunnelWall(float length)
+        public static LowPolyBuilder TunnelWall(float length)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Submesh(0).Color(Swatch.ConcreteDark).Box(new Vector3(0f, 3f, length * 0.5f), new Vector3(0.6f, 6f, length));
             m.Submesh(0).Color(Swatch.TileWhite).Box(new Vector3(0.31f, 1.6f, length * 0.5f), new Vector3(0.02f, 2.6f, length));
             for (float z = 0.4f; z < length; z += 0.8f)
@@ -247,9 +248,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A concrete portal spanning the road, 12 m wide and 6.5 m high, with a row of lamps under it.</summary>
-        public static MeshBuilder TunnelArch()
+        public static LowPolyBuilder TunnelArch()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             const float halfWidth = 6.2f;
             const float lintel = 9f;
             for (int side = -1; side <= 1; side += 2)
@@ -272,9 +273,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A round steel pillar with a base plate and a hazard band.</summary>
-        public static MeshBuilder Pillar(int seed)
+        public static LowPolyBuilder Pillar(int seed)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             float height = 5.5f + (seed % 3) * 0.5f;
             m.Color(Swatch.ConcreteDark).Cylinder(Vector3.zero, 0.5f, 0.42f, 0.3f, 8);
             m.Color(Swatch.SteelDark).Cylinder(new Vector3(0f, 0.3f, 0f), 0.3f, 0.3f, height, 10, true);
@@ -286,9 +287,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A signal on a post: red, amber and green lamps, one of them lit.</summary>
-        public static MeshBuilder Signal(int seed)
+        public static LowPolyBuilder Signal(int seed)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             int lit = seed % 3;
             m.Color(Swatch.SteelDark).Cylinder(Vector3.zero, 0.15f, 0.12f, 0.1f, 8);
             m.Color(Swatch.SteelDark).Cylinder(new Vector3(0f, 0.1f, 0f), 0.05f, 0.05f, 2.2f, 6, true);
@@ -303,9 +304,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A bundle of cables and junction boxes hung along the wall.</summary>
-        public static MeshBuilder CableRun(float length)
+        public static LowPolyBuilder CableRun(float length)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             for (int i = 0; i < 3; i++)
             {
                 float y = 3.6f + i * 0.22f;
@@ -326,9 +327,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         // ------------------------------------------------------------------ docks
 
         /// <summary>A shipping container, 6 m long along z, with corrugated sides.</summary>
-        public static MeshBuilder Container(Swatch paint, float length = 6f)
+        public static LowPolyBuilder Container(Swatch paint, float length = 6f)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(paint).Box(new Vector3(0f, 1.3f, 0f), new Vector3(2.4f, 2.6f, length));
             for (int side = -1; side <= 1; side += 2)
             {
@@ -356,16 +357,16 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A stack of two or three containers, the top one a little off.</summary>
-        public static MeshBuilder ContainerStack(int seed)
+        public static LowPolyBuilder ContainerStack(int seed)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             var random = new System.Random(seed);
             Swatch[] paints = { Swatch.Container1, Swatch.Container2, Swatch.Container3, Swatch.Container4 };
             int count = 2 + random.Next(2);
             for (int i = 0; i < count; i++)
             {
                 m.Push(new Vector3(((float)random.NextDouble() - 0.5f) * 0.3f, i * 2.62f, ((float)random.NextDouble() - 0.5f) * 0.8f), Quaternion.Euler(0f, ((float)random.NextDouble() - 0.5f) * 4f, 0f));
-                MeshBuilder box = Container(paints[random.Next(paints.Length)]);
+                LowPolyBuilder box = Container(paints[random.Next(paints.Length)]);
                 Append(m, box);
                 m.Pop();
             }
@@ -373,9 +374,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A gantry crane far off the road: two legs, a beam over them and a hanging spreader. Along z.</summary>
-        public static MeshBuilder Crane()
+        public static LowPolyBuilder Crane()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             const float height = 22f;
             for (int side = -1; side <= 1; side += 2)
             {
@@ -400,9 +401,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A pallet of wooden crates under a tarp.</summary>
-        public static MeshBuilder CratePile(int seed)
+        public static LowPolyBuilder CratePile(int seed)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             var random = new System.Random(seed);
             m.Color(Swatch.WoodDark).Box(new Vector3(0f, 0.08f, 0f), new Vector3(2.2f, 0.16f, 2.2f));
             m.Color(Swatch.Wood).BeveledBox(new Vector3(-0.5f, 0.68f, -0.4f), new Vector3(1f, 1f, 1.1f), 0.02f);
@@ -417,9 +418,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A cast iron mooring bollard.</summary>
-        public static MeshBuilder Bollard()
+        public static LowPolyBuilder Bollard()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(Swatch.Iron).Cylinder(Vector3.zero, 0.34f, 0.28f, 0.2f, 10);
             m.Color(Swatch.Iron).Cylinder(new Vector3(0f, 0.2f, 0f), 0.24f, 0.28f, 0.6f, 10, true);
             m.Color(Swatch.Iron).Sphere(new Vector3(0f, 0.85f, 0f), new Vector3(0.32f, 0.16f, 0.32f), 5, 10);
@@ -427,9 +428,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A floodlight mast for the left side of the road, its lamps toward +x.</summary>
-        public static MeshBuilder FloodlightMast()
+        public static LowPolyBuilder FloodlightMast()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(Swatch.ConcreteDark).Box(new Vector3(0f, 0.25f, 0f), new Vector3(1f, 0.5f, 1f));
             m.Color(Swatch.SteelDark).Cylinder(new Vector3(0f, 0.5f, 0f), 0.16f, 0.1f, 9f, 8, true);
             m.Color(Swatch.SteelDark).Box(new Vector3(0.3f, 9.4f, 0f), new Vector3(1.2f, 0.2f, 1.6f));
@@ -445,9 +446,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         // ------------------------------------------------------------------ highway
 
         /// <summary>A 6 m guard rail on posts along z, for the left side of the road, with a reflector.</summary>
-        public static MeshBuilder GuardRail(float length)
+        public static LowPolyBuilder GuardRail(float length)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             for (float z = 0f; z <= length + 0.01f; z += length / 3f)
             {
                 m.Color(Swatch.SteelDark).Box(new Vector3(0f, 0.35f, Mathf.Min(z, length - 0.06f)), new Vector3(0.1f, 0.7f, 0.12f));
@@ -460,9 +461,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A traffic cone.</summary>
-        public static MeshBuilder Cone()
+        public static LowPolyBuilder Cone()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(Swatch.Tar).Box(new Vector3(0f, 0.03f, 0f), new Vector3(0.5f, 0.06f, 0.5f));
             m.Color(Swatch.ConeOrange).Cylinder(new Vector3(0f, 0.06f, 0f), 0.18f, 0.04f, 0.7f, 8, true);
             m.Color(Swatch.ConeWhite).Cylinder(new Vector3(0f, 0.34f, 0f), 0.125f, 0.1f, 0.12f, 8, true);
@@ -470,9 +471,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A pair of cones with a striped bar between them.</summary>
-        public static MeshBuilder ConeRow()
+        public static LowPolyBuilder ConeRow()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             for (int i = 0; i < 2; i++)
             {
                 m.Push(new Vector3(0f, 0f, i * 1.6f - 0.8f));
@@ -487,9 +488,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A green highway sign on two posts, its face toward -z, the road side.</summary>
-        public static MeshBuilder RoadSign(int seed)
+        public static LowPolyBuilder RoadSign(int seed)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             var random = new System.Random(seed);
             m.Color(Swatch.SteelDark).Cylinder(new Vector3(-1.2f, 0f, 0f), 0.08f, 0.07f, 3.4f, 6, true);
             m.Color(Swatch.SteelDark).Cylinder(new Vector3(1.2f, 0f, 0f), 0.08f, 0.07f, 3.4f, 6, true);
@@ -507,9 +508,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A concrete overpass crossing the road 7 m up: two piers and a deck with a parapet and lamps.</summary>
-        public static MeshBuilder Overpass()
+        public static LowPolyBuilder Overpass()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             const float halfSpan = 9f;
             const float deck = 9.2f;
             for (int side = -1; side <= 1; side += 2)
@@ -537,9 +538,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A tall highway light: a mast with its lamp on an arm toward -z (turned over the road where it stands).</summary>
-        public static MeshBuilder HighwayLight()
+        public static LowPolyBuilder HighwayLight()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Push(Vector3.zero, Quaternion.Euler(0f, 90f, 0f));
             m.Color(Swatch.ConcreteDark).Cylinder(Vector3.zero, 0.3f, 0.24f, 0.4f, 8);
             m.Color(Swatch.SteelLight).Cylinder(new Vector3(0f, 0.4f, 0f), 0.12f, 0.07f, 8.6f, 8, true);
@@ -551,9 +552,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A wrecked car on the shoulder, along z, a wheel gone.</summary>
-        public static MeshBuilder Wreck(int seed)
+        public static LowPolyBuilder Wreck(int seed)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             Swatch paint = seed % 2 == 0 ? Swatch.Concrete : Swatch.Container1;
             m.Push(new Vector3(0f, 0f, 0f), Quaternion.Euler(0f, 0f, -6f));
             m.Color(paint).BeveledBox(new Vector3(0f, 0.6f, 0f), new Vector3(1.8f, 0.6f, 4.2f), 0.08f);
@@ -573,9 +574,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         // ------------------------------------------------------------------ rooftops
 
         /// <summary>An air conditioning unit with a fan grille.</summary>
-        public static MeshBuilder AcUnit(int seed)
+        public static LowPolyBuilder AcUnit(int seed)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             bool twin = seed % 2 == 0;
             float width = twin ? 2.6f : 1.4f;
             m.Color(Swatch.SteelDark).Box(new Vector3(0f, 0.1f, 0f), new Vector3(width + 0.2f, 0.2f, 1.6f));
@@ -601,18 +602,18 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A rooftop water tower on a steel stand.</summary>
-        public static MeshBuilder WaterTower()
+        public static LowPolyBuilder WaterTower()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             WaterTank(m, Vector3.zero, 1.6f);
             m.Color(Swatch.Iron).Box(new Vector3(0f, 0.05f, 0f), new Vector3(2.8f, 0.1f, 2.8f));
             return m;
         }
 
         /// <summary>A mast with antennas and a blinking light.</summary>
-        public static MeshBuilder Antenna(int seed)
+        public static LowPolyBuilder Antenna(int seed)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             float height = 4f + (seed % 3) * 1.2f;
             m.Color(Swatch.ConcreteDark).Box(new Vector3(0f, 0.15f, 0f), new Vector3(0.8f, 0.3f, 0.8f));
             m.Color(Swatch.SteelDark).Cylinder(new Vector3(0f, 0.3f, 0f), 0.07f, 0.04f, height, 6, true);
@@ -636,9 +637,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A pitched skylight with a lit interior, along z.</summary>
-        public static MeshBuilder Skylight()
+        public static LowPolyBuilder Skylight()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(Swatch.ConcreteDark).Box(new Vector3(0f, 0.25f, 0f), new Vector3(2f, 0.5f, 3.2f));
             m.Push(new Vector3(0f, 0.5f, 0f), Quaternion.Euler(0f, 90f, 0f));
             m.Color(Swatch.SteelDark).Prism(new[] { new Vector2(-1.55f, 0f), new Vector2(1.55f, 0f), new Vector2(0f, 0.9f) }, 1.9f);
@@ -652,9 +653,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A roof vent: a curved pipe with a hood.</summary>
-        public static MeshBuilder Vent()
+        public static LowPolyBuilder Vent()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(Swatch.ConcreteDark).Cylinder(Vector3.zero, 0.35f, 0.3f, 0.2f, 8);
             m.Color(Swatch.SteelLight).Cylinder(new Vector3(0f, 0.2f, 0f), 0.2f, 0.2f, 1.1f, 10, true);
             var bend = new List<Vector3>();
@@ -669,9 +670,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A low parapet wall along z with a coping, for the left side of the road.</summary>
-        public static MeshBuilder Parapet(float length)
+        public static LowPolyBuilder Parapet(float length)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(Swatch.Brick).Box(new Vector3(0f, 0.45f, length * 0.5f), new Vector3(0.36f, 0.9f, length));
             m.Color(Swatch.ConcreteLight).Box(new Vector3(0f, 0.94f, length * 0.5f), new Vector3(0.46f, 0.08f, length));
             for (float z = 0.3f; z < length; z += 0.6f)
@@ -686,9 +687,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A distant skyscraper: a tall, narrow block of lit windows with a spire.</summary>
-        public static MeshBuilder Skyscraper(int seed)
+        public static LowPolyBuilder Skyscraper(int seed)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             var random = new System.Random(seed);
             int floors = 14 + random.Next(10);
             float width = 9f + (float)random.NextDouble() * 5f;
@@ -705,7 +706,7 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>Copies the faces of <paramref name="source"/> into <paramref name="target"/> under its current transform.</summary>
-        private static void Append(MeshBuilder target, MeshBuilder source)
+        private static void Append(LowPolyBuilder target, LowPolyBuilder source)
         {
             target.Append(source);
         }

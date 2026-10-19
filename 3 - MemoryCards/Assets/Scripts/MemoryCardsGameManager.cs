@@ -794,7 +794,16 @@ namespace Portfolio.MemoryCards
                 error = "OK";
                 return true;
             }
-            return rules.IsValid(animalPool.Count, out error);
+            if (!rules.IsValid(animalPool.Count, out error))
+            {
+                return false;
+            }
+            if (rules.HasTimeLimit)
+            {
+                // The shop's Extra Time perk: more seconds on the clock of every timed level (a versus board has no clock).
+                rules.TimeLimit += MemoryCardsShop.TimeBonus();
+            }
+            return true;
         }
 
 
@@ -947,11 +956,13 @@ namespace Portfolio.MemoryCards
                 {
                     views[i].FlipUp(i * previewStagger);
                 }
+                // The shop's Long Preview perk keeps the cards up longer; an online board shows them as long as the server does.
+                float previewTime = rules.PreviewTime * (IsOnlineVersus ? 1f : MemoryCardsShop.PreviewFactor());
                 float shown = 0f;
-                while (shown < rules.PreviewTime)
+                while (shown < previewTime)
                 {
                     shown += Time.deltaTime;
-                    gameUI?.ShowMemorize(1f - shown / rules.PreviewTime);
+                    gameUI?.ShowMemorize(1f - shown / previewTime);
                     yield return null;
                 }
                 gameUI?.HideMemorize();
