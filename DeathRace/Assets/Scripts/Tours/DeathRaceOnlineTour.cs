@@ -257,6 +257,9 @@ namespace Portfolio.DeathRace
             {
                 case OnlineRaceRules.MineAction: return "mine";
                 case OnlineRaceRules.RocketAction: return "rocket";
+                case OnlineRaceRules.OilAction: return "oil";
+                case OnlineRaceRules.EmpAction: return "emp";
+                case OnlineRaceRules.MortarAction: return "mortar";
                 case OnlineRaceRules.WreckAction: return "wreck";
                 default: return "kind " + kind;
             }

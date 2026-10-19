@@ -301,6 +301,9 @@ namespace Portfolio.DeathRace
             {
                 car.Weapons.MineDropped += mine => OnLocalMine(seat, mine);
                 car.Weapons.RocketFired += rocket => OnLocalRocket(seat, rocket);
+                car.Weapons.OilDropped += slick => OnLocalOil(seat, slick);
+                car.Weapons.EmpFired += blast => OnLocalEmp(seat, blast);
+                car.Weapons.MortarFired += shell => OnLocalMortar(seat, shell);
             }
             car.Wrecked += (wrecked, cause) => OnLocalWrecked(seat, wrecked, cause);
             car.Happened += happened =>
@@ -457,6 +460,47 @@ namespace Portfolio.DeathRace
             Server.SubmitAction(seat, OnlineRaceRules.RocketAction, OnlineRaceRules.EncodeRocket(new OnlineRaceRules.RocketShot
             {
                 X = at.x, Y = at.y, Z = at.z, DirectionX = direction.x, DirectionZ = direction.z, Speed = velocity.magnitude
+            }), Failed);
+        }
+
+        /// <summary>
+        /// A car of this device poured an oil slick: the room lays it on every device. A slick is not used up by a car
+        /// driving through it, so nobody claims it: each device slicks the cars it drives.
+        /// </summary>
+        private void OnLocalOil(byte seat, OilSlick slick)
+        {
+            if (slick == null || !RaceIsOn)
+            {
+                return;
+            }
+            Vector3 at = slick.Position;
+            Server.SubmitAction(seat, OnlineRaceRules.OilAction,
+                OnlineRaceRules.EncodeOil(new OnlineRaceRules.MineDrop { Id = slick.Id, X = at.x, Z = at.z, Yaw = slick.transform.eulerAngles.y }), Failed);
+        }
+
+        /// <summary>A car of this device set off an EMP blast: every other device shows it and jams the cars it drives in reach.</summary>
+        private void OnLocalEmp(byte seat, EmpBlast blast)
+        {
+            if (blast == null || !RaceIsOn)
+            {
+                return;
+            }
+            Vector3 at = blast.Position;
+            Server.SubmitAction(seat, OnlineRaceRules.EmpAction, OnlineRaceRules.EncodeEmp(new OnlineRaceRules.EmpPulse { X = at.x, Z = at.z }), Failed);
+        }
+
+        /// <summary>A car of this device lobbed a mortar shell: every other device flies it to the same spot and judges its blast.</summary>
+        private void OnLocalMortar(byte seat, MortarShell shell)
+        {
+            if (shell == null || !RaceIsOn)
+            {
+                return;
+            }
+            Vector3 from = shell.From;
+            Vector3 target = shell.Target;
+            Server.SubmitAction(seat, OnlineRaceRules.MortarAction, OnlineRaceRules.EncodeMortar(new OnlineRaceRules.MortarLob
+            {
+                X = from.x, Y = from.y, Z = from.z, TargetX = target.x, TargetZ = target.z
             }), Failed);
         }
 
@@ -682,7 +726,11 @@ namespace Portfolio.DeathRace
         // What comes in
         // ------------------------------------------------------------------------------------------------
 
-        /// <summary>The mines, rockets and wrecks of the other devices' cars (this device's own were done when they happened).</summary>
+        /// <summary>
+        /// The mines, rockets, special weapons and wrecks of the other devices' cars (this device's own were done when they
+        /// happened). A slick, a pulse or a shell of another device is not this device's to judge for that car, so it is
+        /// laid with <c>Authoritative</c> off: it hurts and hinders only the cars driven here.
+        /// </summary>
         protected override void OnActionReceived(RoomActionInfo action)
         {
             if (!RaceIsOn || IsLocalSeat(action.Seat) || !cars.TryGetValue(action.Seat, out Car owner))
@@ -709,6 +757,26 @@ namespace Portfolio.DeathRace
                         Rocket rocket = Rocket.Launch(race, content, at, new Vector3(shot.DirectionX, 0f, shot.DirectionZ), shot.Speed, owner);
                         race.Effects?.Muzzle(rocket.transform);
                         race.Audio?.RocketLaunch(at);
+                    }
+                    break;
+                case OnlineRaceRules.OilAction:
+                    if (OnlineRaceRules.TryDecodeOil(action.Payload, out OnlineRaceRules.MineDrop pour))
+                    {
+                        var at = new Vector3(pour.X, 0f, pour.Z);
+                        OilSlick slick = OilSlick.Spawn(race, content, at, Quaternion.Euler(0f, pour.Yaw, 0f), owner, pour.Id);
+                        slick.Authoritative = false;
+                    }
+                    break;
+                case OnlineRaceRules.EmpAction:
+                    if (OnlineRaceRules.TryDecodeEmp(action.Payload, out OnlineRaceRules.EmpPulse pulse))
+                    {
+                        EmpBlast.Fire(race, content, new Vector3(pulse.X, 0f, pulse.Z), owner, false);
+                    }
+                    break;
+                case OnlineRaceRules.MortarAction:
+                    if (OnlineRaceRules.TryDecodeMortar(action.Payload, out OnlineRaceRules.MortarLob lob))
+                    {
+                        MortarShell.Launch(race, content, new Vector3(lob.X, lob.Y, lob.Z), new Vector3(lob.TargetX, 0f, lob.TargetZ), owner, false);
                     }
                     break;
                 case OnlineRaceRules.WreckAction:
