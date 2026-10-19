@@ -66,8 +66,10 @@ namespace Portfolio.DeathRace
             if (owner != null && covers.Add(owner))
             {
                 HideMenu();
-                // The badge of the player's avatar belongs to the title screen, not to a window over it.
+                // The badge of the player's avatar (and the Shop button beside it) belongs to the title screen, not to a
+                // window over it.
                 GetComponent<AvatarCorner>()?.Hide();
+                GetComponent<ShopCorner>()?.Hide();
             }
         }
 
@@ -84,6 +86,7 @@ namespace Portfolio.DeathRace
                 if (Manager.State.BaseState == BaseGameState.Initialization && AvatarPlace is (Vector2 anchor, Vector2 offset) place)
                 {
                     AvatarCorner.For(this, Manager).At(place.anchor, place.offset).Show();
+                    ShopCorner.For(this, Manager).Beside(place.anchor, place.offset).Show();
                 }
             }
         }
