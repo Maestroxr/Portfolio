@@ -28,5 +28,14 @@ namespace Portfolio.BoardGames
                     return null;
             }
         }
+
+        /// <summary>
+        /// The command the computer at its strongest would give for <paramref name="seat"/> (the seat the game waits
+        /// for): what the Hint Book of the shop shows a person. Null when the seat has nothing to do.
+        /// </summary>
+        public static BoardCommand Hint(IBoardGame game, int seat, IRandom random)
+        {
+            return Choose(game, seat, RuleSets.ComputerLevels - 1, random);
+        }
     }
 }

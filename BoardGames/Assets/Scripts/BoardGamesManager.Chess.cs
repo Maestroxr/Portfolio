@@ -272,6 +272,21 @@ namespace Portfolio.BoardGames
                         }
                     }
                 }
+                // The hint's target is marked whatever the setting, and lit unless the pointer is on a target of its own.
+                int hinted = HintTargetFor(chessSelected);
+                if (hinted >= 0)
+                {
+                    ChessMove move = ChessTargetAt(hinted);
+                    List<int> list = move != null && move.IsCapture ? marks.captures : marks.targets;
+                    if (!list.Contains(hinted))
+                    {
+                        list.Add(hinted);
+                    }
+                    if (chessPromotion == null && !marks.targets.Contains(marks.hovered) && !marks.captures.Contains(marks.hovered))
+                    {
+                        marks.hovered = hinted;
+                    }
+                }
             }
             board.SetSquareMarks(marks);
             // The dot of a capture hides under the piece taken: that piece glows instead.

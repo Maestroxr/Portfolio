@@ -117,9 +117,16 @@ namespace Portfolio.BoardGames
                 return;
             }
             bool showMoves = Options != null && Options.showMoves;
-            IReadOnlyList<Move> shown = showMoves ? SelectedMoves : NoCheckersMoves;
+            // The hint's move is marked whatever the setting, and lit unless the pointer is on a target of its own.
+            int hinted = WaitingForHuman ? HintTargetFor(Selected) : -1;
+            IReadOnlyList<Move> shown = showMoves ? SelectedMoves : hinted >= 0 ? CheckersHintMoves(game) : NoCheckersMoves;
+            int hovered = WaitingForHuman ? checkersHovered : -1;
+            if (hinted >= 0 && !EndsOn(shown, hovered))
+            {
+                hovered = hinted;
+            }
             IReadOnlyList<int> movable = showMoves && WaitingForHuman && Selected < 0 ? MovableSquares(game) : null;
-            board.SetHighlights(Selected, shown, game.lastMove, WaitingForHuman ? checkersHovered : -1, PartialPath, movable);
+            board.SetHighlights(Selected, shown, game.lastMove, hovered, PartialPath, movable);
         }
 
         private bool CheckersBusy()

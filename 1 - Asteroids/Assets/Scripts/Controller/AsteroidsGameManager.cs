@@ -948,6 +948,8 @@ namespace Portfolio.Asteroids
             {
                 ship.ResetForMission(settings != null ? settings.HullStrength : 100f);
                 lives = settings != null ? Mathf.Clamp(settings.Lives, 1, AsteroidSettings.LivesLimit) : 3;
+                // The spare ship bought in the shop: one more (a co-op room's lives come from the host and stay).
+                lives = AsteroidsShop.WithSpareShip(lives);
                 if (IsCoop)
                 {
                     // Every pilot starts at a place of their own, with the ships the room gives them.
