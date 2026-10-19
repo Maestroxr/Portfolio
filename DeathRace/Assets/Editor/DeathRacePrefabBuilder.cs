@@ -5,8 +5,8 @@ using UnityEngine.Rendering;
 namespace Portfolio.DeathRace.EditorTools
 {
     /// <summary>
-    /// Builds the moving things of a race from code: the six car models (visual prefabs with a CarModelView), the mine,
-    /// the rocket, the four pickups, the effects and the sounds. <see cref="BuildArt"/> writes the meshes, textures,
+    /// Builds the moving things of a race from code: the car models (visual prefabs with a CarModelView), the mine, the
+    /// rocket, the oil slick, the mortar shell, the plasma bolt, the four pickups, the effects and the sounds. <see cref="BuildArt"/> writes the meshes, textures,
     /// materials and sounds; <see cref="BuildAll"/> the prefabs and the car pictures; <see cref="FillContent"/> points the
     /// content asset at them. Everything is generated (no downloads) and seeded, so a rebuild writes the same files.
     /// </summary>
@@ -55,6 +55,9 @@ namespace Portfolio.DeathRace.EditorTools
             content.carPrefabs = cars;
             content.mine = ItemPrefab("Mine");
             content.rocket = ItemPrefab("Rocket");
+            content.oilSlick = ItemPrefab("OilSlick");
+            content.mortarShell = ItemPrefab("MortarShell");
+            content.plasmaBolt = ItemPrefab("PlasmaBolt");
             var pickups = new GameObject[System.Enum.GetValues(typeof(PickupKind)).Length];
             for (int i = 0; i < pickups.Length; i++)
             {
@@ -71,6 +74,11 @@ namespace Portfolio.DeathRace.EditorTools
             content.nitroFlame = Effect("NitroFlame");
             content.dust = Effect("Dust");
             content.scorch = Effect("Scorch");
+            content.flameJet = Effect("FlameJet");
+            content.plasmaBurst = Effect("PlasmaBurst");
+            content.empBlast = Effect("EmpBlast");
+            content.electric = Effect("Electric");
+            content.weld = Effect("Weld");
             content.tracer = DeathRaceEffectsBuilder.EffectMaterial("Tracer");
             content.skid = DeathRaceEffectsBuilder.EffectMaterial("Skid");
             content.sounds = content.sounds ?? new RaceSounds();

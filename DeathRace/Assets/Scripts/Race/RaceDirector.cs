@@ -473,7 +473,10 @@ namespace Portfolio.DeathRace
                     HealthLeft = car.Health != null && !car.IsWrecked ? car.Health.Health01 : 0f,
                     MinesUsed = car.Weapons != null ? car.Weapons.MinesUsed : 0,
                     RocketsUsed = car.Weapons != null ? car.Weapons.RocketsUsed : 0,
-                    NitroUsed = car.Weapons != null ? car.Weapons.NitroUsed : 0
+                    NitroUsed = car.Weapons != null ? car.Weapons.NitroUsed : 0,
+                    OilUsed = car.Weapons != null ? car.Weapons.SpecialsUsed(SpecialKind.Oil) : 0,
+                    EmpUsed = car.Weapons != null ? car.Weapons.SpecialsUsed(SpecialKind.Emp) : 0,
+                    MortarUsed = car.Weapons != null ? car.Weapons.SpecialsUsed(SpecialKind.Mortar) : 0
                 });
                 if (!car.IsWrecked && !car.HasFinished)
                 {

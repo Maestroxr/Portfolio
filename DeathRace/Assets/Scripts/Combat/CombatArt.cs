@@ -5,8 +5,9 @@ namespace Portfolio.DeathRace
     /// <summary>
     /// Textures and materials the fighting draws with when the content has none of its own (before the builders made the
     /// effect prefabs, or in a test): soft dots for fire and sparks, puffs for smoke, a ring for shock waves, a blotch for
-    /// scorch marks, streaks for tracers and skid marks. Made once in code from seeded noise, on the always included
-    /// sprite shader, so a player build never misses them. The glowing ones are brighter than white so bloom catches them.
+    /// scorch marks, streaks for tracers and skid marks, an oily puddle for slicks. Made once in code from seeded noise,
+    /// on the always included sprite shader, so a player build never misses them. The glowing ones are brighter than
+    /// white so bloom catches them.
     /// </summary>
     public static class CombatArt
     {
@@ -27,6 +28,9 @@ namespace Portfolio.DeathRace
         private static Material plain;
         private static Material trail;
         private static Texture2D puffTiled;
+        private static Texture2D oilTexture;
+        private static Material oil;
+        private static Mesh disc;
         private static Material solid;
         private static Shader solidShader;
         private static bool warned;
@@ -54,6 +58,84 @@ namespace Portfolio.DeathRace
 
         /// <summary>A smoke trail: puffs repeating along it (a rocket's).</summary>
         public static Material SmokeTrail => trail != null ? trail : (trail = Make("Combat Smoke Trail", PuffTiled, Color.white));
+
+        /// <summary>A puddle of oil on the road: nearly black, with the rainbow sheen oil has, ragged at the edge.</summary>
+        public static Material Oil => oil != null ? oil : (oil = Make("Combat Oil", OilTexture, Color.white));
+
+        /// <summary>A flat disc of 1 m radius facing up, its texture laid over it from above (an oil slick's stand-in).</summary>
+        public static Mesh DiscMesh
+        {
+            get
+            {
+                if (disc == null)
+                {
+                    const int sides = 24;
+                    var vertices = new Vector3[sides + 1];
+                    var uvs = new Vector2[sides + 1];
+                    var triangles = new int[sides * 3];
+                    vertices[0] = Vector3.zero;
+                    uvs[0] = new Vector2(0.5f, 0.5f);
+                    for (int i = 0; i < sides; i++)
+                    {
+                        float angle = i * Mathf.PI * 2f / sides;
+                        vertices[i + 1] = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+                        uvs[i + 1] = new Vector2(0.5f + 0.5f * Mathf.Cos(angle), 0.5f + 0.5f * Mathf.Sin(angle));
+                        // Clockwise from above, so the disc faces up.
+                        triangles[i * 3] = 0;
+                        triangles[i * 3 + 1] = (i + 1) % sides + 1;
+                        triangles[i * 3 + 2] = i + 1;
+                    }
+                    disc = new Mesh { name = "Ground Disc", hideFlags = HideFlags.DontSave, vertices = vertices, uv = uvs, triangles = triangles };
+                    disc.RecalculateNormals();
+                    disc.RecalculateBounds();
+                }
+                return disc;
+            }
+        }
+
+        /// <summary>The oil's texture: a dark body, a band of colours where the film thins, a ragged rim (seeded).</summary>
+        public static Texture2D OilTexture
+        {
+            get
+            {
+                if (oilTexture == null)
+                {
+                    var random = new System.Random(31);
+                    float[] edge = new float[20];
+                    for (int i = 0; i < edge.Length; i++)
+                    {
+                        edge[i] = 0.78f + 0.2f * (float)random.NextDouble();
+                    }
+                    const int size = 128;
+                    oilTexture = new Texture2D(size, size, TextureFormat.RGBA32, true) { name = "Oil", wrapMode = TextureWrapMode.Clamp, hideFlags = HideFlags.DontSave };
+                    float half = (size - 1) * 0.5f;
+                    for (int y = 0; y < size; y++)
+                    {
+                        for (int x = 0; x < size; x++)
+                        {
+                            float dx = (x - half) / half;
+                            float dy = (y - half) / half;
+                            float r = Mathf.Sqrt(dx * dx + dy * dy);
+                            float a = (Mathf.Atan2(dy, dx) / (Mathf.PI * 2f) + 1f) % 1f;
+                            float f = a * edge.Length;
+                            int i = (int)f % edge.Length;
+                            float reach = Mathf.Lerp(edge[i], edge[(i + 1) % edge.Length], f % 1f);
+                            float inside = Mathf.Clamp01((reach - r) / 0.06f);
+                            // The sheen: a thin film near the rim and a few swirls, shifting through the colours of oil on water.
+                            float film = Mathf.Clamp01(1f - Mathf.Abs(r / reach - 0.8f) / 0.12f) + 0.35f * Mathf.Max(0f, Mathf.Sin(a * 18.8f + r * 9f));
+                            float hue = Mathf.Repeat(r * 2.3f + a * 0.6f, 1f);
+                            Color sheen = Color.HSVToRGB(hue, 0.65f, 0.55f);
+                            Color body = new Color(0.025f, 0.025f, 0.03f, 1f);
+                            Color color = Color.Lerp(body, sheen, Mathf.Clamp01(film) * 0.45f);
+                            color.a = inside * 0.92f;
+                            oilTexture.SetPixel(x, y, color);
+                        }
+                    }
+                    oilTexture.Apply(true, true);
+                }
+                return oilTexture;
+            }
+        }
 
         /// <summary>
         /// The lit material of the stand-in mines, rockets and pickups: the shader of the theme's car paint (a pipeline
@@ -208,6 +290,26 @@ namespace Portfolio.DeathRace
                     tread.Apply(false, true);
                 }
                 return tread;
+            }
+        }
+
+        /// <summary>
+        /// Takes a weapon's object out of the world after <paramref name="delay"/> seconds: destroyed at the end of the
+        /// frame in play, at once in the editor's tests (which step the weapons by hand and cannot wait for a frame).
+        /// </summary>
+        public static void Discard(Object target, float delay = 0f)
+        {
+            if (target == null)
+            {
+                return;
+            }
+            if (Application.isPlaying)
+            {
+                Object.Destroy(target, delay);
+            }
+            else
+            {
+                Object.DestroyImmediate(target);
             }
         }
 

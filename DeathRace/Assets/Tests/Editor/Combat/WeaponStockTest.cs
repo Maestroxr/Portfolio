@@ -112,6 +112,71 @@ namespace Portfolio.DeathRace.Tests
         }
 
         [Test]
+        public void TheStockFiresAtTheGunsRate()
+        {
+            var stock = new WeaponStock(500, 0, 0, 0, 0, 0, 0, CombatRules.MinigunRoundsPerSecond);
+            int rounds = 0;
+            for (int i = 0; i < 50; i++)
+            {
+                rounds += stock.Fire(true, Step);
+            }
+            Assert.That(rounds, Is.InRange(16, 17), "the minigun: sixteen a second");
+            var plasma = new WeaponStock(500, 0, 0, 0, 0, 0, 0, CombatRules.PlasmaRoundsPerSecond);
+            rounds = 0;
+            for (int i = 0; i < 100; i++)
+            {
+                rounds += plasma.Fire(true, Step);
+            }
+            Assert.That(rounds, Is.InRange(6, 7), "the plasma cannon: three a second");
+            Assert.AreEqual(CombatRules.GunRoundsPerSecond, new WeaponStock(10, 0, 0, 0).RoundsPerSecond, "the machine gun's by default");
+        }
+
+        [Test]
+        public void SpecialsAreCountedOut()
+        {
+            var stock = new WeaponStock(100, 0, 0, 0, 2, 1, 0);
+            Assert.AreEqual(2, stock.SpecialsLeft(SpecialKind.Oil));
+            Assert.AreEqual(1, stock.SpecialsLeft(SpecialKind.Emp));
+            Assert.AreEqual(0, stock.SpecialsLeft(SpecialKind.Mortar));
+            Assert.IsTrue(stock.TakeSpecial(SpecialKind.Emp));
+            Assert.IsFalse(stock.TakeSpecial(SpecialKind.Emp), "none left");
+            Assert.IsFalse(stock.TakeSpecial(SpecialKind.Mortar));
+            Assert.AreEqual(1, stock.SpecialsUsed(SpecialKind.Emp));
+            Assert.AreEqual(0, stock.SpecialsUsed(SpecialKind.Mortar));
+            stock.AddSpecials(SpecialKind.Mortar, 2);
+            Assert.AreEqual(2, stock.SpecialsLeft(SpecialKind.Mortar));
+            Assert.AreEqual(0, stock.SpecialsUsed(SpecialKind.Mortar), "adding is not using");
+        }
+
+        [Test]
+        public void TheButtonFiresTheArmedSpecialThenTheNextThereIs()
+        {
+            var stock = new WeaponStock(100, 0, 0, 0, 1, 0, 2);
+            Assert.AreEqual(SpecialKind.Oil, stock.NextSpecial(SpecialKind.Oil));
+            Assert.AreEqual(SpecialKind.Mortar, stock.NextSpecial(SpecialKind.Mortar));
+            Assert.AreEqual(SpecialKind.Mortar, stock.NextSpecial(SpecialKind.Emp), "none of the armed one: the next round from it");
+            stock.TakeSpecial(SpecialKind.Mortar);
+            stock.TakeSpecial(SpecialKind.Mortar);
+            Assert.AreEqual(SpecialKind.Oil, stock.NextSpecial(SpecialKind.Mortar), "round past the end of the list");
+            stock.TakeSpecial(SpecialKind.Oil);
+            Assert.IsNull(stock.NextSpecial(SpecialKind.Oil), "none at all");
+        }
+
+        [Test]
+        public void ANitroSystemChargeBurnsLonger()
+        {
+            var stock = new WeaponStock(100, 0, 0, 1, 0, 0, 0, 0f, 3.4f);
+            stock.Nitro(true, Step);
+            float burned = 0f;
+            while (stock.NitroActive && burned < 10f)
+            {
+                stock.Nitro(true, Step);
+                burned += Step;
+            }
+            Assert.AreEqual(3.4f, burned, Step * 1.5f);
+        }
+
+        [Test]
         public void DousingPutsTheChargeOut()
         {
             var stock = new WeaponStock(100, 0, 0, 1);

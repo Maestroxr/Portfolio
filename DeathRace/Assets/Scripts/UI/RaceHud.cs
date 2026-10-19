@@ -10,10 +10,12 @@ namespace Portfolio.DeathRace
 {
     /// <summary>
     /// The heads-up display of one person's car, laid over their part of the screen (<see cref="SplitScreen.AnchorTo"/>):
-    /// the place ("2nd" big, "/4" small), the lap, the time of this lap and the best, the health bar, the rounds, mines,
-    /// rockets and nitro the car has left, the cash picked up this race, the minimap with every car on it (the own one
+    /// the place ("2nd" big, "/4" small), the lap, the time of this lap and the best, the health bar, the gun (its icon
+    /// and name) and its rounds, the mines, rockets and nitro the car has left, the special weapon the button fires next
+    /// with its count (and the counts of the other two, small), the statuses the car is under (burning, slicked, jammed,
+    /// each with the time it has left), the cash picked up this race, the minimap with every car on it (the own one
     /// bigger, with an arrow), the big countdown, WRONG WAY, toasts for what happens to the car (a wreck it caused, a
-    /// pickup, a lap, the fastest lap, a weapon with nothing left) and the banner at the finish.
+    /// pickup, a lap, the fastest lap, a weapon with nothing left, a status) and the banner at the finish.
     ///
     /// It is laid out once for a 1920 x 1080 screen in a frame that is scaled to the view (a split screen half or quarter
     /// gets smaller pieces, still in the corners), and drawn again on a new look or language (<see cref="Restyle"/>).
@@ -39,7 +41,14 @@ namespace Portfolio.DeathRace
 
         private TMP_Text placeText, ofText, lapText, timeText, bestText, cashText;
         private TMP_Text countdownText, wrongWayText, bannerText;
-        private Counter ammo, mines, rockets, nitro;
+        private Counter ammo, mines, rockets, nitro, special;
+        private readonly Counter[] otherSpecials = new Counter[2];
+        private readonly SpecialKind[] otherKinds = new SpecialKind[2];
+        private TMP_Text specialName;
+        private SpecialKind? shownSpecial;
+        private bool specialShown;
+        private readonly Chip[] chips = new Chip[3];
+        private int shownStatuses = -1;
         private HudBar health;
         private RectTransform mapPanel;
         private Minimap map;
@@ -68,6 +77,14 @@ namespace Portfolio.DeathRace
             public float Until;
         }
 
+        /// <summary>One status over the car panel: its icon (or none), its word and a bar of the seconds it has left.</summary>
+        private sealed class Chip
+        {
+            public RectTransform Rect;
+            public RectTransform Bar;
+            public float BarWidth;
+        }
+
         public Car Car { get; protected set; }
         public Race Race { get; protected set; }
 
@@ -90,6 +107,10 @@ namespace Portfolio.DeathRace
             hud.viewport = viewport;
             hud.Build();
             car.Happened += hud.OnHappened;
+            if (car.Status != null)
+            {
+                car.Status.Started += hud.OnStatus;
+            }
             return hud;
         }
 
@@ -119,6 +140,10 @@ namespace Portfolio.DeathRace
             if (Car != null)
             {
                 Car.Happened -= OnHappened;
+                if (Car.Status != null)
+                {
+                    Car.Status.Started -= OnStatus;
+                }
             }
         }
 
@@ -131,9 +156,17 @@ namespace Portfolio.DeathRace
         private Color Warn => theme != null ? theme.hudWarn : new Color(0.95f, 0.25f, 0.18f, 1f);
         private static Color Shade => new Color(0.02f, 0.02f, 0.03f, 0.62f);
 
-        /// <summary>The width of the panel of the car's health and weapons, and of one weapon's count in it.</summary>
-        private const float CarPanelWidth = 640f;
+        /// <summary>
+        /// The width of the panel of the car's health and weapons, of one weapon's count in it, and of the special weapon's
+        /// place at its end (the next one big, the other two small beside it).
+        /// </summary>
+        private const float CarPanelWidth = 860f;
         private const float CounterWidth = 149f;
+        private const float SpecialWidth = 222f;
+
+        /// <summary>The size of a status chip over the car panel.</summary>
+        private const float ChipWidth = 236f;
+        private const float ChipHeight = 60f;
 
         private void Build()
         {
@@ -142,9 +175,10 @@ namespace Portfolio.DeathRace
                 Destroy(frame.gameObject);
             }
             markers.Clear();
-            shownPlace = shownLap = shownCash = shownHundredths = -1;
+            shownPlace = shownLap = shownCash = shownHundredths = shownStatuses = -1;
             shownBest = -1f;
             shownCountdown = null;
+            specialShown = false;
 
             frame = OverlayKit.Rect(transform, "Frame");
             frame.anchorMin = frame.anchorMax = frame.pivot = new Vector2(0.5f, 0.5f);
@@ -153,6 +187,7 @@ namespace Portfolio.DeathRace
 
             BuildStanding();
             BuildCar();
+            BuildStatuses();
             BuildMap();
             BuildMiddle();
             ApplySettings(settings);
@@ -234,10 +269,14 @@ namespace Portfolio.DeathRace
             health.LowColor = Warn;
             health.SetValue(Car != null && Car.Health != null ? Car.Health.Health01 : 1f, true);
 
-            ammo = MakeCounter(panel, theme != null ? theme.iconAmmo : null, L.T("AMMO"), 0);
+            // The gun's own icon (the rounds' when the look has none), and its name over the count always: four guns look alike small.
+            GunSpec gun = Car != null && Car.Weapons != null ? Car.Weapons.GunSpec : Guns.Of(GunKind.MachineGun);
+            Sprite gunIcon = Named(gun.Icon);
+            ammo = MakeCounter(panel, gunIcon != null ? gunIcon : theme != null ? theme.iconAmmo : null, Upper(L.Data(gun.Name)), 0, true);
             mines = MakeCounter(panel, theme != null ? theme.iconMine : null, L.T("MINES"), 1);
             rockets = MakeCounter(panel, theme != null ? theme.iconRocket : null, L.T("ROCKETS"), 2);
             nitro = MakeCounter(panel, theme != null ? theme.iconNitro : null, L.T("NITRO"), 3);
+            BuildSpecial(panel);
 
             RectTransform money = Panel("Cash", new Vector2(1f, 0f), new Vector2(-28f, 28f), new Vector2(300f, 84f));
             Image coin = Icon(money, theme != null ? theme.iconCash : null, Accent, new Vector2(0f, 0.5f), new Vector2(18f, 0f), 48f);
@@ -246,8 +285,8 @@ namespace Portfolio.DeathRace
                 new Vector2(coin.enabled ? 200f : 260f, 60f));
         }
 
-        /// <summary>A count with its icon (or its name in small letters when the look has no icon).</summary>
-        private Counter MakeCounter(RectTransform panel, Sprite icon, string name, int slot)
+        /// <summary>A count with its icon (or its name in small letters when the look has no icon; always with <paramref name="labelled"/>).</summary>
+        private Counter MakeCounter(RectTransform panel, Sprite icon, string name, int slot, bool labelled = false)
         {
             const float width = CounterWidth;
             float x = 22f + slot * width;
@@ -258,11 +297,162 @@ namespace Portfolio.DeathRace
             if (icon == null)
             {
                 counter.Icon.enabled = false;
-                Words(panel, name, 16f, Muted, TextAlignmentOptions.BottomLeft, true, new Vector2(0f, 0f), new Vector2(x, 70f), new Vector2(width - 8f, 22f));
+            }
+            if (icon == null || labelled)
+            {
+                Words(panel, name, 16f, Muted, TextAlignmentOptions.BottomLeft, true, new Vector2(0f, 0f), new Vector2(x, 76f), new Vector2(width - 8f, 22f));
             }
             counter.Text = Words(panel, "", 40f, Text, TextAlignmentOptions.MidlineLeft, true, new Vector2(0f, 0f),
                 new Vector2(icon != null ? x + 58f : x, 22f), new Vector2(icon != null ? width - 64f : width - 8f, 52f));
             return counter;
+        }
+
+        /// <summary>
+        /// The special weapon at the end of the panel: the one the button fires next (its icon, its name over it, its count
+        /// big) and the other two small beside it (icon and count each; a badge of its colour when the look has no icon).
+        /// </summary>
+        private void BuildSpecial(RectTransform panel)
+        {
+            float x = 22f + 4f * CounterWidth;
+            specialName = Words(panel, "", 16f, Muted, TextAlignmentOptions.BottomLeft, true, new Vector2(0f, 0f), new Vector2(x, 76f),
+                new Vector2(SpecialWidth - 8f, 22f));
+            special = new Counter { Icon = Icon(panel, null, Text, new Vector2(0f, 0f), new Vector2(x, 22f), 52f) };
+            special.Text = Words(panel, "", 40f, Text, TextAlignmentOptions.MidlineLeft, true, new Vector2(0f, 0f), new Vector2(x + 58f, 22f),
+                new Vector2(62f, 52f));
+            float smallX = x + 122f;
+            for (int i = 0; i < otherSpecials.Length; i++)
+            {
+                float y = 48f - i * 28f;
+                var counter = new Counter { Icon = Icon(panel, null, Muted, new Vector2(0f, 0f), new Vector2(smallX, y), 26f) };
+                counter.Text = Words(panel, "", 24f, Muted, TextAlignmentOptions.MidlineLeft, true, new Vector2(0f, 0f), new Vector2(smallX + 30f, y),
+                    new Vector2(52f, 26f));
+                otherSpecials[i] = counter;
+            }
+        }
+
+        /// <summary>The icon, the name and the other two of the special the button fires next (it changes when one runs out).</summary>
+        private void ShowSpecial(SpecialKind? next, CarWeapons weapons)
+        {
+            specialShown = true;
+            shownSpecial = next;
+            SpecialKind kind = next ?? (weapons != null ? weapons.ArmedSpecial : SpecialKind.Oil);
+            SpecialSpec spec = Specials.Of(kind);
+            specialName.text = Upper(L.Data(spec.Name));
+            SpecialIcon(special.Icon, kind, Text);
+            special.Shown = -1;
+            int slot = 0;
+            for (int step = 1; step < Specials.Count && slot < otherSpecials.Length; step++)
+            {
+                otherKinds[slot] = (SpecialKind)(((int)kind + step) % Specials.Count);
+                Counter counter = otherSpecials[slot];
+                SpecialIcon(counter.Icon, otherKinds[slot], Muted);
+                counter.Shown = -1;
+                slot++;
+            }
+        }
+
+        /// <summary>
+        /// The icon of a special weapon in <paramref name="tint"/>; while the look has none, a small rounded badge in the
+        /// special's own colour (the oil's dark sheen, the EMP's blue, the mortar's olive), so the three still tell apart.
+        /// </summary>
+        private void SpecialIcon(Image image, SpecialKind kind, Color tint)
+        {
+            Sprite sprite = Named(Specials.Of(kind).Icon);
+            image.enabled = true;
+            if (sprite != null)
+            {
+                image.sprite = sprite;
+                image.color = tint;
+                image.type = Image.Type.Simple;
+                return;
+            }
+            image.sprite = RaceShapes.Rounded;
+            image.type = Image.Type.Sliced;
+            switch (kind)
+            {
+                case SpecialKind.Oil:
+                    image.color = new Color(0.42f, 0.36f, 0.56f, 1f);
+                    break;
+                case SpecialKind.Emp:
+                    image.color = EffectFallbacks.EmpColor;
+                    break;
+                default:
+                    image.color = new Color(0.6f, 0.64f, 0.3f, 1f);
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// The statuses over the car panel: a chip for each (burning, slicked, jammed) with its icon, its word and a bar of
+        /// the seconds left, shown only while the car is under it, packed from the left.
+        /// </summary>
+        private void BuildStatuses()
+        {
+            CarStatusKind[] kinds = { CarStatusKind.Burning, CarStatusKind.Slicked, CarStatusKind.Jammed };
+            for (int i = 0; i < kinds.Length; i++)
+            {
+                CarStatusKind kind = kinds[i];
+                Color color = StatusColor(kind);
+                RectTransform rect = Panel($"Status {kind}", new Vector2(0f, 0f), new Vector2(28f + i * (ChipWidth + 10f), 28f + 168f + 12f),
+                    new Vector2(ChipWidth, ChipHeight));
+                Image icon = Icon(rect, Named(kind.ToString()), color, new Vector2(0f, 0.5f), new Vector2(10f, 3f), 40f);
+                icon.enabled = icon.sprite != null;
+                float left = icon.enabled ? 58f : 14f;
+                Words(rect, StatusWord(kind), 26f, color, TextAlignmentOptions.MidlineLeft, true, new Vector2(0f, 0.5f), new Vector2(left, 4f),
+                    new Vector2(ChipWidth - left - 10f, 40f));
+                Image track = OverlayKit.NewImage(rect, "Time", new Color(0f, 0f, 0f, 0.45f));
+                track.raycastTarget = false;
+                float barWidth = ChipWidth - left - 14f;
+                OverlayKit.Anchor(track.rectTransform, new Vector2(0f, 0f), new Vector2(left, 8f), new Vector2(barWidth, 6f));
+                Image bar = OverlayKit.NewImage(rect, "Left", color);
+                bar.raycastTarget = false;
+                OverlayKit.Anchor(bar.rectTransform, new Vector2(0f, 0f), new Vector2(left, 8f), new Vector2(barWidth, 6f));
+                rect.gameObject.SetActive(false);
+                chips[i] = new Chip { Rect = rect, Bar = bar.rectTransform, BarWidth = barWidth };
+            }
+        }
+
+        private Color StatusColor(CarStatusKind kind)
+        {
+            switch (kind)
+            {
+                case CarStatusKind.Burning: return Color.Lerp(Accent, Warn, 0.35f);
+                case CarStatusKind.Jammed: return EffectFallbacks.EmpColor;
+                default: return Color.Lerp(Text, new Color(0.55f, 0.6f, 0.75f, 1f), 0.5f);
+            }
+        }
+
+        private static string StatusWord(CarStatusKind kind)
+        {
+            switch (kind)
+            {
+                case CarStatusKind.Burning: return L.T("BURNING");
+                case CarStatusKind.Jammed: return L.T("JAMMED");
+                default: return L.T("SLICKED");
+            }
+        }
+
+        /// <summary>How long each status lasts at most (the bar's full width).</summary>
+        private static float StatusSeconds(CarStatusKind kind)
+        {
+            switch (kind)
+            {
+                case CarStatusKind.Burning: return CombatRules.BurnSeconds;
+                case CarStatusKind.Jammed: return CombatRules.EmpJamSeconds;
+                default: return CombatRules.OilSlickSeconds;
+            }
+        }
+
+        /// <summary>A named picture of the look (the guns', the specials', the statuses' icons), or null.</summary>
+        private Sprite Named(string key)
+        {
+            return theme != null && !string.IsNullOrEmpty(key) ? theme.SpriteOf(key) : null;
+        }
+
+        /// <summary>Capitals, as the HUD writes its words (Hebrew has none and stays as it is).</summary>
+        private static string Upper(string words)
+        {
+            return string.IsNullOrEmpty(words) ? "" : words.ToUpperInvariant();
         }
 
         /// <summary>The top right: the track and a dot for every car, the own one an arrow drawn over the others.</summary>
@@ -443,12 +633,25 @@ namespace Portfolio.DeathRace
                 Count(rockets, weapons.Rockets, all);
                 Count(nitro, weapons.NitroCharges, all);
                 nitro.Text.color = weapons.NitroActive ? Accent : nitro.Pulse > 0f ? Accent : Text;
-                ammo.Text.color = weapons.Ammo <= 0 ? Warn : weapons.AmmoCapacity > 0 && weapons.Ammo < weapons.AmmoCapacity / 5 ? Accent : Text;
+                ammo.Text.color = weapons.Jammed ? Muted : weapons.Ammo <= 0 ? Warn : weapons.AmmoCapacity > 0 && weapons.Ammo < weapons.AmmoCapacity / 5 ? Accent : Text;
+                SpecialKind? next = weapons.NextSpecial;
+                if (!specialShown || next != shownSpecial || all)
+                {
+                    ShowSpecial(next, weapons);
+                }
+                Count(special, next.HasValue ? weapons.SpecialsLeft(next.Value) : 0, all);
+                special.Text.color = weapons.Jammed ? Muted : next.HasValue ? Text : Warn;
+                for (int i = 0; i < otherSpecials.Length; i++)
+                {
+                    Count(otherSpecials[i], weapons.SpecialsLeft(otherKinds[i]), all);
+                }
             }
             Pulse(ammo);
             Pulse(mines);
             Pulse(rockets);
             Pulse(nitro);
+            Pulse(special);
+            ShowStatuses(all);
 
             MoveMarkers();
             ShowCountdown();
@@ -473,6 +676,53 @@ namespace Portfolio.DeathRace
             }
             counter.Shown = value;
             counter.Text.text = Number(value);
+        }
+
+        /// <summary>The chips of the statuses the car is under, packed from the left, their bars running down.</summary>
+        private void ShowStatuses(bool all)
+        {
+            CarStatus status = Car.Status;
+            int mask = 0;
+            for (int i = 0; i < chips.Length; i++)
+            {
+                if (status != null && status.Has((CarStatusKind)i) && !Car.IsWrecked)
+                {
+                    mask |= 1 << i;
+                }
+            }
+            if (mask != shownStatuses || all)
+            {
+                shownStatuses = mask;
+                int slot = 0;
+                for (int i = 0; i < chips.Length; i++)
+                {
+                    bool on = (mask & (1 << i)) != 0;
+                    chips[i].Rect.gameObject.SetActive(on);
+                    if (on)
+                    {
+                        chips[i].Rect.anchoredPosition = new Vector2(28f + slot * (ChipWidth + 10f), 28f + 168f + 12f);
+                        slot++;
+                    }
+                }
+            }
+            if (mask == 0 || status == null)
+            {
+                return;
+            }
+            for (int i = 0; i < chips.Length; i++)
+            {
+                if ((mask & (1 << i)) == 0)
+                {
+                    continue;
+                }
+                var kind = (CarStatusKind)i;
+                float left = Mathf.Clamp01(status.SecondsLeft(kind) / StatusSeconds(kind));
+                Chip chip = chips[i];
+                chip.Bar.sizeDelta = new Vector2(chip.BarWidth * left, chip.Bar.sizeDelta.y);
+                // The last second of a status blinks: it is about to let go.
+                bool blink = status.SecondsLeft(kind) < 0.8f && Mathf.Repeat(Time.unscaledTime, 0.3f) < 0.12f;
+                chip.Rect.localScale = blink ? new Vector3(0.96f, 0.96f, 1f) : Vector3.one;
+            }
         }
 
         private static void Pulse(Counter counter)
@@ -574,6 +824,23 @@ namespace Portfolio.DeathRace
                     finished = true;
                     int place = Mathf.Max(1, happened.Amount);
                     Banner(place == 1 ? L.T("YOU WIN!") : L.F("FINISHED {0}", Standings.Ordinal(place)), place == 1 ? Accent : Text);
+                    break;
+            }
+        }
+
+        /// <summary>The car came under a status: a toast says so at once (the chip stays while it lasts).</summary>
+        private void OnStatus(CarStatusKind kind)
+        {
+            switch (kind)
+            {
+                case CarStatusKind.Burning:
+                    ShowToast(L.T("ON FIRE!"), StatusColor(kind));
+                    break;
+                case CarStatusKind.Jammed:
+                    ShowToast(L.T("JAMMED!"), StatusColor(kind));
+                    break;
+                default:
+                    ShowToast(L.T("OIL!"), StatusColor(kind));
                     break;
             }
         }

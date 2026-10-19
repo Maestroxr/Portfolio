@@ -113,6 +113,9 @@ namespace Portfolio.DeathRace.Tests
             filled.MinesUsed = 2;
             filled.RocketsUsed = 1;
             filled.NitroUsed = 3;
+            filled.OilUsed = 2;
+            filled.EmpUsed = 1;
+            filled.MortarUsed = 3;
             filled.Entrant.RivalId = "rival.7";
             standings[1] = filled;
             RaceResult result = RaceRules.Result(setup, standings, 130f);
@@ -133,6 +136,12 @@ namespace Portfolio.DeathRace.Tests
             Assert.AreEqual(2, winner.MinesUsed);
             Assert.AreEqual(1, winner.RocketsUsed);
             Assert.AreEqual(3, winner.NitroUsed);
+            Assert.AreEqual(2, winner.OilUsed);
+            Assert.AreEqual(1, winner.EmpUsed);
+            Assert.AreEqual(3, winner.MortarUsed);
+            Assert.AreEqual(2, winner.SpecialsUsed(SpecialKind.Oil));
+            Assert.AreEqual(1, winner.SpecialsUsed(SpecialKind.Emp));
+            Assert.AreEqual(3, winner.SpecialsUsed(SpecialKind.Mortar));
             RacerResult wreck = result.Of(0);
             Assert.AreEqual(2, wreck.Place);
             Assert.IsTrue(wreck.Wrecked);

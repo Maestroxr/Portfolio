@@ -9,9 +9,11 @@ namespace Portfolio.DeathRace
         /// <summary>
         /// The nearest running car (not <paramref name="exclude"/>) within <paramref name="range"/> metres of
         /// <paramref name="origin"/> and inside the cone of <paramref name="coneDegrees"/> (whole width) around
-        /// <paramref name="forward"/>; null when there is none.
+        /// <paramref name="forward"/>; null when there is none. A <paramref name="homing"/> seeker (a rocket's) never
+        /// picks a car with a radar jammer (<see cref="CarStats.Jammer"/>): it does not see it.
         /// </summary>
-        public static Car NearestInCone(IReadOnlyList<Car> cars, Car exclude, Vector3 origin, Vector3 forward, float coneDegrees, float range)
+        public static Car NearestInCone(IReadOnlyList<Car> cars, Car exclude, Vector3 origin, Vector3 forward, float coneDegrees, float range,
+            bool homing = false)
         {
             if (cars == null)
             {
@@ -23,7 +25,7 @@ namespace Portfolio.DeathRace
             float bestDistance = range * range;
             foreach (Car car in cars)
             {
-                if (car == null || car == exclude || car.IsWrecked)
+                if (car == null || car == exclude || car.IsWrecked || (homing && !Lockable(car)))
                 {
                     continue;
                 }
@@ -37,6 +39,12 @@ namespace Portfolio.DeathRace
                 bestDistance = distance;
             }
             return best;
+        }
+
+        /// <summary>Whether a homing weapon can lock on to <paramref name="car"/>: not when it carries a radar jammer.</summary>
+        public static bool Lockable(Car car)
+        {
+            return car != null && !car.Stats.Jammer;
         }
 
         /// <summary>The cars of <paramref name="race"/>, or of the scene when there is no race (a test, a check).</summary>

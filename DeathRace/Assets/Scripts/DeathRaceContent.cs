@@ -19,6 +19,16 @@ namespace Portfolio.DeathRace
         public AudioClip mineArm;
         public AudioClip rocketLaunch;
         public AudioClip nitro;
+        public AudioClip minigun;
+        [Tooltip("A loop: the roar of the flamethrower while it fires.")]
+        public AudioClip flame;
+        public AudioClip plasmaShot;
+        public AudioClip plasmaBurst;
+        public AudioClip oilPour;
+        public AudioClip emp;
+        public AudioClip mortarLaunch;
+        public AudioClip mortarWhistle;
+        public AudioClip jammed;
         public AudioClip pickupCash;
         public AudioClip pickupRepair;
         public AudioClip pickupAmmo;
@@ -39,8 +49,10 @@ namespace Portfolio.DeathRace
 
     /// <summary>
     /// What a race is built from that does not change with the look: the car models (visual prefabs with a
-    /// <see cref="CarModelView"/>; the race adds the physics and the weapons when it spawns one), the mines, rockets and
-    /// pickups, the effects and the sounds. One asset, <c>Config/DeathRaceContent.asset</c>, made by the builders.
+    /// <see cref="CarModelView"/>; the race adds the physics and the weapons when it spawns one), the mines, rockets,
+    /// oil slicks, mortar shells, plasma bolts and pickups, the effects and the sounds. One asset,
+    /// <c>Config/DeathRaceContent.asset</c>, made by the builders. Every field may be missing (a stand-in drawn in code
+    /// plays instead).
     /// </summary>
     [CreateAssetMenu(fileName = "DeathRaceContent", menuName = "Death Race/Content")]
     public class DeathRaceContent : ScriptableObject
@@ -49,6 +61,12 @@ namespace Portfolio.DeathRace
         public GameObject[] carPrefabs = new GameObject[0];
         public GameObject mine;
         public GameObject rocket;
+        [Tooltip("The puddle of an oil slick: a 1 m radius decal on the ground (the race scales it).")]
+        public GameObject oilSlick;
+        [Tooltip("A mortar shell along +z.")]
+        public GameObject mortarShell;
+        [Tooltip("A plasma bolt along +z: a glowing core (the race adds its trail).")]
+        public GameObject plasmaBolt;
         [Tooltip("Per PickupKind.")]
         public GameObject[] pickups = new GameObject[0];
 
@@ -63,6 +81,15 @@ namespace Portfolio.DeathRace
         public GameObject nitroFlame;
         public GameObject dust;
         public GameObject scorch;
+        [Tooltip("The flamethrower's jet: a loop along +z.")]
+        public GameObject flameJet;
+        public GameObject plasmaBurst;
+        [Tooltip("An EMP blast: a ring that grows to 1 m radius at size 1 (the race sizes it to the blast).")]
+        public GameObject empBlast;
+        [Tooltip("A loop of sparks crawling over a jammed car.")]
+        public GameObject electric;
+        [Tooltip("A loop: the field welder's sparks.")]
+        public GameObject weld;
         public Material tracer;
         public Material skid;
 

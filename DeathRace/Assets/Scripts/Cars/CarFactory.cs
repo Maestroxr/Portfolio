@@ -6,7 +6,7 @@ namespace Portfolio.DeathRace
     /// <summary>
     /// Builds a race car at run time: the visual prefab of its model (meshes and a <see cref="CarModelView"/>, no physics),
     /// or a stand-in of primitives while the model is missing, and then every gameplay part in code (the Rigidbody and its
-    /// box, the car, its body, health, weapons and sound), so no agent's prefab has to know another's components.
+    /// box, the car, its body, health, weapons, statuses and sound), so no agent's prefab has to know another's components.
     /// </summary>
     public static class CarFactory
     {
@@ -66,11 +66,14 @@ namespace Portfolio.DeathRace
             CarBody body = root.AddComponent<CarBody>();
             CarHealth health = root.AddComponent<CarHealth>();
             CarWeapons weapons = root.AddComponent<CarWeapons>();
+            CarStatus status = root.AddComponent<CarStatus>();
             CarAudio audio = root.AddComponent<CarAudio>();
 
             car.Setup(entrant, race, driver, body, health, weapons, view);
+            car.AttachStatus(status);
             body.Setup(car, car.Stats);
             health.Setup(car, loadout.health);
+            status.Setup(car);
             weapons.Setup(car, loadout);
             car.AttachAudio(audio);
             audio.Setup(car, content != null ? content.sounds : null, volume);
