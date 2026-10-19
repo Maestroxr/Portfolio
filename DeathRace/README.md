@@ -114,16 +114,18 @@ in the look shown. Stars: three for a win on a track, two for second, one for th
   track (those opened on this device), the laps, the car (one of the six for everyone, or a random car per seat) and
   computer cars to fill the grid to four (none, easy, normal, hard). Race Again keeps the same people.
 - **Online** (BaseGame's lobby and rooms; room options: the track, the laps, the car): a real time race like the Endless
-  Runner's. Every device drives its own car and sends its pose about fifteen times a second; the others show as
-  puppets that still fire, burn nitro and blow up from the flags of their poses. A car's own device judges every hit on
-  it; mines, rockets and wrecks go through the room's action log, so every device has them; a pickup or a mine belongs
-  to the first device that claims it; finishing is reported to the server, which ranks the room. When the first car
-  finishes the others have thirty seconds. Private rooms, players at one device (companions) and tournaments are
-  BaseGame's.
+  Runner's. Every car carries the machine gun and a load of every weapon, specials included. Every device drives its
+  own car and sends its pose about fifteen times a second; the others show as puppets that still fire, burn nitro and
+  blow up from the flags of their poses. A car's own device judges every hit on it; mines, rockets, oil slicks, EMP
+  blasts, mortar shells and wrecks go through the room's action log, so every device has them (a slick, a pulse or a
+  shell of another device hurts and hinders only the cars driven here); a pickup or a mine belongs to the first device
+  that claims it; finishing is reported to the server, which ranks the room. When the first car finishes the others
+  have thirty seconds. Private rooms, players at one device (companions) and tournaments are BaseGame's.
 - **The server module** (`Server/Lib.cs`, database `skinnerboxes-deathrace`): the base server plus the race's tables
   (`RaceTrack`, `RaceRacer`, `RaceClaim`, `DeathRaceStats`) and reducers (`ClaimPickup`, `ClaimMine`, `FinishRace`);
-  `Assets/Scripts/Online/OnlineRaceRules.cs` is compiled into the module and the game alike (payloads, pose flags, claim
-  keys, scores). Publish it with BaseGame's `Gamebox > Server > Publish All Games` (or `spacetime publish` here).
+  `Assets/Scripts/Online/OnlineRaceRules.cs` is compiled into the module and the game alike (the actions and their
+  payloads, pose flags, claim keys, the number of cars and tracks a room may name, scores). Publish it with BaseGame's
+  `Gamebox > Server > Publish All Games` (or `spacetime publish` here) after a change there.
 
 ## How it is built
 
