@@ -132,6 +132,7 @@ namespace Portfolio.DeathRace
                 Difficulty = offer.difficulty,
                 Seed = offer.seed,
                 CashPerPickup = CareerRules.CashPerPickup(state.League, offer.difficulty),
+                Bounty = CareerRules.Bounty(state.League, offer.difficulty),
                 Pickups = true
             };
             setup.Entrants.Add(new RaceEntrant

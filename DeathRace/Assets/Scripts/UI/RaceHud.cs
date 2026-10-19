@@ -799,7 +799,7 @@ namespace Portfolio.DeathRace
             {
                 case CarEventKind.Kill:
                     string victim = happened.Other != null && happened.Other.Entrant != null ? happened.Other.Entrant.Name : "";
-                    int bounty = Race != null && Race.Setup != null && Race.Setup.Mode == RaceMode.Career ? CareerRules.Bounty(Race.Setup.Difficulty) : 0;
+                    int bounty = Race != null && Race.Setup != null && Race.Setup.Mode == RaceMode.Career ? Race.Setup.Bounty : 0;
                     ShowToast(bounty > 0 ? L.F("WRECKED {0}! +{1}", victim, RaceFormat.Money(bounty)) : L.F("WRECKED {0}!", victim), Accent);
                     break;
                 case CarEventKind.Wrecked:

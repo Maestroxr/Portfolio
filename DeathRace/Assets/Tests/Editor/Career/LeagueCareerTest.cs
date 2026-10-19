@@ -122,6 +122,7 @@ namespace Portfolio.DeathRace.Tests
             for (int i = 0; i < state.offers.Count; i++)
             {
                 RaceSetup setup = Career.Setup(state, state.offers[i], null);
+                Assert.AreEqual(CareerRules.Bounty(state.League, state.offers[i].difficulty), setup.Bounty, "the HUD shows the league's bounty");
                 foreach (RaceEntrant entrant in setup.Entrants.Skip(1))
                 {
                     Assert.AreEqual(state.Rival(entrant.RivalId).Car, entrant.Loadout.model, entrant.RivalId);

@@ -100,6 +100,9 @@ namespace Portfolio.DeathRace
         /// <summary>What a cash pickup is worth.</summary>
         public int CashPerPickup = 50;
 
+        /// <summary>What wrecking a car pays (a career race's bounty, which the HUD shows with the kill); 0 for none.</summary>
+        public int Bounty;
+
         public bool Pickups = true;
 
         public RaceEntrant EntrantAt(int seat)
