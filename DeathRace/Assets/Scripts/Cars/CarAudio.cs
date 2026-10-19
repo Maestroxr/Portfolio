@@ -5,8 +5,11 @@ namespace Portfolio.DeathRace
     /// <summary>
     /// The sound of one car: its engine loop, pitched by the speed through five gears (it drops at each change up and
     /// climbs again) and lifted by the throttle, so a car revving on the grid, pulling away and backing off all sound
-    /// different; and the squeal of its tyres while it slides. Heavier cars sound deeper. Both loops are partly placed in
-    /// the world, so the cars near the camera are the loud ones, and they pause with the game. A missing clip is silence.
+    /// different; and the squeal of its tyres while it slides. Heavier cars sound deeper, and some cars have a character
+    /// of their own (<see cref="Character"/>): the Jackal buzzes, the Mauler and the Goliath growl, the Spectre is hushed,
+    /// and the Banshee's supercharger and the Apocalypse's turbines whine over their engines (the turbines louder with
+    /// nitro). The loops are partly placed in the world, so the cars near the camera are the loud ones, and they pause
+    /// with the game. A missing clip is silence.
     /// </summary>
     public class CarAudio : MonoBehaviour
     {
@@ -18,6 +21,9 @@ namespace Portfolio.DeathRace
         private Car car;
         private AudioSource engine;
         private AudioSource skid;
+        private AudioSource whine;
+        private float whineRatio;
+        private float whineVolume;
         private float basePitch = 1f;
         private float loudness = 1f;
         private float pitch = 0.6f;
@@ -34,7 +40,11 @@ namespace Portfolio.DeathRace
             car = owner;
             loudness = Mathf.Clamp01(volume);
             float heft = owner != null ? Mathf.InverseLerp(1100f, 1700f, owner.Stats.Mass) : 0f;
-            basePitch = Mathf.Lerp(1.1f, 0.82f, heft);
+            (float pitchFactor, float loudnessFactor, float ratio, float share) = Character(owner != null && owner.Loadout != null ? owner.Loadout.model : CarModel.Rustbucket);
+            basePitch = Mathf.Lerp(1.1f, 0.82f, heft) * pitchFactor;
+            loudness *= loudnessFactor;
+            whineRatio = ratio;
+            whineVolume = share;
             AudioClip engineClip = sounds != null ? sounds.engine : null;
             AudioClip skidClip = sounds != null ? sounds.skid : null;
             if ((engineClip == null || skidClip == null) && !warned)
@@ -49,6 +59,30 @@ namespace Portfolio.DeathRace
                 // Every engine starts at its own point of the loop, so a grid of the same car does not drone in phase.
                 engine.time = Mathf.Repeat((owner != null && owner.Entrant != null ? owner.Entrant.Seat + 1 : 0) * 0.737f, Mathf.Max(0.01f, engineClip.length));
                 engine.Play();
+                if (whineRatio > 0f)
+                {
+                    whine = Loop(engineClip, "Whine");
+                    whine.time = Mathf.Repeat(engine.time + engineClip.length * 0.5f, Mathf.Max(0.01f, engineClip.length));
+                    whine.Play();
+                }
+            }
+        }
+
+        /// <summary>
+        /// The character of a model's engine: its pitch against the others', its loudness, and the whine laid over it (a
+        /// second voice of the engine at <c>ratio</c> times its pitch, at <c>share</c> of its loudness; 0 = none).
+        /// </summary>
+        public static (float pitch, float loudness, float ratio, float share) Character(CarModel model)
+        {
+            switch (model)
+            {
+                case CarModel.Jackal: return (1.1f, 1f, 0f, 0f);
+                case CarModel.Mauler: return (0.9f, 1.05f, 0f, 0f);
+                case CarModel.Banshee: return (0.96f, 1.05f, 1.6f, 0.22f);
+                case CarModel.Spectre: return (1.06f, 0.75f, 0f, 0f);
+                case CarModel.Goliath: return (0.86f, 1.1f, 0f, 0f);
+                case CarModel.Apocalypse: return (1f, 0.95f, 1.85f, 0.3f);
+                default: return (1f, 1f, 0f, 0f);
             }
         }
 
@@ -59,6 +93,10 @@ namespace Portfolio.DeathRace
             if (skid != null)
             {
                 skid.Stop();
+            }
+            if (whine != null)
+            {
+                whine.Stop();
             }
         }
 
@@ -74,6 +112,7 @@ namespace Portfolio.DeathRace
                 paused = stopped;
                 Pause(engine, paused);
                 Pause(skid, paused);
+                Pause(whine, paused);
             }
             if (paused)
             {
@@ -104,6 +143,12 @@ namespace Portfolio.DeathRace
                     engine.pitch = pitch;
                     float share = Mathf.Clamp01(Mathf.Abs(car.Body.ForwardSpeed) / Mathf.Max(1f, car.Stats.TopSpeed));
                     engine.volume = loudness * (car.IsHuman ? 1f : 0.75f) * (0.32f + 0.42f * throttle + 0.26f * share);
+                    if (whine != null)
+                    {
+                        // The whine climbs with the revs and swells with the speed (and, on the jets, with the nitro).
+                        whine.pitch = Mathf.Min(3f, pitch * whineRatio);
+                        whine.volume = loudness * whineVolume * (car.IsHuman ? 1f : 0.75f) * (0.25f + 0.75f * share) * (car.Body.Nitro ? 1.6f : 1f);
+                    }
                 }
             }
             if (skid != null && !silenced)

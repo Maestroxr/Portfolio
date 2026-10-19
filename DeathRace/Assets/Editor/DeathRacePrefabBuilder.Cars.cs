@@ -10,7 +10,7 @@ namespace Portfolio.DeathRace.EditorTools
             return $"{CarArt.MeshFolder}/{model}{part}.asset";
         }
 
-        /// <summary>The meshes of the six cars: body, paint, head and tail lights, front and rear wheels.</summary>
+        /// <summary>The meshes of the cars: body, paint, head and tail lights, the glowing lamps (if any), front and rear wheels.</summary>
         private static void BuildCarMeshes()
         {
             for (int i = 0; i < CarSpecs.Count; i++)
@@ -21,15 +21,20 @@ namespace Portfolio.DeathRace.EditorTools
                 SaveMesh(rig.Paint, CarMesh(model, "Paint"));
                 SaveMesh(rig.Heads, CarMesh(model, "Headlights"));
                 SaveMesh(rig.Tails, CarMesh(model, "Taillights"));
+                if (rig.Glows.VertexCount > 0)
+                {
+                    SaveMesh(rig.Glows, CarMesh(model, "Glows"));
+                }
                 SaveMesh(rig.FrontWheel, CarMesh(model, "WheelFront"));
                 SaveMesh(rig.RearWheel, CarMesh(model, "WheelRear"));
             }
         }
 
         /// <summary>
-        /// The car prefabs: the model's renderers, four wheel objects pivoting at their centres, the muzzle, mine chute,
-        /// rocket mount and exhaust points, the contact shadow, the night beams and tail glow, the nitro flames, and a
-        /// CarModelView wired to all of them. No colliders or rigidbody: the race adds those.
+        /// The car prefabs: the model's renderers (with its glowing lamps, if it has any), four wheel objects pivoting at
+        /// their centres, the muzzle, mine chute, rocket mount and exhaust points, the contact shadow, the night beams and
+        /// tail glow, the nitro flames, and a CarModelView wired to all of them. No colliders or rigidbody: the race adds
+        /// those.
         /// </summary>
         private static void BuildCars()
         {
@@ -75,6 +80,10 @@ namespace Portfolio.DeathRace.EditorTools
                 view.paint = new Renderer[] { painted };
                 view.headlights = new Renderer[] { heads };
                 view.taillights = new Renderer[] { tails };
+                view.glows = rig.Glows.VertexCount > 0
+                    ? new Renderer[] { Part(t, "Glows", DeathRaceAssets.Require<Mesh>(CarMesh(model, "Glows")), palette, Vector3.zero, Quaternion.identity, false) }
+                    : new Renderer[0];
+                view.paintGloss = rig.PaintGloss;
 
                 view.muzzle = Mount(t, "Muzzle", rig.Muzzle, Quaternion.identity);
                 view.mineDrop = Mount(t, "MineDrop", rig.MineDrop, Quaternion.Euler(0f, 180f, 0f));
@@ -86,7 +95,7 @@ namespace Portfolio.DeathRace.EditorTools
                     Quaternion blow = Quaternion.LookRotation(rig.ExhaustDirections[e], Vector3.up);
                     exhausts.Add(Mount(t, $"Exhaust{e + 1}", rig.Exhausts[e], blow));
                     MeshRenderer fire = Part(t, $"NitroFlame{e + 1}", flame, CarArt.Shared("NitroFlame"), rig.Exhausts[e] + rig.ExhaustDirections[e] * 0.02f, blow, false);
-                    fire.transform.localScale = Vector3.one * Mathf.Lerp(0.9f, 1.3f, (spec.Size.x - 1.9f) / 0.4f);
+                    fire.transform.localScale = Vector3.one * (Mathf.Lerp(0.9f, 1.3f, (spec.Size.x - 1.9f) / 0.4f) * rig.FlameScale);
                     fire.enabled = false;
                     flames.Add(fire);
                 }

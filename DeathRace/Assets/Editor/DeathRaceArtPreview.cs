@@ -18,7 +18,8 @@ namespace Portfolio.DeathRace.EditorTools
     /// line) seen by the race camera, the props and landmarks up close and from high above, the barrier close up; per look
     /// the interface sprites and icons on a canvas. Run with
     /// <c>-executeMethod Portfolio.DeathRace.EditorTools.DeathRaceArtPreview.RenderSheets -artshots &lt;folder&gt;</c>
-    /// (or <c>RenderWorld</c> / <c>RenderInterface</c>). Nothing is saved to the project: the scenes are made in memory.
+    /// (or <c>RenderWorld</c> / <c>RenderInterface</c>; <c>IconSheet</c> draws every icon, upgrade picture and portrait
+    /// straight from their code, nothing built). Nothing is saved to the project: the scenes are made in memory.
     /// </summary>
     internal static class DeathRaceArtPreview
     {
@@ -431,7 +432,7 @@ namespace Portfolio.DeathRace.EditorTools
         /// <summary>A few of ART-CARS' cars on the road, for scale and to see them against the land (when they are built).</summary>
         private static void PlaceCars(DeathRaceTheme theme, Transform root)
         {
-            var spots = new[] { (CarModel.Viper, new Vector3(-6f, 0f, 2.5f), 90f), (CarModel.Bulldog, new Vector3(-14f, 0f, -2.5f), 90f), (CarModel.Rustbucket, new Vector3(22f, 0f, 8f), 45f) };
+            var spots = new[] { (CarModel.Viper, new Vector3(-6f, 0f, 2.5f), 90f), (CarModel.Goliath, new Vector3(-14f, 0f, -2.5f), 90f), (CarModel.Jackal, new Vector3(22f, 0f, 8f), 45f) };
             for (int i = 0; i < spots.Length; i++)
             {
                 GameObject prefab = DeathRacePrefabBuilder.CarPrefab(spots[i].Item1);
@@ -509,7 +510,7 @@ namespace Portfolio.DeathRace.EditorTools
 
             // The four cars on the grid, two more racing through the sharpest corner.
             float corner = SharpestCorner(track);
-            var models = new[] { CarModel.Viper, CarModel.Bulldog, CarModel.Hornet, CarModel.Reaper, CarModel.Tyrant, CarModel.Rustbucket };
+            var models = new[] { CarModel.Viper, CarModel.Goliath, CarModel.Hornet, CarModel.Spectre, CarModel.Apocalypse, CarModel.Banshee };
             for (int i = 0; i < 4; i++)
             {
                 Pose slot = track.GridSlot(i);
@@ -688,7 +689,7 @@ namespace Portfolio.DeathRace.EditorTools
             AddImage(rootRect, DeathRaceArtBuilder.UI(spec, "Preview"), new Vector2(1640f, 520f), new Vector2(200f, 200f), Image.Type.Simple);
             for (int i = 0; i < DeathRaceArtBuilder.UpgradeIcons.Length; i++)
             {
-                AddImage(rootRect, DeathRaceArtBuilder.UpgradePicture(spec, DeathRaceArtBuilder.UpgradeIcons[i]), new Vector2(1560f + i * 120f, 860f), new Vector2(110f, 110f), Image.Type.Simple);
+                AddImage(rootRect, DeathRaceArtBuilder.UpgradePicture(spec, DeathRaceArtBuilder.UpgradeIcons[i]), new Vector2(1485f + i * 93f, 860f), new Vector2(84f, 84f), Image.Type.Simple);
             }
 
             Canvas.ForceUpdateCanvases();
@@ -698,6 +699,77 @@ namespace Portfolio.DeathRace.EditorTools
             File.WriteAllBytes(file, sheet.EncodeToPNG());
             Object.DestroyImmediate(sheet);
             Debug.Log($"Art preview: {file}");
+        }
+
+        // ------------------------------------------------------------------------------------------------
+        // The icons straight from their code
+        // ------------------------------------------------------------------------------------------------
+
+        /// <summary>
+        /// Per look a sheet (icons-&lt;Look&gt;.png) of every icon at 128 px, ten to a row, the upgrades' pictures at 256 px
+        /// and the drivers' and champions' portraits, drawn from <see cref="DeathRaceArtIcons"/> and
+        /// <see cref="DeathRaceArtPortraits"/> over the look's backdrop colour: quick to judge, nothing is built or saved.
+        /// </summary>
+        public static void IconSheet()
+        {
+            string folder = OutputFolder();
+            const int cell = 136;
+            const int columns = 10;
+            const int big = 264;
+            int iconRows = (DeathRaceArtIcons.Names.Length + columns - 1) / columns;
+            int portraitRows = (DeathRaceArtPortraits.Count + columns - 1) / columns;
+            int width = cell * columns;
+            int height = cell * (iconRows + portraitRows) + big;
+            foreach (DeathRaceThemeSpec spec in DeathRaceThemeSpec.All)
+            {
+                var pixels = new Color[width * height];
+                Color background = spec.Night ? DeathRaceThemeSpec.Hex(0x1A2238) : DeathRaceThemeSpec.Hex(0x8A7458);
+                for (int i = 0; i < pixels.Length; i++)
+                {
+                    pixels[i] = background;
+                }
+                for (int i = 0; i < DeathRaceArtIcons.Names.Length; i++)
+                {
+                    Blit(pixels, width, height, DeathRaceArtIcons.Draw(DeathRaceArtIcons.Names[i], 128, spec), i % columns * cell + 4, i / columns * cell + 4);
+                }
+                for (int i = 0; i < DeathRaceArtBuilder.UpgradeIcons.Length; i++)
+                {
+                    Blit(pixels, width, height, DeathRaceArtIcons.Draw(DeathRaceArtBuilder.UpgradeIcons[i], 256, spec), i * big + 4, iconRows * cell + 4);
+                }
+                for (int i = 0; i < DeathRaceArtPortraits.Count; i++)
+                {
+                    Blit(pixels, width, height, DeathRaceArtPortraits.Draw(i, spec), i % columns * cell + 4, iconRows * cell + big + i / columns * cell + 4);
+                }
+                var sheet = new Texture2D(width, height, TextureFormat.RGBA32, false);
+                sheet.SetPixels(pixels);
+                sheet.Apply();
+                string file = Path.Combine(folder, $"icons-{spec.Name}.png");
+                File.WriteAllBytes(file, sheet.EncodeToPNG());
+                Object.DestroyImmediate(sheet);
+                Debug.Log($"Art preview: {file}");
+            }
+        }
+
+        /// <summary>Lays <paramref name="picture"/> (straight alpha) over the sheet with its top left corner at <paramref name="left"/>, <paramref name="top"/> from the top.</summary>
+        private static void Blit(Color[] sheet, int width, int height, Texture2D picture, int left, int top)
+        {
+            Color[] pixels = picture.GetPixels();
+            for (int y = 0; y < picture.height; y++)
+            {
+                for (int x = 0; x < picture.width; x++)
+                {
+                    int sx = left + x;
+                    int sy = height - top - picture.height + y;
+                    if (sx < 0 || sy < 0 || sx >= width || sy >= height)
+                    {
+                        continue;
+                    }
+                    Color c = pixels[y * picture.width + x];
+                    int index = sy * width + sx;
+                    sheet[index] = Color.Lerp(sheet[index], new Color(c.r, c.g, c.b, 1f), c.a);
+                }
+            }
+            Object.DestroyImmediate(picture);
         }
 
         private static Image AddImage(RectTransform parent, Sprite sprite, Vector2 center, Vector2 size, Image.Type type)

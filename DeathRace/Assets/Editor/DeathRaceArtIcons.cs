@@ -8,15 +8,21 @@ namespace Portfolio.DeathRace.EditorTools
     /// The icons of the game, each a few bold shapes (signed distance functions on a 128 unit square, y up) drawn in the
     /// style of a look: Scorched fills them in warm, shaded colours with a dark cartoon outline and a hard shadow;
     /// Nightfall draws them as dark glass outlined in neon with a glow. The same shapes make the 128 px icons, the 256 px
-    /// pictures of the upgrades and the launcher's emblem (<see cref="GameIcon"/>).
+    /// pictures of the five upgrades and the launcher's emblem (<see cref="GameIcon"/>).
     /// </summary>
     internal static class DeathRaceArtIcons
     {
-        /// <summary>The icons every look has, by file name.</summary>
+        /// <summary>
+        /// The icons every look has, by file name (and by key: theme.SpriteOf). After the first twenty come those of the
+        /// leagues: the nitro system and the gun mount, the fittings, the guns, the special weapons, the workshop, a league
+        /// and the statuses a car can suffer (the names in Arsenal's Icon fields).
+        /// </summary>
         public static readonly string[] Names =
         {
             "Ammo", "Mine", "Rocket", "Nitro", "Cash", "Repair", "Health", "Flag", "Skull", "Engine", "Tyres", "Armour",
-            "Spikes", "Piercing", "Sabotage", "Trophy", "Star", "Lock", "Car", "Timer"
+            "Spikes", "Piercing", "Sabotage", "Trophy", "Star", "Lock", "Car", "Timer",
+            "Boost", "GunMount", "Cage", "Shield", "Jammer", "Welder", "Magazine", "MachineGun", "Minigun", "Flamethrower", "Plasma",
+            "Oil", "Emp", "Mortar", "Workshop", "League", "Burning", "Jammed", "Slicked"
         };
 
         private sealed class Part
@@ -147,6 +153,25 @@ namespace Portfolio.DeathRace.EditorTools
                 case "Star": return new Icon(Hex(0xFFD24A)).Add(p => Sd.Star(p, V(64f, 62f), 52f, 5, 0.45f), Hex(0xE8B42A));
                 case "Lock": return Lock();
                 case "Car": return Car();
+                case "Boost": return Boost();
+                case "GunMount": return GunMount();
+                case "Cage": return Cage();
+                case "Shield": return Shield();
+                case "Jammer": return Jammer();
+                case "Welder": return Welder();
+                case "Magazine": return Magazine();
+                case "MachineGun": return MachineGun();
+                case "Minigun": return Minigun();
+                case "Flamethrower": return Flamethrower();
+                case "Plasma": return Plasma();
+                case "Oil": return Oil();
+                case "Emp": return Emp();
+                case "Mortar": return Mortar();
+                case "Workshop": return Workshop();
+                case "League": return League();
+                case "Burning": return Burning();
+                case "Jammed": return Jammed();
+                case "Slicked": return Slicked();
                 default: return Timer();
             }
         }
@@ -510,6 +535,516 @@ namespace Portfolio.DeathRace.EditorTools
                 }
                 return d;
             }, Hex(0x3A3F45));
+            return icon;
+        }
+
+        // ------------------------------------------------------------------------------------------------
+        // The icons of the leagues' upgrades, fittings, guns, special weapons and statuses (128 units, y up)
+        // ------------------------------------------------------------------------------------------------
+
+        /// <summary>The nitro system: two bottles on a manifold, a blue flame out of its nozzle.</summary>
+        private static Icon Boost()
+        {
+            var icon = new Icon(Hex(0x3FE6FF));
+            Vector2[] flame = Tongue(V(64f, 90f), 32f, 13f, 3f, 2f);
+            icon.Add(p => Sd.Polygon(p, flame), Hex(0x3FA8FF), Hex(0x3FE6FF));
+            icon.Detail(p => Sd.Polygon(p, flame) + 5f, Hex(0xD8F4FF), Hex(0xEAF8FF));
+            icon.Add(p => Sd.Union(Sd.Segment(p, V(40f, 82f), V(88f, 82f), 5f), Sd.Box(p, V(64f, 86f), V(7f, 8f), 2f)), Hex(0xB8BEC4));
+            foreach (float x in new[] { 40f, 88f })
+            {
+                float bx = x;
+                icon.Add(p => Sd.Box(p, V(bx, 78f), V(6f, 5f), 1.5f), Hex(0xB8BEC4));
+                icon.Add(p => Sd.Box(p, V(bx, 44f), V(17f, 30f), 15f), Hex(0x2F6BFF));
+                icon.Detail(p => Sd.Box(p, V(bx, 46f), V(17.2f, 7f)), Hex(0xEDEAE2), Hex(0xEAF8FF));
+                icon.Detail(p => Sd.Box(p, V(bx - 8f, 60f), V(2.5f, 8f), 2.5f), Hex(0x8FB6FF, 0.8f));
+            }
+            return icon;
+        }
+
+        /// <summary>The gun mount: a gun on a pedestal bolted to a plate, a plus for the upgrade.</summary>
+        private static Icon GunMount()
+        {
+            var icon = new Icon(Hex(0xFF8A2A));
+            var pivot = V(62f, 58f);
+            Vector2 R(Vector2 p)
+            {
+                return Sd.Rotate(p, pivot, 18f);
+            }
+
+            icon.Add(p => Sd.Box(p, V(64f, 20f), V(46f, 8f), 4f), Hex(0x4A4F55));
+            icon.Detail(p =>
+            {
+                float d = float.MaxValue;
+                foreach (float x in new[] { 26f, 48f, 80f, 102f })
+                {
+                    d = Mathf.Min(d, Sd.Circle(p, V(x, 20f), 2.8f));
+                }
+                return d;
+            }, Hex(0xB8BEC4));
+            icon.Add(p => Sd.Polygon(p, new[] { V(50f, 27f), V(78f, 27f), V(70f, 52f), V(58f, 52f) }), Hex(0x6E747A));
+            icon.Add(p => Sd.Box(R(p), V(38f, 46f), V(9f, 10f), 2f), Hex(0x5B6236));
+            icon.Add(p => Sd.Union(Sd.Box(R(p), V(94f, 61f), V(20f, 4.5f), 2f), Sd.Box(R(p), V(115f, 61f), V(4f, 7f), 1f)), Hex(0x2A2D33));
+            icon.Add(p => Sd.Box(R(p), V(80f, 61f), V(8f, 8f), 2f), Hex(0x8A9096));
+            icon.Add(p => Sd.Box(R(p), V(54f, 60f), V(22f, 11f), 3f), Hex(0x3A3F45));
+            icon.Detail(p => Sd.Box(R(p), V(54f, 67f), V(18f, 2f)), Hex(0x8A9096));
+            icon.Add(p => Sd.Union(Sd.Box(p, V(24f, 102f), V(4.5f, 14f), 1.5f), Sd.Box(p, V(24f, 102f), V(14f, 4.5f), 1.5f)), Hex(0x8BD450), Hex(0x5CFFA0));
+            return icon;
+        }
+
+        /// <summary>The roll cage: a frame of tubes over a car's body.</summary>
+        private static Icon Cage()
+        {
+            var icon = new Icon(Hex(0x3FE6FF));
+            Vector2[] joints = { V(32f, 52f), V(46f, 98f), V(84f, 98f), V(100f, 52f), V(68f, 52f), V(66f, 98f) };
+            icon.Add(p =>
+            {
+                float d = Sd.Segment(p, joints[0], joints[1], 4.5f);
+                d = Mathf.Min(d, Sd.Segment(p, joints[1], joints[2], 4.5f));
+                d = Mathf.Min(d, Sd.Segment(p, joints[2], joints[3], 4.5f));
+                d = Mathf.Min(d, Sd.Segment(p, joints[5], joints[4], 4f));
+                d = Mathf.Min(d, Sd.Segment(p, joints[1], joints[4], 3.5f));
+                d = Mathf.Min(d, Sd.Segment(p, joints[5], joints[3], 3.5f));
+                return d;
+            }, Hex(0xB8BEC4));
+            icon.Detail(p =>
+            {
+                float d = float.MaxValue;
+                foreach (Vector2 joint in new[] { joints[1], joints[2], joints[5] })
+                {
+                    d = Mathf.Min(d, Sd.Circle(p, joint, 6f));
+                }
+                return d;
+            }, Hex(0x6E747A));
+            icon.Add(p => Sd.Box(p, V(64f, 42f), V(52f, 12f), 6f), Hex(0xC62E24), Hex(0xFF3A3A));
+            icon.Detail(p => Sd.Box(p, V(64f, 46f), V(48f, 2f)), Hex(0xE8664A), Hex(0xFF8A8A));
+            foreach (float x in new[] { 34f, 94f })
+            {
+                float wx = x;
+                icon.Add(p => Sd.Circle(p, V(wx, 28f), 12f), Hex(0x1A1A1C), Hex(0xEAF2FF));
+                icon.Detail(p => Sd.Circle(p, V(wx, 28f), 5f), Hex(0xB8BEC4));
+            }
+            return icon;
+        }
+
+        /// <summary>Blast shielding: a riveted plate over a burst.</summary>
+        private static Icon Shield()
+        {
+            var icon = new Icon(Hex(0xFF8A2A));
+            icon.Add(p => Sd.Star(p, V(64f, 46f), 42f, 9, 0.55f), Hex(0xFF8A1E), Hex(0xFFB02A));
+            icon.Detail(p => Sd.Star(p, V(64f, 46f), 24f, 9, 0.55f, 110f), Hex(0xFFE08A), Hex(0xFFF2B0));
+            icon.Add(p => Sd.Intersect(Sd.Ring(p, V(64f, 20f), 78f, 18f), Mathf.Abs(p.x - 64f) - 54f), Hex(0xA8AEB4), Hex(0x4A8CFF));
+            icon.Detail(p =>
+            {
+                float d = float.MaxValue;
+                for (int i = -2; i <= 2; i++)
+                {
+                    float a = (90f + i * 17f) * Mathf.Deg2Rad;
+                    d = Mathf.Min(d, Sd.Circle(p, V(64f, 20f) + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * 78f, 3f));
+                }
+                return d;
+            }, Hex(0xE6EAEE));
+            icon.Detail(p => Sd.Intersect(Sd.Ring(p, V(64f, 20f), 71f, 2.2f), Mathf.Abs(p.x - 64f) - 50f), Hex(0x6E747A), Hex(0x4A8CFF));
+            return icon;
+        }
+
+        /// <summary>The radar jammer: a mast sending waves, struck through.</summary>
+        private static Icon Jammer()
+        {
+            var icon = new Icon(Hex(0xFF3F6A));
+            var top = V(64f, 80f);
+            icon.Add(p =>
+            {
+                float d = float.MaxValue;
+                foreach (float radius in new[] { 20f, 32f, 44f })
+                {
+                    d = Mathf.Min(d, Sd.Intersect(Sd.Ring(p, top, radius, 5f), Mathf.Abs(p.y - top.y) - Mathf.Abs(p.x - top.x) * 0.75f));
+                }
+                return d;
+            }, Hex(0x3FA8FF), Hex(0x3FE6FF));
+            icon.Add(p => Sd.Union(Sd.Segment(p, V(64f, 22f), top, 4.5f), Sd.Polygon(p, new[] { V(46f, 16f), V(82f, 16f), V(64f, 40f) })), Hex(0x8A9096));
+            icon.Add(p => Sd.Circle(p, top, 8f), Hex(0xE8402A), Hex(0xFF5A3A));
+            icon.Add(p => Sd.Segment(p, V(24f, 22f), V(104f, 106f), 6f), Hex(0xD8302A), Hex(0xFF3F6A));
+            return icon;
+        }
+
+        /// <summary>The field welder: a torch spitting sparks.</summary>
+        private static Icon Welder()
+        {
+            var icon = new Icon(Hex(0xFFD24A));
+            var tip = V(88f, 40f);
+            icon.Add(p => Sd.Star(p, tip, 28f, 8, 0.3f, 20f), Hex(0xFFC93C), Hex(0xFFE08A));
+            icon.Detail(p => Sd.Circle(p, tip, 8f), Hex(0xFFFDF0), Hex(0xFFFFFF));
+            icon.Detail(p =>
+            {
+                float d = float.MaxValue;
+                foreach (float degrees in new[] { -70f, -30f, 10f, 50f, 200f, 250f })
+                {
+                    float a = degrees * Mathf.Deg2Rad;
+                    var dir = new Vector2(Mathf.Cos(a), Mathf.Sin(a));
+                    d = Mathf.Min(d, Sd.Segment(p, tip + dir * 33f, tip + dir * 38f, 2f));
+                }
+                return d;
+            }, Hex(0xFFB02A), Hex(0xFFE08A));
+            icon.Add(p => Sd.Union(Sd.Segment(p, V(20f, 112f), V(30f, 98f), 4f), Sd.Segment(p, V(30f, 98f), V(36f, 92f), 4f)), Hex(0x2A2D33));
+            icon.Add(p => Sd.Segment(p, V(36f, 92f), V(60f, 68f), 9f), Hex(0xC62E24), Hex(0xFF3A3A));
+            icon.Detail(p =>
+            {
+                float d = float.MaxValue;
+                for (int i = 0; i < 4; i++)
+                {
+                    Vector2 at = Vector2.Lerp(V(40f, 88f), V(56f, 72f), i / 3f);
+                    d = Mathf.Min(d, Sd.Segment(p, at + V(-6f, -6f), at + V(6f, 6f), 1.4f));
+                }
+                return d;
+            }, Hex(0x8E1E18));
+            icon.Add(p => Sd.Segment(p, V(60f, 68f), V(76f, 52f), 6f), Hex(0xB8BEC4));
+            icon.Add(p => Sd.Segment(p, V(76f, 52f), V(84f, 44f), 3f), Hex(0xD9A441));
+            return icon;
+        }
+
+        /// <summary>The extended magazine: a long box magazine with rounds showing, a plus for the extra half.</summary>
+        private static Icon Magazine()
+        {
+            var icon = new Icon(Hex(0xFFD24A));
+            var c = V(54f, 58f);
+            Vector2 R(Vector2 p)
+            {
+                return Sd.Rotate(p, c, -12f);
+            }
+
+            icon.Add(p => Sd.Box(R(p), V(54f, 90f), V(9f, 8f), 1f), Hex(0xD9A441));
+            icon.Add(p => Sd.Intersect(Sd.Ellipse(R(p), V(54f, 98f), V(8f, 16f)), 98f - R(p).y), Hex(0xC8673A));
+            icon.Add(p => Sd.Box(R(p), V(54f, 54f), V(20f, 40f), 4f), Hex(0x3A3F45));
+            icon.Add(p => Sd.Box(R(p), V(54f, 16f), V(23f, 5f), 2f), Hex(0x2A2D33));
+            icon.Detail(p =>
+            {
+                float d = float.MaxValue;
+                for (int i = 0; i < 4; i++)
+                {
+                    d = Mathf.Min(d, Sd.Box(R(p), V(54f, 30f + i * 16f), V(9f, 4f), 1.5f));
+                }
+                return d;
+            }, Hex(0xD9A441));
+            icon.Detail(p => Sd.Box(R(p), V(40f, 54f), V(2f, 34f)), Hex(0x6E747A));
+            icon.Add(p => Sd.Union(Sd.Box(p, V(100f, 86f), V(5f, 16f), 1.5f), Sd.Box(p, V(100f, 86f), V(16f, 5f), 1.5f)), Hex(0x8BD450), Hex(0x5CFFA0));
+            return icon;
+        }
+
+        /// <summary>The machine gun from the side: stock, receiver, the cooling jacket, the belt of rounds.</summary>
+        private static Icon MachineGun()
+        {
+            var icon = new Icon(Hex(0xFFD24A));
+            icon.Add(p =>
+            {
+                float d = float.MaxValue;
+                for (int i = 0; i < 6; i++)
+                {
+                    float t = i / 5f;
+                    Vector2 at = V(54f - t * 14f, 46f - t * 30f + t * t * 8f);
+                    d = Mathf.Min(d, Sd.Box(Sd.Rotate(p, at, 30f * t), at, V(6f, 3.4f), 1f));
+                }
+                return d;
+            }, Hex(0xD9A441));
+            icon.Add(p => Sd.Polygon(p, new[] { V(8f, 52f), V(30f, 60f), V(30f, 70f), V(10f, 66f) }), Hex(0x8A6236), Hex(0xFFB02A));
+            icon.Add(p => Sd.Polygon(p, new[] { V(36f, 56f), V(46f, 56f), V(42f, 36f), V(32f, 38f) }), Hex(0x2A2D33));
+            icon.Add(p => Sd.Box(p, V(84f, 64f), V(22f, 7f), 3f), Hex(0x6E747A));
+            icon.Detail(p =>
+            {
+                float d = float.MaxValue;
+                foreach (float x in new[] { 70f, 80f, 90f, 100f })
+                {
+                    d = Mathf.Min(d, Sd.Box(p, V(x, 64f), V(2.5f, 3f), 1f));
+                }
+                return d;
+            }, Hex(0x2A2D33));
+            icon.Add(p => Sd.Union(Sd.Box(p, V(112f, 64f), V(7f, 2.8f)), Sd.Box(p, V(119f, 64f), V(2.5f, 5f), 1f)), Hex(0x2A2D33));
+            icon.Add(p => Sd.Box(p, V(46f, 64f), V(18f, 9f), 2f), Hex(0x3A3F45));
+            icon.Add(p => Sd.Box(p, V(54f, 50f), V(8f, 6f), 1.5f), Hex(0x5B6236));
+            icon.Detail(p => Sd.Box(p, V(46f, 71f), V(15f, 2f)), Hex(0x8A9096));
+            return icon;
+        }
+
+        /// <summary>The minigun: a bundle of barrels on a motor, clamped twice, its belt feeding in.</summary>
+        private static Icon Minigun()
+        {
+            var icon = new Icon(Hex(0xFF8A2A));
+            icon.Add(p =>
+            {
+                float d = float.MaxValue;
+                for (int i = 0; i < 5; i++)
+                {
+                    float t = i / 4f;
+                    Vector2 at = V(28f - t * 6f, 44f - t * 26f);
+                    d = Mathf.Min(d, Sd.Box(Sd.Rotate(p, at, 70f), at, V(6f, 3.4f), 1f));
+                }
+                return d;
+            }, Hex(0xD9A441));
+            icon.Add(p => Sd.Union(Sd.Segment(p, V(22f, 90f), V(46f, 90f), 3.5f), Sd.Union(Sd.Segment(p, V(24f, 80f), V(24f, 90f), 3f), Sd.Segment(p, V(44f, 80f), V(44f, 90f), 3f))),
+                Hex(0x2A2D33));
+            icon.Add(p => Sd.Box(p, V(34f, 64f), V(20f, 17f), 5f), Hex(0x3A3F45));
+            icon.Add(p =>
+            {
+                float d = float.MaxValue;
+                foreach (float y in new[] { 54f, 64f, 74f })
+                {
+                    d = Mathf.Min(d, Sd.Box(p, V(84f, y), V(32f, 3.8f), 1.5f));
+                }
+                return d;
+            }, Hex(0x8A9096));
+            icon.Add(p => Sd.Union(Sd.Box(p, V(66f, 64f), V(4f, 15f), 2f), Sd.Box(p, V(108f, 64f), V(4f, 15f), 2f)), Hex(0xB8BEC4));
+            icon.Detail(p =>
+            {
+                float d = float.MaxValue;
+                foreach (float y in new[] { 54f, 64f, 74f })
+                {
+                    d = Mathf.Min(d, Sd.Circle(p, V(116f, y), 2.2f));
+                }
+                return d;
+            }, Hex(0x1A1A1C));
+            icon.Detail(p => Sd.Box(p, V(34f, 70f), V(16f, 2f)), Hex(0x6E747A));
+            return icon;
+        }
+
+        /// <summary>The flamethrower: a tank and a lance, fire roaring out of its nozzle.</summary>
+        private static Icon Flamethrower()
+        {
+            var icon = new Icon(Hex(0xFF8A2A));
+            var root = V(74f, 58f);
+            var tongues = new[] { Tongue(root, 50f, 17f, 0f, 3f), Tongue(root + V(0f, 2f), 38f, 12f, 12f, 3f), Tongue(root + V(0f, -2f), 36f, 12f, -12f, -3f) };
+            Sdf flames = p =>
+            {
+                Vector2 q = Sd.Rotate(p, root, -90f);
+                float d = float.MaxValue;
+                foreach (Vector2[] outline in tongues)
+                {
+                    d = Mathf.Min(d, Sd.Polygon(q, outline));
+                }
+                return d;
+            };
+            icon.Add(flames, Hex(0xE8501A), Hex(0xFF8A2A));
+            icon.Detail(p => flames(p) + 7f, Hex(0xFFA02A), Hex(0xFFB02A));
+            icon.Detail(p => flames(p) + 14f, Hex(0xFFE04A), Hex(0xFFF2B0));
+            icon.Add(p => Sd.Box(p, V(22f, 54f), V(11f, 26f), 10f), Hex(0xC62E24), Hex(0xFF3A3A));
+            icon.Detail(p => Sd.Box(p, V(22f, 58f), V(11.2f, 3f)), Hex(0x1C1B1A));
+            icon.Add(p => Sd.Box(p, V(22f, 84f), V(5f, 4f), 1f), Hex(0xB8BEC4));
+            icon.Add(p => Sd.Segment(p, V(32f, 56f), V(72f, 58f), 5f), Hex(0x8A9096));
+            icon.Add(p => Sd.Polygon(p, new[] { V(42f, 52f), V(52f, 52f), V(48f, 34f), V(38f, 36f) }), Hex(0x2A2D33));
+            icon.Add(p => Sd.Box(p, V(74f, 58f), V(4f, 7f), 1f), Hex(0x3A3F45));
+            return icon;
+        }
+
+        /// <summary>The plasma cannon's bolt: a glowing ball in two rings, its trail behind it.</summary>
+        private static Icon Plasma()
+        {
+            var icon = new Icon(Hex(0xC45AFF));
+            var c = V(74f, 72f);
+            icon.Add(p => Sd.Polygon(p, new[] { V(12f, 24f), V(88f, 48f), V(58f, 94f) }), Hex(0x8A4ADF), Hex(0xC45AFF));
+            icon.Detail(p => Sd.Polygon(p, new[] { V(22f, 32f), V(80f, 56f), V(64f, 82f) }), Hex(0xB08AFF), Hex(0xE0C8FF));
+            icon.Add(p => Sd.Circle(p, c, 28f), Hex(0x6E3AD8), Hex(0xC45AFF));
+            icon.Detail(p => Sd.Circle(p, c, 18f), Hex(0xB08AFF), Hex(0xE0C8FF));
+            icon.Detail(p => Sd.Circle(p, c + V(-5f, 5f), 8f), Hex(0xF4EEFF), Hex(0xFFFFFF));
+            icon.Detail(p => Sd.Outline(Sd.Ellipse(Sd.Rotate(p, c, 30f), c, V(42f, 13f)), 3f), Hex(0x3FE6FF));
+            icon.Detail(p => Sd.Outline(Sd.Ellipse(Sd.Rotate(p, c, -40f), c, V(42f, 13f)), 3f), Hex(0x3FE6FF));
+            return icon;
+        }
+
+        /// <summary>The oil slick: a black drop over a glossy puddle with a sheen.</summary>
+        private static Icon Oil()
+        {
+            var icon = new Icon(Hex(0xB45AFF));
+            icon.Add(p => Sd.Union(Sd.Ellipse(p, V(66f, 26f), V(50f, 14f)), Sd.Ellipse(p, V(34f, 32f), V(18f, 9f))), Hex(0x2A2630));
+            icon.Detail(p => Sd.Outline(Sd.Ellipse(p, V(70f, 27f), V(34f, 7f)), 2.4f), Hex(0x6A5A8A), Hex(0x3FE6FF));
+            icon.Add(p => Sd.SmoothUnion(Sd.Circle(p, V(64f, 62f), 26f), Sd.Polygon(p, new[] { V(64f, 114f), V(44f, 72f), V(84f, 72f) }), 6f),
+                Hex(0x1E1C24), Hex(0xB45AFF));
+            icon.Detail(p => Sd.Ellipse(Sd.Rotate(p, V(53f, 70f), 30f), V(53f, 70f), V(5f, 11f)), Hex(0x8A8496), Hex(0xE0C8FF));
+            return icon;
+        }
+
+        /// <summary>The EMP blast: a lightning bolt in a ring that throws off sparks.</summary>
+        private static Icon Emp()
+        {
+            var icon = new Icon(Hex(0x3FE6FF));
+            var c = V(64f, 64f);
+            icon.Add(p => Sd.Ring(p, c, 46f, 6f), Hex(0x2F6BFF), Hex(0x3FE6FF));
+            icon.Detail(p =>
+            {
+                float d = float.MaxValue;
+                for (int i = 0; i < 4; i++)
+                {
+                    float a = (45f + i * 90f) * Mathf.Deg2Rad;
+                    var dir = new Vector2(Mathf.Cos(a), Mathf.Sin(a));
+                    d = Mathf.Min(d, Sd.Segment(p, c + dir * 53f, c + dir * 60f, 2.4f));
+                }
+                return d;
+            }, Hex(0x8FD8FF), Hex(0xEAF8FF));
+            icon.Add(p => Sd.Circle(p, c, 36f), Hex(0x1C2A4A), Hex(0x2F6BFF));
+            icon.Add(p => Sd.Polygon(p, new[] { V(72f, 102f), V(44f, 60f), V(62f, 60f), V(54f, 26f), V(86f, 70f), V(68f, 70f) }), Hex(0xFFE04A), Hex(0xEAF8FF));
+            return icon;
+        }
+
+        /// <summary>The mortar: a tube on its base plate and bipod, the shell at the top of its arc.</summary>
+        private static Icon Mortar()
+        {
+            var icon = new Icon(Hex(0xFF8A2A));
+            Vector2 mouth = V(56f, 78f);
+            Vector2 shell = V(94f, 96f);
+            icon.Detail(p =>
+            {
+                float d = float.MaxValue;
+                for (int i = 1; i <= 4; i++)
+                {
+                    float t = i / 5f;
+                    Vector2 at = (1f - t) * (1f - t) * mouth + 2f * (1f - t) * t * V(70f, 112f) + t * t * (shell - V(18f, 0f));
+                    d = Mathf.Min(d, Sd.Circle(p, at, 3.4f));
+                }
+                return d;
+            }, Hex(0xEDEAE2));
+            icon.Add(p => Sd.Box(p, V(36f, 18f), V(24f, 5f), 2f), Hex(0x4A4F55));
+            icon.Add(p => Sd.Union(Sd.Segment(p, V(48f, 52f), V(68f, 16f), 3f), Sd.Segment(p, V(62f, 16f), V(76f, 16f), 3f)), Hex(0x6E747A));
+            icon.Add(p => Sd.Segment(p, V(32f, 24f), mouth + V(-2f, -4f), 9f), Hex(0x5B6236));
+            icon.Add(p => Sd.Segment(p, mouth + V(-2f, -4f), mouth, 11f), Hex(0x3D4224));
+            icon.Add(p =>
+            {
+                Vector2 q = Sd.Rotate(p, shell, -90f);
+                return Sd.Union(Sd.Ellipse(q, shell, V(10f, 18f)), Sd.Box(q, shell - V(0f, 18f), V(6.5f, 7f), 1f));
+            }, Hex(0x6E747A));
+            icon.Detail(p => Sd.Box(Sd.Rotate(p, shell, -90f), shell + V(0f, 3f), V(10.2f, 2.4f)), Hex(0xC62E24), Hex(0xFF3A3A));
+            return icon;
+        }
+
+        /// <summary>The workshop: a gear with a spanner across it.</summary>
+        private static Icon Workshop()
+        {
+            var icon = new Icon(Hex(0xFFD24A));
+            var c = V(54f, 56f);
+            icon.Add(p =>
+            {
+                float angle = Mathf.Atan2(p.y - c.y, p.x - c.x);
+                float tooth = Mathf.Abs(Mathf.Repeat(angle / (Mathf.PI * 2f) * 8f, 1f) - 0.5f);
+                float teeth = Sd.Intersect(Sd.Circle(p, c, 42f), (tooth - 0.22f) * 28f);
+                return Sd.Subtract(Sd.Union(Sd.Circle(p, c, 32f), teeth), Sd.Circle(p, c, 12f));
+            }, Hex(0x8A9096));
+            icon.Detail(p => Sd.Ring(p, c, 22f, 2f), Hex(0x6E747A));
+            var head = V(98f, 98f);
+            icon.Add(p =>
+            {
+                float d = Sd.Union(Sd.Segment(p, V(58f, 58f), head, 7f), Sd.Circle(p, head, 17f));
+                return Sd.Subtract(d, Sd.Box(Sd.Rotate(p, head, 45f), head + V(0f, 11f), V(7f, 13f), 1f));
+            }, Hex(0xD8DCE0));
+            icon.Detail(p => Sd.Segment(p, V(66f, 70f), V(86f, 90f), 2f), Hex(0xF2F4F6));
+            return icon;
+        }
+
+        /// <summary>A league: a pennant hanging from its rod, a star over two chevrons.</summary>
+        private static Icon League()
+        {
+            var icon = new Icon(Hex(0xFF3FC8));
+            Vector2[] banner = { V(36f, 104f), V(92f, 104f), V(92f, 20f), V(64f, 38f), V(36f, 20f) };
+            icon.Add(p => Sd.Polygon(p, banner), Hex(0xC62E24), Hex(0xFF3FC8));
+            icon.Detail(p => Sd.Outline(Sd.Polygon(p, banner) + 5f, 2.4f), Hex(0xE8B42A), Hex(0xFFD24A));
+            icon.Detail(p => Sd.Star(p, V(64f, 80f), 14f, 5, 0.45f), Hex(0xFFD24A), Hex(0xFFE08A));
+            icon.Detail(p =>
+            {
+                float d = float.MaxValue;
+                foreach (float y in new[] { 62f, 50f })
+                {
+                    d = Mathf.Min(d, Sd.Union(Sd.Segment(p, V(48f, y), V(64f, y - 9f), 2.8f), Sd.Segment(p, V(64f, y - 9f), V(80f, y), 2.8f)));
+                }
+                return d;
+            }, Hex(0xFFD24A), Hex(0xFFE08A));
+            icon.Add(p => Sd.Union(Sd.Segment(p, V(26f, 108f), V(102f, 108f), 4f), Sd.Union(Sd.Circle(p, V(24f, 108f), 6f), Sd.Circle(p, V(104f, 108f), 6f))),
+                Hex(0xC9961E));
+            return icon;
+        }
+
+        /// <summary>Burning: the car is on fire.</summary>
+        private static Icon Burning()
+        {
+            var icon = new Icon(Hex(0xFF8A2A));
+            var tongues = new[] { Tongue(V(64f, 18f), 92f, 30f, 4f, 5f), Tongue(V(38f, 22f), 60f, 20f, -12f, -4f), Tongue(V(90f, 22f), 64f, 20f, 12f, 4f) };
+            Sdf flames = p =>
+            {
+                float d = float.MaxValue;
+                foreach (Vector2[] outline in tongues)
+                {
+                    d = Mathf.Min(d, Sd.Polygon(p, outline));
+                }
+                return d;
+            };
+            icon.Add(flames, Hex(0xE8401A), Hex(0xFF8A2A));
+            icon.Detail(p => flames(p) + 9f, Hex(0xFF9A2A), Hex(0xFFB02A));
+            icon.Detail(p => flames(p) + 18f, Hex(0xFFE04A), Hex(0xFFF2B0));
+            return icon;
+        }
+
+        /// <summary>Jammed: the sights fizzling out with an electric spark across them.</summary>
+        private static Icon Jammed()
+        {
+            var icon = new Icon(Hex(0x3FE6FF));
+            var c = V(64f, 64f);
+            icon.Add(p =>
+            {
+                float d = Sd.Ring(p, c, 34f, 7f);
+                d = Mathf.Min(d, Sd.Box(p, c + V(0f, 42f), V(3.5f, 12f)));
+                d = Mathf.Min(d, Sd.Box(p, c - V(0f, 42f), V(3.5f, 12f)));
+                d = Mathf.Min(d, Sd.Box(p, c + V(42f, 0f), V(12f, 3.5f)));
+                return Mathf.Min(d, Sd.Box(p, c - V(42f, 0f), V(12f, 3.5f)));
+            }, Hex(0x8A9096), Hex(0x8FA3C4));
+            Vector2[] zig = { V(16f, 78f), V(42f, 56f), V(56f, 76f), V(74f, 48f), V(86f, 68f), V(112f, 46f) };
+            Sdf spark = p =>
+            {
+                float d = float.MaxValue;
+                for (int i = 0; i + 1 < zig.Length; i++)
+                {
+                    d = Mathf.Min(d, Sd.Segment(p, zig[i], zig[i + 1], 4.5f));
+                }
+                return d;
+            };
+            icon.Add(spark, Hex(0x3FA8FF), Hex(0x3FE6FF));
+            icon.Detail(p => spark(p) + 3f, Hex(0xEAF8FF), Hex(0xFFFFFF));
+            return icon;
+        }
+
+        /// <summary>Slicked: a car spinning on a puddle of oil.</summary>
+        private static Icon Slicked()
+        {
+            var icon = new Icon(Hex(0xB45AFF));
+            var car = V(64f, 62f);
+            icon.Add(p => Sd.Union(Sd.Ellipse(p, V(64f, 50f), V(54f, 30f)), Sd.Circle(p, V(104f, 30f), 10f)), Hex(0x2A2630));
+            icon.Detail(p => Sd.Outline(Sd.Ellipse(p, V(60f, 44f), V(40f, 18f)), 2.2f), Hex(0x6A5A8A), Hex(0x3FE6FF));
+            Sdf arcs = p =>
+            {
+                Vector2 d = p - car;
+                float angle = Mathf.Atan2(d.y, d.x) * Mathf.Rad2Deg;
+                float off = Mathf.Min(Mathf.Abs(Mathf.DeltaAngle(angle, 135f)), Mathf.Abs(Mathf.DeltaAngle(angle, 315f)));
+                return Sd.Intersect(Sd.Ring(p, car, 46f, 5f), (off - 38f) * 0.8f);
+            };
+            icon.Add(p =>
+            {
+                float d = arcs(p);
+                foreach (float degrees in new[] { 173f, 353f })
+                {
+                    float a = degrees * Mathf.Deg2Rad;
+                    var radial = new Vector2(Mathf.Cos(a), Mathf.Sin(a));
+                    var tangent = new Vector2(-radial.y, radial.x);
+                    Vector2 at = car + radial * 46f;
+                    d = Mathf.Min(d, Sd.Polygon(p, new[] { at + tangent * 10f, at + radial * 8f, at - radial * 8f }));
+                }
+                return d;
+            }, Hex(0xEDEAE2), Hex(0xEAF2FF));
+            Vector2 R(Vector2 p)
+            {
+                return Sd.Rotate(p, car, 35f);
+            }
+
+            foreach (Vector2 wheel in new[] { V(48f, 84f), V(80f, 84f), V(48f, 40f), V(80f, 40f) })
+            {
+                Vector2 w = wheel;
+                icon.Add(p => Sd.Box(R(p), w, V(5f, 9f), 2.5f), Hex(0x1A1A1C), Hex(0xEAF2FF));
+            }
+            icon.Add(p => Sd.Box(R(p), car, V(19f, 36f), 10f), Hex(0xC62E24), Hex(0xFF3A3A));
+            icon.Detail(p => Sd.Box(R(p), car + V(0f, 9f), V(13f, 8f), 4f), Hex(0x2C3A48), Hex(0x3FE6FF));
+            icon.Detail(p => Sd.Box(R(p), car - V(0f, 16f), V(12f, 5f), 3f), Hex(0x2C3A48), Hex(0x3FE6FF));
             return icon;
         }
 
