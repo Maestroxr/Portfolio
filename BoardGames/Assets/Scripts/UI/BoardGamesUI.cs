@@ -1,5 +1,6 @@
 using System.Collections;
 using Gamebox;
+using Gamebox.Economy;
 using Gamebox.UI;
 using TMPro;
 using UnityEngine;
@@ -43,6 +44,10 @@ namespace Portfolio.BoardGames
         [SerializeField] private Button againButton;
         [SerializeField] private Button menuButton;
         [SerializeField] private Button resignButton;
+
+        /// <summary>The shop's buttons, made from the resign button at start and stacked over it: shown while their perks apply.</summary>
+        private Button hintButton;
+        private Button takeBackButton;
 
         [Header("Menu buttons")]
         [Tooltip("The campaign button: StartNewGame of the shared menu, labelled Campaign.")]
@@ -105,6 +110,8 @@ namespace Portfolio.BoardGames
             }
             if (resignButton != null)
             {
+                hintButton = CloneButton(resignButton, "HintButton", 1, () => Games?.RequestHint());
+                takeBackButton = CloneButton(resignButton, "TakeBackButton", 2, () => Games?.TakeBack());
                 resignButton.onClick.AddListener(OnResignClicked);
             }
             foreach (Button button in GetComponentsInChildren<Button>(true))
@@ -129,6 +136,8 @@ namespace Portfolio.BoardGames
         {
             Subscribe();
             GameThemes.Changed += OnLookChanged;
+            // A perk bought during a game shows its button at once.
+            CloudEconomy.Changed += RefreshHud;
         }
 
         private void Start()
@@ -140,6 +149,7 @@ namespace Portfolio.BoardGames
         private void OnDisable()
         {
             GameThemes.Changed -= OnLookChanged;
+            CloudEconomy.Changed -= RefreshHud;
             if (subscribed != null)
             {
                 subscribed.Changed -= RefreshHud;
@@ -341,6 +351,11 @@ namespace Portfolio.BoardGames
             {
                 SetLabel(resignButton, L.T("Resign"));
             }
+            // The shop's perks against the computer, while they apply.
+            SetVisible(hintButton, manager.HintOffered);
+            SetLabel(hintButton, L.T("Hint"));
+            SetVisible(takeBackButton, manager.TakeBackOffered);
+            SetLabel(takeBackButton, L.T("Take Back"));
             UpdateClock(true);
         }
 
@@ -488,6 +503,26 @@ namespace Portfolio.BoardGames
         }
 
         // ------------------------------------------------------------------ helpers
+
+        /// <summary>
+        /// A button like <paramref name="source"/> (the resign button, built by the scene builder), <paramref name="rows"/>
+        /// rows above it in the same corner, doing <paramref name="clicked"/>; hidden until the HUD shows it.
+        /// </summary>
+        private static Button CloneButton(Button source, string name, int rows, UnityEngine.Events.UnityAction clicked)
+        {
+            Button button = Instantiate(source, source.transform.parent);
+            button.name = name;
+            var rect = button.GetComponent<RectTransform>();
+            var sourceRect = source.GetComponent<RectTransform>();
+            if (rect != null && sourceRect != null)
+            {
+                rect.anchoredPosition = sourceRect.anchoredPosition + new Vector2(0f, (sourceRect.sizeDelta.y + 12f) * rows);
+            }
+            button.onClick.RemoveAllListeners();
+            button.onClick.AddListener(clicked);
+            button.gameObject.SetActive(false);
+            return button;
+        }
 
         private static void SetVisible(Button button, bool visible)
         {

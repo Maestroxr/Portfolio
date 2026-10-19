@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using Gamebox;
+using Gamebox.Economy;
 using Gamebox.Online;
 using Gamebox.UI;
 using Portfolio.Heroes.UI;
@@ -263,6 +264,9 @@ namespace Portfolio.Heroes
             // A map asked for as it is, or the scenario's as the settings shape it.
             MapSpec spec = pendingMap != null ? pendingMap.Clone() : NewGameMap(scenario);
             pendingMap = null;
+            // The shop's perks belong to the account at this device: the seats people play get them. Online every client
+            // lays out the same map, so they stay out of it (StartOnlineGame).
+            HeroesShop.Outfit(spec, CloudEconomy.Owns(HeroesShop.PurseId), CloudEconomy.Owns(HeroesShop.VeteransId));
             // The rules keep the style for the whole game, so a saved game goes on the way it began. A hot seat chose its
             // own; anything else fights where the settings say.
             int style = pendingBattleStyle ?? Options.battleStyle;

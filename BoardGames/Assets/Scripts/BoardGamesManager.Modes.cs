@@ -318,9 +318,10 @@ namespace Portfolio.BoardGames
             }
         }
 
-        /// <summary>The game played forgets its selection and partial moves.</summary>
+        /// <summary>The game played forgets its selection and partial moves (and the hint shown with them).</summary>
         private void ClearSelection()
         {
+            hint = null;
             switch (Mode)
             {
                 case GameMode.Chess:

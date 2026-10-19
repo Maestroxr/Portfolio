@@ -112,6 +112,7 @@ namespace Portfolio.Heroes
                 {
                     gold = gold * (seat.aiLevel == 0 ? 60 : seat.aiLevel == 2 ? 130 : 100) / 100;
                 }
+                gold += seat.extraGold;
                 player.resources = new ResourceSet(gold, common, common, rare, rare, rare, rare);
                 state.players.Add(player);
             }
@@ -1289,7 +1290,14 @@ namespace Portfolio.Heroes
                     def = options.Count > 0 ? options[random.Range(0, options.Count)] : state.freeHeroes[0];
                 }
                 int cell = player.towns.Count > 0 ? state.towns[player.towns[0]].cell : zones[player.index].center;
-                game.SpawnHero(player.index, def, cell, true);
+                HeroState hero = game.SpawnHero(player.index, def, cell, true);
+                if (seat.extraLevels > 0)
+                {
+                    // A veteran: the levels the seat brings along, gained the usual way (a stat each; a person picks the
+                    // skills when the game begins).
+                    int level = Math.Min(HeroData.MaxLevel, hero.level + seat.extraLevels);
+                    game.GainExperience(hero, HeroData.ExperienceFor(level) - hero.experience);
+                }
             }
         }
 

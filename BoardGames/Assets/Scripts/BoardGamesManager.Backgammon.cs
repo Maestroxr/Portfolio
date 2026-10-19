@@ -366,6 +366,19 @@ namespace Portfolio.BoardGames
                             bgMarks.targets.Add(route.Key);
                         }
                     }
+                    // The hint's target is marked whatever the setting, and lit unless the pointer is on a target of its own.
+                    int hinted = HintTargetFor(bgSelected);
+                    if (hinted >= 0)
+                    {
+                        if (!bgMarks.targets.Contains(hinted))
+                        {
+                            bgMarks.targets.Add(hinted);
+                        }
+                        if (!bgMarks.targets.Contains(bgHovered))
+                        {
+                            bgMarks.hovered = hinted;
+                        }
+                    }
                 }
                 else if (showMoves)
                 {

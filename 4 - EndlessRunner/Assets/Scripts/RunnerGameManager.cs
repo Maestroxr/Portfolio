@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Gamebox;
+using Gamebox.Economy;
 using Gamebox.UI;
 using UnityEngine;
 
@@ -107,6 +108,8 @@ namespace Portfolio.EndlessRunner
         // The run of the runner of the scene: the game alone, an online race, the first seat of a local race.
         private RunnerRun main;
         private int coinGoal;
+        // The Coin Magnet of the shop is the account's, read once a run (ApplyPerks).
+        private bool coinMagnet;
         private bool trackReady;
         private int trackLevel = -1;
         private bool menuVisited;
@@ -555,6 +558,7 @@ namespace Portfolio.EndlessRunner
                 runner.ResetToStart(StartPositionOf(slot), StartLane(slot));
                 runnerCamera.SetMode(RunnerCamera.Mode.Chase);
             }
+            ApplyPerks();
             phase = RunPhase.Countdown;
             phaseTime = 0f;
             countdown.Restart();
@@ -630,6 +634,31 @@ namespace Portfolio.EndlessRunner
                 ClearPowerUps(run);
             }
             ResetScore();
+        }
+
+
+        /// <summary>
+        /// The perks of the shop (<see cref="RunnerShop"/>), for the device's own runner: the runner of the scene, whose
+        /// run is <see cref="Main"/> (the companions of a local race or a party and the ghosts of an online race run as
+        /// they are). A Head Start puts a shield on the runner before the countdown, as if just picked up; the Coin
+        /// Magnet is read once a run for <see cref="UpdatePickups"/>. Without them the run is what it always was.
+        /// </summary>
+        private void ApplyPerks()
+        {
+            coinMagnet = CloudEconomy.Owns(RunnerShop.CoinMagnetId);
+            if (CloudEconomy.Owns(RunnerShop.HeadStartId))
+            {
+                Main.GivePowerUp(PowerUpType.Shield, PowerUpDuration(PowerUpType.Shield));
+                UpdatePowerUps(Main, 0f);
+            }
+        }
+
+
+        /// <summary>The seconds <paramref name="type"/> lasts from its pickup.</summary>
+        private float PowerUpDuration(PowerUpType type)
+        {
+            int index = (int)type;
+            return index < powerUpDurations.Length ? powerUpDurations[index] : 10f;
         }
 
 
@@ -712,14 +741,16 @@ namespace Portfolio.EndlessRunner
         /// <summary>What is left of a power-up of <paramref name="run"/>, from 1 when it was picked up to 0 when it is gone.</summary>
         private float PowerUpFraction(RunnerRun run, PowerUpType type)
         {
-            int index = (int)type;
-            float duration = index < powerUpDurations.Length ? powerUpDurations[index] : 10f;
             float left = run.PowerUpLeft(type);
-            return left > 0f ? left / duration : 0f;
+            return left > 0f ? left / PowerUpDuration(type) : 0f;
         }
 
 
-        /// <summary>Swept test of every live pickup against the runner of <paramref name="run"/>, plus the magnet's pull.</summary>
+        /// <summary>
+        /// Swept test of every live pickup against the runner of <paramref name="run"/>, plus the magnet's pull. The Coin
+        /// Magnet of the shop (the device's own runner's, see <see cref="ApplyPerks"/>) makes a magnet picked up reach
+        /// farther, and draws the coins nearby without one; without it the pull is what it always was.
+        /// </summary>
         private void UpdatePickups(RunnerRun run, float deltaTime)
         {
             RunnerPlayer runner = run.Runner;
@@ -727,6 +758,10 @@ namespace Portfolio.EndlessRunner
             Vector3 to = runner.transform.position;
             float height = runner.Height;
             bool magnet = run.IsPowerUpActive(PowerUpType.Magnet);
+            bool perk = coinMagnet && run == Main;
+            float reach = magnet ? RunnerShop.MagnetFactor(perk) : RunnerShop.PassiveMagnetFactor(perk);
+            float radius = magnetRadius * reach;
+            float ahead = 14f * reach;
             Vector3 chest = to + Vector3.up * (height * 0.55f);
             IReadOnlyList<Collidable> pickups = track.Pickups;
             for (int i = 0; i < pickups.Count; i++)
@@ -737,13 +772,13 @@ namespace Portfolio.EndlessRunner
                     continue;
                 }
                 Vector3 position = pickup.transform.position;
-                if (magnet && pickup.Magnetic)
+                if (reach > 0f && pickup.Magnetic)
                 {
                     Vector3 toRunner = chest - position;
                     float distanceToRunner = toRunner.magnitude;
-                    if (distanceToRunner < magnetRadius || (position.z < to.z + 14f && position.z > to.z - 2f && Mathf.Abs(toRunner.x) < magnetRadius))
+                    if (distanceToRunner < radius || (position.z < to.z + ahead && position.z > to.z - 2f && Mathf.Abs(toRunner.x) < radius))
                     {
-                        float pull = magnetPull * (1.5f - Mathf.Clamp01(distanceToRunner / magnetRadius)) * deltaTime;
+                        float pull = magnetPull * (1.5f - Mathf.Clamp01(distanceToRunner / radius)) * deltaTime;
                         position = Vector3.MoveTowards(position, chest, pull + runner.Speed * deltaTime);
                         pickup.transform.position = position;
                     }
@@ -990,8 +1025,7 @@ namespace Portfolio.EndlessRunner
             {
                 return;
             }
-            int index = (int)pickup.Type;
-            run.GivePowerUp(pickup.Type, index < powerUpDurations.Length ? powerUpDurations[index] : 10f);
+            run.GivePowerUp(pickup.Type, PowerUpDuration(pickup.Type));
             Color color = PowerUpColor(pickup.Type);
             effects?.PowerUp(pickup.transform.position, color);
             sounds?.Play(sounds.powerUp);

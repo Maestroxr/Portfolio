@@ -174,6 +174,18 @@ namespace Portfolio.Asteroids.Tests
             }
             words.AddRange(LocalCoopRules.Scheme.Actions.Select(action => action.Label));
             words.Add("Local Play");
+            // The shop: its window title, the Supply Room's pages and the game's cloud items.
+            var shop = new AsteroidsShop();
+            var cloud = new Gamebox.Economy.CloudCatalog();
+            shop.DefineCloud(cloud);
+            words.Add(shop.Title);
+            words.Add(PilotLedger.WeaponsPage);
+            words.Add(PilotLedger.GearPage);
+            foreach (Gamebox.Economy.CloudItem item in cloud)
+            {
+                words.Add(item.Title);
+                words.Add(item.Description);
+            }
             Assert.That(words.Count, Is.GreaterThan(100), "The data was found.");
             List<string> missing = words.Where(word => !string.IsNullOrWhiteSpace(word) && !keys.Contains(word)).Distinct().ToList();
             Assert.That(missing, Is.Empty, "Data words missing from Asteroids.csv: " + string.Join(" | ", missing));

@@ -153,6 +153,7 @@ namespace Portfolio.BoardGames
                 reportedWorth[i] = -1;
             }
             thought = null;
+            ForgetPerks();
             StarsEarned = 0;
             ResultTitle = "";
             ResultDetail = "";
@@ -229,6 +230,7 @@ namespace Portfolio.BoardGames
             table = null;
             campaignLevel = -1;
             thought = null;
+            ForgetPerks();
             foreach (BoardGamesPlayer player in players)
             {
                 player?.Assign(-1, PlayerControl.Local);
@@ -566,7 +568,12 @@ namespace Portfolio.BoardGames
             {
                 return false;
             }
+            IBoardGame before = BeforeTakeBack(command);
             bool ok = table.Apply(command, NewSeed());
+            if (ok && before != null)
+            {
+                takeBacks.Add(before);
+            }
             AfterEntry(command, ok, LockstepEntryKind.Command, null);
             return ok;
         }
@@ -618,6 +625,8 @@ namespace Portfolio.BoardGames
                     }
                     // After the moves' own words (a check, a cube taken), so the player learns that the clock decided.
                     ui?.Toast(L.F("Time is up for {0}.", NameOf(made[0].seat)));
+                    // A move the clock made is not one to take back.
+                    takeBacks.Clear();
                     if (!IsOnlineGame && !table.IsOver)
                     {
                         Autosave();
