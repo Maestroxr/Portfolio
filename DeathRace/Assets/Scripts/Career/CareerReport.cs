@@ -40,6 +40,9 @@ namespace Portfolio.DeathRace
     /// </summary>
     public sealed class CareerReport
     {
+        /// <summary>The league of the career (what its prizes, bounties and champion are).</summary>
+        public LeagueKind League;
+
         /// <summary>The day raced (the career is on the next one now).</summary>
         public int Day;
 
@@ -74,8 +77,11 @@ namespace Portfolio.DeathRace
         public int MinesUsed;
         public int RocketsUsed;
         public int NitroUsed;
+        public int OilUsed;
+        public int EmpUsed;
+        public int MortarUsed;
 
-        /// <summary>This race won the championship.</summary>
+        /// <summary>This race won the league's title.</summary>
         public bool Champion;
 
         public bool ShowdownLost;
@@ -88,6 +94,20 @@ namespace Portfolio.DeathRace
         public List<int> TracksOpened = new List<int>();
 
         public int Earned => Prize + Bounty + Cash;
+
+        /// <summary>The bounty paid for each car wrecked in this race.</summary>
+        public int BountyEach => CareerRules.Bounty(Leagues.Of(League), Difficulty);
+
+        /// <summary>How many of the special weapon <paramref name="kind"/> the player fired (and the career lost).</summary>
+        public int SpecialsUsed(SpecialKind kind)
+        {
+            switch (kind)
+            {
+                case SpecialKind.Oil: return OilUsed;
+                case SpecialKind.Emp: return EmpUsed;
+                default: return MortarUsed;
+            }
+        }
 
         public int RankChange => RankBefore - RankAfter;
     }

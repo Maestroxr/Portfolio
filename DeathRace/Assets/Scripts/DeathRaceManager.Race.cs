@@ -14,8 +14,12 @@ namespace Portfolio.DeathRace
         /// <summary>The laps of a race behind the menu.</summary>
         public const int AttractLaps = 2;
 
-        /// <summary>The cars of a race behind the menu, a spread from the middle of the field to the top.</summary>
-        private static readonly CarModel[] AttractCars = { CarModel.Hornet, CarModel.Viper, CarModel.Bulldog, CarModel.Reaper, CarModel.Tyrant };
+        /// <summary>The cars of a race behind the menu, a spread from the middle of the field to the top of the last league.</summary>
+        private static readonly CarModel[] AttractCars =
+        {
+            CarModel.Hornet, CarModel.Viper, CarModel.Bulldog, CarModel.Reaper, CarModel.Tyrant, CarModel.Jackal, CarModel.Mauler, CarModel.Banshee,
+            CarModel.Spectre, CarModel.Goliath, CarModel.Apocalypse
+        };
 
         private int attractTrack;
         private int attractRaces;
@@ -50,7 +54,10 @@ namespace Portfolio.DeathRace
             }
         }
 
-        /// <summary>The race behind the menu on <paramref name="track"/>: four computer cars of the upper tiers, armed.</summary>
+        /// <summary>
+        /// The race behind the menu on <paramref name="track"/>: four computer cars of the upper tiers, armed (most with a
+        /// gun of their own, each with a special weapon), so the menu shows off the whole armoury in time.
+        /// </summary>
         public RaceSetup AttractSetup(int track, int round = 0)
         {
             var random = new System.Random(track * 7919 + round * 104729 + 11);
@@ -75,6 +82,9 @@ namespace Portfolio.DeathRace
                 loadout.mines = 2;
                 loadout.rockets = 2;
                 loadout.nitro = 2;
+                loadout.GiveGun((GunKind)random.Next(0, Guns.Count));
+                loadout.special = (SpecialKind)random.Next(0, Specials.Count);
+                loadout.SetSpecials(loadout.special, 2);
                 setup.Entrants.Add(new RaceEntrant
                 {
                     Seat = seat,

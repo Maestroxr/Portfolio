@@ -30,11 +30,11 @@ namespace Portfolio.DeathRace
             return new SaveContent { Data = career, Level = career.tracksOpen - 1, Summary = SummaryOf(career) };
         }
 
-        /// <summary>"Ada, day 12: #7, $12,300", what tells the saves apart in the list.</summary>
+        /// <summary>"Ada, Iron League, day 12: #7, $12,300", what tells the saves apart in the list.</summary>
         public static string SummaryOf(CareerState state)
         {
-            string line = Portfolio.DeathRace.L.F("{0}, day {1}: {2}, {3}", state.driverName, state.day, RaceFormat.Rank(Ladder.Rank(state)),
-                RaceFormat.Money(state.wallet.Money));
+            string line = Portfolio.DeathRace.L.F("{0}, {1}, day {2}: {3}, {4}", state.driverName, Portfolio.DeathRace.L.Data(state.League.Name), state.day,
+                RaceFormat.Rank(Ladder.Rank(state)), RaceFormat.Money(state.wallet.Money));
             return state.champion ? line + " " + Portfolio.DeathRace.L.T("(champion)") : line;
         }
 

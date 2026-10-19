@@ -174,8 +174,9 @@ namespace Portfolio.DeathRace.Tests
             RaceSetup setup = CareerTestKit.Enter(state, Difficulty.Easy);
             CareerReport report = Career.Apply(state, CareerTestKit.Result(setup, 4));
             Assert.AreEqual(2, terry.tier);
-            Assert.AreEqual(CarModel.Hornet, terry.Car);
-            Assert.IsTrue(report.Promotions.Any(promotion => promotion.Id == "terry" && promotion.Car == CarModel.Hornet));
+            Assert.AreEqual(CarSpecs.ForDriver(2, "terry"), terry.Car, "a tier 2 car of Terry's own (the Jackal: a dune buggy)");
+            Assert.AreEqual(CarModel.Jackal, terry.Car);
+            Assert.IsTrue(report.Promotions.Any(promotion => promotion.Id == "terry" && promotion.Car == terry.Car));
         }
 
         [Test]

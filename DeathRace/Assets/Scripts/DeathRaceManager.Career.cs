@@ -7,10 +7,12 @@ namespace Portfolio.DeathRace
 {
     /// <summary>
     /// The career and quick races. The career is a <see cref="CareerState"/> held here: the menu's Career opens a new
-    /// one (<see cref="NewCareerWindow"/>) or the garage of the one being played (<see cref="GarageWindow"/>), an offer
-    /// of the garage becomes a race (<see cref="EnterOffer"/>), and when it is over <see cref="Career.Apply"/> books it,
-    /// the results show, the career saves itself and the garage opens again on the next day (or the champion's window,
-    /// once The Warden is beaten). A quick race is set up in its own window and its results offer the same race again.
+    /// one in a league open on this device (<see cref="NewCareerWindow"/>) or the garage of the one being played
+    /// (<see cref="GarageWindow"/>), an offer of the garage becomes a race (<see cref="EnterOffer"/>), and when it is
+    /// over <see cref="Career.Apply"/> books it, the device records the tracks it opened and a title, the results show,
+    /// the career saves itself and the garage opens again on the next day (or the champion's window, once the league's
+    /// champion is beaten, which offers to move up to the next league: <see cref="MoveUpLeague"/>). A quick race is set
+    /// up in its own window and its results offer the same race again.
     /// </summary>
     public partial class DeathRaceManager
     {
@@ -52,19 +54,59 @@ namespace Portfolio.DeathRace
             GarageWindow.For(this).Show(page);
         }
 
-        /// <summary>Starts a new career for <paramref name="driverName"/> in colour <paramref name="colorIndex"/> and opens its garage.</summary>
-        public void StartCareer(string driverName, int colorIndex, int seed = 0)
+        /// <summary>
+        /// Starts a new career for <paramref name="driverName"/> in colour <paramref name="colorIndex"/> in
+        /// <paramref name="league"/> and opens its garage.
+        /// </summary>
+        public void StartCareer(string driverName, int colorIndex, int seed = 0, LeagueKind league = LeagueKind.Wasteland)
         {
-            TakeCareer(Career.New(driverName, colorIndex, seed != 0 ? seed : System.Environment.TickCount & 0x7FFFFFFF));
+            TakeCareer(Career.New(driverName, colorIndex, seed != 0 ? seed : NewSeed(), league));
             Autosave();
             GarageWindow.For(this).Show(GarageWindow.RacePage);
+        }
+
+        /// <summary>The league after the one of the career being played, when its champion has been beaten there; else null.</summary>
+        public LeagueSpec NextLeague => career != null && career.champion ? career.League.Next : null;
+
+        /// <summary>
+        /// The champion moves up: the finished career is kept as a save named after the title, and a new career of the
+        /// next league starts for the same driver in the same colour, in its garage. False when there is no league to
+        /// move up to (or the finished career could not be kept, which is said).
+        /// </summary>
+        public bool MoveUpLeague()
+        {
+            LeagueSpec next = NextLeague;
+            if (next == null)
+            {
+                return false;
+            }
+            if (!SaveAs(TitleSaveName(career), out string problem))
+            {
+                UI?.UpdateError(problem);
+                return false;
+            }
+            TakeCareer(Career.MoveUp(career, NewSeed()));
+            Autosave();
+            GarageWindow.For(this).Show(GarageWindow.RacePage);
+            return true;
+        }
+
+        /// <summary>"Ada, Wasteland Circuit champion": the name the finished career of a champion is kept under.</summary>
+        public static string TitleSaveName(CareerState state)
+        {
+            return Portfolio.DeathRace.L.F("{0}, {1} champion", state.driverName, Portfolio.DeathRace.L.Data(state.League.Name));
+        }
+
+        private static int NewSeed()
+        {
+            return System.Environment.TickCount & 0x7FFFFFFF;
         }
 
         /// <summary>Takes up <paramref name="state"/> (a new career or a loaded save) as the career being played.</summary>
         private void TakeCareer(CareerState state)
         {
             career = state;
-            Progress.OpenCareerTracks(career.tracksOpen);
+            RecordTracks();
             // Cash bought in the shop while no career was open goes into this one.
             int cash = DeathRaceShop.TakePendingCash(Progress);
             if (cash > 0)
@@ -90,6 +132,19 @@ namespace Portfolio.DeathRace
             return true;
         }
 
+        /// <summary>
+        /// Remembers on the device the tracks the career has opened (quick races and split screen offer them): every league
+        /// by track, the first league also by its old count, for what reads that.
+        /// </summary>
+        private void RecordTracks()
+        {
+            Progress.OpenCareerTracks(career.OpenTracks);
+            if (career.League.Kind == LeagueKind.Wasteland)
+            {
+                Progress.OpenCareerTracks(career.tracksOpen);
+            }
+        }
+
         /// <summary>The colour of a driver of the career in the look shown (an index into its driver colours).</summary>
         public Color DriverColor(int colorIndex)
         {
@@ -106,10 +161,10 @@ namespace Portfolio.DeathRace
                 return;
             }
             CareerReport report = Career.Apply(career, result);
-            Progress.OpenCareerTracks(career.tracksOpen);
+            RecordTracks();
             if (report.Champion)
             {
-                Progress.WinChampionship();
+                Progress.WinLeague(career.league);
             }
             Autosave();
             ShowResultsState(result);
@@ -160,8 +215,10 @@ namespace Portfolio.DeathRace
 
         /// <summary>
         /// A quick race on <paramref name="track"/>: the settings' car with every part one level up and a full load of
-        /// mines, rockets and nitro, against three computer cars of the same model, as strong and as upgraded as the
-        /// settings' difficulty says, driven by drivers of the matching third of the career's roster.
+        /// mines, rockets, nitro and two of each special weapon, against three computer cars of the same model, as strong
+        /// and as upgraded as the settings' difficulty says (with the first league's special weapons for the difficulty,
+        /// of a kind of their own, and on Hard a gun of their own), driven by drivers of the matching third of the
+        /// career's roster.
         /// </summary>
         public RaceSetup QuickRaceSetup(int track)
         {
@@ -190,6 +247,10 @@ namespace Portfolio.DeathRace
             player.mines = 3;
             player.rockets = 2;
             player.nitro = 3;
+            foreach (SpecialSpec special in Specials.All)
+            {
+                player.SetSpecials(special.Kind, QuickSpecials);
+            }
             int playerColor = career != null ? career.colorIndex : 0;
             setup.Entrants.Add(new RaceEntrant
             {
@@ -207,6 +268,13 @@ namespace Portfolio.DeathRace
                 loadout.spikes = difficulty == Difficulty.Hard && seat == 1;
                 loadout.piercing = difficulty == Difficulty.Hard;
                 (loadout.mines, loadout.rockets, loadout.nitro) = CareerRules.AiCarries(difficulty);
+                var special = (SpecialKind)random.Range(0, Specials.Count);
+                loadout.SetSpecials(special, CareerRules.AiSpecials(Leagues.Wasteland, difficulty));
+                loadout.special = special;
+                if (difficulty == Difficulty.Hard)
+                {
+                    loadout.GiveGun(CareerRules.BoughtGuns[random.Range(0, CareerRules.BoughtGuns.Length)]);
+                }
                 setup.Entrants.Add(new RaceEntrant
                 {
                     Seat = seat, Name = Portfolio.DeathRace.L.Data(driver.Name), Color = DriverColor(color == playerColor ? 0 : color),
@@ -216,6 +284,9 @@ namespace Portfolio.DeathRace
             }
             return setup;
         }
+
+        /// <summary>How many of each special weapon the person carries into a quick race.</summary>
+        public const int QuickSpecials = 2;
 
         /// <summary>Three drivers of the roster's third that matches <paramref name="difficulty"/>, in a random order.</summary>
         private static List<RosterDriver> QuickRivals(Difficulty difficulty, IRandom random)

@@ -51,7 +51,11 @@ namespace Portfolio.DeathRace
         /// <summary>The champion who waits above the ladder and races the Showdown.</summary>
         public RosterDriver Champion;
 
+        /// <summary>The champion's car (every upgrade and fitting on it), its gun, the special it fires first, and its paint.</summary>
         public CarModel ChampionCar;
+
+        public GunKind ChampionGun;
+        public SpecialKind ChampionSpecial;
         public Color ChampionPaint;
 
         /// <summary>The points of the best rival on the first day; the others are spread evenly down to zero.</summary>
@@ -101,17 +105,34 @@ namespace Portfolio.DeathRace
         /// <summary>The computer's cars get one more upgrade level on every part every this many days.</summary>
         public int DaysPerAiUpgrade;
 
-        /// <summary>The days from which the better rivals bolt on spiked bumpers, armour-piercing rounds and the other fittings, and mount other guns.</summary>
+        /// <summary>The day from which the computer's cars have the nitro system and the gun mount at the level of their other parts (none before).</summary>
+        public int AiLaterUpgradesDay = 1;
+
+        /// <summary>The days from which tier 3 and better rivals bolt on spiked bumpers, and tier 4 and better armour-piercing rounds.</summary>
         public int AiSpikesDay;
 
         public int AiPiercingDay;
+
+        /// <summary>
+        /// The day from which the rivals bolt on the other fittings (roll cage, blast shielding, radar jammer, field welder,
+        /// extended magazine), one of them at first and one more every <see cref="DaysPerAiFitting"/> days, each driver in
+        /// an order of their own; a Hard race's cars have one more, an Easy race's one fewer.
+        /// </summary>
         public int AiFittingsDay;
-        public int AiGunsDay;
+
+        public int DaysPerAiFitting;
+
+        /// <summary>
+        /// The day from which the computer's cars of a race of each <see cref="Difficulty"/> mount a gun of their own (the
+        /// driver's liking: a minigun, flamethrower or plasma cannon) in place of the machine gun; <see cref="Leagues.Never"/>
+        /// for never.
+        /// </summary>
+        public int[] AiGunDays;
 
         /// <summary>What a computer car carries into a race: mines, rockets, nitro per <see cref="Difficulty"/>.</summary>
         public int[][] AiConsumables;
 
-        /// <summary>How many special weapons a computer car carries per <see cref="Difficulty"/>.</summary>
+        /// <summary>How many special weapons a computer car carries per <see cref="Difficulty"/> (of the driver's liking).</summary>
         public int[] AiSpecials;
 
         // Tracks
@@ -138,6 +159,15 @@ namespace Portfolio.DeathRace
         public int MaxDealerTier;
 
         public int Index => (int)Kind;
+
+        /// <summary>The champion's portrait among the theme's driver portraits: after the twenty colours of the drivers.</summary>
+        public int ChampionPortrait => CareerRules.LadderSize + Index;
+
+        /// <summary>The league after this one, or null for the last.</summary>
+        public LeagueSpec Next => Index + 1 < Leagues.Count ? Leagues.Of(Index + 1) : null;
+
+        /// <summary>The league before this one (whose title opens it), or null for the first.</summary>
+        public LeagueSpec Previous => Index > 0 ? Leagues.Of(Index - 1) : null;
 
         /// <summary>The roster position of the rival with <paramref name="id"/> (0 = the worst on the first day), or -1.</summary>
         public int IndexOf(string id)
@@ -174,11 +204,26 @@ namespace Portfolio.DeathRace
             int tier = CarSpecs.Of(model).Tier;
             return tier >= MinDealerTier && tier <= MaxDealerTier;
         }
+
+        /// <summary>The position of <paramref name="track"/> in <see cref="Tracks"/> (the order it opens in), or -1.</summary>
+        public int TrackOrder(int track)
+        {
+            return System.Array.IndexOf(Tracks, track);
+        }
     }
 
-    /// <summary>The three leagues of the career.</summary>
+    /// <summary>
+    /// The three leagues of the career. The first is the career as it was before the leagues, number for number; the
+    /// other two start where it ends (a Bulldog, then a Reaper), with rivals in better cars who drive better and fight
+    /// with everything the shop sells, purses to match, and the higher tiers' cars at the dealer. Tuned with the
+    /// simulated careers of the tests: an average player becomes champion of each in about 30 to 50 races, a few more in
+    /// each league than in the one before.
+    /// </summary>
     public static class Leagues
     {
+        /// <summary>A day that never comes (for a schedule entry that does not apply).</summary>
+        public const int Never = int.MaxValue;
+
         private static readonly int[][] Points =
         {
             new[] { 3, 2, 1, 0 },
@@ -200,6 +245,8 @@ namespace Portfolio.DeathRace
             Rivals = Roster.Rivals,
             Champion = Roster.Warden,
             ChampionCar = CarModel.Tyrant,
+            ChampionGun = GunKind.Flamethrower,
+            ChampionSpecial = SpecialKind.Mortar,
             ChampionPaint = new Color(0.42f, 0.03f, 0.05f, 1f),
             TopRivalStartPoints = 40,
             StartTiers = new[] { 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4, 4, 5 },
@@ -229,10 +276,12 @@ namespace Portfolio.DeathRace
             SimulatedWreckChance = new[] { 6, 8, 11, 14 },
             AiLevelBonus = 0,
             DaysPerAiUpgrade = 15,
+            AiLaterUpgradesDay = Never,
             AiSpikesDay = 8,
             AiPiercingDay = 14,
-            AiFittingsDay = 30,
-            AiGunsDay = 22,
+            AiFittingsDay = Never,
+            DaysPerAiFitting = 12,
+            AiGunDays = new[] { Never, Never, Never, 1 },
             AiConsumables = new[]
             {
                 new[] { 1, 0, 1 },
@@ -265,34 +314,36 @@ namespace Portfolio.DeathRace
             {
                 new RosterDriver("gus", "Gearbox Gus", "Strips his rivals' cars for parts after the race."),
                 new RosterDriver("patch", "Patch Perkins", "Half his car is duct tape. The other half is armour."),
-                new RosterDriver("rosa", "Rivet Rosa", "Builds her own cars and blows up everyone else's."),
+                new RosterDriver("rosa", "Rivet Rosa", "Builds her own cars and blows up everyone else's.", special: SpecialKind.Mortar),
                 new RosterDriver("earl", "Big Earl", "Weighs as much as his engine and drives like it."),
-                new RosterDriver("kerosene", "Kid Kerosene", "Too young to drive, old enough to set you on fire."),
-                new RosterDriver("vinnie", "Slick Vinnie", "Every corner he takes, he leaves a puddle of oil in."),
-                new RosterDriver("tatiana", "Tank Tatiana", "Learned to drive in an armoured column. It shows."),
-                new RosterDriver("ray", "Ricochet Ray", "Never aims. Hits anyway."),
+                new RosterDriver("kerosene", "Kid Kerosene", "Too young to drive, old enough to set you on fire.", GunKind.Flamethrower),
+                new RosterDriver("vinnie", "Slick Vinnie", "Every corner he takes, he leaves a puddle of oil in.", special: SpecialKind.Oil),
+                new RosterDriver("tatiana", "Tank Tatiana", "Learned to drive in an armoured column. It shows.", GunKind.Minigun),
+                new RosterDriver("ray", "Ricochet Ray", "Never aims. Hits anyway.", GunKind.Minigun),
                 new RosterDriver("mechanic", "The Mechanic", "Fixes his car between corners. Fixes yours for good."),
-                new RosterDriver("widowmaker", "Widowmaker", "Her rivals' families send the flowers in advance."),
-                new RosterDriver("detonator", "Dr. Detonator", "A chemist with a mortar and a doctorate in blowing things up."),
-                new RosterDriver("mary", "Bloody Mary", "Red car, red visor, red mist."),
-                new RosterDriver("copperhead", "Copperhead", "Strikes from the inside line without a sound."),
+                new RosterDriver("widowmaker", "Widowmaker", "Her rivals' families send the flowers in advance.", GunKind.Plasma),
+                new RosterDriver("detonator", "Dr. Detonator", "A chemist with a mortar and a doctorate in blowing things up.", special: SpecialKind.Mortar),
+                new RosterDriver("mary", "Bloody Mary", "Red car, red visor, red mist.", GunKind.Flamethrower),
+                new RosterDriver("copperhead", "Copperhead", "Strikes from the inside line without a sound.", GunKind.Plasma),
                 new RosterDriver("gray", "Grinder Gray", "Rides your door until the paint gives out, then the metal."),
-                new RosterDriver("betty", "Black Betty", "Her engine is the last thing a rival hears."),
-                new RosterDriver("dynamo", "Duke Dynamo", "Charged his first EMP off a power line. Still tingles."),
+                new RosterDriver("betty", "Black Betty", "Her engine is the last thing a rival hears.", GunKind.Minigun),
+                new RosterDriver("dynamo", "Duke Dynamo", "Charged his first EMP off a power line. Still tingles.", special: SpecialKind.Emp),
                 new RosterDriver("sven", "Steel Sven", "Built like his roll cage, and just as hard to bend."),
-                new RosterDriver("fontaine", "Fury Fontaine", "Champion of three wastelands and a sore loser in all of them."),
-                new RosterDriver("carnage", "Count Carnage", "The Baron's right hand, and sure he is next in line.")
+                new RosterDriver("fontaine", "Fury Fontaine", "Champion of three wastelands and a sore loser in all of them.", GunKind.Plasma),
+                new RosterDriver("carnage", "Count Carnage", "The Baron's right hand, and sure he is next in line.", GunKind.Minigun, SpecialKind.Mortar)
             },
             Champion = new RosterDriver("baron", "The Iron Baron",
                 "Rules the Iron League from a war rig plated with his rivals' doors. He has never lost a Showdown."),
             ChampionCar = CarModel.Goliath,
+            ChampionGun = GunKind.Minigun,
+            ChampionSpecial = SpecialKind.Oil,
             ChampionPaint = new Color(0.2f, 0.22f, 0.25f, 1f),
-            TopRivalStartPoints = 50,
-            StartTiers = new[] { 3, 3, 3, 3, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6, 6, 6, 6, 7 },
+            TopRivalStartPoints = 60,
+            StartTiers = new[] { 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 7 },
             MaxRivalTier = 7,
             PointsPerTier = 90,
-            BottomSkill = 0.45f,
-            TopSkill = 0.88f,
+            BottomSkill = 0.4f,
+            TopSkill = 0.85f,
             SkillPerDay = 0.0012f,
             MaxRivalSkill = 0.97f,
             AiSkillBands = new[]
@@ -304,21 +355,22 @@ namespace Portfolio.DeathRace
             },
             PrizeTable = new[]
             {
-                new[] { 4000, 2200, 1000, 250 },
-                new[] { 11000, 6500, 2500, 600 },
-                new[] { 24000, 14000, 6000, 1500 },
-                new[] { 120000, 0, 0, 0 }
+                new[] { 7000, 4000, 1800, 450 },
+                new[] { 20000, 11500, 4500, 1100 },
+                new[] { 43000, 25000, 11000, 2700 },
+                new[] { 200000, 0, 0, 0 }
             },
             PointTable = Points,
             BountyTable = new[] { 900, 1800, 3500, 8000 },
             CashTable = new[] { 150, 300, 500, 600 },
             SimulatedWreckChance = new[] { 8, 10, 13, 16 },
-            AiLevelBonus = 1,
+            AiLevelBonus = 0,
             DaysPerAiUpgrade = 12,
             AiSpikesDay = 1,
             AiPiercingDay = 5,
             AiFittingsDay = 10,
-            AiGunsDay = 1,
+            DaysPerAiFitting = 10,
+            AiGunDays = new[] { 12, 6, 1, 1 },
             AiConsumables = new[]
             {
                 new[] { 2, 1, 2 },
@@ -327,7 +379,7 @@ namespace Portfolio.DeathRace
                 new[] { 5, 4, 4 }
             },
             AiSpecials = new[] { 0, 1, 2, 3 },
-            Tracks = new[] { 0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11 },
+            Tracks = new[] { 0, 1, 2, 3, 9, 4, 5, 10, 6, 7, 11 },
             StartTracks = 5,
             TrackRanks = new[] { 17, 14, 11, 8, 5, 3 },
             ShowdownTrack = 8,
@@ -352,35 +404,37 @@ namespace Portfolio.DeathRace
             Rivals = new[]
             {
                 new RosterDriver("ash", "Ash Ashford", "Survived the Iron League. Barely."),
-                new RosterDriver("cinder", "Cinder", "Nobody remembers her real name. Nobody asks."),
+                new RosterDriver("cinder", "Cinder", "Nobody remembers her real name. Nobody asks.", GunKind.Flamethrower),
                 new RosterDriver("harry", "Hot Rod Harry", "Three hundred races, three hundred wrecks, one smile."),
-                new RosterDriver("lava", "Lady Lava", "Drives like molten rock: slow to start, impossible to stop."),
+                new RosterDriver("lava", "Lady Lava", "Drives like molten rock: slow to start, impossible to stop.", GunKind.Flamethrower, SpecialKind.Oil),
                 new RosterDriver("jansen", "Jet Jansen", "Strapped a jet engine to a hearse. Won with it."),
-                new RosterDriver("pete", "Pyro Pete", "Thinks a flamethrower is a steering aid."),
-                new RosterDriver("hana", "Hellcat Hana", "Smaller than her car and meaner than her guns."),
-                new RosterDriver("surgeon", "The Surgeon", "Takes your car apart one precise shot at a time."),
-                new RosterDriver("brimstone", "Brimstone", "Leaves scorch marks on the grid before the lights go out."),
+                new RosterDriver("pete", "Pyro Pete", "Thinks a flamethrower is a steering aid.", GunKind.Flamethrower),
+                new RosterDriver("hana", "Hellcat Hana", "Smaller than her car and meaner than her guns.", GunKind.Minigun),
+                new RosterDriver("surgeon", "The Surgeon", "Takes your car apart one precise shot at a time.", GunKind.Plasma),
+                new RosterDriver("brimstone", "Brimstone", "Leaves scorch marks on the grid before the lights go out.", GunKind.Flamethrower, SpecialKind.Mortar),
                 new RosterDriver("mayhem", "Mother Mayhem", "Raised half the drivers on this ladder. Wrecked the other half."),
-                new RosterDriver("zero", "Zero", "No name, no face, no mercy, no brakes."),
-                new RosterDriver("ivy", "Inferno Ivy", "Burns everything she passes, her bridges included."),
-                new RosterDriver("major", "Major Mortar", "Shells the corners ahead as if the war never ended."),
-                new RosterDriver("sasha", "Static Sasha", "Her EMP has stopped more cars than her guns."),
-                new RosterDriver("wraith", "Wraith", "Appears in your mirror, then in your wreckage."),
-                new RosterDriver("doomsday", "Doomsday Dan", "Has been predicting your end since the first lap."),
-                new RosterDriver("valkyrie", "Valkyrie", "Chooses who leaves the race. Never herself."),
-                new RosterDriver("overkill", "Overkill", "Every weapon he owns, all at once, all the time."),
-                new RosterDriver("butcherjr", "The Butcher's Daughter", "Carries on the family trade with better tools.")
+                new RosterDriver("zero", "Zero", "No name, no face, no mercy, no brakes.", GunKind.Plasma),
+                new RosterDriver("ivy", "Inferno Ivy", "Burns everything she passes, her bridges included.", GunKind.Flamethrower),
+                new RosterDriver("major", "Major Mortar", "Shells the corners ahead as if the war never ended.", special: SpecialKind.Mortar),
+                new RosterDriver("sasha", "Static Sasha", "Her EMP has stopped more cars than her guns.", special: SpecialKind.Emp),
+                new RosterDriver("wraith", "Wraith", "Appears in your mirror, then in your wreckage.", GunKind.Plasma, SpecialKind.Oil),
+                new RosterDriver("doomsday", "Doomsday Dan", "Has been predicting your end since the first lap.", special: SpecialKind.Mortar),
+                new RosterDriver("valkyrie", "Valkyrie", "Chooses who leaves the race. Never herself.", GunKind.Plasma, SpecialKind.Emp),
+                new RosterDriver("overkill", "Overkill", "Every weapon he owns, all at once, all the time.", GunKind.Minigun),
+                new RosterDriver("butcherjr", "The Butcher's Daughter", "Carries on the family trade with better tools.", GunKind.Minigun, SpecialKind.Mortar)
             },
             Champion = new RosterDriver("nemesis", "Nemesis",
                 "Nobody knows where Nemesis came from. Everybody knows where the rivals went."),
             ChampionCar = CarModel.Apocalypse,
+            ChampionGun = GunKind.Plasma,
+            ChampionSpecial = SpecialKind.Emp,
             ChampionPaint = new Color(0.22f, 0.05f, 0.3f, 1f),
-            TopRivalStartPoints = 60,
-            StartTiers = new[] { 5, 5, 5, 5, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 7, 8, 8, 8, 8 },
+            TopRivalStartPoints = 75,
+            StartTiers = new[] { 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 8, 8 },
             MaxRivalTier = 8,
             PointsPerTier = 100,
-            BottomSkill = 0.6f,
-            TopSkill = 0.95f,
+            BottomSkill = 0.55f,
+            TopSkill = 0.92f,
             SkillPerDay = 0.0012f,
             MaxRivalSkill = 0.99f,
             AiSkillBands = new[]
@@ -392,21 +446,22 @@ namespace Portfolio.DeathRace
             },
             PrizeTable = new[]
             {
-                new[] { 12000, 6500, 3000, 800 },
-                new[] { 30000, 17000, 7000, 1800 },
-                new[] { 60000, 34000, 15000, 4000 },
-                new[] { 400000, 0, 0, 0 }
+                new[] { 19000, 10500, 4800, 1300 },
+                new[] { 48000, 27000, 11000, 2900 },
+                new[] { 96000, 54000, 24000, 6400 },
+                new[] { 600000, 0, 0, 0 }
             },
             PointTable = Points,
             BountyTable = new[] { 2500, 5000, 9000, 20000 },
             CashTable = new[] { 400, 700, 1100, 1500 },
             SimulatedWreckChance = new[] { 10, 12, 15, 18 },
-            AiLevelBonus = 2,
+            AiLevelBonus = 0,
             DaysPerAiUpgrade = 10,
             AiSpikesDay = 1,
             AiPiercingDay = 1,
             AiFittingsDay = 4,
-            AiGunsDay = 1,
+            DaysPerAiFitting = 8,
+            AiGunDays = new[] { 1, 1, 1, 1 },
             AiConsumables = new[]
             {
                 new[] { 3, 2, 2 },
@@ -415,7 +470,7 @@ namespace Portfolio.DeathRace
                 new[] { 6, 5, 4 }
             },
             AiSpecials = new[] { 1, 2, 3, 4 },
-            Tracks = new[] { 0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11 },
+            Tracks = new[] { 0, 1, 2, 4, 9, 5, 10, 3, 6, 11, 7 },
             StartTracks = 7,
             TrackRanks = new[] { 15, 11, 7, 3 },
             ShowdownTrack = 8,

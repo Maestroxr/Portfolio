@@ -263,7 +263,7 @@ namespace Portfolio.DeathRace
             float y = -20f;
             Line(box, L("Prize"), report.Wrecked ? L("None: wrecked") : RaceFormat.Money(report.Prize), ref y, look,
                 report.Wrecked ? Warn : look.text);
-            string bounty = report.Kills > 0 ? LF("{0} x {1}", report.Kills, RaceFormat.Money(CareerRules.Bounty(report.Difficulty))) : "";
+            string bounty = report.Kills > 0 ? LF("{0} x {1}", report.Kills, RaceFormat.Money(report.BountyEach)) : "";
             Line(box, L("Bounties"), RaceFormat.Money(report.Bounty), ref y, look, look.text, bounty);
             Line(box, L("Cash picked up"), RaceFormat.Money(report.Cash), ref y, look, look.text);
             Image rule = OverlayKit.NewImage(box, "Rule", look.muted);
@@ -324,7 +324,7 @@ namespace Portfolio.DeathRace
             y -= 56f;
         }
 
-        /// <summary>"Used 1 mine, 2 rockets, 1 nitro", or nothing.</summary>
+        /// <summary>"Used 1 mine, 2 rockets, 1 nitro, 1 oil slick", or nothing.</summary>
         private string Used()
         {
             var parts = new List<string>();
@@ -339,6 +339,18 @@ namespace Portfolio.DeathRace
             if (report.NitroUsed > 0)
             {
                 parts.Add(report.NitroUsed == 1 ? L("1 nitro") : LF("{0} nitros", report.NitroUsed));
+            }
+            if (report.OilUsed > 0)
+            {
+                parts.Add(report.OilUsed == 1 ? L("1 oil slick") : LF("{0} oil slicks", report.OilUsed));
+            }
+            if (report.EmpUsed > 0)
+            {
+                parts.Add(report.EmpUsed == 1 ? L("1 EMP blast") : LF("{0} EMP blasts", report.EmpUsed));
+            }
+            if (report.MortarUsed > 0)
+            {
+                parts.Add(report.MortarUsed == 1 ? L("1 mortar shell") : LF("{0} mortar shells", report.MortarUsed));
             }
             return parts.Count > 0 ? LF("Used {0}.", string.Join(", ", parts)) : "";
         }
@@ -393,13 +405,14 @@ namespace Portfolio.DeathRace
 
         private IEnumerable<string> News()
         {
+            string champion = Portfolio.DeathRace.L.Data(Leagues.Of(report.League).Champion.Name);
             if (report.Champion)
             {
-                yield return L("You beat The Warden: you are the champion!");
+                yield return LF("You beat {0}: you are the champion!", champion);
             }
             else if (report.ShowdownLost)
             {
-                yield return L("The Warden keeps the title. Climb back to the top and try again.");
+                yield return LF("{0} keeps the title. Climb back to the top and try again.", champion);
             }
             foreach (int track in report.TracksOpened)
             {
@@ -459,7 +472,9 @@ namespace Portfolio.DeathRace
                     return string.Join("  ·  ", track, LF("Quick race, {0}", ui.DifficultyName(setup.Difficulty)), Portfolio.DeathRace.L.Laps(setup.Laps));
                 default:
                     string line = string.Join("  ·  ", track, ui.DifficultyName(setup.Difficulty), Portfolio.DeathRace.L.Laps(setup.Laps));
-                    return report != null ? LF("Day {0}", report.Day) + "  ·  " + line : line;
+                    return report != null
+                        ? string.Join("  ·  ", L(Leagues.Of(report.League).Name), LF("Day {0}", report.Day), line)
+                        : line;
             }
         }
 
