@@ -9,8 +9,10 @@ namespace Portfolio.DeathRace
     /// The prefab is drawn in two materials: the palette (every unpainted part, the wheels and the light lenses) and the
     /// paint (the body panels, tinted per car with a property block, so every car of a race wears its driver's colour
     /// while all cars share two materials). A look swaps both for its own (<see cref="ApplyTheme"/>), lights the lamps at
-    /// night and shows the headlight beams on the road. Braking, damage, nitro and a wreck change only property blocks,
-    /// enabled flags and, for a wreck, the materials: nothing allocates while a race runs.
+    /// night and shows the headlight beams on the road. Some cars carry lamps that glow all the time (the Spectre's light
+    /// strips, the Apocalypse's jet nozzles), brighter at night and flaring while the nitro burns, and a car may wear a
+    /// duller finish than the look's glossy paint (<see cref="paintGloss"/>). Braking, damage, nitro and a wreck change
+    /// only property blocks, enabled flags and, for a wreck, the materials: nothing allocates while a race runs.
     /// </summary>
     [DisallowMultipleComponent]
     public class CarModelView : MonoBehaviour
@@ -38,10 +40,14 @@ namespace Portfolio.DeathRace
         public Renderer[] nitroFlames = new Renderer[0];
         [Tooltip("The soft shadow under the car.")]
         public Renderer shadow;
+        [Tooltip("Lamps of the body that glow by day and by night and flare up while the nitro burns (light strips, jet nozzles).")]
+        public Renderer[] glows = new Renderer[0];
 
         [Header("Shape")]
         public float frontWheelRadius = 0.35f;
         public float rearWheelRadius = 0.35f;
+        [Tooltip("How glossy the paint is against the look's paint (1); a matte finish is less.")]
+        [Range(0f, 1.5f)] public float paintGloss = 1f;
         [SerializeField] private Bounds bounds = new Bounds(new Vector3(0f, 0.7f, 0f), new Vector3(2f, 1.4f, 4.2f));
 
         // Lamp brightness (multiplies the palette's emission map) by day and by night.
@@ -51,6 +57,9 @@ namespace Portfolio.DeathRace
         private const float TailNight = 1.4f;
         private const float BrakeDay = 2.4f;
         private const float BrakeNight = 4.2f;
+        private const float GlowDay = 1.1f;
+        private const float GlowNight = 2.2f;
+        private const float GlowNitro = 2.4f;
 
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
@@ -210,6 +219,10 @@ namespace Portfolio.DeathRace
             nitro = burning;
             Prepare();
             SetEnabled(nitroFlames, nitro && !wrecked);
+            if (glows.Length > 0)
+            {
+                RefreshLights();
+            }
         }
 
         public virtual void SetWrecked(bool wrecked)
@@ -268,6 +281,7 @@ namespace Portfolio.DeathRace
             SetMaterial(body, palette);
             SetMaterial(headlights, palette);
             SetMaterial(taillights, palette);
+            SetMaterial(glows, palette);
             SetMaterial(paint, painted);
         }
 
@@ -334,7 +348,7 @@ namespace Portfolio.DeathRace
             Color faded = Color.Lerp(paintColor, new Color(grey, grey, grey, 1f), damage * 0.55f);
             Color painted = faded * Color.Lerp(Color.white, Grime, damage * 0.85f);
             painted.a = 1f;
-            ApplyBlock(paint, painted, Mathf.Lerp(paintSmoothness, 0.22f, damage * 0.85f), false, 0f);
+            ApplyBlock(paint, painted, Mathf.Lerp(paintSmoothness * paintGloss, 0.22f, damage * 0.85f), false, 0f);
         }
 
         private void RefreshLights()
@@ -347,6 +361,7 @@ namespace Portfolio.DeathRace
             {
                 ClearBlocks(headlights);
                 ClearBlocks(taillights);
+                ClearBlocks(glows);
                 return;
             }
             Color dirt = wrecked ? Charred : Color.Lerp(Color.white, Dust, damage * 0.7f);
@@ -356,6 +371,11 @@ namespace Portfolio.DeathRace
             float failing = Mathf.Lerp(1f, 0.6f, Mathf.Clamp01((damage - 0.6f) / 0.4f));
             ApplyBlock(headlights, dirt, null, true, head * failing);
             ApplyBlock(taillights, dirt, null, true, tail);
+            if (glows.Length > 0)
+            {
+                float glow = wrecked ? 0f : (night ? GlowNight : GlowDay) * (nitro ? GlowNitro : 1f) * failing;
+                ApplyBlock(glows, dirt, null, true, glow);
+            }
             foreach (Renderer glow in tailGlows)
             {
                 if (glow == null)

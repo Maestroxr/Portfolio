@@ -8,13 +8,14 @@ namespace Portfolio.DeathRace.EditorTools
     /// <summary>
     /// The pictures of the interface: plain white shapes (Art/UI), the sprites of each look's menus, windows and HUD
     /// (Art/UI/&lt;Look&gt;, drawn at twice their size and imported at 200 pixels per unit), each look's icons
-    /// (Art/Icons/&lt;Look&gt;) with the bigger pictures of the three upgrades, the look's picture for the theme choice, and
+    /// (Art/Icons/&lt;Look&gt;) with the bigger pictures of the five upgrades, the drivers' and champions' portraits, the
+    /// look's picture for the theme choice, and
     /// the launcher's emblem (Art/Icons/GameIcon.png).
     /// </summary>
     internal static partial class DeathRaceArtBuilder
     {
-        /// <summary>The upgrades' pictures, per UpgradeKind (Engine, Tires, Armor), by icon name.</summary>
-        public static readonly string[] UpgradeIcons = { "Engine", "Tyres", "Armour" };
+        /// <summary>The upgrades' pictures, per UpgradeKind (Engine, Tires, Armor, Boost, GunMount), by icon name.</summary>
+        public static readonly string[] UpgradeIcons = { "Engine", "Tyres", "Armour", "Boost", "GunMount" };
 
         private const float SpritePixelsPerUnit = 100f * DeathRaceArtInterface.Detail;
 
@@ -35,10 +36,13 @@ namespace Portfolio.DeathRace.EditorTools
             return DeathRaceAssets.LoadSprite($"{spec.IconsFolder}/Upgrade{icon}.png");
         }
 
-        /// <summary>The drivers' portraits of a look: twenty (index = the driver's colour) and The Warden's last.</summary>
+        /// <summary>
+        /// The drivers' portraits of a look: twenty (index = the driver's colour), then the champions: The Warden (20), The
+        /// Iron Baron (21) and Nemesis (22).
+        /// </summary>
         public static Sprite[] Portraits(DeathRaceThemeSpec spec)
         {
-            var portraits = new Sprite[DeathRaceArtPortraits.Warden + 1];
+            var portraits = new Sprite[DeathRaceArtPortraits.Count];
             for (int i = 0; i < portraits.Length; i++)
             {
                 portraits[i] = DeathRaceAssets.LoadSprite(PortraitPath(spec, i));
@@ -102,7 +106,7 @@ namespace Portfolio.DeathRace.EditorTools
                 {
                     SaveSprite(DeathRaceArtIcons.Draw(icon, 256, spec), $"{spec.IconsFolder}/Upgrade{icon}.png", Vector4.zero, 100f);
                 }
-                for (int i = 0; i <= DeathRaceArtPortraits.Warden; i++)
+                for (int i = 0; i < DeathRaceArtPortraits.Count; i++)
                 {
                     SaveSprite(DeathRaceArtPortraits.Draw(i, spec), PortraitPath(spec, i), Vector4.zero, 100f);
                 }

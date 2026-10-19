@@ -100,8 +100,9 @@ namespace Portfolio.DeathRace
         public Sprite iconSkull;
         [Tooltip("Per CarModel: the car seen from above.")]
         public Sprite[] carPictures = new Sprite[0];
-        [Tooltip("Per UpgradeKind: engine, tyres, armour.")]
+        [Tooltip("Per UpgradeKind: engine, tyres, armour, nitro system, gun mount.")]
         public Sprite[] upgradePictures = new Sprite[0];
+        [Tooltip("The twenty drivers' helmets (index = the driver's colour), then the champions: 20 The Warden, 21 The Iron Baron, 22 Nemesis.")]
         [ThemeOptional] public Sprite[] driverPortraits = new Sprite[0];
         public Color hudText = new Color(0.96f, 0.93f, 0.86f, 1f);
         public Color hudAccent = new Color(1f, 0.62f, 0.12f, 1f);
@@ -129,6 +130,19 @@ namespace Portfolio.DeathRace
             return carPictures != null && index >= 0 && index < carPictures.Length ? carPictures[index] : null;
         }
 
+        /// <summary>The picture of an upgrade, or null when the look has none (callers draw their own).</summary>
+        public Sprite UpgradePicture(UpgradeKind kind)
+        {
+            int index = (int)kind;
+            return upgradePictures != null && index >= 0 && index < upgradePictures.Length ? upgradePictures[index] : null;
+        }
+
+        /// <summary>A driver's portrait (0-19 by colour, 20-22 the champions), or null when the look has none.</summary>
+        public Sprite DriverPortrait(int index)
+        {
+            return driverPortraits != null && index >= 0 && index < driverPortraits.Length ? driverPortraits[index] : null;
+        }
+
         public Sprite PickupIcon(PickupKind kind)
         {
             switch (kind)
@@ -152,6 +166,12 @@ namespace Portfolio.DeathRace
             if (carPictures == null || carPictures.Length != CarSpecs.Count)
             {
                 problems.Add($"{name}: needs a picture of each of the {CarSpecs.Count} cars");
+                valid = false;
+            }
+            int upgrades = Enum.GetValues(typeof(UpgradeKind)).Length;
+            if (upgradePictures == null || upgradePictures.Length != upgrades)
+            {
+                problems.Add($"{name}: needs a picture of each of the {upgrades} upgrades");
                 valid = false;
             }
             if (seatColors == null || seatColors.Length < 4)
