@@ -17,13 +17,15 @@ namespace Portfolio.DeathRace.EditorTools
     /// angle at the grid, at the slowest corner and half a lap on. Nothing is saved to the project.
     ///
     /// Batch: <c>-executeMethod Portfolio.DeathRace.EditorTools.TrackPreview.RenderAll -trackpreview &lt;folder&gt;</c>
-    /// (<c>DrawLayouts</c> for the drawings alone; <c>-trackpreview-only 3</c> for one track). Without a folder the
-    /// pictures go to the project's Logs/TrackPreview.
+    /// (<c>DrawLayouts</c> for the drawings alone; <c>-trackpreview-only 3</c> or <c>9,10,11</c> for some;
+    /// <c>-trackpreview-pieces 1</c> adds a race camera picture of every set piece). Without a folder the pictures go to
+    /// the project's Logs/TrackPreview.
     /// </summary>
     internal static partial class TrackPreview
     {
         private const string FolderArgument = "-trackpreview";
         private const string OnlyArgument = "-trackpreview-only";
+        private const string PiecesArgument = "-trackpreview-pieces";
         private const float CameraPitch = 60f;
         private const float CameraHeight = 38f;
         private const float CameraFieldOfView = 50f;
@@ -92,6 +94,14 @@ namespace Portfolio.DeathRace.EditorTools
                         stage.Chase(track, Path.Combine(themeFolder, $"{slug}-grid.png"), GridView(track));
                         stage.Chase(track, Path.Combine(themeFolder, $"{slug}-corner.png"), SlowestCorner(track));
                         stage.Chase(track, Path.Combine(themeFolder, $"{slug}-half.png"), track.LineDistance + track.Path.Length * 0.5f);
+                        if (Argument(PiecesArgument) != null)
+                        {
+                            for (int piece = 0; piece < layout.SetPieces.Length; piece++)
+                            {
+                                TrackLayout.SetPiece setPiece = layout.SetPieces[piece];
+                                stage.Chase(track, Path.Combine(themeFolder, $"{slug}-piece{piece}-{setPiece.Kind}.png"), setPiece.Distance);
+                            }
+                        }
                         Debug.Log($"{name} {layout.Name}: built in {built} ms with {theme.name}, {track.GetComponentsInChildren<MeshRenderer>().Length} renderers, " +
                                   $"{track.GetComponentsInChildren<Light>().Length} lights, {track.GetComponentsInChildren<BoxCollider>().Length} wall colliders");
                     }
@@ -146,9 +156,15 @@ namespace Portfolio.DeathRace.EditorTools
         private static IEnumerable<int> Indices()
         {
             string only = Argument(OnlyArgument);
-            if (only != null && int.TryParse(only, out int index))
+            if (only != null)
             {
-                yield return Mathf.Clamp(index, 0, TrackLayouts.Count - 1);
+                foreach (string part in only.Split(','))
+                {
+                    if (int.TryParse(part.Trim(), out int index))
+                    {
+                        yield return Mathf.Clamp(index, 0, TrackLayouts.Count - 1);
+                    }
+                }
                 yield break;
             }
             for (int i = 0; i < TrackLayouts.Count; i++)

@@ -159,6 +159,53 @@ namespace Portfolio.DeathRace.Tests
             Assert.AreEqual(3, load.mines);
             Assert.AreEqual(2, load.rockets);
             Assert.AreEqual(3, load.nitro);
+            Assert.AreEqual(1, load.oil, "one of each special weapon");
+            Assert.AreEqual(1, load.emp);
+            Assert.AreEqual(1, load.mortar);
+            Assert.AreEqual(SpecialKind.Oil, load.special);
+            DeathRaceLocalRules rules = Rules();
+            foreach (RaceEntrant entrant in rules.BuildSetup(Match(rules, 2), 5).Entrants)
+            {
+                Assert.AreEqual(DeathRaceLocalRules.SpecialsPerSeat, entrant.Loadout.oil, entrant.Name);
+                Assert.AreEqual(DeathRaceLocalRules.SpecialsPerSeat, entrant.Loadout.emp, entrant.Name);
+                Assert.AreEqual(DeathRaceLocalRules.SpecialsPerSeat, entrant.Loadout.mortar, entrant.Name);
+            }
+        }
+
+        [Test]
+        public void AllTwelveTracksAndCarsAreOffered()
+        {
+            var all = new List<int>();
+            for (int track = 0; track < TrackLayouts.Count; track++)
+            {
+                all.Add(track);
+            }
+            DeathRaceLocalRules rules = Rules(all.ToArray());
+            Assert.AreEqual(12, rules.Tracks.Count);
+            LocalOption tracks = rules.FindOption(DeathRaceLocalRules.TrackOption);
+            Assert.AreEqual("Gridlock Boulevard", tracks.Values[11]);
+            LocalOption cars = rules.FindOption(DeathRaceLocalRules.CarOption);
+            Assert.AreEqual(CarSpecs.Count + 1, cars.Values.Length, "every car and the mixed grid");
+            Assert.AreEqual(12, CarSpecs.Count);
+            Assert.AreEqual(CarSpecs.Of(CarModel.Apocalypse).Name, cars.Values[(int)CarModel.Apocalypse]);
+            Assert.AreEqual(DeathRaceLocalRules.MixedCars, cars.Values[CarSpecs.Count]);
+            LocalMatch match = Match(rules, 2);
+            match.SetOption(DeathRaceLocalRules.TrackOption, 10);
+            match.SetOption(DeathRaceLocalRules.CarOption, (int)CarModel.Goliath);
+            RaceSetup setup = rules.BuildSetup(match, 11);
+            Assert.AreEqual(10, setup.Track);
+            Assert.AreEqual(TrackLayouts.Of(10).Laps, setup.Laps);
+            Assert.AreEqual(CarModel.Goliath, setup.Entrants[0].Loadout.model);
+            match.SetOption(DeathRaceLocalRules.CarOption, CarSpecs.Count);
+            var drawn = new HashSet<CarModel>();
+            for (int seed = 0; seed < 60; seed++)
+            {
+                foreach (RaceEntrant entrant in rules.BuildSetup(match, seed).Entrants)
+                {
+                    drawn.Add(entrant.Loadout.model);
+                }
+            }
+            Assert.IsTrue(drawn.Contains(CarModel.Apocalypse) && drawn.Contains(CarModel.Jackal), "a mixed grid draws from all twelve");
         }
     }
 }

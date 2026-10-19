@@ -3,9 +3,11 @@ using UnityEngine;
 namespace Portfolio.DeathRace
 {
     /// <summary>
-    /// The nine tracks of the game, in campaign order (the campaign's level i is track i). Names, lands and laps are the
+    /// The twelve tracks of the game, in campaign order (the campaign's level i is track i). Names, lands and laps are the
     /// design's; the shapes were drawn for armed cars seen from above: fast straights for nitro and rockets, hairpins and
-    /// chicanes where the field bunches up and the guns come out, a narrow gorge or two. Every layout keeps the rules of
+    /// chicanes where the field bunches up and the guns come out, a narrow gorge or two. The first nine are the
+    /// Wasteland's (the Crucible, 8, is every league's Showdown arena); the last three came with the harder leagues and
+    /// sit after it, so the indices saves keep never move. Every layout keeps the rules of
     /// <see cref="TrackGeometry.Problems"/> (the tests check them all).
     ///
     /// The control points are metres (x east, y north) in the order of travel; the centre line is a centripetal
@@ -258,6 +260,112 @@ namespace Portfolio.DeathRace
                     71.5f, 120, 62.5f, 129, 50, 132.5f, 37.5f, 129, 28, 120, 20.5f, 107,
                     14.5f, 98.5f, 6, 92, -2, 86, -8.5f, 77.5f, -20, 57.5f, -31.5f, 37.5f,
                     -35, 25, -31.5f, 12.5f, -22.5f, 3.5f, -10, 0)
+            },
+
+            // The tracks of the harder leagues (after the Crucible, so saves keep their indices): wider and faster, for
+            // cars that pass sixty metres a second on nitro, each with a narrow stretch where the field has to queue up.
+            new TrackLayout
+            {
+                Name = "Refinery Row",
+                Description = "A flat-out sweep round the storage tanks, then a narrow box of corners through the pipe racks.",
+                Biome = Biome.Industrial,
+                Laps = 5,
+                Width = 16f,
+                Seed = 11010,
+                StartDistance = 60f,
+                PickupDistances = new[] { 235f, 425f, 590f, 725f, 910f, 1050f },
+                Stretches = new[] { new TrackLayout.Stretch(640f, 780f, 13f) },
+                SetPieces = new[]
+                {
+                    new TrackLayout.SetPiece(SetPieceKind.StorageTank, 355f, 1f, 6f),
+                    new TrackLayout.SetPiece(SetPieceKind.StorageTank, 445f, 1f, 6f),
+                    new TrackLayout.SetPiece(SetPieceKind.StorageTank, 510f, 1f, 9f),
+                    new TrackLayout.SetPiece(SetPieceKind.StorageTank, 385f, 1f, 30f),
+                    new TrackLayout.SetPiece(SetPieceKind.StorageTank, 475f, 1f, 30f),
+                    new TrackLayout.SetPiece(SetPieceKind.PipeRack, 670f, -1f),
+                    new TrackLayout.SetPiece(SetPieceKind.PipeRack, 730f, -1f),
+                    new TrackLayout.SetPiece(SetPieceKind.PipeRack, 730f, 1f, 14f),
+                    new TrackLayout.SetPiece(SetPieceKind.PipeRack, 785f, -1f),
+                    new TrackLayout.SetPiece(SetPieceKind.Containers, 900f, -1f),
+                    new TrackLayout.SetPiece(SetPieceKind.Containers, 930f, 1f),
+                    new TrackLayout.SetPiece(SetPieceKind.Tyres, 640f, 1f),
+                    new TrackLayout.SetPiece(SetPieceKind.Tyres, 1090f, -1f)
+                },
+                Points = Points(
+                    0, 0, 28, 0, 55.5f, 0, 83.5f, 0, 111.5f, 0, 139, 0,
+                    167, 0, 195, 0, 222.5f, 0, 250.5f, 0, 278.5f, 0, 318.5f, 10.5f,
+                    347.5f, 40, 358.5f, 80, 358.5f, 95, 347.5f, 135, 318.5f, 164.5f, 278.5f, 175,
+                    248, 175, 217.5f, 175, 205.5f, 178, 196.5f, 187, 193.5f, 199, 193.5f, 221,
+                    190, 233, 181.5f, 242, 169.5f, 245, 153.5f, 245, 141.5f, 242, 132.5f, 233,
+                    129.5f, 221, 129.5f, 208, 125.5f, 194, 115.5f, 184, 101.5f, 180, 67, 180,
+                    53.5f, 178.5f, 41.5f, 173, 21, 161.5f, 0.5f, 149.5f, -20, 137.5f, -40, 125.5f,
+                    -52, 114, -57, 98.5f, -54, 82, -44, 60, -34, 37.5f, -23.5f, 15,
+                    -18, 7, -9.5f, 2)
+            },
+            new TrackLayout
+            {
+                Name = "Avalanche Ridge",
+                Description = "Two hairpins up the mountain, a narrow ice shelf along the ridge and a long sweeping run back down.",
+                Biome = Biome.Snow,
+                Laps = 5,
+                Width = 16f,
+                Seed = 12111,
+                StartDistance = 60f,
+                PickupDistances = new[] { 245f, 385f, 495f, 665f, 860f, 1180f },
+                Stretches = new[] { new TrackLayout.Stretch(755f, 950f, 12f) },
+                SetPieces = new[]
+                {
+                    new TrackLayout.SetPiece(SetPieceKind.Tyres, 425f, -1f),
+                    new TrackLayout.SetPiece(SetPieceKind.Tyres, 570f, 1f),
+                    new TrackLayout.SetPiece(SetPieceKind.Boulders, 800f, -1f),
+                    new TrackLayout.SetPiece(SetPieceKind.Boulders, 900f, -1f),
+                    new TrackLayout.SetPiece(SetPieceKind.Boulders, 1050f, -1f)
+                },
+                Points = Points(
+                    0, 0, 27, 0, 53.5f, 0, 80.5f, 0, 107, 0, 134, 0,
+                    161, 0, 187.5f, 0, 214.5f, 0, 241, 0, 257.5f, 3.5f, 271, 13.5f,
+                    279.5f, 28, 287.5f, 54.5f, 296, 81, 304, 107.5f, 312.5f, 133.5f, 313.5f, 144,
+                    310, 153.5f, 303, 161, 293.5f, 164.5f, 281, 164, 271.5f, 159, 265.5f, 150,
+                    254, 121, 242.5f, 92, 236.5f, 83.5f, 227.5f, 78.5f, 217, 77.5f, 211, 78,
+                    199.5f, 82.5f, 192, 92, 190, 104, 192.5f, 134, 195.5f, 163.5f, 193.5f, 183,
+                    184, 200.5f, 168, 213, 149, 218, 123, 219.5f, 97, 221, 71.5f, 222.5f,
+                    45.5f, 224, 19.5f, 225.5f, -6, 227, -32, 228.5f, -52.5f, 225.5f, -70.5f, 214,
+                    -95, 189.5f, -111.5f, 163, -115, 132, -105, 103, -95, 87, -88, 69.5f,
+                    -88.5f, 50.5f, -87.5f, 33.5f, -79.5f, 20.5f, -65.5f, 13.5f, -37, 7.5f, -8.5f, 1)
+            },
+            new TrackLayout
+            {
+                Name = "Gridlock Boulevard",
+                Description = "The longest circuit in the city: a flat-out boulevard, a tight chicane between the blocks and tyre walls at the stops.",
+                Biome = Biome.City,
+                Laps = 4,
+                Width = 16f,
+                Seed = 13212,
+                StartDistance = 60f,
+                PickupDistances = new[] { 260f, 600f, 800f, 960f, 1130f, 1290f },
+                Stretches = new[] { new TrackLayout.Stretch(500f, 580f, 13f) },
+                SetPieces = new[]
+                {
+                    new TrackLayout.SetPiece(SetPieceKind.Tyres, 440f, 1f),
+                    new TrackLayout.SetPiece(SetPieceKind.Tyres, 540f, -1f),
+                    new TrackLayout.SetPiece(SetPieceKind.Tyres, 1030f, 1f),
+                    new TrackLayout.SetPiece(SetPieceKind.Wrecks, 150f, 1f),
+                    new TrackLayout.SetPiece(SetPieceKind.Wrecks, 330f, -1f),
+                    new TrackLayout.SetPiece(SetPieceKind.Wrecks, 850f, -1f),
+                    new TrackLayout.SetPiece(SetPieceKind.Wrecks, 1200f, 1f)
+                },
+                Points = Points(
+                    0, 0, 28, 0, 55.5f, 0, 83.5f, 0, 111.5f, 0, 139.5f, 0,
+                    167, 0, 195, 0, 223, 0, 251, 0, 278.5f, 0, 306.5f, 0,
+                    334.5f, 0, 362.5f, 0, 390, 0, 418, 0, 429, -3, 437, -11,
+                    440, -22, 440, -51.5f, 440, -81.5f, 441.5f, -89.5f, 445.5f, -96.5f, 452, -101.5f,
+                    470, -111.5f, 476.5f, -116.5f, 480.5f, -123.5f, 482, -131.5f, 482, -158, 482, -184,
+                    482, -210, 478, -225, 467, -236, 452, -240, 424, -240, 395.5f, -240,
+                    367.5f, -240, 339.5f, -240, 311, -240, 283, -240, 254.5f, -240, 226.5f, -240,
+                    198.5f, -240, 170, -240, 142, -240, 131, -237, 123, -229, 120, -218,
+                    120, -192, 117, -181, 109, -173, 98, -170, 75, -170, 52, -170,
+                    41, -167, 33, -159, 30, -148, 30, -112, 26, -97.5f, 15, -86.5f,
+                    -15, -68.5f, -26, -57.5f, -30, -43, -30, -30, -26, -15, -15, -4)
             }
         };
 

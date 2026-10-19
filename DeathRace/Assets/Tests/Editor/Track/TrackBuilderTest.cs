@@ -115,6 +115,57 @@ namespace Portfolio.DeathRace.Tests
             Track first = TrackBuilder.Build(TrackLayouts.Of(0), null, null, root.transform);
             Track second = TrackBuilder.Build(TrackLayouts.Of(0), null, null, root.transform);
             Assert.AreEqual(Vertices(first), Vertices(second));
+            Track refinery = TrackBuilder.Build(TrackLayouts.Of(9), night, null, root.transform);
+            Track again = TrackBuilder.Build(TrackLayouts.Of(9), night, null, root.transform);
+            Assert.AreEqual(Vertices(refinery), Vertices(again), "the new set pieces too");
+        }
+
+        [Test]
+        public void TheHarderLeaguesTracksStandTheirSetPiecesBehindTheBarrier()
+        {
+            var expected = new Dictionary<int, string[]>
+            {
+                { 9, new[] { "Tanks", "Tank Roofs", "Steelwork", "Pipes", "Gas Pipes", "Water Pipes", "Warning Lights", "Containers 0" } },
+                { 10, new[] { "Boulders", "Boulder Snow", "Tyres" } },
+                { 11, new[] { "Wreck Glass", "Wreck Tyres", "Tyres" } }
+            };
+            foreach (KeyValuePair<int, string[]> track in expected)
+            {
+                Track built = TrackBuilder.Build(TrackLayouts.Of(track.Key), night, null, root.transform);
+                var names = new HashSet<string>();
+                foreach (Transform part in built.GetComponentsInChildren<Transform>(true))
+                {
+                    names.Add(part.name);
+                }
+                foreach (string name in track.Value)
+                {
+                    Assert.IsTrue(names.Contains(name), $"{built.Layout.Name} has {name}");
+                }
+                // Nothing of these set pieces reaches over the road (the merged chunks of their paints).
+                RacePath path = built.Path;
+                string[] paints = { "tank", "pipe", "piece", "wreck", "boulder", "warning" };
+                foreach (MeshFilter filter in built.transform.Find("Scenery").GetComponentsInChildren<MeshFilter>(true))
+                {
+                    if (!filter.name.StartsWith("Track chunk") || filter.sharedMesh == null || !System.Array.Exists(paints, filter.name.Contains))
+                    {
+                        continue;
+                    }
+                    Vector3[] vertices = filter.sharedMesh.vertices;
+                    for (int v = 0; v < vertices.Length; v += 7)
+                    {
+                        Vector3 world = filter.transform.TransformPoint(vertices[v]);
+                        if (world.y < 0.3f)
+                        {
+                            continue;
+                        }
+                        Vector2 point = RacePath.ToPlane(world);
+                        float distance = path.Project(point);
+                        Assert.Greater(Mathf.Abs(path.SignedOffset(point, distance)), built.HalfWidthAt(distance) + 0.5f,
+                            $"{built.Layout.Name}: {filter.name} reaches the road at {distance:0} m");
+                    }
+                }
+                Object.DestroyImmediate(built.gameObject);
+            }
         }
 
         private static int Vertices(Track track)
