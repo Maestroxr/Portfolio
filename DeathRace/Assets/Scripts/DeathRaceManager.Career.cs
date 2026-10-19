@@ -65,6 +65,12 @@ namespace Portfolio.DeathRace
         {
             career = state;
             Progress.OpenCareerTracks(career.tracksOpen);
+            // Cash bought in the shop while no career was open goes into this one.
+            int cash = DeathRaceShop.TakePendingCash(Progress);
+            if (cash > 0)
+            {
+                career.wallet.Add(cash);
+            }
         }
 
         /// <summary>

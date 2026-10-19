@@ -104,7 +104,7 @@ namespace Portfolio.DeathRace
             {
                 Id = RepairId, Title = "Repair", Description = "Panel beating and welding, paid by the point of health.",
                 Category = GaragePage, Kind = ItemKind.Metered, Max = Mathf.Max(1, Mathf.CeilToInt(maxHealth - 0.001f)),
-                Price = CareerRules.RepairPrice(tier), Sellable = false, Icon = "repair"
+                Price = DeathRaceShop.RepairPrice(tier, DeathRaceShop.HasPitCrew), Sellable = false, Icon = "repair"
             });
             catalog.Add(Consumable(MineId, "Mine", "Dropped behind the car; it arms in a moment and blows up whoever drives over it.",
                 CareerRules.MinePrice, CareerRules.MineMax));
