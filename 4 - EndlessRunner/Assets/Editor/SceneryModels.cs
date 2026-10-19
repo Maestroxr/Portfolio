@@ -1,3 +1,4 @@
+using Gamebox.Editor;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -8,9 +9,9 @@ namespace Portfolio.EndlessRunner.EditorTools
     {
         // ------------------------------------------------------------------ meadow
 
-        public static MeshBuilder RoundTree(int seed, Swatch leaf, Swatch leafDark, Swatch trunk, Swatch fruit = Swatch.Black, bool fruits = false)
+        public static LowPolyBuilder RoundTree(int seed, Swatch leaf, Swatch leafDark, Swatch trunk, Swatch fruit = Swatch.Black, bool fruits = false)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(trunk).Cylinder(Vector3.zero, 0.24f, 0.15f, 1.9f, 7);
             m.Color(trunk).Rod(new Vector3(0f, 1.3f, 0f), new Vector3(0.55f, 2f, 0.2f), 0.08f, 5, false);
             m.Color(leaf).Blob(new Vector3(0f, 2.5f, 0f), new Vector3(1.35f, 1.15f, 1.35f), 1, 0.16f, seed);
@@ -30,18 +31,18 @@ namespace Portfolio.EndlessRunner.EditorTools
             return m;
         }
 
-        public static MeshBuilder Poplar(int seed)
+        public static LowPolyBuilder Poplar(int seed)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(Swatch.Bark).Cylinder(Vector3.zero, 0.18f, 0.12f, 1.4f, 6);
             m.Color(Swatch.LeafLight).Blob(new Vector3(0f, 3f, 0f), new Vector3(0.9f, 2.2f, 0.9f), 1, 0.12f, seed);
             m.Color(Swatch.Leaf).Blob(new Vector3(0.25f, 2.2f, 0.2f), new Vector3(0.7f, 1.2f, 0.7f), 1, 0.12f, seed + 3);
             return m;
         }
 
-        public static MeshBuilder Pine(int seed, Swatch needles, Swatch needlesDark, Swatch trunk, bool snow, float scale = 1f)
+        public static LowPolyBuilder Pine(int seed, Swatch needles, Swatch needlesDark, Swatch trunk, bool snow, float scale = 1f)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Push(Vector3.zero, Quaternion.identity, Vector3.one * scale);
             m.Color(trunk).Cylinder(Vector3.zero, 0.22f, 0.16f, 1.1f, 6);
             float radius = 1.6f;
@@ -61,9 +62,9 @@ namespace Portfolio.EndlessRunner.EditorTools
             return m;
         }
 
-        public static MeshBuilder Bush(int seed, Swatch leaf, Swatch leafDark, Swatch berries = Swatch.Black, bool withBerries = false)
+        public static LowPolyBuilder Bush(int seed, Swatch leaf, Swatch leafDark, Swatch berries = Swatch.Black, bool withBerries = false)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(leaf).Blob(new Vector3(0f, 0.45f, 0f), new Vector3(0.8f, 0.6f, 0.8f), 1, 0.2f, seed);
             m.Color(leafDark).Blob(new Vector3(0.6f, 0.35f, 0.2f), new Vector3(0.55f, 0.45f, 0.55f), 1, 0.2f, seed + 1);
             m.Color(leaf).Blob(new Vector3(-0.5f, 0.3f, -0.2f), new Vector3(0.5f, 0.4f, 0.5f), 1, 0.2f, seed + 2);
@@ -79,9 +80,9 @@ namespace Portfolio.EndlessRunner.EditorTools
             return m;
         }
 
-        public static MeshBuilder Flowers(int seed)
+        public static LowPolyBuilder Flowers(int seed)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             var random = new System.Random(seed);
             Swatch[] colors = { Swatch.FlowerRed, Swatch.FlowerYellow, Swatch.FlowerPink, Swatch.FlowerPurple, Swatch.FlowerWhite };
             for (int i = 0; i < 9; i++)
@@ -102,17 +103,17 @@ namespace Portfolio.EndlessRunner.EditorTools
             return m;
         }
 
-        public static MeshBuilder Rock(int seed, Swatch color, Swatch shade, float size = 1f)
+        public static LowPolyBuilder Rock(int seed, Swatch color, Swatch shade, float size = 1f)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(color).Blob(new Vector3(0f, 0.35f * size, 0f), new Vector3(0.9f, 0.6f, 0.75f) * size, 1, 0.25f, seed);
             m.Color(shade).Blob(new Vector3(0.65f * size, 0.2f * size, 0.3f * size), new Vector3(0.45f, 0.35f, 0.4f) * size, 0, 0.25f, seed + 1);
             return m;
         }
 
-        public static MeshBuilder Mushroom(int seed, Swatch cap, Swatch dots, Swatch stem)
+        public static LowPolyBuilder Mushroom(int seed, Swatch cap, Swatch dots, Swatch stem)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             var random = new System.Random(seed);
             int count = 1 + random.Next(3);
             for (int i = 0; i < count; i++)
@@ -134,9 +135,9 @@ namespace Portfolio.EndlessRunner.EditorTools
             return m;
         }
 
-        public static MeshBuilder Cottage()
+        public static LowPolyBuilder Cottage()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(Swatch.Gray).Box(new Vector3(0f, 0.15f, 0f), new Vector3(4.4f, 0.3f, 3.6f));
             m.Color(Swatch.Wall).BeveledBox(new Vector3(0f, 1.5f, 0f), new Vector3(4f, 2.4f, 3.2f), 0.05f);
             m.Push(new Vector3(0f, 2.7f, 0f), Quaternion.Euler(0f, 90f, 0f));
@@ -159,9 +160,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A 6 m fence segment along z, for the left side of the road.</summary>
-        public static MeshBuilder Fence(float length)
+        public static LowPolyBuilder Fence(float length)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             for (float z = 0f; z <= length + 0.01f; z += length / 4f)
             {
                 m.Color(Swatch.WoodLight).Box(new Vector3(0f, 0.55f, z), new Vector3(0.14f, 1.1f, 0.14f));
@@ -174,9 +175,9 @@ namespace Portfolio.EndlessRunner.EditorTools
 
         // ------------------------------------------------------------------ desert
 
-        public static MeshBuilder Saguaro(int seed)
+        public static LowPolyBuilder Saguaro(int seed)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             var random = new System.Random(seed);
             float height = 2.6f + (float)random.NextDouble() * 1.2f;
             m.Color(Swatch.Cactus).Cylinder(Vector3.zero, 0.36f, 0.32f, height, 8);
@@ -197,9 +198,9 @@ namespace Portfolio.EndlessRunner.EditorTools
             return m;
         }
 
-        public static MeshBuilder BarrelCactus(int seed)
+        public static LowPolyBuilder BarrelCactus(int seed)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(Swatch.CactusLight).Sphere(new Vector3(0f, 0.42f, 0f), new Vector3(0.55f, 0.48f, 0.55f), 5, 10, false);
             m.Color(Swatch.Cactus).Sphere(new Vector3(0.6f, 0.26f, 0.2f), new Vector3(0.32f, 0.3f, 0.32f), 4, 8, false);
             for (int i = 0; i < 4; i++)
@@ -210,9 +211,9 @@ namespace Portfolio.EndlessRunner.EditorTools
             return m;
         }
 
-        public static MeshBuilder Mesa(int seed)
+        public static LowPolyBuilder Mesa(int seed)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             var random = new System.Random(seed);
             Swatch[] layers = { Swatch.RockRed, Swatch.RockOrange, Swatch.Terracotta, Swatch.RockOrange };
             float radius = 7f;
@@ -228,18 +229,18 @@ namespace Portfolio.EndlessRunner.EditorTools
             return m;
         }
 
-        public static MeshBuilder DesertRock(int seed)
+        public static LowPolyBuilder DesertRock(int seed)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(Swatch.RockOrange).Blob(new Vector3(0f, 0.6f, 0f), new Vector3(1.3f, 0.9f, 1.1f), 1, 0.22f, seed);
             m.Color(Swatch.RockRed).Blob(new Vector3(0.9f, 0.3f, 0.4f), new Vector3(0.6f, 0.45f, 0.55f), 0, 0.2f, seed + 1);
             m.Color(Swatch.Terracotta).Box(new Vector3(0f, 0.95f, 0f), new Vector3(1.5f, 0.12f, 1.2f));
             return m;
         }
 
-        public static MeshBuilder PalmTree(int seed)
+        public static LowPolyBuilder PalmTree(int seed)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             var random = new System.Random(seed);
             float lean = 0.3f + (float)random.NextDouble() * 0.4f;
             Vector3 previous = Vector3.zero;
@@ -274,9 +275,9 @@ namespace Portfolio.EndlessRunner.EditorTools
             return m;
         }
 
-        public static MeshBuilder DeadBush(int seed)
+        public static LowPolyBuilder DeadBush(int seed)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             var random = new System.Random(seed);
             for (int i = 0; i < 7; i++)
             {
@@ -290,9 +291,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A weathered wooden signpost with two arrow boards, for the roadside of the canyon.</summary>
-        public static MeshBuilder Signpost()
+        public static LowPolyBuilder Signpost()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(Swatch.SandDark).Cylinder(Vector3.zero, 0.22f, 0.16f, 0.12f, 7);
             m.Color(Swatch.WoodDark).Box(new Vector3(0f, 1.1f, 0f), new Vector3(0.14f, 2.2f, 0.14f));
             m.Push(new Vector3(0.3f, 1.9f, 0f), Quaternion.Euler(0f, 0f, 4f));
@@ -309,9 +310,9 @@ namespace Portfolio.EndlessRunner.EditorTools
 
         // ------------------------------------------------------------------ snow
 
-        public static MeshBuilder Snowman()
+        public static LowPolyBuilder Snowman()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(Swatch.Snow).Sphere(new Vector3(0f, 0.55f, 0f), 0.6f, 10, 14);
             m.Color(Swatch.Snow).Sphere(new Vector3(0f, 1.35f, 0f), 0.44f, 10, 14);
             m.Color(Swatch.Snow).Sphere(new Vector3(0f, 1.98f, 0f), 0.32f, 10, 14);
@@ -334,9 +335,9 @@ namespace Portfolio.EndlessRunner.EditorTools
             return m;
         }
 
-        public static MeshBuilder Crystals(int seed, Swatch color, Swatch accent, float size = 1f)
+        public static LowPolyBuilder Crystals(int seed, Swatch color, Swatch accent, float size = 1f)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             var random = new System.Random(seed);
             for (int i = 0; i < 6; i++)
             {
@@ -352,9 +353,9 @@ namespace Portfolio.EndlessRunner.EditorTools
             return m;
         }
 
-        public static MeshBuilder SnowPole()
+        public static LowPolyBuilder SnowPole()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             for (int band = 0; band < 6; band++)
             {
                 m.Color(band % 2 == 0 ? Swatch.Red : Swatch.White).Cylinder(new Vector3(0f, band * 0.3f, 0f), 0.05f, 0.05f, 0.3f, 6, true, band == 0, band == 5);
@@ -365,9 +366,9 @@ namespace Portfolio.EndlessRunner.EditorTools
 
         // ------------------------------------------------------------------ night
 
-        public static MeshBuilder GlowMushrooms(int seed)
+        public static LowPolyBuilder GlowMushrooms(int seed)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             var random = new System.Random(seed);
             Swatch[] caps = { Swatch.GlowCyan, Swatch.GlowMagenta, Swatch.GlowPurple };
             for (int i = 0; i < 4; i++)
@@ -381,9 +382,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A street lamp for the left side of the road; its arm reaches over the curb (+x).</summary>
-        public static MeshBuilder LampPost()
+        public static LowPolyBuilder LampPost()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(Swatch.Charcoal).Cylinder(Vector3.zero, 0.2f, 0.16f, 0.3f, 8);
             m.Color(Swatch.Charcoal).Cylinder(new Vector3(0f, 0.3f, 0f), 0.08f, 0.07f, 3.6f, 8, true);
             m.Color(Swatch.Charcoal).Rod(new Vector3(0f, 3.8f, 0f), new Vector3(0.8f, 4.1f, 0f), 0.05f, 6);
@@ -395,9 +396,9 @@ namespace Portfolio.EndlessRunner.EditorTools
 
         // ------------------------------------------------------------------ volcano
 
-        public static MeshBuilder BasaltColumns(int seed)
+        public static LowPolyBuilder BasaltColumns(int seed)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             var random = new System.Random(seed);
             for (int i = 0; i < 7; i++)
             {
@@ -411,9 +412,9 @@ namespace Portfolio.EndlessRunner.EditorTools
             return m;
         }
 
-        public static MeshBuilder DeadTree(int seed)
+        public static LowPolyBuilder DeadTree(int seed)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             var random = new System.Random(seed);
             m.Color(Swatch.Obsidian).Cylinder(Vector3.zero, 0.25f, 0.12f, 2.6f, 6);
             for (int i = 0; i < 5; i++)
@@ -426,18 +427,18 @@ namespace Portfolio.EndlessRunner.EditorTools
             return m;
         }
 
-        public static MeshBuilder LavaRock(int seed)
+        public static LowPolyBuilder LavaRock(int seed)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(Swatch.GlowLava).Blob(new Vector3(0f, 0.45f, 0f), new Vector3(0.95f, 0.62f, 0.85f), 1, 0.05f, seed + 7);
             m.Color(Swatch.Basalt).Blob(new Vector3(0f, 0.5f, 0f), new Vector3(1f, 0.7f, 0.9f), 1, 0.28f, seed);
             m.Color(Swatch.Ash).Blob(new Vector3(0.7f, 0.25f, 0.3f), new Vector3(0.45f, 0.35f, 0.4f), 0, 0.25f, seed + 1);
             return m;
         }
 
-        public static MeshBuilder Volcano()
+        public static LowPolyBuilder Volcano()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(Swatch.Basalt).Cylinder(Vector3.zero, 16f, 6f, 9f, 11, false, false, false);
             m.Color(Swatch.Ash).Cylinder(new Vector3(0f, 9f, 0f), 6f, 3.5f, 3f, 11, false, false, false, 0.2f);
             m.Color(Swatch.GlowLava).Cylinder(new Vector3(0f, 11.2f, 0f), 3.3f, 3.3f, 0.2f, 11);
@@ -451,9 +452,9 @@ namespace Portfolio.EndlessRunner.EditorTools
             return m;
         }
 
-        public static MeshBuilder Torch()
+        public static LowPolyBuilder Torch()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(Swatch.Basalt).Cylinder(Vector3.zero, 0.25f, 0.2f, 0.3f, 6);
             m.Color(Swatch.Bark).Cylinder(new Vector3(0f, 0.3f, 0f), 0.07f, 0.06f, 1.9f, 6);
             m.Color(Swatch.MetalDark).Cylinder(new Vector3(0f, 2.1f, 0f), 0.12f, 0.24f, 0.25f, 8);
@@ -463,9 +464,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A puffy cloud made of a few blobs; used far off the road.</summary>
-        public static MeshBuilder Cloud(int seed, Swatch color)
+        public static LowPolyBuilder Cloud(int seed, Swatch color)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             var random = new System.Random(seed);
             for (int i = 0; i < 5; i++)
             {

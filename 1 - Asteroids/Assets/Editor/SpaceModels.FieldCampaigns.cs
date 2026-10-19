@@ -1,3 +1,4 @@
+using Gamebox.Editor;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -18,9 +19,9 @@ namespace Portfolio.Asteroids.EditorTools
         /// A piece of a dead ship, about one unit in radius: a buckled hull plate with its ribs (variant 0), a broken girder
         /// truss (1), or a hull section with a fuel tank that still glows (2, the one that explodes).
         /// </summary>
-        public static MeshBuilder Wreck(int variant)
+        public static LowPolyBuilder Wreck(int variant)
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             var random = new System.Random(4100 + variant * 37);
             float Jitter(float amount) => ((float)random.NextDouble() * 2f - 1f) * amount;
             switch (variant)
@@ -110,9 +111,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>A hydra rock: a lumpy green body bristling with glowing nodules, about one unit in radius.</summary>
-        public static MeshBuilder HydraRock(int seed)
+        public static LowPolyBuilder HydraRock(int seed)
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             var random = new System.Random(seed);
             FacetedBlob(b, new Vector3(0.8f, 0.72f, 0.76f), 1, 0.28f, seed, random, Swatch.Green, Swatch.DarkGreen, Swatch.Teal);
             int nodules = 6 + random.Next(4);
@@ -133,9 +134,9 @@ namespace Portfolio.Asteroids.EditorTools
         // ------------------------------------------------------------------ enemies and allies
 
         /// <summary>The sentry's platform: a hexagonal armoured base with fins and running lights (the turret is apart).</summary>
-        public static MeshBuilder SentryBase()
+        public static LowPolyBuilder SentryBase()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.Gunmetal);
             b.Cylinder(new Vector3(0f, -0.2f, 0f), 0.95f, 0.85f, 0.25f, 6, false, true, true, Mathf.PI / 6f);
             b.Color(Swatch.HullDark);
@@ -159,9 +160,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>The sentry's turret: a squat dome with twin barrels along +Z.</summary>
-        public static MeshBuilder SentryTurret()
+        public static LowPolyBuilder SentryTurret()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.Panel);
             b.Sphere(Vector3.zero, new Vector3(0.42f, 0.32f, 0.42f), 6, 12, true, 0.5f);
             b.Color(Swatch.Gunmetal);
@@ -179,9 +180,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>The minelayer: a broad, blunt hull in yellow and black hazard paint with a glowing cockpit at the nose.</summary>
-        public static MeshBuilder Minelayer()
+        public static LowPolyBuilder Minelayer()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.Hull);
             b.BeveledBox(new Vector3(0f, 0f, 0.1f), new Vector3(1.15f, 0.55f, 2.4f), 0.14f);
             b.Color(Swatch.Gunmetal);
@@ -211,9 +212,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>The minelayer's mine drum, seen from above: a disc ringed with mines that turns as it sows them.</summary>
-        public static MeshBuilder MineDrum()
+        public static LowPolyBuilder MineDrum()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.HullDark);
             b.Cylinder(Vector3.zero, 0.42f, 0.38f, 0.12f, 12, false);
             for (int i = 0; i < 6; i++)
@@ -230,9 +231,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>The phase stalker: a dark blade of a ship with glowing edges and a single eye.</summary>
-        public static MeshBuilder Stalker()
+        public static LowPolyBuilder Stalker()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             var outline = new[]
             {
                 new Vector2(0f, 1.05f), new Vector2(0.22f, 0.35f), new Vector2(0.75f, -0.15f), new Vector2(0.5f, -0.55f), new Vector2(0.18f, -0.3f),
@@ -258,9 +259,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>A freighter, about 3.6 long: a spine with a cockpit, two rows of cargo containers and a twin engine block.</summary>
-        public static MeshBuilder Freighter()
+        public static LowPolyBuilder Freighter()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.Gunmetal);
             b.BeveledBox(new Vector3(0f, 0f, 0f), new Vector3(0.36f, 0.3f, 3.1f), 0.06f);
             b.Color(Swatch.Hull);
@@ -296,9 +297,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>A station's hub: a drum with a dome, solar wings and spokes out to its ring (the ring is apart).</summary>
-        public static MeshBuilder StationHub()
+        public static LowPolyBuilder StationHub()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.Hull);
             b.Cylinder(new Vector3(0f, -0.3f, 0f), 0.6f, 0.6f, 0.55f, 16, true);
             b.Color(Swatch.Panel);
@@ -322,9 +323,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>A station's ring with its modules and lights (turns slowly around the hub).</summary>
-        public static MeshBuilder StationRing()
+        public static LowPolyBuilder StationRing()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.Hull);
             b.Torus(Vector3.zero, 1.6f, 0.13f, 48, 8);
             for (int i = 0; i < 8; i++)
@@ -343,9 +344,9 @@ namespace Portfolio.Asteroids.EditorTools
         // ------------------------------------------------------------------ bosses
 
         /// <summary>The Storm Herald: a great ion manta with swept wings veined in light, head fins and a whip of a tail.</summary>
-        public static MeshBuilder StormHerald()
+        public static LowPolyBuilder StormHerald()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.Blue);
             b.Sphere(new Vector3(0f, 0f, 0.1f), new Vector3(0.75f, 0.32f, 1.25f), 8, 16, true);
             var wing = new[]
@@ -382,9 +383,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>The ion rings that circle the Storm Herald (they spin on their own).</summary>
-        public static MeshBuilder HeraldRings()
+        public static LowPolyBuilder HeraldRings()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.GlowCyan);
             b.Torus(Vector3.zero, 2.45f, 0.045f, 48, 4, 300f, true, 10f);
             b.Color(Swatch.GlowBlue);
@@ -400,9 +401,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>The Bastion: an octagonal fortress of armour plates around a reactor, a heavy gun on each flank.</summary>
-        public static MeshBuilder BastionFortress()
+        public static LowPolyBuilder BastionFortress()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             var octagon = new Vector2[8];
             for (int i = 0; i < 8; i++)
             {
@@ -447,9 +448,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>The Bastion's outer ring of gun pods (it turns around the fortress).</summary>
-        public static MeshBuilder BastionRing()
+        public static LowPolyBuilder BastionRing()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.Trim);
             b.Torus(Vector3.zero, 2.3f, 0.09f, 48, 6);
             for (int i = 0; i < 6; i++)
@@ -469,9 +470,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>The Sunbreaker's sun cannon: a ring of gold with a white-hot heart, held by three prongs, at the nose of its hull.</summary>
-        public static MeshBuilder SunCannon()
+        public static LowPolyBuilder SunCannon()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Push(Vector3.zero, Quaternion.Euler(90f, 0f, 0f));
             b.Color(Swatch.Gold);
             b.Torus(Vector3.zero, 0.85f, 0.13f, 32, 8);
@@ -494,9 +495,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>The Scrap Leviathan's head: a dark maw ringed in red heat and four jaws of salvaged plating.</summary>
-        public static MeshBuilder ScrapMaw()
+        public static LowPolyBuilder ScrapMaw()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.Basalt);
             b.Sphere(Vector3.zero, new Vector3(1f, 0.7f, 1f), 8, 16, false);
             b.Color(Swatch.Black);
@@ -530,9 +531,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>The Wraith Matriarch: a crescent of dark crystal with a crown of spikes, one burning eye and trailing tendrils.</summary>
-        public static MeshBuilder WraithMatriarch()
+        public static LowPolyBuilder WraithMatriarch()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             // The crescent in convex pieces (a prism is filled from its middle, so a crescent goes quad by quad).
             const int pieces = 14;
             b.Push(Vector3.zero, Quaternion.Euler(90f, 0f, 0f));
@@ -584,9 +585,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>The Hydra: a lumpy body bristling with nodules and three necks reaching forward to fanged, glowing-eyed heads.</summary>
-        public static MeshBuilder Hydra()
+        public static LowPolyBuilder Hydra()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             var random = new System.Random(5511);
             FacetedBlob(b, new Vector3(1.15f, 0.7f, 1.05f), 1, 0.2f, 5511, random, Swatch.Green, Swatch.DarkGreen, Swatch.Teal);
             for (int i = 0; i < 9; i++)
@@ -631,9 +632,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>The Gatekeeper's core: a black eye of a sphere with a golden iris and a white-hot pupil, three spokes out to the gate.</summary>
-        public static MeshBuilder GateCore()
+        public static LowPolyBuilder GateCore()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.Black);
             b.Sphere(Vector3.zero, new Vector3(0.95f, 0.7f, 0.95f), 10, 20, true);
             b.Color(Swatch.Gold);
@@ -658,9 +659,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>The gate itself: eight arcs of a golden ring with glowing glyph plates (it turns around the core).</summary>
-        public static MeshBuilder GateRing(float radius, int glyphsPerArc, Swatch glow)
+        public static LowPolyBuilder GateRing(float radius, int glyphsPerArc, Swatch glow)
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             for (int i = 0; i < 8; i++)
             {
                 float start = i * 45f + 4f;

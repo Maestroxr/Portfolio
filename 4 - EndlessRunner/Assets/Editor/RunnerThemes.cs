@@ -1,3 +1,4 @@
+using Gamebox.Editor;
 using System;
 using UnityEngine;
 
@@ -6,14 +7,14 @@ namespace Portfolio.EndlessRunner.EditorTools
     /// <summary>The recipes of every model of a theme, so the art builder builds any theme from the same code.</summary>
     internal sealed class ModelSet
     {
-        public Func<MeshBuilder> Torso, Head, UpperArm, Forearm, Thigh, Shin;
-        public Func<MeshBuilder> Hurdle, Barrier, CrateStack, BarrelStack, CartBody, Wheel;
+        public Func<LowPolyBuilder> Torso, Head, UpperArm, Forearm, Thigh, Shin;
+        public Func<LowPolyBuilder> Hurdle, Barrier, CrateStack, BarrelStack, CartBody, Wheel;
         /// <summary>A wagon of the given length in the given livery (0 to 3).</summary>
-        public Func<float, int, MeshBuilder> Wagon;
+        public Func<float, int, LowPolyBuilder> Wagon;
         /// <summary>A ramp of the given width, height and length.</summary>
-        public Func<float, float, float, MeshBuilder> Ramp;
-        public Func<float, MeshBuilder> Bridge;
-        public Func<MeshBuilder> Coin, Gem, Magnet, Shield, Multiplier, SuperJump, JumpPadBase, JumpPadMembrane, FinishArch;
+        public Func<float, float, float, LowPolyBuilder> Ramp;
+        public Func<float, LowPolyBuilder> Bridge;
+        public Func<LowPolyBuilder> Coin, Gem, Magnet, Shield, Multiplier, SuperJump, JumpPadBase, JumpPadMembrane, FinishArch;
     }
 
 
@@ -22,7 +23,7 @@ namespace Portfolio.EndlessRunner.EditorTools
     {
         public string Biome;
         public string Name;
-        public Func<MeshBuilder> Model;
+        public Func<LowPolyBuilder> Model;
         public float Length = 1f;
         /// <summary>Big and far away: casts no shadow.</summary>
         public bool NoShadow;

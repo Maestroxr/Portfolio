@@ -621,7 +621,7 @@ namespace Portfolio.EndlessRunner.EditorTools
 
         private static readonly string[] WagonLiveries = { "Red", "Blue", "Green", "Yellow" };
 
-        private static void SaveObstacle(ThemeArt theme, string name, MeshBuilder model, ObstacleKind kind, float length, Action<GameObject> configure)
+        private static void SaveObstacle(ThemeArt theme, string name, LowPolyBuilder model, ObstacleKind kind, float length, Action<GameObject> configure)
         {
             Mesh mesh = RunnerAssets.SaveMesh(model, $"{theme.ModelFolder}/{name}.asset");
             SavePiece<Obstacle>(theme, name, length, root =>
@@ -632,7 +632,7 @@ namespace Portfolio.EndlessRunner.EditorTools
             });
         }
 
-        private static void PowerUp(ThemeArt theme, string name, MeshBuilder model, PowerUpType type, string halo)
+        private static void PowerUp(ThemeArt theme, string name, LowPolyBuilder model, PowerUpType type, string halo)
         {
             Mesh mesh = RunnerAssets.SaveMesh(model, $"{theme.ModelFolder}/{name}.asset");
             SavePiece<PowerUpPickup>(theme, name, 0.5f, root =>

@@ -1,3 +1,4 @@
+using Gamebox.Editor;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -19,9 +20,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         // ------------------------------------------------------------------ runner
 
         /// <summary>Hips up to the neck: shorts, hoodie and backpack. Pivot at the hips.</summary>
-        public static MeshBuilder Torso()
+        public static LowPolyBuilder Torso()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(Swatch.Shorts).BeveledBox(new Vector3(0f, 0.03f, 0f), new Vector3(0.34f, 0.16f, 0.22f), 0.04f);
             m.Color(Swatch.Hoodie).BeveledBox(new Vector3(0f, 0.29f, 0f), new Vector3(0.42f, 0.4f, 0.26f), 0.07f);
             m.Color(Swatch.HoodieDark).BeveledBox(new Vector3(0f, 0.11f, 0f), new Vector3(0.43f, 0.06f, 0.27f), 0.02f);
@@ -37,9 +38,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>Head with face, hair and cap. Pivot at the neck.</summary>
-        public static MeshBuilder Head()
+        public static LowPolyBuilder Head()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             var c = new Vector3(0f, 0.2f, 0.01f);
             m.Color(Swatch.Hair).Sphere(c + new Vector3(0f, 0.02f, -0.045f), new Vector3(0.24f, 0.22f, 0.22f), 10, 14);
             m.Color(Swatch.Skin).Sphere(c, 0.23f, 12, 18);
@@ -64,18 +65,18 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>Hoodie sleeve from the shoulder to the elbow. Pivot at the shoulder.</summary>
-        public static MeshBuilder UpperArm()
+        public static LowPolyBuilder UpperArm()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(Swatch.Hoodie).Sphere(Vector3.zero, 0.078f, 6, 10);
             m.Color(Swatch.Hoodie).Cylinder(new Vector3(0f, -0.25f, 0f), 0.062f, 0.072f, 0.25f, 10, true, true, false);
             return m;
         }
 
         /// <summary>Sleeve, cuff and hand. Pivot at the elbow.</summary>
-        public static MeshBuilder Forearm()
+        public static LowPolyBuilder Forearm()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(Swatch.Hoodie).Sphere(Vector3.zero, 0.062f, 6, 10);
             m.Color(Swatch.Hoodie).Cylinder(new Vector3(0f, -0.13f, 0f), 0.058f, 0.062f, 0.13f, 10, true, false, false);
             m.Color(Swatch.HoodieDark).Cylinder(new Vector3(0f, -0.16f, 0f), 0.066f, 0.066f, 0.035f, 10, true);
@@ -85,9 +86,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>Shorts leg and knee. Pivot at the hip.</summary>
-        public static MeshBuilder Thigh()
+        public static LowPolyBuilder Thigh()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(Swatch.Shorts).Sphere(Vector3.zero, 0.098f, 6, 10);
             m.Color(Swatch.Shorts).Cylinder(new Vector3(0f, -0.2f, 0f), 0.092f, 0.1f, 0.2f, 10, true, true, false);
             m.Color(Swatch.Skin).Cylinder(new Vector3(0f, -0.36f, 0f), 0.068f, 0.078f, 0.18f, 10, true, false, false);
@@ -95,9 +96,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>Lower leg, sock and sneaker; the sole touches the ground in the rest pose. Pivot at the knee.</summary>
-        public static MeshBuilder Shin()
+        public static LowPolyBuilder Shin()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(Swatch.Skin).Sphere(Vector3.zero, 0.07f, 6, 8);
             m.Color(Swatch.Skin).Cylinder(new Vector3(0f, -0.26f, 0f), 0.056f, 0.068f, 0.26f, 10, true, false, false);
             m.Color(Swatch.White).Cylinder(new Vector3(0f, -0.33f, 0f), 0.063f, 0.06f, 0.08f, 10, true);
@@ -111,9 +112,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         // ------------------------------------------------------------------ obstacles
 
         /// <summary>A striped hurdle to jump, 1 m high. Pivot at the middle of its base.</summary>
-        public static MeshBuilder Hurdle()
+        public static LowPolyBuilder Hurdle()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             const float post = 1.05f;
             for (int side = -1; side <= 1; side += 2)
             {
@@ -136,9 +137,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>An overhead barrier to slide under: its board starts 1.2 m up. Pivot at the middle of its base.</summary>
-        public static MeshBuilder Barrier()
+        public static LowPolyBuilder Barrier()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             const float post = 1.18f;
             for (int side = -1; side <= 1; side += 2)
             {
@@ -158,7 +159,7 @@ namespace Portfolio.EndlessRunner.EditorTools
                     new Vector2(x, board.yMin), new Vector2(x + 0.25f, board.yMin),
                     new Vector2(x + 0.25f + board.height, board.yMax), new Vector2(x + board.height, board.yMax)
                 };
-                List<Vector2> clipped = MeshBuilder.Clip(stripe, board);
+                List<Vector2> clipped = LowPolyBuilder.Clip(stripe, board);
                 if (clipped.Count >= 3)
                 {
                     m.Color(Swatch.HazardYellow).Prism(clipped, 0.12f);
@@ -174,7 +175,7 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A white arrow pointing down (slide!) on the front of a barrier.</summary>
-        private static void Chevron(MeshBuilder m, Vector3 center)
+        private static void Chevron(LowPolyBuilder m, Vector3 center)
         {
             m.Color(Swatch.White);
             m.Push(center + new Vector3(-0.09f, 0.03f, 0f), Quaternion.Euler(0f, 0f, 45f));
@@ -186,15 +187,15 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>Two wooden crates stacked, 2.2 m high. Pivot at the middle of its base.</summary>
-        public static MeshBuilder CrateStack()
+        public static LowPolyBuilder CrateStack()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             Crate(m, new Vector3(0f, 0.6f, 0f), new Vector3(1.95f, 1.2f, 1.7f), 0f);
             Crate(m, new Vector3(0.08f, 1.7f, 0.05f), new Vector3(1.5f, 1f, 1.3f), 12f);
             return m;
         }
 
-        private static void Crate(MeshBuilder m, Vector3 center, Vector3 size, float yaw)
+        private static void Crate(LowPolyBuilder m, Vector3 center, Vector3 size, float yaw)
         {
             m.Push(center, Quaternion.Euler(0f, yaw, 0f));
             m.Color(Swatch.Wood).Box(Vector3.zero, size * 0.96f);
@@ -225,16 +226,16 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>Three oil drums, two below and one on top. Pivot at the middle of its base.</summary>
-        public static MeshBuilder BarrelStack()
+        public static LowPolyBuilder BarrelStack()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             Barrel(m, new Vector3(-0.48f, 0f, 0f), Swatch.Red);
             Barrel(m, new Vector3(0.48f, 0f, 0f), Swatch.Blue);
             Barrel(m, new Vector3(0f, 1.06f, 0.02f), Swatch.Red);
             return m;
         }
 
-        private static void Barrel(MeshBuilder m, Vector3 bottom, Swatch body)
+        private static void Barrel(LowPolyBuilder m, Vector3 bottom, Swatch body)
         {
             m.Color(body).Cylinder(bottom, 0.44f, 0.44f, 1.04f, 14, true);
             m.Color(Swatch.MetalDark).Cylinder(bottom + Vector3.up * 0.22f, 0.455f, 0.455f, 0.06f, 14, true);
@@ -244,9 +245,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A freight wagon to run on, 2.4 m high. Pivot at the middle of its front bottom edge.</summary>
-        public static MeshBuilder Wagon(float length, Swatch body, Swatch rib)
+        public static LowPolyBuilder Wagon(float length, Swatch body, Swatch rib)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             const float width = 2.3f;
             const float top = 2.4f;
             const float bottom = 0.45f;
@@ -292,9 +293,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A wooden ramp up to wagon height. Pivot at the middle of its lower edge.</summary>
-        public static MeshBuilder Ramp(float width, float height, float length)
+        public static LowPolyBuilder Ramp(float width, float height, float length)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(Swatch.WoodDark).Wedge(width - 0.2f, height - 0.08f, length);
             float slope = Mathf.Sqrt(length * length + height * height);
             float angle = Mathf.Atan2(height, length) * Mathf.Rad2Deg;
@@ -329,18 +330,18 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>Collision shape of a ramp: the slope runs on a little past the wagon so the runner never catches its edge.</summary>
-        public static MeshBuilder RampCollider(float width, float height, float length, float overlap)
+        public static LowPolyBuilder RampCollider(float width, float height, float length, float overlap)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             float total = length + overlap;
             m.Wedge(width, height * total / length, total);
             return m;
         }
 
         /// <summary>Body of a runaway mine cart full of gold. Pivot at the middle of its base; it rolls toward -z.</summary>
-        public static MeshBuilder CartBody()
+        public static LowPolyBuilder CartBody()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(Swatch.Charcoal).Box(new Vector3(0f, 0.3f, 0f), new Vector3(1.3f, 0.14f, 1.8f));
             m.Color(Swatch.Wood).BeveledBox(new Vector3(0f, 0.8f, 0f), new Vector3(1.6f, 0.86f, 2f), 0.06f);
             foreach (float z in new[] { -0.75f, 0f, 0.75f })
@@ -368,9 +369,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A cart wheel (with spokes, or a solid caster), turning around x. Pivot at its axle.</summary>
-        public static MeshBuilder Wheel(Swatch tire = Swatch.Charcoal, Swatch hub = Swatch.Metal, bool spokes = true)
+        public static LowPolyBuilder Wheel(Swatch tire = Swatch.Charcoal, Swatch hub = Swatch.Metal, bool spokes = true)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Push(Vector3.zero, Quaternion.Euler(0f, 0f, 90f));
             m.Color(tire).Cylinder(new Vector3(0f, -0.06f, 0f), 0.3f, 0.3f, 0.12f, 12);
             m.Color(hub).Cylinder(new Vector3(0f, -0.08f, 0f), spokes ? 0.08f : 0.13f, spokes ? 0.08f : 0.13f, 0.16f, 8);
@@ -384,9 +385,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A plank bridge across a chasm. Pivot at the middle of its near end.</summary>
-        public static MeshBuilder Bridge(float length)
+        public static LowPolyBuilder Bridge(float length)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             int planks = Mathf.RoundToInt(length / 0.3f);
             for (int i = 0; i < planks; i++)
             {
@@ -410,9 +411,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>Base of a bounce pad: rim and springs. Pivot at the middle of its base.</summary>
-        public static MeshBuilder JumpPadBase()
+        public static LowPolyBuilder JumpPadBase()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(Swatch.MetalDark).Cylinder(Vector3.zero, 0.98f, 0.92f, 0.16f, 18);
             m.Color(Swatch.HazardYellow).Torus(new Vector3(0f, 0.17f, 0f), 0.86f, 0.07f, 22, 6);
             for (int i = 0; i < 6; i++)
@@ -432,9 +433,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>The bouncy top of a pad with an arrow on it. Pivot at its underside.</summary>
-        public static MeshBuilder JumpPadMembrane(Swatch top = Swatch.GlowGreen, Swatch arrow = Swatch.White)
+        public static LowPolyBuilder JumpPadMembrane(Swatch top = Swatch.GlowGreen, Swatch arrow = Swatch.White)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(top).Cylinder(Vector3.zero, 0.8f, 0.78f, 0.07f, 18);
             m.Push(new Vector3(0f, 0.075f, 0f), Quaternion.Euler(90f, 0f, 0f));
             m.Color(arrow).Prism(new[] { new Vector2(-0.14f, -0.4f), new Vector2(0.14f, -0.4f), new Vector2(0.14f, 0.02f), new Vector2(-0.14f, 0.02f) }, 0.02f);
@@ -446,31 +447,31 @@ namespace Portfolio.EndlessRunner.EditorTools
         // ------------------------------------------------------------------ pickups
 
         /// <summary>A coin standing on its edge, with a star on both faces. Pivot at its centre.</summary>
-        public static MeshBuilder Coin()
+        public static LowPolyBuilder Coin()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Push(Vector3.zero, Quaternion.Euler(90f, 0f, 0f));
             m.Color(Swatch.Gold).Cylinder(new Vector3(0f, -0.05f, 0f), 0.4f, 0.4f, 0.1f, 24, true);
             m.Color(Swatch.Gold).Torus(new Vector3(0f, 0.05f, 0f), 0.35f, 0.035f, 24, 6);
             m.Color(Swatch.Gold).Torus(new Vector3(0f, -0.05f, 0f), 0.35f, 0.035f, 24, 6);
             m.Pop();
-            m.Color(Swatch.Gold).Prism(MeshBuilder.StarOutline(5, 0.2f, 0.09f), 0.15f);
+            m.Color(Swatch.Gold).Prism(LowPolyBuilder.StarOutline(5, 0.2f, 0.09f), 0.15f);
             return m;
         }
 
         /// <summary>A cut gem. Pivot at its centre.</summary>
-        public static MeshBuilder Gem(Swatch crown = Swatch.GlowMagenta, Swatch pavilion = Swatch.GlowPurple)
+        public static LowPolyBuilder Gem(Swatch crown = Swatch.GlowMagenta, Swatch pavilion = Swatch.GlowPurple)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(crown).Cylinder(Vector3.zero, 0.34f, 0.2f, 0.16f, 8);
             m.Color(pavilion).Cylinder(new Vector3(0f, -0.38f, 0f), 0f, 0.34f, 0.38f, 8, false, false, false);
             return m;
         }
 
         /// <summary>A horseshoe magnet. Pivot at its centre.</summary>
-        public static MeshBuilder Magnet(Swatch body = Swatch.Red, Swatch tip = Swatch.GlowWhite)
+        public static LowPolyBuilder Magnet(Swatch body = Swatch.Red, Swatch tip = Swatch.GlowWhite)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Push(new Vector3(0f, -0.05f, 0f), Quaternion.Euler(-90f, 0f, 0f));
             m.Color(body).Torus(Vector3.zero, 0.24f, 0.1f, 12, 8, 180f, true, 180f);
             m.Pop();
@@ -483,7 +484,7 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A heater shield with a star. Pivot at its centre.</summary>
-        public static MeshBuilder Shield(Swatch rim = Swatch.Gold, Swatch face = Swatch.GlowBlue, Swatch star = Swatch.GlowWhite)
+        public static LowPolyBuilder Shield(Swatch rim = Swatch.Gold, Swatch face = Swatch.GlowBlue, Swatch star = Swatch.GlowWhite)
         {
             var outline = new[]
             {
@@ -496,26 +497,26 @@ namespace Portfolio.EndlessRunner.EditorTools
             {
                 edge[i] = outline[i] * 1.14f;
             }
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(rim).Prism(edge, 0.08f);
             m.Color(face).Prism(outline, 0.12f);
-            m.Color(star).Prism(MeshBuilder.StarOutline(5, 0.14f, 0.06f), 0.14f, new Vector3(0f, 0.02f, 0f));
+            m.Color(star).Prism(LowPolyBuilder.StarOutline(5, 0.14f, 0.06f), 0.14f, new Vector3(0f, 0.02f, 0f));
             return m;
         }
 
         /// <summary>A double star: the coin multiplier. Pivot at its centre.</summary>
-        public static MeshBuilder StarPower(Swatch outer = Swatch.GlowPurple, Swatch inner = Swatch.GlowYellow)
+        public static LowPolyBuilder StarPower(Swatch outer = Swatch.GlowPurple, Swatch inner = Swatch.GlowYellow)
         {
-            var m = new MeshBuilder();
-            m.Color(outer).Prism(MeshBuilder.StarOutline(5, 0.36f, 0.16f), 0.14f);
-            m.Color(inner).Prism(MeshBuilder.StarOutline(5, 0.17f, 0.08f), 0.18f);
+            var m = new LowPolyBuilder();
+            m.Color(outer).Prism(LowPolyBuilder.StarOutline(5, 0.36f, 0.16f), 0.14f);
+            m.Color(inner).Prism(LowPolyBuilder.StarOutline(5, 0.17f, 0.08f), 0.18f);
             return m;
         }
 
         /// <summary>A sneaker on a spring: super jump. Pivot at its centre.</summary>
-        public static MeshBuilder SpringShoe(Swatch shoe = Swatch.Shoe, Swatch spring = Swatch.GlowGreen, Swatch wing = Swatch.White)
+        public static LowPolyBuilder SpringShoe(Swatch shoe = Swatch.Shoe, Swatch spring = Swatch.GlowGreen, Swatch wing = Swatch.White)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             var coil = new List<Vector3>();
             for (int k = 0; k <= 48; k++)
             {
@@ -543,9 +544,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         /// A road tile: road (submesh 0), lane stripes (1), curbs (2) and ground (3). A chasm tile leaves a gap between
         /// <paramref name="gapStart"/> and <paramref name="gapEnd"/> with rock walls (4) down to the water.
         /// </summary>
-        public static MeshBuilder RoadTile(bool chasm, float gapStart, float gapEnd)
+        public static LowPolyBuilder RoadTile(bool chasm, float gapStart, float gapEnd)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             var spans = chasm ? new[] { new Vector2(0f, gapStart), new Vector2(gapEnd, TileLength) } : new[] { new Vector2(0f, TileLength) };
             float curbOuter = RoadHalfWidth + CurbWidth;
             foreach (Vector2 span in spans)
@@ -599,18 +600,18 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>The water (or lava) filling a chasm; its material comes from the theme.</summary>
-        public static MeshBuilder ChasmFill(float gapStart, float gapEnd)
+        public static LowPolyBuilder ChasmFill(float gapStart, float gapEnd)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Project(new Vector3(0.25f, 0f, 0f), new Vector3(0f, 0f, 0.25f));
             m.Plane(new Vector3(0f, WaterLevel, (gapStart + gapEnd) * 0.5f), new Vector3(GroundHalfWidth, 0f, 0f), new Vector3(0f, 0f, (gapEnd - gapStart) * 0.5f + 0.1f), Vector3.up);
             return m;
         }
 
         /// <summary>The finish arch with a chequered banner, balloons and a chequered line. Pivot on the finish line.</summary>
-        public static MeshBuilder FinishArch()
+        public static LowPolyBuilder FinishArch()
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             const float pillarX = 5.1f;
             const float bannerBottom = 4.5f;
             const float bannerTop = 5.8f;
@@ -653,7 +654,7 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>The chequered finish line across the road at z = 0.</summary>
-        public static void ChequeredLine(MeshBuilder m, Swatch light, Swatch dark)
+        public static void ChequeredLine(LowPolyBuilder m, Swatch light, Swatch dark)
         {
             const int lineColumns = 16;
             float lineCell = RoadHalfWidth * 2f / lineColumns;
@@ -668,9 +669,9 @@ namespace Portfolio.EndlessRunner.EditorTools
         }
 
         /// <summary>A glowing ring (magnet aura, spring boots). Pivot at its centre.</summary>
-        public static MeshBuilder Ring(float radius, float thickness, Swatch color)
+        public static LowPolyBuilder Ring(float radius, float thickness, Swatch color)
         {
-            var m = new MeshBuilder();
+            var m = new LowPolyBuilder();
             m.Color(color).Torus(Vector3.zero, radius, thickness, 28, 6);
             return m;
         }

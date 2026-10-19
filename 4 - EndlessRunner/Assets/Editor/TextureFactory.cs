@@ -1,3 +1,4 @@
+using Gamebox.Editor;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -526,7 +527,7 @@ namespace Portfolio.EndlessRunner.EditorTools
 
         private static Vector2[] Star(float outer, float inner, Vector2 center)
         {
-            Vector2[] outline = MeshBuilder.StarOutline(5, outer, inner);
+            Vector2[] outline = LowPolyBuilder.StarOutline(5, outer, inner);
             for (int i = 0; i < outline.Length; i++)
             {
                 outline[i] += center;

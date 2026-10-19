@@ -1,3 +1,4 @@
+using Gamebox.Editor;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -17,9 +18,9 @@ namespace Portfolio.Asteroids.EditorTools
         /// The gunship's fuselage (4 m long): a rounded body with a glass canopy, stub wings carrying two rocket pods, a tail
         /// boom and a fin. Its main rotor is <see cref="RotorBlades"/>, turned by a particle on the prefab.
         /// </summary>
-        public static MeshBuilder GunshipBody()
+        public static LowPolyBuilder GunshipBody()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.HullDark);
             b.Sphere(new Vector3(0f, 0.55f, 0.35f), new Vector3(0.62f, 0.5f, 1.35f), 8, 14, true);
             b.Color(Swatch.Gunmetal);
@@ -47,9 +48,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>A rotor of <paramref name="blades"/> blades, <paramref name="radius"/> long, around a hub (lies in the XZ plane).</summary>
-        public static MeshBuilder RotorBlades(int blades, float radius)
+        public static LowPolyBuilder RotorBlades(int blades, float radius)
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.Gunmetal);
             b.Cylinder(new Vector3(0f, -0.06f, 0f), 0.22f, 0.16f, 0.14f, 10, true);
             for (int i = 0; i < blades; i++)
@@ -72,9 +73,9 @@ namespace Portfolio.Asteroids.EditorTools
         /// The crawler: a tracked fortress 10 m long and 7.4 m wide with a raised deck, sockets for two turrets at
         /// (+-1.7, 2.9) and the main cannon at (0, -0.6) (deck height 2.2), exhaust stacks and hazard stripes at the front.
         /// </summary>
-        public static MeshBuilder CrawlerHull(bool foundry)
+        public static LowPolyBuilder CrawlerHull(bool foundry)
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             Swatch hull = foundry ? Swatch.Basalt : Swatch.HullDark;
             Swatch deck = foundry ? Swatch.RockDark : Swatch.Panel;
             for (int side = -1; side <= 1; side += 2)
@@ -122,9 +123,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>A round turret socket (the fixed base of a turret part), 0.3 m high.</summary>
-        public static MeshBuilder TurretBase(float radius)
+        public static LowPolyBuilder TurretBase(float radius)
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.Gunmetal);
             b.Cylinder(Vector3.zero, radius, radius * 0.9f, 0.3f, 16);
             b.Color(Swatch.Hazard);
@@ -137,9 +138,9 @@ namespace Portfolio.Asteroids.EditorTools
         /// A turret head with <paramref name="barrels"/> barrels pointing along +Z, <paramref name="length"/> long: the
         /// part that turns. The muzzles are at (+-spacing, 0.35, 0.5 + length).
         /// </summary>
-        public static MeshBuilder TurretHead(int barrels, float length, float spacing, Swatch body, float size = 1f)
+        public static LowPolyBuilder TurretHead(int barrels, float length, float spacing, Swatch body, float size = 1f)
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Push(Vector3.zero, Quaternion.identity, Vector3.one * size);
             b.Color(body);
             b.BeveledBox(new Vector3(0f, 0.35f, -0.05f), new Vector3(1.1f, 0.5f, 1.2f), 0.12f);
@@ -161,9 +162,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>A missile launcher head: a box of 2 x 2 tubes pointing along +Z, glowing tips.</summary>
-        public static MeshBuilder LauncherHead()
+        public static LowPolyBuilder LauncherHead()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.DarkGreen);
             b.BeveledBox(new Vector3(0f, 0.55f, 0f), new Vector3(1.4f, 0.8f, 1.5f), 0.1f);
             for (int i = 0; i < 4; i++)
@@ -182,9 +183,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>A laser emitter: a dome with a glowing lens ring, <paramref name="radius"/> across.</summary>
-        public static MeshBuilder LaserEmitter(float radius, Swatch glow)
+        public static LowPolyBuilder LaserEmitter(float radius, Swatch glow)
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.Gunmetal);
             b.Cylinder(Vector3.zero, radius, radius * 0.95f, 0.4f, 20);
             b.Color(Swatch.HullDark);
@@ -204,9 +205,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>The refinery's pump station: a 9 x 7 m concrete platform with tanks, pipes and a reactor well at the centre.</summary>
-        public static MeshBuilder PumpStation()
+        public static LowPolyBuilder PumpStation()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.Panel);
             b.BeveledBox(new Vector3(0f, 0.4f, 0f), new Vector3(9f, 0.8f, 7f), 0.2f);
             b.Color(Swatch.Trim);
@@ -243,9 +244,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>A reactor core: a ribbed cylinder under a glowing dome (the refinery's core).</summary>
-        public static MeshBuilder ReactorCore(float radius, Swatch glow)
+        public static LowPolyBuilder ReactorCore(float radius, Swatch glow)
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.Gunmetal);
             b.Cylinder(Vector3.zero, radius, radius * 0.92f, 0.9f, 20);
             b.Color(Swatch.Trim);
@@ -264,9 +265,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>The sea fortress: an oil rig platform of 12 x 9 m on four legs, a helipad, a derrick and deck sockets.</summary>
-        public static MeshBuilder RigPlatform()
+        public static LowPolyBuilder RigPlatform()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             for (int i = 0; i < 4; i++)
             {
                 float x = i % 2 == 0 ? -5f : 5f;
@@ -315,9 +316,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>A concrete pad joining two silos (the coreless boss's body), 12 x 5 m, with the silo sockets at x = +-4.</summary>
-        public static MeshBuilder SiloPad()
+        public static LowPolyBuilder SiloPad()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.Panel);
             b.BeveledBox(new Vector3(0f, 0.3f, 0f), new Vector3(12.5f, 0.6f, 5f), 0.2f);
             b.Color(Swatch.HullDark);
@@ -336,9 +337,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>A laser silo: a thick armoured cylinder whose split hatch shows a glowing emitter.</summary>
-        public static MeshBuilder Silo(float radius)
+        public static LowPolyBuilder Silo(float radius)
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.Trim);
             b.Cylinder(Vector3.zero, radius * 1.1f, radius * 1.05f, 0.4f, 24);
             b.Color(Swatch.HullDark);
@@ -355,9 +356,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>The dome fortress: a hexagonal bastion 12 m across with four turret sockets and a dome well.</summary>
-        public static MeshBuilder Bastion()
+        public static LowPolyBuilder Bastion()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             var outline = new List<Vector2>();
             for (int i = 0; i < 8; i++)
             {
@@ -399,9 +400,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>A flame vent: a grated box with a glowing mouth (the foundry crawler's side weapons).</summary>
-        public static MeshBuilder FlameVent()
+        public static LowPolyBuilder FlameVent()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.Basalt);
             b.BeveledBox(new Vector3(0f, 0.45f, 0f), new Vector3(1.4f, 0.9f, 1.6f), 0.12f);
             b.Color(Swatch.GlowOrange);
@@ -418,9 +419,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>The Shadow's station core: a dark sphere in a glowing equator, antenna spines and a cannon mouth.</summary>
-        public static MeshBuilder StationCore(float radius)
+        public static LowPolyBuilder StationCore(float radius)
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.Basalt);
             b.Sphere(Vector3.zero, new Vector3(radius, radius * 0.7f, radius), 10, 24, true);
             b.Color(Swatch.GlowMagenta);
@@ -441,9 +442,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>A ring of the station (lying in the XZ plane), <paramref name="radius"/> across the middle, with <paramref name="mounts"/> mounts.</summary>
-        public static MeshBuilder StationRing(float radius, int mounts, Swatch glow)
+        public static LowPolyBuilder StationRing(float radius, int mounts, Swatch glow)
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.HullDark);
             b.Torus(Vector3.zero, radius, 0.35f, 48, 6);
             b.Color(glow);
@@ -465,9 +466,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>A module pod hung under the Skyhammer: a capsule with a hatch and fins, 3 m long along +Z.</summary>
-        public static MeshBuilder ModulePod(Swatch body, Swatch glow)
+        public static LowPolyBuilder ModulePod(Swatch body, Swatch glow)
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Push(Vector3.zero, Quaternion.Euler(90f, 0f, 0f));
             b.Color(body);
             b.Cylinder(new Vector3(0f, -1.1f, 0f), 0.6f, 0.6f, 2.2f, 14, true, false, false);
@@ -491,9 +492,9 @@ namespace Portfolio.Asteroids.EditorTools
         // ------------------------------------------------------------------ pickups
 
         /// <summary>Small arms: an olive ammunition crate with a yellow stencil and cartridges on the lid.</summary>
-        public static MeshBuilder AmmoCrate()
+        public static LowPolyBuilder AmmoCrate()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.DarkGreen);
             b.BeveledBox(new Vector3(0f, 0.25f, 0f), new Vector3(1.1f, 0.5f, 0.75f), 0.05f);
             b.Color(Swatch.Hazard);
@@ -514,9 +515,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>Isotopes: a steel canister with glowing green bands and a trefoil cap.</summary>
-        public static MeshBuilder IsotopeCanister()
+        public static LowPolyBuilder IsotopeCanister()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.Chrome);
             b.Cylinder(Vector3.zero, 0.36f, 0.36f, 0.95f, 14, true);
             b.Color(Swatch.GlowGreen);
@@ -536,9 +537,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>Thaelite: a cluster of blue crystals on a rock.</summary>
-        public static MeshBuilder ThaeliteCluster()
+        public static LowPolyBuilder ThaeliteCluster()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.RockDark);
             b.Blob(new Vector3(0f, 0.1f, 0f), new Vector3(0.55f, 0.22f, 0.45f), 1, 0.12f, 71);
             (Vector3 at, Vector3 tilt, float size)[] crystals =
@@ -560,9 +561,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>A fusion core: a glowing orange sphere in a steel cage with two rings.</summary>
-        public static MeshBuilder FusionCore()
+        public static LowPolyBuilder FusionCore()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.GlowOrange);
             b.Sphere(new Vector3(0f, 0.45f, 0f), 0.3f, 8, 14, true);
             b.Color(Swatch.Gunmetal);
@@ -581,9 +582,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>Freylium ore: a dark purple rock veined with glowing magenta crystal.</summary>
-        public static MeshBuilder FreyliumOre()
+        public static LowPolyBuilder FreyliumOre()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.CrystalDark);
             b.Blob(new Vector3(0f, 0.3f, 0f), new Vector3(0.5f, 0.32f, 0.42f), 1, 0.18f, 211);
             b.Color(Swatch.GlowMagenta);
@@ -602,9 +603,9 @@ namespace Portfolio.Asteroids.EditorTools
 
 
         /// <summary>A credit orb: a thick gold coin with a glowing rim.</summary>
-        public static MeshBuilder CreditCoin()
+        public static LowPolyBuilder CreditCoin()
         {
-            var b = new MeshBuilder();
+            var b = new LowPolyBuilder();
             b.Color(Swatch.Gold);
             b.Cylinder(new Vector3(0f, -0.06f, 0f), 0.4f, 0.4f, 0.12f, 18, false);
             b.Color(Swatch.GlowYellow);
