@@ -21,8 +21,9 @@ namespace Portfolio.DeathRace.Tests
         [Test]
         public void TheCatalogHasEveryPage()
         {
-            Assert.AreEqual(new[] { CareerShop.GaragePage, CareerShop.MarketPage, CareerShop.DealerPage }, shop.Catalog.Categories);
-            Assert.AreEqual(CarSpecs.Count, shop.Catalog.InCategory(CareerShop.DealerPage).Count);
+            Assert.AreEqual(new[] { CareerShop.GaragePage, CareerShop.WorkshopPage, CareerShop.MarketPage, CareerShop.DealerPage }, shop.Catalog.Categories);
+            Assert.AreEqual(CarSpecs.All.Count(car => car.Tier <= 6), shop.Catalog.InCategory(CareerShop.DealerPage).Count,
+                "the first league's dealer sells the cars of tiers 1 to 6");
             Assert.AreEqual(ItemKind.Leveled, shop.Catalog[CareerShop.EngineId].Kind);
             Assert.AreEqual(ItemKind.Counted, shop.Catalog[CareerShop.MineId].Kind);
             Assert.AreEqual(ItemKind.Owned, shop.Catalog[CareerShop.SpikesId].Kind);

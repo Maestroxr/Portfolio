@@ -6,12 +6,13 @@ namespace Portfolio.DeathRace
     /// <summary>
     /// The races of a day: one Easy, one Medium and one Hard, each on a track the career has opened and against three
     /// rivals drawn from the matching third of the ladder (so the three offers never share a driver), and, when the
-    /// player starts the day first on the ladder, the Showdown against The Warden on The Crucible. Seeded by the career
-    /// and the day, so the same day always offers the same races.
+    /// player starts the day first on the ladder, the Showdown against the league's champion on the league's Showdown
+    /// track (The Crucible, more laps in the later leagues). Seeded by the career and the day, so the same day always
+    /// offers the same races.
     /// </summary>
     public static class RaceOffers
     {
-        /// <summary>The Warden brings the two best rivals to the Showdown.</summary>
+        /// <summary>The champion brings the two best rivals to the Showdown.</summary>
         public const int ShowdownRivals = 2;
 
         private static readonly Difficulty[] Ordinary = { Difficulty.Easy, Difficulty.Medium, Difficulty.Hard };
@@ -22,9 +23,10 @@ namespace Portfolio.DeathRace
             var random = new SeededRandom(SeededRandom.Mix((uint)state.seed, (uint)day, 0x0FFE5u));
             var offers = new List<RaceOffer>(CareerRules.OffersPerDay + 1);
             var used = new List<int>();
+            LeagueSpec league = state.League;
             foreach (Difficulty difficulty in Ordinary)
             {
-                int track = PickTrack(state.tracksOpen, difficulty, used, random);
+                int track = PickTrack(league, state.tracksOpen, difficulty, used, random);
                 used.Add(track);
                 var offer = new RaceOffer
                 {
@@ -56,14 +58,15 @@ namespace Portfolio.DeathRace
 
         private static RaceOffer Showdown(CareerState state, SeededRandom random)
         {
+            LeagueSpec league = state.League;
             var offer = new RaceOffer
             {
                 difficulty = Difficulty.Showdown,
-                track = CareerRules.ShowdownTrack,
-                laps = TrackLayouts.Of(CareerRules.ShowdownTrack).Laps,
+                track = league.ShowdownTrack,
+                laps = league.ShowdownLaps,
                 seed = (int)random.Next()
             };
-            offer.rivals.Add(Roster.WardenId);
+            offer.rivals.Add(league.Champion.Id);
             foreach (LadderEntry entry in Ladder.Entries(state))
             {
                 if (!entry.IsPlayer && offer.rivals.Count <= ShowdownRivals)
@@ -75,33 +78,35 @@ namespace Portfolio.DeathRace
         }
 
         /// <summary>
-        /// A track for a race of <paramref name="difficulty"/>: an Easy race may be on any open track, a Medium one on the
-        /// five opened last, a Hard one on the three opened last; a track another offer of the day has is avoided.
+        /// A track for a race of <paramref name="difficulty"/> among the first <paramref name="open"/> of the league's
+        /// tracks: an Easy race may be on any open track, a Medium one on the five opened last, a Hard one on the three
+        /// opened last; a track another offer of the day has is avoided.
         /// </summary>
-        private static int PickTrack(int open, Difficulty difficulty, List<int> used, SeededRandom random)
+        private static int PickTrack(LeagueSpec league, int open, Difficulty difficulty, List<int> used, SeededRandom random)
         {
-            open = System.Math.Max(1, System.Math.Min(open, CareerRules.ShowdownTrack));
+            int[] tracks = league.Tracks;
+            open = System.Math.Max(1, System.Math.Min(open, tracks.Length));
             int span = difficulty == Difficulty.Easy ? open : difficulty == Difficulty.Medium ? 5 : 3;
             int first = System.Math.Max(0, open - span);
             var choices = new List<int>();
-            for (int track = first; track < open; track++)
+            for (int i = first; i < open; i++)
             {
-                if (!used.Contains(track))
+                if (!used.Contains(tracks[i]))
                 {
-                    choices.Add(track);
+                    choices.Add(tracks[i]);
                 }
             }
             if (choices.Count == 0)
             {
-                for (int track = 0; track < open; track++)
+                for (int i = 0; i < open; i++)
                 {
-                    if (!used.Contains(track))
+                    if (!used.Contains(tracks[i]))
                     {
-                        choices.Add(track);
+                        choices.Add(tracks[i]);
                     }
                 }
             }
-            return choices.Count > 0 ? random.Pick(choices) : random.Range(first, open);
+            return choices.Count > 0 ? random.Pick(choices) : tracks[random.Range(first, open)];
         }
     }
 }

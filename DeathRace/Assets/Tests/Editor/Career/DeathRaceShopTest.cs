@@ -40,8 +40,9 @@ namespace Portfolio.DeathRace.Tests
             int saved = 0;
             var ledger = new CareerLedger(state, () => saved++);
             Assert.AreEqual(ShopKeeping.Local, ledger.Keeping);
-            Assert.AreEqual(new[] { CareerShop.GaragePage, CareerShop.MarketPage, CareerShop.DealerPage }, ledger.Catalog.Categories);
+            Assert.AreEqual(new[] { CareerShop.GaragePage, CareerShop.WorkshopPage, CareerShop.MarketPage, CareerShop.DealerPage }, ledger.Catalog.Categories);
             Assert.AreEqual("Garage", ledger.PageTitle(CareerShop.GaragePage));
+            Assert.AreEqual("Workshop", ledger.PageTitle(CareerShop.WorkshopPage));
             Assert.AreEqual("Black Market", ledger.PageTitle(CareerShop.MarketPage));
             Assert.AreEqual("Dealer", ledger.PageTitle(CareerShop.DealerPage));
             Assert.AreSame(state.wallet, ledger.Wallet);

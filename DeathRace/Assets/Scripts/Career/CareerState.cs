@@ -5,8 +5,8 @@ using Gamebox.Economy;
 namespace Portfolio.DeathRace
 {
     /// <summary>
-    /// A car the player owns: its loadout (model, upgrade levels, equipment, the health it is in; the mines, rockets
-    /// and nitro are the career's, not the car's) and how it has done.
+    /// A car the player owns: its loadout (model, upgrade levels, fittings, the guns bought for it and the one mounted, the
+    /// health it is in; the mines, rockets, nitro and special weapons are the career's, not the car's) and how it has done.
     /// </summary>
     [Serializable]
     public sealed class OwnedCar
@@ -31,7 +31,7 @@ namespace Portfolio.DeathRace
         public string name;
         public int points;
 
-        /// <summary>1 to <see cref="CareerRules.MaxRivalTier"/>: the car they drive (<see cref="CarSpecs.OfTier"/>).</summary>
+        /// <summary>1 to the league's <see cref="LeagueSpec.MaxRivalTier"/>: the tier of the car they drive (<see cref="Car"/>).</summary>
         public int tier = 1;
 
         /// <summary>How well they drive and shoot on the first day, 0 to 1 (they sharpen with the days: <see cref="CareerRules.SkillOn"/>).</summary>
@@ -44,12 +44,13 @@ namespace Portfolio.DeathRace
         public int races;
         public int kills;
 
-        public CarModel Car => CarSpecs.OfTier(tier);
+        /// <summary>The car of their tier they drive: always the same one for the same driver (<see cref="CarSpecs.ForDriver"/>).</summary>
+        public CarModel Car => CarSpecs.ForDriver(tier, id);
     }
 
     /// <summary>
     /// A race on offer today: how hard it is, the track and laps, the three rivals it draws (ids, from the right third of
-    /// the ladder), and the seed it is raced with. A Showdown is the race against The Warden.
+    /// the ladder), and the seed it is raced with. A Showdown is the race against the league's champion.
     /// </summary>
     [Serializable]
     public sealed class RaceOffer
@@ -62,16 +63,23 @@ namespace Portfolio.DeathRace
 
         public bool IsShowdown => difficulty == Difficulty.Showdown;
 
+        /// <summary>The prize of <paramref name="place"/> in the first league (what knows no league).</summary>
         public int Prize(int place)
         {
             return CareerRules.Prize(difficulty, place);
+        }
+
+        /// <summary>The prize of <paramref name="place"/> in <paramref name="league"/>.</summary>
+        public int Prize(LeagueSpec league, int place)
+        {
+            return CareerRules.Prize(league, difficulty, place);
         }
     }
 
     /// <summary>
     /// A whole career, as it is saved (JsonUtility through the named YAML saves, so lists and plain fields only): the
-    /// driver, the day, the money, the cars and what they carry, the nineteen rivals of the ladder, the record, the
-    /// offers of the day and the sabotage bought for the next race. <see cref="Career"/> makes and moves it on.
+    /// league, the driver, the day, the money, the cars and what they carry, the nineteen rivals of the ladder, the
+    /// record, the offers of the day and the sabotage bought for the next race. <see cref="Career"/> makes and moves it on.
     /// </summary>
     [Serializable]
     public sealed class CareerState
@@ -99,8 +107,11 @@ namespace Portfolio.DeathRace
 
         public List<OwnedCar> garage = new List<OwnedCar>();
 
-        /// <summary>The mines, rockets and nitro the player carries (ids <see cref="CareerShop.MineId"/>, ...).</summary>
+        /// <summary>The mines, rockets, nitro and special weapons the player carries (ids <see cref="CareerShop.MineId"/>, ..., <see cref="SpecialSpec.Id"/>).</summary>
         public Inventory consumables = new Inventory();
+
+        /// <summary>The special weapon the car fires first (when there is none of it left, the next one that has some).</summary>
+        public SpecialKind armed;
 
         public List<RivalState> rivals = new List<RivalState>();
 
@@ -120,7 +131,7 @@ namespace Portfolio.DeathRace
 
         public bool champion;
 
-        /// <summary>The day The Warden was beaten, or 0.</summary>
+        /// <summary>The day the league's champion was beaten, or 0.</summary>
         public int championDay;
 
         public int showdownsLost;
@@ -137,7 +148,7 @@ namespace Portfolio.DeathRace
         /// <summary>The rival whose car was sabotaged before the next race (an id), or empty.</summary>
         public string sabotage = "";
 
-        /// <summary>How many tracks the career has opened (from the first).</summary>
+        /// <summary>How many of the league's tracks the career has opened (the first ones of <see cref="LeagueSpec.Tracks"/>).</summary>
         public int tracksOpen = CareerRules.StartTracks;
 
         /// <summary>The car the player drives now (never null in a valid career).</summary>
@@ -160,6 +171,19 @@ namespace Portfolio.DeathRace
 
         /// <summary>The league of the career: its ladder, its numbers, its champion.</summary>
         public LeagueSpec League => Leagues.Of(league);
+
+        /// <summary>The tracks the career has opened, in the order they opened.</summary>
+        public IEnumerable<int> OpenTracks
+        {
+            get
+            {
+                int[] tracks = League.Tracks;
+                for (int i = 0; i < Math.Min(tracksOpen, tracks.Length); i++)
+                {
+                    yield return tracks[i];
+                }
+            }
+        }
 
         public RivalState Rival(string id)
         {

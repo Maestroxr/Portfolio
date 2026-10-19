@@ -7,8 +7,8 @@ using UnityEngine;
 namespace Portfolio.DeathRace
 {
     /// <summary>
-    /// Death Race's side of the cross-game shop (<see cref="GameShopDefinition"/>): the garage, the black market and
-    /// the dealer of the career being played as pages of the shared window, kept in the career's save
+    /// Death Race's side of the cross-game shop (<see cref="GameShopDefinition"/>): the garage, the workshop, the black
+    /// market and the dealer of the career being played as pages of the shared window, kept in the career's save
     /// (<see cref="CareerLedger"/>), then the cloud's pages with the two items of the game. The Pit Crew (a perk for
     /// money) makes repairs free; a bundle of cash (for Tokens) goes into the career's wallet, or waits for the next
     /// career when none is open (<see cref="TakePendingCash"/>).
@@ -40,7 +40,9 @@ namespace Portfolio.DeathRace
         {
             if (manager is DeathRaceManager game && game.HasCareer)
             {
-                shop.Add(new CareerLedger(game.CurrentCareer, () => game.Autosave()));
+                var ledger = new CareerLedger(game.CurrentCareer, () => game.Autosave());
+                ledger.IconOf = item => GarageWindow.IconFor(game.Look, item);
+                shop.Add(ledger);
             }
         }
 
@@ -119,10 +121,10 @@ namespace Portfolio.DeathRace
     }
 
     /// <summary>
-    /// The career's garage, black market and dealer as a ledger of the shared shop window: the rules and the catalog of
-    /// <see cref="CareerShop"/> over the career's wallet and consumables, saved after every purchase. Sabotage stays in
-    /// the garage window, which has the picker of a rival; a new car makes the catalog over (its own upgrades), which the
-    /// window follows (<see cref="Stale"/>).
+    /// The career's garage, workshop, black market and dealer as a ledger of the shared shop window: the rules and the
+    /// catalog of <see cref="CareerShop"/> over the career's wallet and consumables, saved after every purchase. Sabotage
+    /// stays in the garage window, which has the picker of a rival (so does the choice of the special weapon armed
+    /// first); a new car makes the catalog over (its own upgrades), which the window follows (<see cref="Stale"/>).
     /// </summary>
     public sealed class CareerLedger : ShopLedger
     {
@@ -153,6 +155,8 @@ namespace Portfolio.DeathRace
             {
                 case CareerShop.GaragePage:
                     return "Garage";
+                case CareerShop.WorkshopPage:
+                    return "Workshop";
                 case CareerShop.MarketPage:
                     return "Black Market";
                 case CareerShop.DealerPage:

@@ -11,13 +11,14 @@ namespace Portfolio.DeathRace
     /// <summary>
     /// Development players only: the tour of the whole game at this device. Started with <c>-deathrace-tour &lt;folder&gt;</c>
     /// it plays through everything a player can do offline and saves a numbered screenshot of every step into the folder:
-    /// the menu with the computer cars racing behind it, the settings, a new career (the new career window, the garage on
-    /// every page, an upgrade bought, an offer entered and raced, the results, the garage of the next day), the quick race
+    /// the menu with the computer cars racing behind it, the settings, a new career in the last league (the new career
+    /// window with every league open, as on a device where the first two were won, the garage on every page, an upgrade
+    /// bought, an offer entered and raced, the results, the garage of the next day), the quick race
     /// window and a quick race (with the pause menu in the middle of it), and split screen with two and with four people
     /// (the setup, the controls page, the race in its views, the results). The people's cars are driven by the computer
     /// (<see cref="AiDriver"/>) so the races play themselves, a little faster than real time between the pictures.
     /// Anything that does not happen as it should is a FAIL line in <c>tour.log</c>, so are errors and exceptions; the
-    /// tour leaves no career behind and quits. The look and the language are the command line's
+    /// tour leaves no career behind, puts the device's titles and opened tracks back (<see cref="TourLeagues"/>) and quits. The look and the language are the command line's
     /// (<c>-gamebox-theme Nightfall</c>, <c>-gamebox-language he</c>).
     /// <c>-deathrace-tour-speed &lt;x&gt;</c> sets the speed of the races between pictures (default 2.5),
     /// <c>-deathrace-tour-skip career,quick,split</c> leaves parts out.
@@ -33,6 +34,7 @@ namespace Portfolio.DeathRace
         private string folder;
         private StreamWriter log;
         private DeathRaceManager manager;
+        private TourLeagues leagues;
         private int shots;
         private int failures;
         private int errors;
@@ -79,6 +81,7 @@ namespace Portfolio.DeathRace
             }
             Note($"tour: screen {Screen.width}x{Screen.height}, language {GameLanguages.Code}, look {(manager.Look != null ? manager.Look.name : "none")}, speed {speed}");
             manager.Director.Started += Pilot;
+            leagues = new TourLeagues(manager.Progress);
 
             yield return Menu();
             if (!Skipped("career"))
@@ -98,6 +101,7 @@ namespace Portfolio.DeathRace
             manager.Director.Started -= Pilot;
             Time.timeScale = 1f;
             manager.ForgetAutosave();
+            leagues.Restore();
             Note($"tour done: {shots} screenshots, {failures} FAIL, {errors} errors");
             Quit();
         }
@@ -128,20 +132,27 @@ namespace Portfolio.DeathRace
             yield return Settle();
         }
 
-        /// <summary>A new career: the garage, an upgrade, a race of the day, its results and the next day.</summary>
+        /// <summary>A new career of the Hellfire League: the garage, an upgrade, a race of the day, its results and the next day.</summary>
         private IEnumerator Career()
         {
+            leagues.OpenUpTo(LeagueKind.Hellfire);
             manager.OpenCareer();
             yield return Settle();
-            Expect(NewCareerWindow.For(manager).IsOpen, "the new career window opens");
+            NewCareerWindow window = NewCareerWindow.For(manager);
+            Expect(window.IsOpen, "the new career window opens");
+            Expect(window.League == LeagueKind.Hellfire, "every league is open and the last one picked");
             yield return Shot("career-new");
-            NewCareerWindow.For(manager).Hide();
-            manager.StartCareer("Max Kowalski", 5, 20261019);
+            window.Hide();
+            manager.StartCareer("Max Kowalski", 5, 20261019, LeagueKind.Hellfire);
             yield return Settle();
-            Expect(manager.HasCareer, "a career was started");
+            Expect(manager.HasCareer && manager.CurrentCareer.League.Kind == LeagueKind.Hellfire, "a career of the Hellfire League was started");
             GarageWindow garage = GarageWindow.For(manager);
             Expect(garage.IsOpen, "the garage opens on a new career");
-            foreach (string page in new[] { GarageWindow.RacePage, GarageWindow.GaragePage, GarageWindow.MarketPage, GarageWindow.DealerPage, GarageWindow.StandingsPage })
+            foreach (string page in new[]
+                     {
+                         GarageWindow.RacePage, GarageWindow.GaragePage, GarageWindow.WorkshopPage, GarageWindow.MarketPage, GarageWindow.DealerPage,
+                         GarageWindow.StandingsPage
+                     })
             {
                 garage.TurnTo(page);
                 yield return Settle();
@@ -380,6 +391,9 @@ namespace Portfolio.DeathRace
         {
             shots++;
             string file = Path.Combine(folder, $"{shots:00}_{label}.png");
+            // The development console pops up over the game on any error (the errors are in the log already).
+            Debug.developerConsoleVisible = false;
+            yield return null;
             ScreenCapture.CaptureScreenshot(file);
             yield return null;
             yield return new WaitForEndOfFrame();

@@ -9,12 +9,15 @@ namespace Portfolio.DeathRace
     /// <summary>
     /// Development players only: the check of the career and its windows. Started with <c>-deathrace-careercheck
     /// &lt;folder&gt;</c>, it walks through every screen of the game but the shared menu and saves a numbered screenshot of
-    /// each into the folder: the new career window, a new career's garage on every page, a purchase in the garage and
-    /// in the market (the sabotage picker too), a career race entered through an offer and driven by a computer driver
-    /// in the person's seat (the countdown, the HUD mid race), its results, the garage of the next day, the champion's
-    /// window and the quick race window. Problems (a window that did not open, errors and exceptions) are FAIL lines in
-    /// <c>career.log</c>. It leaves no save behind and quits.
-    /// <c>-deathrace-careercheck-speed &lt;x&gt;</c> runs the race faster (default 2.5), <c>-deathrace-careercheck-norace</c> skips it.
+    /// each into the folder: the new career window (with only the first league open, then with every league open and
+    /// the last one picked), a new career's garage on every page, a purchase in the garage, the workshop (a fitting, a
+    /// gun bought and the machine gun mounted again) and the market (a mine, a special weapon armed first, the sabotage
+    /// picker), a career race entered through an offer and driven by a computer driver in the person's seat (the
+    /// countdown, the HUD mid race), its results, the garage of the next day, the champion's window and moving up to
+    /// the Iron League (its garage and a race of it), and the quick race window. Problems (a window that did not open,
+    /// errors and exceptions) are FAIL lines in <c>career.log</c>. It leaves no save behind, puts the device's titles
+    /// and opened tracks back as they were (<see cref="TourLeagues"/>) and quits.
+    /// <c>-deathrace-careercheck-speed &lt;x&gt;</c> runs the races faster (default 2.5), <c>-deathrace-careercheck-norace</c> skips them.
     /// </summary>
     public sealed class CareerCheck : MonoBehaviour
     {
@@ -27,6 +30,8 @@ namespace Portfolio.DeathRace
         private string folder;
         private StreamWriter log;
         private DeathRaceManager manager;
+        private TourLeagues leagues;
+        private string titleSave;
         private int shots;
         private int failures;
         private int errors;
@@ -68,20 +73,34 @@ namespace Portfolio.DeathRace
                 yield break;
             }
             Note($"careercheck: screen {Screen.width}x{Screen.height}, language {GameLanguages.Code}, look {(manager.Look != null ? manager.Look.name : "none")}");
+            leagues = new TourLeagues(manager.Progress);
+            leagues.Close();
             yield return new WaitForSecondsRealtime(3f);
             yield return Shot("menu");
 
+            bool race = Array.IndexOf(Environment.GetCommandLineArgs(), NoRaceArgument) < 0;
             yield return NewCareer();
             yield return Garage();
-            if (Array.IndexOf(Environment.GetCommandLineArgs(), NoRaceArgument) < 0)
+            yield return Workshop();
+            yield return Market();
+            if (race)
             {
-                yield return CareerRace();
+                yield return CareerRace("race");
             }
             yield return Champion();
+            if (race && manager.CurrentCareer != null && manager.CurrentCareer.League.Kind == LeagueKind.Iron)
+            {
+                yield return CareerRace("iron-race");
+            }
             yield return QuickRace();
 
             Note($"careercheck done: {shots} screenshots, {failures} FAIL, {errors} errors");
             manager.ForgetAutosave();
+            if (titleSave != null)
+            {
+                manager.SavedGames?.Delete(titleSave);
+            }
+            leagues.Restore();
             Quit();
         }
 
@@ -89,12 +108,27 @@ namespace Portfolio.DeathRace
         {
             manager.OpenCareer();
             yield return Settle();
-            Expect(NewCareerWindow.For(manager).IsOpen, "the new career window opens when there is no career");
+            NewCareerWindow window = NewCareerWindow.For(manager);
+            Expect(window.IsOpen, "the new career window opens when there is no career");
+            Expect(window.League == LeagueKind.Wasteland && !window.Pick(LeagueKind.Iron), "only the first league is open on a new device");
             yield return Shot("new-career");
-            NewCareerWindow.For(manager).Hide();
+            window.Hide();
+
+            // Every league open (as on a device where both titles were won): the picker starts on the last one.
+            leagues.OpenUpTo(LeagueKind.Hellfire);
+            manager.OpenCareer();
+            yield return Settle();
+            Expect(window.IsOpen && window.League == LeagueKind.Hellfire, "the picker starts on the highest league open");
+            yield return Shot("new-career-leagues");
+            Expect(window.Pick(LeagueKind.Iron), "an open league can be picked");
+            yield return Settle();
+            yield return Shot("new-career-iron");
+            window.Hide();
+            leagues.Close();
+
             manager.StartCareer("Ace Rivera", 3, 20261018);
             yield return Settle();
-            Expect(manager.HasCareer, "a career was started");
+            Expect(manager.HasCareer && manager.CurrentCareer.League.Kind == LeagueKind.Wasteland, "a career of the first league was started");
             Expect(GarageWindow.For(manager).IsOpen, "the garage opens on a new career");
         }
 
@@ -102,26 +136,73 @@ namespace Portfolio.DeathRace
         {
             GarageWindow garage = GarageWindow.For(manager);
             yield return Shot("garage-races");
-            foreach (string page in new[] { GarageWindow.GaragePage, GarageWindow.MarketPage, GarageWindow.DealerPage, GarageWindow.StandingsPage })
+            foreach (string page in new[] { GarageWindow.GaragePage, GarageWindow.WorkshopPage, GarageWindow.MarketPage, GarageWindow.DealerPage, GarageWindow.StandingsPage })
             {
                 garage.TurnTo(page);
                 yield return Settle();
                 yield return Shot("garage-" + page);
             }
 
-            // Spend a little: an engine level and a mine, then aim a sabotage.
+            // Spend a little: an engine level and the nitro system.
             CareerState state = manager.CurrentCareer;
+            state.wallet.Add(6000);
             int money = state.wallet.Money;
             state.Current.loadout.health = 0.62f;
             garage.TurnTo(GarageWindow.GaragePage);
             garage.Press(CareerShop.EngineId);
+            garage.Press(CareerShop.BoostId);
             yield return Settle();
-            Expect(state.Current.loadout.engine == 1 && state.wallet.Money < money, "an engine upgrade is bought in the garage");
+            Expect(state.Current.loadout.engine == 1 && state.Current.loadout.boost == 1 && state.wallet.Money < money, "an engine and a nitro system level are bought in the garage");
             yield return Shot("garage-bought-engine");
-            garage.TurnTo(GarageWindow.MarketPage);
-            garage.Press(CareerShop.MineId);
+        }
+
+        private IEnumerator Workshop()
+        {
+            GarageWindow garage = GarageWindow.For(manager);
+            CareerState state = manager.CurrentCareer;
+            garage.TurnTo(GarageWindow.WorkshopPage);
             yield return Settle();
-            Expect(state.consumables.Get(CareerShop.MineId) == CareerRules.StartMines + 1, "a mine is bought in the market");
+            garage.Pick(CareerShop.FittingId(EquipmentKind.Magazine));
+            garage.Press(CareerShop.FittingId(EquipmentKind.Magazine));
+            yield return Settle();
+            Expect(state.Current.loadout.magazine, "the extended magazine is fitted in the workshop");
+            garage.Pick(CareerShop.GunId(GunKind.Minigun));
+            garage.Press(CareerShop.GunId(GunKind.Minigun));
+            yield return Settle();
+            Expect(state.Current.loadout.gun == GunKind.Minigun, "the minigun is bought and mounted");
+            yield return Shot("workshop-minigun");
+            garage.Pick(CareerShop.GunId(GunKind.MachineGun));
+            int money = state.wallet.Money;
+            garage.Press(CareerShop.GunId(GunKind.MachineGun));
+            yield return Settle();
+            Expect(state.Current.loadout.gun == GunKind.MachineGun && state.wallet.Money == money, "the machine gun goes back on for nothing");
+            garage.Pick(CareerShop.GunId(GunKind.Minigun));
+            yield return Settle();
+            yield return Shot("workshop-minigun-free");
+            garage.Press(CareerShop.GunId(GunKind.Minigun));
+            yield return Settle();
+            Expect(state.Current.loadout.gun == GunKind.Minigun && state.wallet.Money == money, "the minigun goes back on for nothing");
+        }
+
+        private IEnumerator Market()
+        {
+            GarageWindow garage = GarageWindow.For(manager);
+            CareerState state = manager.CurrentCareer;
+            garage.TurnTo(GarageWindow.MarketPage);
+            yield return Settle();
+            int mines = state.consumables.Get(CareerShop.MineId);
+            garage.Press(CareerShop.MineId);
+            garage.Press(CareerShop.SpecialId(SpecialKind.Oil));
+            garage.Press(CareerShop.SpecialId(SpecialKind.Emp));
+            yield return Settle();
+            Expect(state.consumables.Get(CareerShop.MineId) == mines + 1, "a mine is bought in the market");
+            Expect(state.consumables.Get("oil") == 1 && state.consumables.Get("emp") == 1, "an oil slick and an EMP blast are bought");
+            garage.Pick(CareerShop.SpecialId(SpecialKind.Emp));
+            yield return Settle();
+            garage.PressArm();
+            yield return Settle();
+            Expect(state.armed == SpecialKind.Emp, "the EMP blast is armed first");
+            yield return Shot("market-emp-armed");
             garage.Press(CareerShop.SabotageId);
             yield return Settle();
             Expect(garage.IsPicking, "sabotage opens the picker of the drivers racing today");
@@ -133,7 +214,7 @@ namespace Portfolio.DeathRace
             yield return Settle();
         }
 
-        private IEnumerator CareerRace()
+        private IEnumerator CareerRace(string label)
         {
             CareerState state = manager.CurrentCareer;
             RaceDirector director = manager.Director;
@@ -142,11 +223,12 @@ namespace Portfolio.DeathRace
                 Fail("no race director");
                 yield break;
             }
+            int day = state.day;
             int easy = state.offers.FindIndex(offer => offer.difficulty == Difficulty.Easy);
             director.Started += Pilot;
             float speed = Mathf.Clamp(Number(SpeedArgument, 2.5f), 0.5f, 3f);
             bool entered = manager.EnterOffer(easy);
-            Expect(entered, "an offer is entered");
+            Expect(entered, $"an offer of the {state.League.Name} is entered");
             director.Started -= Pilot;
             if (!entered)
             {
@@ -155,9 +237,9 @@ namespace Portfolio.DeathRace
             Expect(!GarageWindow.For(manager).IsOpen, "the garage closes for the race");
             // The HUD of the very first frames: it must sit in the corners already, not small in the middle.
             yield return null;
-            yield return Shot("race-grid");
+            yield return Shot(label + "-grid");
             yield return new WaitForSecondsRealtime(2f);
-            yield return Shot("race-countdown");
+            yield return Shot(label + "-countdown");
             yield return new WaitForSecondsRealtime(2.5f);
             Time.timeScale = speed;
             float start = Time.unscaledTime;
@@ -172,7 +254,7 @@ namespace Portfolio.DeathRace
                 {
                     hudShot++;
                     Time.timeScale = 1f;
-                    yield return Shot($"race-hud-{hudShot}");
+                    yield return Shot($"{label}-hud-{hudShot}");
                     Time.timeScale = speed;
                 }
                 yield return null;
@@ -185,14 +267,14 @@ namespace Portfolio.DeathRace
                 yield break;
             }
             yield return new WaitForSecondsRealtime(2.5f);
-            yield return Shot("results");
-            Expect(manager.CurrentCareer.day == 2, "the career moved on to the next day");
-            Expect(manager.LatestSave != null && manager.LatestSave.Summary != null && manager.LatestSave.Summary.Contains("day 2"),
-                "the career saved itself after the race (the save is of day 2)");
+            yield return Shot(label + "-results");
+            Expect(manager.CurrentCareer.day == day + 1, "the career moved on to the next day");
+            Expect(manager.LatestSave != null && manager.LatestSave.Summary == DeathRaceManager.SummaryOf(manager.CurrentCareer),
+                "the career saved itself after the race (the save is of the next day)");
             manager.Back();
             yield return Settle();
             Expect(GarageWindow.For(manager).IsOpen, "Continue goes back to the garage");
-            yield return Shot("garage-next-day");
+            yield return Shot(label + "-garage-next-day");
         }
 
         /// <summary>The career race was built: the person's seat is handed to a computer driver.</summary>
@@ -207,22 +289,44 @@ namespace Portfolio.DeathRace
             }
         }
 
+        /// <summary>The champion's window of the first league, and moving up to the Iron League from it.</summary>
         private IEnumerator Champion()
         {
             GarageWindow.For(manager).Hide();
             CareerState state = manager.CurrentCareer;
             state.champion = true;
             state.championDay = state.day;
-            ChampionWindow.For(manager).Show();
+            manager.Progress.WinLeague(state.league);
+            ChampionWindow window = ChampionWindow.For(manager);
+            window.Show();
             yield return Settle();
-            Expect(ChampionWindow.For(manager).IsOpen, "the champion's window opens");
+            Expect(window.IsOpen, "the champion's window opens");
+            Expect(window.OffersMoveUp, "the champion of the first league is offered the Iron League");
             yield return Shot("champion");
-            ChampionWindow.For(manager).Hide();
-            state.champion = false;
+            titleSave = DeathRaceManager.TitleSaveName(state);
+            window.Hide();
+            Expect(manager.MoveUpLeague(), "the champion moves up");
+            yield return Settle();
+            CareerState iron = manager.CurrentCareer;
+            Expect(iron != state && iron.League.Kind == LeagueKind.Iron && iron.driverName == state.driverName && iron.colorIndex == state.colorIndex,
+                "a career of the Iron League for the same driver in the same colour");
+            Expect(manager.SavedGames != null && manager.SavedGames.Find(titleSave) != null, "the finished career is kept as a save named after the title");
+            GarageWindow garage = GarageWindow.For(manager);
+            Expect(garage.IsOpen, "the Iron League's garage opens");
+            yield return Shot("iron-garage-races");
+            foreach (string page in new[] { GarageWindow.GaragePage, GarageWindow.DealerPage, GarageWindow.StandingsPage })
+            {
+                garage.TurnTo(page);
+                yield return Settle();
+                yield return Shot("iron-garage-" + page);
+            }
+            garage.TurnTo(GarageWindow.RacePage);
+            yield return Settle();
         }
 
         private IEnumerator QuickRace()
         {
+            GarageWindow.For(manager).Hide();
             manager.OpenQuickRace();
             yield return Settle();
             Expect(QuickRaceWindow.For(manager).IsOpen, "the quick race window opens");
@@ -244,6 +348,9 @@ namespace Portfolio.DeathRace
         {
             shots++;
             string file = Path.Combine(folder, $"{shots:00}_{label}.png");
+            // The development console pops up over the game on any error (the errors are in the log already).
+            Debug.developerConsoleVisible = false;
+            yield return null;
             ScreenCapture.CaptureScreenshot(file);
             yield return null;
             yield return new WaitForEndOfFrame();
@@ -303,6 +410,70 @@ namespace Portfolio.DeathRace
             Application.logMessageReceived -= OnLog;
             log?.Dispose();
             log = null;
+        }
+    }
+
+    /// <summary>
+    /// Development players only: what the tours do to the device's record of the leagues. A tour opens leagues as a
+    /// device where the leagues before were won would have them (<see cref="OpenUpTo"/>), or closes them for a look at
+    /// a new device (<see cref="Close"/>), rather than the game having a cheat; <see cref="Restore"/> puts the titles and
+    /// the tracks the careers opened back as they were before the tour, so a tour leaves the device as it found it.
+    /// </summary>
+    public sealed class TourLeagues
+    {
+        private const int Missing = int.MinValue;
+
+        private static readonly string[] Keys =
+        {
+            "Championships", "LeagueTitles.Recorded", "LeagueTitles.0", "LeagueTitles.1", "LeagueTitles.2", "CareerTracks", "CareerTrackMask"
+        };
+
+        private readonly DeathRaceProgress progress;
+        private readonly int[] saved;
+
+        public TourLeagues(DeathRaceProgress progress)
+        {
+            this.progress = progress;
+            saved = new int[Keys.Length];
+            for (int i = 0; i < Keys.Length; i++)
+            {
+                saved[i] = progress.Value(Keys[i], Missing);
+            }
+        }
+
+        /// <summary>Opens every league up to <paramref name="league"/>: the ones before it have a title on the device.</summary>
+        public void OpenUpTo(LeagueKind league)
+        {
+            for (int i = 0; i < (int)league; i++)
+            {
+                if (progress.LeagueTitles(i) == 0)
+                {
+                    progress.WinLeague(i);
+                }
+            }
+        }
+
+        /// <summary>No title on the device: only the first league is open (as on a new device).</summary>
+        public void Close()
+        {
+            progress.Reset(0, null, new[] { "Championships", "LeagueTitles.0", "LeagueTitles.1", "LeagueTitles.2" });
+            progress.SetValue("LeagueTitles.Recorded", 1);
+        }
+
+        /// <summary>The titles and the opened tracks as they were when the tour began.</summary>
+        public void Restore()
+        {
+            for (int i = 0; i < Keys.Length; i++)
+            {
+                if (saved[i] == Missing)
+                {
+                    progress.Reset(0, null, new[] { Keys[i] });
+                }
+                else
+                {
+                    progress.SetValue(Keys[i], saved[i]);
+                }
+            }
         }
     }
 }

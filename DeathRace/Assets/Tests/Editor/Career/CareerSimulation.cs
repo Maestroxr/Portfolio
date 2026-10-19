@@ -6,28 +6,35 @@ using UnityEngine;
 namespace Portfolio.DeathRace.Tests
 {
     /// <summary>
-    /// Plays a career the way an average player would, without Unity: every day it enters the hardest race whose rivals
-    /// its car can live with (the Showdown as soon as it is offered), races it with a driver of middling skill (the same
-    /// rating and luck as the races the career simulates, a kill now and then, some cash, some damage), then mends the
-    /// car, restocks a few mines and nitros, and saves up for the next car, spending what is left on upgrades. What the
-    /// tests check the tuning of the career with.
+    /// Plays a career of a league the way an average player would, without Unity: every day it enters the hardest race
+    /// whose rivals its car can live with (the Showdown, with the champion sabotaged, as soon as it can be won now and
+    /// then), races it with a driver
+    /// of middling skill (the same rating and luck as the races the career simulates, a kill now and then, some cash,
+    /// some damage, a special weapon fired), then mends the car, restocks a few mines and nitros (and a special weapon in
+    /// the later leagues), and saves up for the next car of the dealer, spending what is left on the cheapest upgrades,
+    /// fittings and a gun. What the tests check the tuning of every league with.
     /// </summary>
     public sealed class CareerSimulation
     {
         public const float PlayerSkill = 0.75f;
+
+        /// <summary>The player takes on the champion once the Showdown is won about this often.</summary>
+        public const float ShowdownChance = 0.1f;
 
         private readonly SeededRandom random;
 
         /// <summary>What the visits so far have set aside for upgrades and not spent.</summary>
         private int savedBudget;
 
-        public CareerSimulation(int seed)
+        public CareerSimulation(int seed, LeagueKind league = LeagueKind.Wasteland)
         {
             random = new SeededRandom((uint)seed * 7919u + 13u);
-            State = Career.New("Sim", 0, seed);
+            State = Career.New("Sim", 0, seed, league);
         }
 
         public CareerState State { get; }
+
+        public LeagueSpec League => State.League;
 
         /// <summary>The races run before the player first stood first on the ladder, or -1 while they have not.</summary>
         public int RacesToTop { get; private set; } = -1;
@@ -70,6 +77,13 @@ namespace Portfolio.DeathRace.Tests
         public CareerReport Day()
         {
             int index = Choose();
+            if (State.offers[index].IsShowdown && !State.HasSabotage)
+            {
+                // Before the Showdown a sensible player pays a mechanic to visit the champion's garage.
+                int before = State.wallet.Money;
+                new CareerShop(State).Sabotage(League.Champion.Id);
+                SpentMarket += before - State.wallet.Money;
+            }
             RaceSetup setup = Career.Enter(State, index, color => Color.white);
             RaceResult result = Race(setup);
             CareerReport report = Career.Apply(State, result);
@@ -86,7 +100,7 @@ namespace Portfolio.DeathRace.Tests
             return report;
         }
 
-        public float PlayerRating => Career.Rating(PlayerSkill, State.Current.loadout);
+        public float PlayerRating => Career.Rating(League, PlayerSkill, State.Current.loadout);
 
         /// <summary>
         /// The offer worth most to a sensible player: the points it can be expected to score (and a little of the money),
@@ -102,7 +116,7 @@ namespace Portfolio.DeathRace.Tests
                 (float points, float money, float wins) = Expect(offer);
                 if (offer.IsShowdown)
                 {
-                    if (wins >= 0.2f)
+                    if (wins >= ShowdownChance)
                     {
                         return i;
                     }
@@ -131,15 +145,16 @@ namespace Portfolio.DeathRace.Tests
             var rivals = new List<float>();
             foreach (string id in offer.rivals)
             {
-                if (id == Roster.WardenId)
+                if (League.IsChampion(id))
                 {
-                    rivals.Add(Career.Rating(Career.WardenSkill, Career.WardenLoadout()));
+                    rivals.Add(Career.Rating(League, Career.ChampionSkill, Career.ChampionLoadout(League)));
                     continue;
                 }
                 RivalState rival = State.Rival(id);
                 if (rival != null)
                 {
-                    rivals.Add(Career.Rating(CareerRules.SkillOn(rival.skill, State.day), Career.AiLoadout(rival.tier, State.day, offer.difficulty, null)));
+                    CarLoadout car = Career.AiLoadout(League, rival.tier, rival.id, State.day, offer.difficulty, null);
+                    rivals.Add(Career.Rating(League, CareerRules.SkillOn(League, rival.skill, State.day), car));
                 }
             }
             float points = 0f, money = 0f, wins = 0f;
@@ -156,8 +171,8 @@ namespace Portfolio.DeathRace.Tests
                 {
                     place += rival + Career.Form(imagined) > mine ? 1 : 0;
                 }
-                points += CareerRules.Points(offer.difficulty, place);
-                money += CareerRules.Prize(offer.difficulty, place);
+                points += CareerRules.Points(League, offer.difficulty, place);
+                money += CareerRules.Prize(League, offer.difficulty, place);
                 wins += place == 1 ? 1f : 0f;
             }
             return (points / Samples, money / Samples, wins / Samples);
@@ -185,7 +200,7 @@ namespace Portfolio.DeathRace.Tests
             {
                 if (!entrant.IsHuman)
                 {
-                    ratings.Add(Career.Rating(RosterSkill(entrant), entrant.Loadout));
+                    ratings.Add(Career.Rating(League, RosterSkill(entrant), entrant.Loadout));
                 }
             }
             int playerWreck = WreckChance(PlayerRating, ratings);
@@ -193,8 +208,8 @@ namespace Portfolio.DeathRace.Tests
             foreach (RaceEntrant entrant in setup.Entrants)
             {
                 float skill = entrant.IsHuman ? PlayerSkill : RosterSkill(entrant);
-                float score = Career.Rating(skill, entrant.Loadout) + Career.Form(random) - (1f - entrant.Loadout.health) * 0.15f;
-                bool wrecked = random.Chance(entrant.IsHuman ? playerWreck : CareerRules.WreckChance(setup.Difficulty));
+                float score = Career.Rating(League, skill, entrant.Loadout) + Career.Form(random) - (1f - entrant.Loadout.health) * 0.15f;
+                bool wrecked = random.Chance(entrant.IsHuman ? playerWreck : CareerRules.WreckChance(League, setup.Difficulty));
                 scores.Add((entrant, score, wrecked));
             }
             scores.Sort((a, b) => a.wrecked != b.wrecked ? a.wrecked.CompareTo(b.wrecked) : b.score.CompareTo(a.score));
@@ -212,7 +227,10 @@ namespace Portfolio.DeathRace.Tests
                     HealthLeft = wrecked ? 0f : 0.35f + (float)random.Value() * 0.5f,
                     MinesUsed = entrant.IsHuman ? Mathf.Min(entrant.Loadout.mines, random.Range(0, 3)) : 0,
                     RocketsUsed = entrant.IsHuman ? Mathf.Min(entrant.Loadout.rockets, random.Range(0, 2)) : 0,
-                    NitroUsed = entrant.IsHuman ? Mathf.Min(entrant.Loadout.nitro, random.Range(0, 3)) : 0
+                    NitroUsed = entrant.IsHuman ? Mathf.Min(entrant.Loadout.nitro, random.Range(0, 3)) : 0,
+                    OilUsed = entrant.IsHuman && entrant.Loadout.oil > 0 ? random.Range(0, 2) : 0,
+                    EmpUsed = entrant.IsHuman && entrant.Loadout.emp > 0 ? random.Range(0, 2) : 0,
+                    MortarUsed = entrant.IsHuman && entrant.Loadout.mortar > 0 ? random.Range(0, 2) : 0
                 });
             }
             return result;
@@ -225,7 +243,7 @@ namespace Portfolio.DeathRace.Tests
         private float RosterSkill(RaceEntrant entrant)
         {
             RivalState rival = State.Rival(entrant.RivalId);
-            return rival != null ? CareerRules.SkillOn(rival.skill, State.day) : entrant.Skill;
+            return rival != null ? CareerRules.SkillOn(League, rival.skill, State.day) : entrant.Skill;
         }
 
         /// <summary>Mends the car, restocks, saves up for the next car, and upgrades with what the plan leaves over.</summary>
@@ -236,18 +254,24 @@ namespace Portfolio.DeathRace.Tests
             shop.RepairAll();
             SpentRepairs += before - State.wallet.Money;
             before = State.wallet.Money;
-            // An early career buys a mine and a nitro at most; later two of each and a rocket.
-            bool early = State.car == CareerRules.StartCar;
+            // An early career buys a mine and a nitro at most; later two of each and a rocket, and one of the special weapon
+            // armed in the leagues after the first.
+            bool early = State.car == League.StartCar;
             Restock(shop, CareerShop.MineId, early ? 1 : 2);
             Restock(shop, CareerShop.NitroId, early ? 1 : 2);
             Restock(shop, CareerShop.RocketId, early ? 0 : 1);
-            SpentMarket += before - State.wallet.Money;
-            if (State.car != CarModel.Tyrant)
+            if (League.Kind != LeagueKind.Wasteland)
             {
-                CarModel next = State.car + 1;
+                Restock(shop, CareerShop.SpecialId(State.armed), 1);
+            }
+            SpentMarket += before - State.wallet.Money;
+            int tier = State.Current.loadout.Spec.Tier;
+            if (tier < League.MaxDealerTier)
+            {
+                CarModel next = CarSpecs.OfTier(tier + 1);
                 ShopItem car = shop.Catalog[CareerShop.CarId(next)];
                 int price = shop.NextPrice(State.consumables, car);
-                if (price >= 0 && State.wallet.Money >= price + 600)
+                if (price >= 0 && State.wallet.Money >= price + Reserve)
                 {
                     SpentCars += price;
                     shop.Buy(State.wallet, State.consumables, car);
@@ -264,6 +288,45 @@ namespace Portfolio.DeathRace.Tests
             }
         }
 
+        /// <summary>The car with one more level or piece of <paramref name="item"/> (an upgrade, a fitting, a gun mounted).</summary>
+        private static CarLoadout With(CarLoadout car, ShopItem item)
+        {
+            CarLoadout after = car.Clone();
+            switch (item.Tag)
+            {
+                case UpgradeKind kind:
+                    after.SetLevel(kind, after.Level(kind) + 1);
+                    break;
+                case EquipmentKind kind:
+                    after.Set(kind, true);
+                    break;
+                case GunKind gun:
+                    after.GiveGun(gun);
+                    break;
+            }
+            return after;
+        }
+
+        /// <summary>What the player upgrades the car with: the five upgrades, the seven fittings, and a gun while it has only the machine gun.</summary>
+        private IEnumerable<string> Parts()
+        {
+            foreach (UpgradeKind kind in CareerRules.Upgrades)
+            {
+                yield return CareerShop.UpgradeId(kind);
+            }
+            foreach (EquipmentKind kind in CareerRules.Fittings)
+            {
+                yield return CareerShop.FittingId(kind);
+            }
+            if (State.Current.loadout.gun == GunKind.MachineGun)
+            {
+                foreach (GunKind gun in CareerRules.BoughtGuns)
+                {
+                    yield return CareerShop.GunId(gun);
+                }
+            }
+        }
+
         private void Restock(CareerShop shop, string id, int keep)
         {
             while (State.consumables.Get(id) < keep && shop.Buy(id) == BuyResult.Bought)
@@ -271,10 +334,13 @@ namespace Portfolio.DeathRace.Tests
             }
         }
 
+        /// <summary>What the player keeps after buying a car (for the repairs of the first races in it): more in the later leagues.</summary>
+        private int Reserve => 600 * CarSpecs.Of(League.StartCar).Tier;
+
         /// <summary>
-        /// Buys the cheapest next levels of upgrades and equipment for up to <paramref name="budget"/>, while the money
-        /// stays above <paramref name="reserve"/>; a level dearer than the budget is bought once the budgets of a few
-        /// visits have added up.
+        /// Buys the next levels of upgrades, fittings and a gun that add the most to the car's rating for their price, for
+        /// up to <paramref name="budget"/>, while the money stays above
+        /// <paramref name="reserve"/>; a part dearer than the budget is bought once the budgets of a few visits have added up.
         /// </summary>
         private void Upgrade(ref CareerShop shop, int reserve, int budget)
         {
@@ -283,12 +349,17 @@ namespace Portfolio.DeathRace.Tests
             {
                 ShopItem cheapest = null;
                 int best = int.MaxValue;
-                foreach (string id in new[] { CareerShop.EngineId, CareerShop.TiresId, CareerShop.ArmorId, CareerShop.SpikesId, CareerShop.PiercingId })
+                float bestCost = float.MaxValue;
+                float rating = Career.CarRating(League, State.Current.loadout);
+                foreach (string id in Parts())
                 {
                     ShopItem item = shop.Catalog[id];
                     int price = shop.NextPrice(State.consumables, item);
-                    if (price >= 0 && price < best)
+                    float gain = Career.CarRating(League, With(State.Current.loadout, item)) - rating;
+                    float cost = price / Mathf.Max(1e-5f, gain);
+                    if (price >= 0 && gain > 0f && cost < bestCost)
                     {
+                        bestCost = cost;
                         best = price;
                         cheapest = item;
                     }
