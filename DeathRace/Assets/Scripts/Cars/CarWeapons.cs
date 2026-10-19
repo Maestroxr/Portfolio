@@ -4,28 +4,55 @@ using UnityEngine;
 namespace Portfolio.DeathRace
 {
     /// <summary>
-    /// A car's weapons: the machine gun and its rounds, the mines and rockets it carries, and its nitro charges. The car
-    /// hands it the driver's input every physics step (<see cref="Tick"/>). The gun is hitscan: each round flies straight
-    /// out of the muzzle (a little spread) to the first car or barrier within its range, drawn as a tracer with a flash
-    /// and sparks. Mines drop behind (<see cref="Mine"/>), rockets launch forward (<see cref="Rocket"/>), a nitro charge
-    /// burns for a couple of seconds with flames from the exhausts. What is carried and spent is a
-    /// <see cref="WeaponStock"/>; what each weapon does is in <see cref="CombatRules"/>.
+    /// A car's weapons: the gun on its bonnet and its rounds, the mines and rockets it carries, its nitro charges and its
+    /// special weapons. The car hands it the driver's input every physics step (<see cref="Tick"/>).
+    ///
+    /// The gun is the one of the car's stats (<see cref="Guns"/>), firing at its rate (the gun mount's faster) for its
+    /// damage (armour-piercing rounds and the mount's harder): the machine gun and the minigun are hitscan, each round
+    /// flying straight out of the muzzle (with the gun's spread) to the first car or barrier within its range, drawn as a
+    /// tracer (the minigun's thinner and quicker) with a flash and sparks; the flamethrower sends a puff of fire every
+    /// round that hurts every car in a short cone ahead that no barrier hides and sets it burning
+    /// (<see cref="CarStatus.Burn"/>), a jet of flame roaring from the muzzle while it fires; the plasma cannon fires
+    /// glowing bolts that fly (<see cref="PlasmaBolt"/>) and burst where they hit.
+    ///
+    /// Mines drop behind (<see cref="Mine"/>), rockets launch forward (<see cref="Rocket"/>), a nitro charge burns for a
+    /// couple of seconds (longer with the nitro system) with flames from the exhausts. The special button fires the
+    /// special armed, or the next one there is (<see cref="NextSpecial"/>): an oil slick poured behind
+    /// (<see cref="OilSlick"/>), an EMP blast round the car (<see cref="EmpBlast"/>), a mortar shell lobbed ahead along the
+    /// track (<see cref="MortarShell"/>); each raises its event with what it made (online: an action for the room). A
+    /// jammed car (<see cref="CarStatus.IsJammed"/>) fires nothing and its burning charge goes out. What is carried and
+    /// spent is a <see cref="WeaponStock"/>; what each weapon does is in <see cref="CombatRules"/>.
     /// </summary>
     public class CarWeapons : MonoBehaviour
     {
         private const float MuzzleHeight = 0.75f;
 
+        /// <summary>The minigun's tracers: thinner and quicker than the machine gun's (0.34 m, 0.09 s).</summary>
+        private const float MinigunTracerWidth = 0.2f;
+
+        private const float MinigunTracerSeconds = 0.06f;
+
+        /// <summary>How far behind the car's tail an oil slick is poured (to its middle).</summary>
+        private const float OilBehind = 2.2f;
+
+        private const float FlameVolume = 0.7f;
+
         private static readonly RaycastHit[] Hits = new RaycastHit[8];
 
         private WeaponStock stock = new WeaponStock(100, 0, 0, 0);
+        private GunSpec gun = Guns.Of(GunKind.MachineGun);
         private Car car;
         private System.Random random = new System.Random(1);
         private Transform fallbackMuzzle;
         private RaceEffect[] flames = new RaceEffect[0];
+        private RaceEffect flameJet;
+        private AudioSource flameSound;
+        private bool flameOn;
         private bool disarmed;
         private bool emptyGun;
         private bool nitroWasHeld;
         private int hitCount;
+        private int roundsShown;
 
         public int Ammo { get; protected set; }
         public int AmmoCapacity { get; protected set; }
@@ -43,7 +70,7 @@ namespace Portfolio.DeathRace
         public int RocketsUsed { get; protected set; }
         public int NitroUsed { get; protected set; }
 
-        /// <summary>Rounds fired this race, and how many of them hit a car.</summary>
+        /// <summary>Rounds fired this race, and how many of them hit a car (a puff of flame counts once for every car it licks).</summary>
         public int RoundsFired => stock.RoundsFired;
 
         public int RoundsHit => hitCount;
@@ -51,9 +78,24 @@ namespace Portfolio.DeathRace
         /// <summary>The share of the burning nitro charge left, 0 to 1 (0 when none burns).</summary>
         public float NitroLeft01 => stock.NitroLeft / Mathf.Max(0.01f, stock.NitroSeconds);
 
-        public float GunRange => CombatRules.GunRange;
+        /// <summary>The gun on the bonnet.</summary>
+        public GunKind Gun => gun.Kind;
 
-        /// <summary>A round left the muzzle: where from, where it stopped, the car it hit (or null).</summary>
+        /// <summary>Everything about the gun on the bonnet: its rate, damage, reach, spread, how its rounds travel.</summary>
+        public GunSpec GunSpec => gun;
+
+        public float GunRange => gun.Range;
+
+        /// <summary>How many rounds the gun fires a second (the gun mount's faster).</summary>
+        public float RoundsPerSecond => stock.RoundsPerSecond;
+
+        /// <summary>What one round takes off before the target's armour (armour-piercing rounds and the gun mount included).</summary>
+        public float RoundDamage => CombatRules.RoundDamage(car != null ? car.Stats : CarStats.Of(null), gun);
+
+        /// <summary>Whether an EMP blast has the car jammed: nothing fires.</summary>
+        public bool Jammed => car != null && car.Status != null && car.Status.IsJammed;
+
+        /// <summary>A round left the muzzle: where from, where it stopped (or would), the car it hit (or null).</summary>
         public event Action<Vector3, Vector3, Car> Fired;
 
         /// <summary>A mine was dropped (online: an action for the room).</summary>
@@ -76,6 +118,9 @@ namespace Portfolio.DeathRace
         /// <summary>The special weapon the button fires next (the armed one, or the next with any left); null when none are left.</summary>
         public SpecialKind? NextSpecial => stock.NextSpecial(armedSpecial);
 
+        /// <summary>The special weapon armed (fired first while there is any of it).</summary>
+        public SpecialKind ArmedSpecial => armedSpecial;
+
         /// <summary>How many of <paramref name="kind"/> are left.</summary>
         public int SpecialsLeft(SpecialKind kind)
         {
@@ -86,6 +131,9 @@ namespace Portfolio.DeathRace
         {
             return stock.SpecialsUsed(kind);
         }
+
+        /// <summary>How many special weapons of every kind are left.</summary>
+        public int SpecialsCarried => stock.SpecialsLeft(SpecialKind.Oil) + stock.SpecialsLeft(SpecialKind.Emp) + stock.SpecialsLeft(SpecialKind.Mortar);
 
         /// <summary>For the weapons work and the online race: raise the events of the special weapons.</summary>
         protected void RaiseOilDropped(OilSlick slick) => OilDropped?.Invoke(slick);
@@ -100,14 +148,16 @@ namespace Portfolio.DeathRace
             this.car = car;
             int capacity = car != null ? car.Stats.AmmoCapacity : CarStats.Of(loadout).AmmoCapacity;
             CarStats stats = car != null ? car.Stats : CarStats.Of(loadout);
+            gun = Guns.Of(stats.Gun);
             stock = new WeaponStock(capacity, loadout?.mines ?? 0, loadout?.rockets ?? 0, loadout?.nitro ?? 0, loadout?.oil ?? 0, loadout?.emp ?? 0,
-                loadout?.mortar ?? 0, Guns.Of(stats.Gun).RoundsPerSecond * stats.GunRate, stats.NitroSeconds);
+                loadout?.mortar ?? 0, gun.RoundsPerSecond * (stats.GunRate > 0f ? stats.GunRate : 1f), stats.NitroSeconds);
             armedSpecial = loadout != null ? loadout.special : SpecialKind.Oil;
             int seed = car != null && car.Race != null && car.Race.Setup != null ? car.Race.Setup.Seed : 0;
             int seat = car != null && car.Entrant != null ? car.Entrant.Seat : 0;
             random = new System.Random(unchecked(seed * 7919 + seat * 104729 + 17));
             disarmed = false;
             hitCount = 0;
+            ShowFlame(false);
             Sync();
         }
 
@@ -117,6 +167,8 @@ namespace Portfolio.DeathRace
 
         private DeathRaceContent Content => car != null && car.Race != null && car.Race.Effects != null ? car.Race.Effects.Content : null;
 
+        private Race Race => car != null ? car.Race : null;
+
         /// <summary>One physics step with the driver's input.</summary>
         public virtual void Tick(CarInput input, float deltaTime)
         {
@@ -124,8 +176,15 @@ namespace Portfolio.DeathRace
             {
                 car = GetComponent<Car>();
             }
-            bool live = !disarmed && (car == null || !car.IsWrecked) && (car == null || car.Race == null || car.Race.IsRunning);
-            Gun(live && input.Fire, deltaTime);
+            bool jammed = Jammed;
+            if (jammed && stock.NitroActive)
+            {
+                // The pulse kills the electrics: a burning charge goes out with them.
+                stock.Douse();
+                ShowNitro(false);
+            }
+            bool live = !disarmed && !jammed && (car == null || !car.IsWrecked) && (car == null || car.Race == null || car.Race.IsRunning);
+            Trigger(live && input.Fire, deltaTime);
             if (live && input.DropMine)
             {
                 if (stock.TakeMine())
@@ -148,15 +207,19 @@ namespace Portfolio.DeathRace
                     Empty();
                 }
             }
+            if (live && input.Special)
+            {
+                FireSpecial();
+            }
             Nitro(live && input.Nitro, deltaTime);
             Sync();
         }
 
         // ------------------------------------------------------------------------------------------------
-        // The machine gun
+        // The gun
         // ------------------------------------------------------------------------------------------------
 
-        private void Gun(bool held, float deltaTime)
+        private void Trigger(bool held, float deltaTime)
         {
             int rounds = stock.Fire(held, deltaTime);
             Firing = held && stock.Ammo > 0;
@@ -164,6 +227,7 @@ namespace Portfolio.DeathRace
             {
                 FireRound();
             }
+            ShowFlame(Firing && gun.IsFlame);
             if (held && stock.Ammo == 0 && rounds == 0)
             {
                 if (!emptyGun)
@@ -198,18 +262,50 @@ namespace Portfolio.DeathRace
             }
         }
 
-        private void FireRound()
+        /// <summary>The muzzle's point, at the height rounds fly (over the road, under the barriers' tops).</summary>
+        private Vector3 MuzzlePoint(Transform muzzle)
         {
-            Transform muzzle = Muzzle;
             Vector3 origin = muzzle.position;
             origin.y = Mathf.Clamp(origin.y, 0.5f, 1.1f);
-            float spread = ((float)random.NextDouble() * 2f - 1f) * CombatRules.GunSpread;
-            Vector3 forward = transform.forward;
-            forward.y = 0f;
-            Vector3 direction = Quaternion.Euler(0f, spread, 0f) * forward.normalized;
-            Vector3 end = origin + direction * CombatRules.GunRange;
+            return origin;
+        }
+
+        private Vector3 FlatForward
+        {
+            get
+            {
+                Vector3 forward = transform.forward;
+                forward.y = 0f;
+                return forward.sqrMagnitude > 1e-6f ? forward.normalized : Vector3.forward;
+            }
+        }
+
+        private void FireRound()
+        {
+            if (gun.IsFlame)
+            {
+                FirePuff();
+            }
+            else if (gun.IsProjectile)
+            {
+                FireBolt();
+            }
+            else
+            {
+                FireBullet();
+            }
+        }
+
+        /// <summary>A round of the machine gun or the minigun: straight to the first car or barrier, at once.</summary>
+        private void FireBullet()
+        {
+            Transform muzzle = Muzzle;
+            Vector3 origin = MuzzlePoint(muzzle);
+            float spread = ((float)random.NextDouble() * 2f - 1f) * gun.Spread;
+            Vector3 direction = Quaternion.Euler(0f, spread, 0f) * FlatForward;
+            Vector3 end = origin + direction * gun.Range;
             Car victim = null;
-            if (Nearest(origin, direction, out RaycastHit hit))
+            if (Nearest(origin, direction, gun.Range, out RaycastHit hit))
             {
                 end = hit.point;
                 victim = hit.collider.GetComponentInParent<Car>();
@@ -220,7 +316,7 @@ namespace Portfolio.DeathRace
                     // Whether it hurts is the victim's to judge (online, only the device that drives a car hurts it).
                     if (victim.Health != null && !victim.IsWrecked)
                     {
-                        victim.Health.TakeDamage(new DamageInfo(CombatRules.RoundDamage(car != null ? car.Stats : CarStats.Of(null)), DamageSource.Gun, car, hit.point, direction));
+                        victim.Health.TakeDamage(new DamageInfo(RoundDamage, DamageSource.Gun, car, hit.point, direction));
                     }
                     Effects?.Sparks(hit.point, Vector3.Reflect(direction, normal.sqrMagnitude > 0.0001f ? normal.normalized : -direction), 1f);
                     if (random.NextDouble() < 0.3)
@@ -238,20 +334,41 @@ namespace Portfolio.DeathRace
                 }
             }
             RaceEffects effects = Effects;
+            bool minigun = gun.Kind == GunKind.Minigun;
+            roundsShown++;
             if (effects != null)
             {
-                effects.Tracer(origin, end);
-                effects.Muzzle(muzzle);
+                if (minigun)
+                {
+                    effects.Tracer(origin, end, MinigunTracerWidth, MinigunTracerSeconds);
+                    // Sixteen rounds a second: a flash for every other one is a steady blaze already.
+                    if (roundsShown % 2 == 0)
+                    {
+                        effects.Muzzle(muzzle);
+                    }
+                }
+                else
+                {
+                    effects.Tracer(origin, end);
+                    effects.Muzzle(muzzle);
+                }
             }
-            Audio?.Gun(origin);
+            if (minigun)
+            {
+                Audio?.Minigun(origin);
+            }
+            else
+            {
+                Audio?.Gun(origin);
+            }
             Fired?.Invoke(origin, end, victim);
         }
 
-        /// <summary>The first car or barrier along the round's way, not this car itself.</summary>
-        private bool Nearest(Vector3 origin, Vector3 direction, out RaycastHit nearest)
+        /// <summary>The first car or barrier along the round's way within <paramref name="range"/>, not this car itself.</summary>
+        private bool Nearest(Vector3 origin, Vector3 direction, float range, out RaycastHit nearest)
         {
             nearest = default;
-            int count = Physics.RaycastNonAlloc(origin, direction, Hits, CombatRules.GunRange, DeathRaceLayers.ShotMask, QueryTriggerInteraction.Ignore);
+            int count = Physics.RaycastNonAlloc(origin, direction, Hits, range, DeathRaceLayers.ShotMask, QueryTriggerInteraction.Ignore);
             float best = float.MaxValue;
             bool found = false;
             for (int i = 0; i < count; i++)
@@ -273,45 +390,244 @@ namespace Portfolio.DeathRace
             return found;
         }
 
+        /// <summary>
+        /// A puff of the flamethrower: every running car in the cone ahead within reach (measured to the nearest point of
+        /// its body) that no barrier hides takes the puff's damage and catches fire.
+        /// </summary>
+        private void FirePuff()
+        {
+            Vector3 origin = MuzzlePoint(Muzzle);
+            Vector3 forward = FlatForward;
+            Vector2 from = new Vector2(origin.x, origin.z);
+            Vector2 ahead = new Vector2(forward.x, forward.z);
+            float damage = RoundDamage;
+            Car first = null;
+            float firstDistance = float.MaxValue;
+            foreach (Car other in Targeting.CarsOf(Race))
+            {
+                if (other == null || other == car || other.IsWrecked || (Race != null && other.Race != null && other.Race != Race))
+                {
+                    continue;
+                }
+                Vector3 nearest = other.Body != null && other.Body.Collider != null && other.Body.Collider.enabled
+                    ? other.Body.Collider.ClosestPoint(origin)
+                    : other.transform.position;
+                Vector2 toNearest = new Vector2(nearest.x, nearest.z) - from;
+                Vector2 toMiddle = other.Position2D - from;
+                bool reaches = CombatRules.FlameReaches(ahead, toNearest, 0f, gun.Range, gun.Cone) ||
+                               CombatRules.FlameReaches(ahead, toMiddle, 0f, gun.Range, gun.Cone);
+                if (!reaches)
+                {
+                    continue;
+                }
+                Vector3 target = new Vector3(nearest.x, origin.y, nearest.z);
+                if (Physics.Linecast(origin, target, DeathRaceLayers.WallMask, QueryTriggerInteraction.Ignore))
+                {
+                    // A barrier between: the fire licks the barrier, not the car behind it.
+                    continue;
+                }
+                hitCount++;
+                Vector3 direction = new Vector3(toMiddle.x, 0f, toMiddle.y);
+                direction = direction.sqrMagnitude > 0.0001f ? direction.normalized : forward;
+                // Whether it hurts and burns is the victim's to judge (online, only the device that drives a car does).
+                other.Health?.TakeDamage(new DamageInfo(damage, DamageSource.Flame, car, nearest, direction));
+                other.Status?.Burn(car);
+                if (toMiddle.sqrMagnitude < firstDistance)
+                {
+                    firstDistance = toMiddle.sqrMagnitude;
+                    first = other;
+                }
+            }
+            Fired?.Invoke(origin, origin + forward * gun.Range, first);
+        }
+
+        /// <summary>A bolt of the plasma cannon, flying straight out at the cannon's speed on top of the car's own.</summary>
+        private void FireBolt()
+        {
+            Transform muzzle = Muzzle;
+            Vector3 origin = MuzzlePoint(muzzle);
+            Vector3 direction = FlatForward;
+            float speed = gun.ProjectileSpeed + Mathf.Max(0f, car != null ? car.Speed : 0f);
+            PlasmaBolt.Launch(Race, Content, origin, direction, speed, car, RoundDamage, gun.Range, victim => hitCount++);
+            Effects?.Muzzle(muzzle);
+            Audio?.PlasmaShot(origin);
+            Fired?.Invoke(origin, origin + direction * gun.Range, null);
+        }
+
+        /// <summary>The flamethrower's jet and its roar, on while it fires.</summary>
+        private void ShowFlame(bool on)
+        {
+            if (on == flameOn && (!on || (flameJet != null && flameJet.Playing)))
+            {
+                return;
+            }
+            flameOn = on;
+            if (on)
+            {
+                RaceEffects effects = Effects;
+                if (effects != null && (flameJet == null || !flameJet.Playing))
+                {
+                    flameJet = effects.Loop(EffectKind.FlameJet, Muzzle, Vector3.zero, Quaternion.identity, 1f);
+                }
+                RaceAudio audio = Audio;
+                if (flameSound == null && audio != null && audio.Sounds != null)
+                {
+                    flameSound = audio.LoopOn(transform, audio.Sounds.flame, "Flamethrower");
+                }
+                if (flameSound != null)
+                {
+                    flameSound.volume = audio != null ? audio.LoopVolume(FlameVolume) : FlameVolume;
+                    if (!flameSound.isPlaying)
+                    {
+                        flameSound.time = 0f;
+                        flameSound.Play();
+                    }
+                }
+            }
+            else
+            {
+                if (flameJet != null)
+                {
+                    flameJet.Stop();
+                    flameJet = null;
+                }
+                if (flameSound != null && flameSound.isPlaying)
+                {
+                    flameSound.Stop();
+                }
+            }
+        }
+
+        private void Update()
+        {
+            // The physics steps stop with the game; the flamethrower's roar has to be paused by hand.
+            if (flameSound == null || !flameOn)
+            {
+                return;
+            }
+            if (Time.timeScale <= 0f && flameSound.isPlaying)
+            {
+                flameSound.Pause();
+            }
+            else if (Time.timeScale > 0f && !flameSound.isPlaying)
+            {
+                flameSound.UnPause();
+            }
+        }
+
         // ------------------------------------------------------------------------------------------------
         // Mines and rockets
         // ------------------------------------------------------------------------------------------------
 
+        /// <summary>Where things are dropped behind the car: the model's mine drop, or behind the tail.</summary>
+        private Vector3 DropPoint(float further)
+        {
+            float length = car != null && car.Loadout != null ? car.Loadout.Spec.Size.z : 4.2f;
+            if (car != null && car.View != null && car.View.mineDrop != null)
+            {
+                return car.View.mineDrop.position - FlatForward * further;
+            }
+            return transform.TransformPoint(new Vector3(0f, 0f, -length * 0.5f - 0.9f - further));
+        }
+
         /// <summary>Drops a mine behind the car (the stock was already taken).</summary>
         private void DropMine()
         {
-            Vector3 at;
-            if (car != null && car.View != null && car.View.mineDrop != null)
-            {
-                at = car.View.mineDrop.position;
-            }
-            else
-            {
-                float length = car != null && car.Loadout != null ? car.Loadout.Spec.Size.z : 4.2f;
-                at = transform.TransformPoint(new Vector3(0f, 0f, -length * 0.5f - 0.9f));
-            }
-            Mine mine = Mine.Spawn(car != null ? car.Race : null, Content, at, transform.rotation, car, MinesUsed + 1);
+            Vector3 at = DropPoint(0f);
+            Mine mine = Mine.Spawn(Race, Content, at, transform.rotation, car, MinesUsed + 1);
             Audio?.MineDrop(at);
             MineDropped?.Invoke(mine);
+        }
+
+        /// <summary>Where rockets and shells leave from: the model's rocket mount, or the roof.</summary>
+        private Vector3 RoofPoint()
+        {
+            if (car != null && car.View != null && car.View.rocketMount != null)
+            {
+                return car.View.rocketMount.position;
+            }
+            return transform.TransformPoint(new Vector3(0f, 1.2f, 0.4f));
         }
 
         /// <summary>Fires a rocket ahead (the stock was already taken).</summary>
         private void FireRocket()
         {
-            Vector3 at;
-            if (car != null && car.View != null && car.View.rocketMount != null)
-            {
-                at = car.View.rocketMount.position;
-            }
-            else
-            {
-                at = transform.TransformPoint(new Vector3(0f, 1.2f, 0.4f));
-            }
+            Vector3 at = RoofPoint();
             float speed = Mathf.Max(0f, car != null ? car.Speed : 0f) + CombatRules.RocketLaunchSpeed;
-            Rocket rocket = Rocket.Launch(car != null ? car.Race : null, Content, at, transform.forward, speed, car);
+            Rocket rocket = Rocket.Launch(Race, Content, at, transform.forward, speed, car);
             Effects?.Muzzle(rocket.transform);
             Audio?.RocketLaunch(at);
             RocketFired?.Invoke(rocket);
+        }
+
+        // ------------------------------------------------------------------------------------------------
+        // Special weapons
+        // ------------------------------------------------------------------------------------------------
+
+        /// <summary>The special button: the special armed, or the next one there is; a dry click when none are left.</summary>
+        private void FireSpecial()
+        {
+            SpecialKind? next = NextSpecial;
+            if (!next.HasValue || !stock.TakeSpecial(next.Value))
+            {
+                Empty();
+                return;
+            }
+            switch (next.Value)
+            {
+                case SpecialKind.Oil:
+                    PourOil();
+                    break;
+                case SpecialKind.Emp:
+                    FireEmp();
+                    break;
+                default:
+                    FireMortar();
+                    break;
+            }
+        }
+
+        /// <summary>Pours a slick behind the car (the stock was already taken).</summary>
+        private void PourOil()
+        {
+            Vector3 at = DropPoint(OilBehind);
+            OilSlick slick = OilSlick.Spawn(Race, Content, at, transform.rotation, car, stock.SpecialsUsed(SpecialKind.Oil));
+            RaiseOilDropped(slick);
+        }
+
+        /// <summary>Sets off a pulse round the car (the stock was already taken).</summary>
+        private void FireEmp()
+        {
+            EmpBlast blast = EmpBlast.Fire(Race, Content, transform.position, car);
+            RaiseEmpFired(blast);
+        }
+
+        /// <summary>Lobs a shell ahead (the stock was already taken).</summary>
+        private void FireMortar()
+        {
+            MortarShell shell = MortarShell.Launch(Race, Content, RoofPoint(), MortarAim(), car);
+            RaiseMortarFired(shell);
+        }
+
+        /// <summary>
+        /// Where a shell fired now comes down: <see cref="CombatRules.MortarReach"/> ahead along the track (at the car's own
+        /// place across the road, kept off the verges), so it lands on the road even round a bend; straight ahead off a
+        /// track (a test).
+        /// </summary>
+        public Vector3 MortarAim()
+        {
+            float reach = CombatRules.MortarReach(car != null ? car.Speed : 0f);
+            Track track = Race != null ? Race.Track : null;
+            if (car != null && track != null && track.Path != null)
+            {
+                float distance = car.TrackDistance + reach;
+                float half = track.HalfWidthAt(distance);
+                float offset = Mathf.Clamp(car.TrackOffset, -half * 0.6f, half * 0.6f);
+                Vector2 point = track.Path.PointAt(distance) + track.Path.NormalAt(distance) * offset;
+                return new Vector3(point.x, 0f, point.y);
+            }
+            Vector3 ahead = transform.position + FlatForward * reach;
+            return new Vector3(ahead.x, 0f, ahead.z);
         }
 
         // ------------------------------------------------------------------------------------------------
@@ -438,6 +754,12 @@ namespace Portfolio.DeathRace
             Sync();
         }
 
+        public void AddSpecials(SpecialKind kind, int count)
+        {
+            stock.AddSpecials(kind, count);
+            Sync();
+        }
+
         /// <summary>The car was wrecked: nothing fires any more.</summary>
         public virtual void Disarm()
         {
@@ -445,6 +767,7 @@ namespace Portfolio.DeathRace
             stock.Douse();
             Firing = false;
             ShowNitro(false);
+            ShowFlame(false);
             Sync();
         }
 
@@ -469,6 +792,10 @@ namespace Portfolio.DeathRace
                 {
                     flame.Stop();
                 }
+            }
+            if (flameJet != null)
+            {
+                flameJet.Stop();
             }
         }
     }

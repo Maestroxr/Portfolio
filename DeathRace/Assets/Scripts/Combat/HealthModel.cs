@@ -84,6 +84,20 @@ namespace Portfolio.DeathRace
         }
 
         /// <summary>
+        /// <paramref name="attacker"/> did something to the car that hurts nothing by itself (an oil slick it poured): a crash
+        /// into the barriers within <see cref="CombatRules.AssistWindow"/> still counts as its kill.
+        /// </summary>
+        public void Assist(int attacker, int self, float now)
+        {
+            if (Dead || attacker == Nobody || attacker == self)
+            {
+                return;
+            }
+            LastAttacker = attacker;
+            LastAttackTime = now;
+        }
+
+        /// <summary>
         /// The steady wear of grinding along a barrier: <paramref name="amount"/> before armour, never held back by the crash
         /// cooldown (it comes a little every step). Returns the damage taken.
         /// </summary>

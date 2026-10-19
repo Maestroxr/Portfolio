@@ -138,6 +138,47 @@ namespace Portfolio.DeathRace.Tests
         }
 
         [Test]
+        public void OnOilItSlidesWideAndJammedItSlowsDown()
+        {
+            // The same shove sideways at speed: dry tyres take it out at once, oiled ones hardly; and the wheel turns it less.
+            Car dry = Spawn(CarModel.Viper);
+            Drive(dry, new CarInput { Throttle = 1f }, 2.5f);
+            dry.Body.Push(Vector3.right * 8f * dry.Body.Rigidbody.mass);
+            Drive(dry, new CarInput { Throttle = 1f, Steer = 0.5f }, 0.3f);
+            float drySlide = Mathf.Abs(dry.Body.LateralSpeed);
+            float dryTurn = dry.Body.Rigidbody.rotation.eulerAngles.y;
+            Object.DestroyImmediate(dry.gameObject);
+
+            Car oiled = Spawn(CarModel.Viper);
+            Drive(oiled, new CarInput { Throttle = 1f }, 2.5f);
+            oiled.Body.GripFactor = CombatRules.OilGrip;
+            oiled.Body.SteerFactor = CombatRules.OilSteering;
+            oiled.Body.Push(Vector3.right * 8f * oiled.Body.Rigidbody.mass);
+            Drive(oiled, new CarInput { Throttle = 1f, Steer = 0.5f }, 0.3f);
+            Assert.Greater(Mathf.Abs(oiled.Body.LateralSpeed), Mathf.Max(3f, drySlide * 2f), "on oil the tyres let it slide");
+            Assert.Less(oiled.Body.Rigidbody.rotation.eulerAngles.y, dryTurn, "and the wheel turns it less");
+
+            oiled.Body.GripFactor = 1f;
+            oiled.Body.SteerFactor = 1f;
+            Drive(oiled, new CarInput { Throttle = 1f }, 3f);
+            float top = oiled.Body.ForwardSpeed;
+            oiled.Body.TopSpeedFactor = CombatRules.EmpTopSpeed;
+            Drive(oiled, new CarInput { Throttle = 1f }, 4f);
+            Assert.Less(oiled.Body.ForwardSpeed, top * CombatRules.EmpTopSpeed + 3f, "jammed, the engine holds only a share of its top speed");
+        }
+
+        [Test]
+        public void TheFactoryAddsTheStatusesAndTheySpareAStockCar()
+        {
+            Car spawned = Spawn(CarModel.Hornet);
+            Assert.IsNotNull(spawned.Status);
+            Assert.IsFalse(spawned.Status.Any);
+            Assert.AreEqual(1f, spawned.Body.GripFactor);
+            Assert.AreEqual(1f, spawned.Body.SteerFactor);
+            Assert.AreEqual(1f, spawned.Body.TopSpeedFactor);
+        }
+
+        [Test]
         public void OnTheGridItStaysPut()
         {
             Car driven = Spawn(CarModel.Tyrant);

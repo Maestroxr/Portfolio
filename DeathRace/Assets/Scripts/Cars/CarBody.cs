@@ -64,6 +64,15 @@ namespace Portfolio.DeathRace
         /// <summary>Off the road on the shoulder: more drag, less grip (set by the car from the track every step).</summary>
         public bool OffRoad { get; set; }
 
+        /// <summary>The share of the tyres' grip left (1: all; oil leaves little), set by the car's <see cref="CarStatus"/> every step.</summary>
+        public float GripFactor { get; set; } = 1f;
+
+        /// <summary>The share of the wheel's turn left (1: all; oil leaves half).</summary>
+        public float SteerFactor { get; set; } = 1f;
+
+        /// <summary>The share of the top speed left (1: all; an EMP's jam leaves a share).</summary>
+        public float TopSpeedFactor { get; set; } = 1f;
+
         public bool Wrecked { get; private set; }
 
         /// <summary>The front wheels' angle to show, degrees (positive to the right).</summary>
@@ -175,7 +184,7 @@ namespace Portfolio.DeathRace
             bool reversing = false;
             if (throttle > 0.01f)
             {
-                acceleration = along < -0.5f ? Handling.Brake * throttle : Handling.DriveAcceleration(along, Nitro) * throttle;
+                acceleration = along < -0.5f ? Handling.Brake * throttle : Handling.DriveAcceleration(along, Nitro, TopSpeedFactor) * throttle;
             }
             else if (throttle < -0.01f)
             {
@@ -193,6 +202,11 @@ namespace Portfolio.DeathRace
             else
             {
                 acceleration = -Mathf.Sign(along) * Mathf.Min(Mathf.Abs(along) / deltaTime, CarHandling.CoastDeceleration(along));
+            }
+            if (TopSpeedFactor < 0.999f && throttle <= 0.01f && along > Handling.TopSpeed * TopSpeedFactor)
+            {
+                // A jammed engine holds nothing back off the throttle either: the car sinks to what it has left.
+                acceleration = Mathf.Min(acceleration, -CarHandling.OverSpeedDrag);
             }
             if (Wrecked)
             {
@@ -221,7 +235,7 @@ namespace Portfolio.DeathRace
             }
 
             // The tyres: a small slide is taken out quickly, a big one only as fast as the grip allows.
-            float grip = Handling.GripAt(along, brakeTurn) * (OffRoad ? 0.85f : 1f) * (Wrecked ? 1.6f : 1f);
+            float grip = Handling.GripAt(along, brakeTurn) * (OffRoad ? 0.85f : 1f) * (Wrecked ? 1.6f : Mathf.Clamp01(GripFactor));
             float decay = across * (1f - Mathf.Exp(-CarHandling.LateralDamping * deltaTime));
             float limit = grip * deltaTime;
             float taken = Mathf.Clamp(decay, -limit, limit);
@@ -235,7 +249,7 @@ namespace Portfolio.DeathRace
 
             // The wheel: a yaw rate that needs speed and flips in reverse, followed at a rate a spin can be caught at.
             float direction = newAlong < -0.3f || (reversing && newAlong <= 0.3f) ? -1f : 1f;
-            float target = steer * Handling.MaxYawRate(newAlong) * direction * (1f + 0.25f * brakeTurn);
+            float target = steer * Handling.MaxYawRate(newAlong) * Mathf.Clamp01(SteerFactor) * direction * (1f + 0.25f * brakeTurn);
             if (direction > 0f && newAlong > 4f)
             {
                 // The nose may run ahead of the way the car goes only so far: past it the wheel stops turning it further.

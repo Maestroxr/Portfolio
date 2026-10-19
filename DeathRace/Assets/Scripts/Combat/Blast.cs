@@ -4,10 +4,12 @@ using UnityEngine;
 namespace Portfolio.DeathRace
 {
     /// <summary>
-    /// A blast on the ground (a mine, a rocket, a car blowing up): every car within its radius takes damage that falls
-    /// off with the distance to the nearest point of its body, and is thrown sideways away from the centre with a little
-    /// spin. Who set it off is the attacker of every hit (a car hurt by its own blast is nobody's kill). A car wrecked by
-    /// a blast blows up in turn, so the cars caught are gathered first and hurt after.
+    /// A blast on the ground (a mine, a rocket, a mortar shell, a plasma bolt's burst, a car blowing up): every car within
+    /// its radius takes damage that falls off with the distance to the nearest point of its body (blast shielding soaks a
+    /// share, <see cref="CarStats.BlastTaken"/>), and is thrown sideways away from the centre with a little spin. Who set
+    /// it off is the attacker of every hit (a car hurt by its own blast is nobody's kill). A car wrecked by a blast blows
+    /// up in turn, so the cars caught are gathered first and hurt after. Each car's own device judges what it takes
+    /// (<see cref="CarHealth.Authoritative"/>).
     /// </summary>
     public static class Blast
     {
@@ -45,7 +47,7 @@ namespace Portfolio.DeathRace
             foreach (Victim victim in victims)
             {
                 Car car = victim.Car;
-                float amount = CombatRules.BlastDamage(damage, radius, victim.Distance);
+                float amount = CombatRules.BlastTaken(CombatRules.BlastDamage(damage, radius, victim.Distance), car != null ? car.Stats : default);
                 if (car == null || car.IsWrecked || amount <= 0f)
                 {
                     continue;

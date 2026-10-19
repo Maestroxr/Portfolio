@@ -48,6 +48,9 @@ namespace Portfolio.DeathRace
             public int MinesUsed;
             public int RocketsUsed;
             public int NitroUsed;
+            public int OilUsed;
+            public int EmpUsed;
+            public int MortarUsed;
         }
 
         /// <summary>
@@ -177,7 +180,10 @@ namespace Portfolio.DeathRace
                     HealthLeft = Mathf.Clamp01(standing.HealthLeft),
                     MinesUsed = standing.MinesUsed,
                     RocketsUsed = standing.RocketsUsed,
-                    NitroUsed = standing.NitroUsed
+                    NitroUsed = standing.NitroUsed,
+                    OilUsed = standing.OilUsed,
+                    EmpUsed = standing.EmpUsed,
+                    MortarUsed = standing.MortarUsed
                 });
             }
             racers.Sort((a, b) => a.Place.CompareTo(b.Place));

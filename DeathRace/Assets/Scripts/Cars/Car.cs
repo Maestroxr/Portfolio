@@ -6,14 +6,15 @@ using UnityEngine;
 namespace Portfolio.DeathRace
 {
     /// <summary>
-    /// One car of a race: who drives it, what it is (its loadout and stats), its parts (body, health, weapons, view,
-    /// sound) and how its race goes (its racer). Spawned by <see cref="CarFactory"/>.
+    /// One car of a race: who drives it, what it is (its loadout and stats), its parts (body, health, weapons, statuses,
+    /// view, sound) and how its race goes (its racer). Spawned by <see cref="CarFactory"/>.
     ///
     /// The timing of a car's input: <see cref="Update"/> asks the driver once a frame (a person's key presses only exist
-    /// per rendered frame) and keeps the answer in <see cref="Input"/>, holding a pressed mine or rocket until the next
-    /// physics step has used it; <see cref="FixedUpdate"/> then hands the input to the body and the weapons and moves the
-    /// racer's lap tracker along. Before the green light the body is held still (the engine can still be revved); once
-    /// the car has finished its weapons fall silent; a wrecked car hears no more from its driver.
+    /// per rendered frame) and keeps the answer in <see cref="Input"/>, holding a pressed mine, rocket or special until the
+    /// next physics step has used it; <see cref="FixedUpdate"/> then steps the statuses (burning, oil, a jam), hands the
+    /// input to the body and the weapons and moves the racer's lap tracker along. Before the green light the body is held
+    /// still (the engine can still be revved); once the car has finished its weapons fall silent; a wrecked car hears no
+    /// more from its driver.
     /// </summary>
     public class Car : PlayerBase
     {
@@ -29,6 +30,9 @@ namespace Portfolio.DeathRace
         public CarWeapons Weapons { get; private set; }
         public CarModelView View { get; private set; }
         public CarAudio Audio { get; private set; }
+
+        /// <summary>What the weapons left the car with: burning, slicked, jammed (null on a car made without one).</summary>
+        public CarStatus Status { get; private set; }
         public Racer Racer { get; private set; }
         public ICarDriver Driver { get; set; }
 
@@ -87,6 +91,12 @@ namespace Portfolio.DeathRace
             Audio = audio;
         }
 
+        /// <summary>The car's statuses (the factory adds them after the other parts).</summary>
+        public void AttachStatus(CarStatus status)
+        {
+            Status = status;
+        }
+
         public void AttachRacer(Racer racer)
         {
             Racer = racer;
@@ -107,6 +117,7 @@ namespace Portfolio.DeathRace
             }
             IsWrecked = true;
             Input = CarInput.Idle;
+            Status?.Clear();
             Body?.Wreck();
             if (Weapons != null)
             {
@@ -138,6 +149,7 @@ namespace Portfolio.DeathRace
             CarInput held = Input;
             fresh.DropMine |= held.DropMine;
             fresh.FireRocket |= held.FireRocket;
+            fresh.Special |= held.Special;
             Input = fresh;
         }
 
@@ -152,6 +164,7 @@ namespace Portfolio.DeathRace
             CarInput input = Input;
             Body.Held = Race.Phase == RacePhase.Grid || Race.Phase == RacePhase.Countdown;
             FollowTrack();
+            Status?.Step(deltaTime);
             Body.Step(input, deltaTime);
             if (Weapons != null && !IsWrecked && !Body.Held)
             {
@@ -161,10 +174,11 @@ namespace Portfolio.DeathRace
             {
                 Racer.Tracker.Update(PhysicsPosition2D, Race.Time);
             }
-            if (input.DropMine || input.FireRocket)
+            if (input.DropMine || input.FireRocket || input.Special)
             {
                 input.DropMine = false;
                 input.FireRocket = false;
+                input.Special = false;
                 Input = input;
             }
         }
@@ -223,6 +237,7 @@ namespace Portfolio.DeathRace
             input.Nitro = false;
             input.DropMine = false;
             input.FireRocket = false;
+            input.Special = false;
             return input;
         }
     }

@@ -35,24 +35,48 @@ namespace Portfolio.DeathRace
         public const float MinigunSpread = 4.5f;
         public const float MinigunAmmoFactor = 1.8f;
 
-        /// <summary>The flamethrower: puffs of fire that hurt everything in a short cone ahead and set it burning.</summary>
+        /// <summary>
+        /// The flamethrower: puffs of fire that hurt everything in a short cone ahead and set it burning. Every puff lands
+        /// (no spread, no misses inside the cone, every car in it), so on paper it does less a second than the machine
+        /// gun: whole races with the computer's drivers (CombatCheck -full against -plain) had it dealing three times the
+        /// machine gun's damage a car at 1.9 a puff and 3 a second of burning, twice at 1.1 and 2; at these it deals
+        /// somewhat more than the machine gun, paid for by its short reach.
+        /// </summary>
         public const float FlameRoundsPerSecond = 10f;
-        public const float FlameDamage = 1.9f;
+        public const float FlameDamage = 1f;
         public const float FlameRange = 18f;
         public const float FlameCone = 30f;
         public const float FlameAmmoFactor = 1.2f;
 
         /// <summary>A car set burning by a flame takes this much a second for <see cref="BurnSeconds"/> (another flame starts it again).</summary>
-        public const float BurnDamagePerSecond = 3f;
-        public const float BurnSeconds = 2.5f;
+        public const float BurnDamagePerSecond = 1.5f;
+        public const float BurnSeconds = 2f;
 
-        /// <summary>The plasma cannon: three heavy bolts a second that fly (not hitscan) and burst a little where they land.</summary>
+        /// <summary>
+        /// Seconds between two puffs of burning damage: a burning car loses <see cref="BurnDamagePerSecond"/> in a few
+        /// ticks a second rather than a sliver every physics step (one hit event per tick, not fifty).
+        /// </summary>
+        public const float BurnTick = 0.25f;
+
+        /// <summary>
+        /// The plasma cannon: three heavy bolts a second that fly (not hitscan) and burst a little where they land. A bolt
+        /// never strays and the computer's drivers lead their targets, so it lands far more often than a round of the
+        /// machine gun: 6.5 a bolt dealt three times the machine gun's damage a car in whole races, 4.4 twice; at 4.0
+        /// (on paper a little less a second than the machine gun) it deals somewhat more.
+        /// </summary>
         public const float PlasmaRoundsPerSecond = 3f;
-        public const float PlasmaDamage = 6.5f;
+        public const float PlasmaDamage = 4f;
         public const float PlasmaRange = 90f;
         public const float PlasmaSpeed = 110f;
         public const float PlasmaSplash = 1.5f;
         public const float PlasmaAmmoFactor = 0.35f;
+
+        /// <summary>
+        /// The burst of a bolt: the share of the bolt's damage it deals to the cars round the one it hit (the car hit takes
+        /// the bolt itself, whole), and the little push of it.
+        /// </summary>
+        public const float PlasmaSplashShare = 0.4f;
+        public const float PlasmaPush = 2.5f;
 
         // ------------------------------------------------------------------------------------------------
         // Special weapons
@@ -71,6 +95,14 @@ namespace Portfolio.DeathRace
         /// <summary>Slicks lying on the track at once; the oldest dries up when another is poured.</summary>
         public const int MaxOilSlicks = 12;
 
+        /// <summary>The last seconds of a slick's life, in which it fades and thins out (it still slicks until it is gone).</summary>
+        public const float OilFade = 2.5f;
+
+        /// <summary>Degrees per second of yaw a car is thrown into when it hits a slick, at <see cref="OilSpinSpeed"/> or faster.</summary>
+        public const float OilSpin = 75f;
+
+        public const float OilSpinSpeed = 30f;
+
         /// <summary>An EMP blast: its radius round the car, how long the cars in it are jammed, what they keep of their top speed, its damage.</summary>
         public const float EmpRadius = 14f;
         public const float EmpJamSeconds = 3f;
@@ -83,6 +115,11 @@ namespace Portfolio.DeathRace
         public const float MortarDamage = 40f;
         public const float MortarBlastRadius = 7f;
         public const float MortarPush = 10f;
+
+        /// <summary>How high a shell climbs over the middle of its flight: this share of the way it flies, at least <see cref="MortarMinApex"/> metres.</summary>
+        public const float MortarApexShare = 0.3f;
+
+        public const float MortarMinApex = 8f;
 
         // ------------------------------------------------------------------------------------------------
         // Fittings at work in a race
@@ -196,10 +233,88 @@ namespace Portfolio.DeathRace
         // Arithmetic
         // ------------------------------------------------------------------------------------------------
 
-        /// <summary>What one round of a car with <paramref name="stats"/> takes off before the target's armour.</summary>
+        /// <summary>What one round of the machine gun of a car with <paramref name="stats"/> takes off before the target's armour.</summary>
         public static float RoundDamage(CarStats stats)
         {
             return GunDamage * (stats.GunDamage > 0f ? stats.GunDamage : 1f);
+        }
+
+        /// <summary>
+        /// What one round of <paramref name="gun"/> (a bullet, a puff of flame, a bolt) of a car with <paramref name="stats"/>
+        /// takes off before the target's armour: the gun's damage times the car's (armour-piercing rounds, the gun mount).
+        /// </summary>
+        public static float RoundDamage(CarStats stats, GunSpec gun)
+        {
+            return (gun != null ? gun.Damage : GunDamage) * (stats.GunDamage > 0f ? stats.GunDamage : 1f);
+        }
+
+        /// <summary>A crash's damage on a car with <paramref name="stats"/> before its armour: a roll cage soaks a share.</summary>
+        public static float CrashTaken(float damage, CarStats stats)
+        {
+            return Mathf.Max(0f, damage) * (stats.CrashTaken > 0f ? stats.CrashTaken : 1f);
+        }
+
+        /// <summary>A blast's damage on a car with <paramref name="stats"/> before its armour: blast shielding soaks a share.</summary>
+        public static float BlastTaken(float damage, CarStats stats)
+        {
+            return Mathf.Max(0f, damage) * (stats.BlastTaken > 0f ? stats.BlastTaken : 1f);
+        }
+
+        /// <summary>
+        /// What a field welder mends in <paramref name="deltaTime"/> on a car of <paramref name="maxHealth"/> with
+        /// <paramref name="health"/> left, <paramref name="sinceHit"/> seconds after it was last hurt: nothing for
+        /// <see cref="WelderDelay"/> seconds, then <see cref="WelderPerSecond"/> of the maximum a second, never past
+        /// <see cref="WelderLimit"/> of it (it patches; it does not rebuild). Nothing on a wreck.
+        /// </summary>
+        public static float WelderMend(float maxHealth, float health, float sinceHit, float deltaTime)
+        {
+            if (health <= 0f || maxHealth <= 0f || sinceHit < WelderDelay || deltaTime <= 0f)
+            {
+                return 0f;
+            }
+            float room = maxHealth * WelderLimit - health;
+            return room <= 1e-4f ? 0f : Mathf.Min(room, maxHealth * WelderPerSecond * deltaTime);
+        }
+
+        /// <summary>How far ahead of a car going <paramref name="speed"/> m/s its mortar shell lands: the range, plus the way the car goes while it flies.</summary>
+        public static float MortarReach(float speed)
+        {
+            return MortarRange + Mathf.Max(0f, speed) * MortarFlightSeconds;
+        }
+
+        /// <summary>
+        /// Where a shell is <paramref name="t"/> (0 to 1) of the way through its flight from <paramref name="from"/> to
+        /// <paramref name="to"/> (on the ground): along the line between them, and up on a parabola whose top is
+        /// <paramref name="apex"/> metres above it.
+        /// </summary>
+        public static Vector3 MortarArc(Vector3 from, Vector3 to, float apex, float t)
+        {
+            t = Mathf.Clamp01(t);
+            Vector3 point = Vector3.Lerp(from, to, t);
+            point.y = Mathf.Lerp(from.y, to.y, t) + apex * 4f * t * (1f - t);
+            return point;
+        }
+
+        /// <summary>The top of a shell's flight over <paramref name="distance"/> metres.</summary>
+        public static float MortarApex(float distance)
+        {
+            return Mathf.Max(MortarMinApex, distance * MortarApexShare);
+        }
+
+        /// <summary>The share of the top speed a car keeps (an EMP blast's jam).</summary>
+        public static float TopSpeedShare(bool jammed)
+        {
+            return jammed ? EmpTopSpeed : 1f;
+        }
+
+        /// <summary>
+        /// Whether a flame from <paramref name="origin"/> along <paramref name="forward"/> reaches a point
+        /// <paramref name="toTarget"/> away (flat): within <see cref="FlameRange"/> plus <paramref name="slack"/> (the half
+        /// size of what it licks at) and inside the cone of <see cref="FlameCone"/>. Barriers are the caller's to check.
+        /// </summary>
+        public static bool FlameReaches(Vector2 forward, Vector2 toTarget, float slack = 0f, float range = FlameRange, float cone = FlameCone)
+        {
+            return toTarget.sqrMagnitude <= (range + slack) * (range + slack) && InCone(forward, toTarget, cone);
         }
 
         /// <summary>What a hit of <paramref name="amount"/> takes off a car whose armour lets <paramref name="damageTaken"/> through.</summary>

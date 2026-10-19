@@ -7,25 +7,32 @@ namespace Portfolio.DeathRace
     /// A car's health: hits (guns, mines, rockets, rams, walls) take it down through the car's armour, pickups and the
     /// garage put it back; at zero the car is wrecked. Crashes are worked out here from the body's collisions: a crash
     /// into another car hurts both by the speed of the impact (a spiked bumper bites harder and soaks more), a barrier
-    /// hurts by how hard it was hit, and grinding along one throws sparks. Smoke and fire show how hurt a car is; a wreck
-    /// blows up with a blast that shakes the views nearby, leaves a scorch mark and burns for a while. The numbers are
-    /// <see cref="CombatRules"/>'s, the arithmetic <see cref="HealthModel"/>'s.
+    /// hurts by how hard it was hit, and grinding along one throws sparks; a roll cage soaks a share of every crash. A
+    /// field welder mends the car slowly while nothing hits it, with a spray of sparks. Smoke and fire show how hurt a
+    /// car is; a wreck blows up with a blast that shakes the views nearby, leaves a scorch mark and burns for a while. The
+    /// numbers are <see cref="CombatRules"/>'s, the arithmetic <see cref="HealthModel"/>'s.
     /// </summary>
     public class CarHealth : MonoBehaviour
     {
         private const float WreckBurnSeconds = 14f;
+
+        /// <summary>How often the welder's mending shows on the model (it mends every step, the dents follow now and then).</summary>
+        private const float WeldShowEvery = 0.5f;
 
         private HealthModel model;
         private Car car;
         private Car lastAttacker;
         private RaceEffect smoke;
         private RaceEffect fire;
+        private RaceEffect weld;
         private int stage = -1;
         private float scrapeTimer;
         private float grindTimer;
         private float scrapedAt = -1f;
         private float wreckBurn;
         private bool wreckSmokeOnly;
+        private float hurtAt = float.NegativeInfinity;
+        private float weldShown;
 
         public float Health { get; protected set; }
         public float Max { get; protected set; } = 100f;
@@ -39,6 +46,12 @@ namespace Portfolio.DeathRace
 
         /// <summary>The damage taken this race, after armour.</summary>
         public float DamageTaken { get; private set; }
+
+        /// <summary>The health the field welder put back this race.</summary>
+        public float Welded { get; private set; }
+
+        /// <summary>Whether the field welder is mending the car now (the sparks, the HUD).</summary>
+        public bool Welding { get; private set; }
 
         /// <summary>
         /// Whether this car's own hits are judged here. A car of a person on another device is judged on theirs (online
@@ -65,6 +78,9 @@ namespace Portfolio.DeathRace
             Max = model.Max;
             Health = model.Health;
             DamageTaken = 0f;
+            Welded = 0f;
+            hurtAt = float.NegativeInfinity;
+            ShowWelding(false);
             lastAttacker = null;
             stage = -1;
             if (car != null && car.Body != null)
@@ -125,6 +141,7 @@ namespace Portfolio.DeathRace
             }
             Health = model.Health;
             DamageTaken += taken;
+            Hurt(now);
             DamageInfo landed = info.WithAmount(taken);
             LastHit = landed;
             Damaged?.Invoke(landed);
@@ -187,6 +204,88 @@ namespace Portfolio.DeathRace
             Damaged?.Invoke(info);
         }
 
+        /// <summary>
+        /// <paramref name="attacker"/> did something to the car that hurts nothing by itself (its oil): a crash into the
+        /// barriers in the moments after still counts as its kill.
+        /// </summary>
+        public void Assist(Car attacker)
+        {
+            if (model == null || !Authoritative || attacker == null || attacker == car)
+            {
+                return;
+            }
+            model.Assist(SeatOf(attacker), Seat, Now);
+            lastAttacker = attacker;
+        }
+
+        // ------------------------------------------------------------------------------------------------
+        // The field welder
+        // ------------------------------------------------------------------------------------------------
+
+        /// <summary>The car was hurt at <paramref name="now"/>: the welder waits again.</summary>
+        private void Hurt(float now)
+        {
+            hurtAt = now;
+            if (Welding)
+            {
+                ShowWelding(false);
+            }
+        }
+
+        private void FixedUpdate()
+        {
+            Weld(Time.fixedDeltaTime);
+        }
+
+        /// <summary>
+        /// One step of the field welder (a car with <see cref="CarStats.Welder"/>, in a race that runs, judged here): once
+        /// nothing has hurt the car for a while it mends a little every step, up to its limit (<see cref="CombatRules.WelderMend"/>).
+        /// </summary>
+        public void Weld(float deltaTime)
+        {
+            bool fitted = car != null && car.Stats.Welder;
+            bool working = fitted && model != null && Authoritative && !model.Dead && !car.IsWrecked && !car.HasFinished &&
+                           (car.Race == null || car.Race.IsRunning);
+            float mend = working ? CombatRules.WelderMend(Max, Health, Now - hurtAt, deltaTime) : 0f;
+            if (mend > 0f)
+            {
+                float added = model.Repair(mend);
+                Health = model.Health;
+                Welded += added;
+                weldShown += deltaTime;
+                if (weldShown >= WeldShowEvery)
+                {
+                    weldShown = 0f;
+                    RefreshLook();
+                }
+            }
+            if ((mend > 0f) != Welding)
+            {
+                ShowWelding(mend > 0f);
+                if (mend <= 0f)
+                {
+                    RefreshLook();
+                }
+            }
+        }
+
+        /// <summary>The welder's sparks, on the car while it mends.</summary>
+        private void ShowWelding(bool on)
+        {
+            Welding = on;
+            if (!on)
+            {
+                StopLoop(ref weld);
+                return;
+            }
+            RaceEffects effects = Effects;
+            if (effects != null && (weld == null || !weld.Playing))
+            {
+                Vector3 size = car != null && car.Loadout != null ? car.Loadout.Spec.Size : new Vector3(2f, 1.4f, 4.2f);
+                weld = effects.Loop(EffectKind.Weld, transform, new Vector3(size.x * 0.25f, size.y + 0.3f, -size.z * 0.1f), Quaternion.identity, 1.3f);
+            }
+        }
+
         // ------------------------------------------------------------------------------------------------
         // Crashes
         // ------------------------------------------------------------------------------------------------
@@ -223,7 +322,8 @@ namespace Portfolio.DeathRace
             Vector2 fromOther = new Vector2(point.x, point.z) - other.Position2D;
             bool ownFront = CombatRules.IsFront(car.Forward2D, toPoint);
             bool otherFront = CombatRules.IsFront(other.Forward2D, fromOther);
-            float damage = CombatRules.RamDamage(impactSpeed, ownFront, car.Stats.RamTaken, otherFront, other.Stats.RamDealt);
+            float ram = CombatRules.RamDamage(impactSpeed, ownFront, car.Stats.RamTaken, otherFront, other.Stats.RamDealt);
+            float damage = CombatRules.CrashTaken(ram, car.Stats);
             // Both cars hear of the crash; one of them plays it, so it shows once.
             bool shows = PlaysCrashWith(other) || other.IsWrecked;
             if (shows && impactSpeed > 3f)
@@ -244,7 +344,7 @@ namespace Portfolio.DeathRace
 
         private void HitWall(Vector3 point, Vector3 normal, float impactSpeed)
         {
-            float damage = CombatRules.WallDamage(impactSpeed);
+            float damage = CombatRules.CrashTaken(CombatRules.WallDamage(impactSpeed), car.Stats);
             if (impactSpeed > 4f)
             {
                 float strength = Mathf.Clamp01(impactSpeed / 25f);
@@ -313,7 +413,7 @@ namespace Portfolio.DeathRace
                     Audio?.Scrape(contact.point, Mathf.InverseLerp(5f, 30f, slide));
                 }
                 float share = Mathf.InverseLerp(5f, CombatRules.ScrapeSpeed, slide);
-                ScrapeDamage(CombatRules.ScrapeDamagePerSecond * share * dt, contact.point);
+                ScrapeDamage(CombatRules.CrashTaken(CombatRules.ScrapeDamagePerSecond * share * dt, car.Stats), contact.point);
                 return;
             }
             Car other = collision.collider != null ? collision.collider.GetComponentInParent<Car>() : null;
@@ -342,6 +442,7 @@ namespace Portfolio.DeathRace
             }
             Health = model.Health;
             DamageTaken += taken;
+            Hurt(Now);
             RefreshLook();
             if (model.Dead)
             {
@@ -438,6 +539,7 @@ namespace Portfolio.DeathRace
             }
             StopLoop(ref smoke);
             StopLoop(ref fire);
+            ShowWelding(false);
             if (effects != null)
             {
                 Vector3 engine = EnginePoint();
@@ -473,6 +575,7 @@ namespace Portfolio.DeathRace
             {
                 car.Body.Collided -= OnCollided;
             }
+            StopLoop(ref weld);
         }
     }
 }

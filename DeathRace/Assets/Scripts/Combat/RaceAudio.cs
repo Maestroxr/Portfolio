@@ -262,6 +262,82 @@ namespace Portfolio.DeathRace
             Play(Sounds?.nitro, at, 0.8f, Vary(0.04f));
         }
 
+        /// <summary>One round of the minigun (the machine gun's crack when the minigun's own is missing).</summary>
+        public void Minigun(Vector3 at)
+        {
+            Play(Sounds?.minigun != null ? Sounds.minigun : Sounds?.gun, at, 0.42f, Vary(0.06f) * (Sounds?.minigun != null ? 1f : 1.25f));
+        }
+
+        public void PlasmaShot(Vector3 at)
+        {
+            Play(Sounds?.plasmaShot, at, 0.6f, Vary(0.05f));
+        }
+
+        public void PlasmaBurst(Vector3 at)
+        {
+            Play(Sounds?.plasmaBurst, at, 0.55f, Vary(0.1f));
+        }
+
+        public void OilPour(Vector3 at)
+        {
+            Play(Sounds?.oilPour, at, 0.75f, Vary(0.05f));
+        }
+
+        public void Emp(Vector3 at)
+        {
+            Play(Sounds?.emp, at, 0.9f, Vary(0.03f));
+        }
+
+        public void MortarLaunch(Vector3 at)
+        {
+            Play(Sounds?.mortarLaunch, at, 0.85f, Vary(0.05f));
+        }
+
+        /// <summary>The whistle of a falling shell, played where it will land (it ends as the shell does).</summary>
+        public void MortarWhistle(Vector3 at)
+        {
+            Play(Sounds?.mortarWhistle, at, 0.6f, Vary(0.03f));
+        }
+
+        /// <summary>A car was jammed: its electrics buzz and cough.</summary>
+        public void Jammed(Vector3 at)
+        {
+            Play(Sounds?.jammed, at, 0.6f, Vary(0.06f));
+        }
+
+        /// <summary>
+        /// A looped source on <paramref name="parent"/> for a sound that lasts while something goes on (the flamethrower):
+        /// placed in the world like the one-shots, quieter behind the menu, silent until played. Null without the clip.
+        /// </summary>
+        public AudioSource LoopOn(Transform parent, AudioClip clip, string name)
+        {
+            if (parent == null || clip == null)
+            {
+                return null;
+            }
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            var source = go.AddComponent<AudioSource>();
+            source.playOnAwake = false;
+            source.loop = true;
+            source.clip = clip;
+            source.dopplerLevel = 0f;
+            source.spatialBlend = 1f;
+            source.spread = 70f;
+            source.rolloffMode = AudioRolloffMode.Custom;
+            source.minDistance = 1f;
+            source.maxDistance = FarDistance;
+            source.SetCustomCurve(AudioSourceCurveType.CustomRolloff, Rolloff);
+            source.volume = 0f;
+            return source;
+        }
+
+        /// <summary>The volume a loop of <paramref name="volume"/> plays at now (quieter behind the menu).</summary>
+        public float LoopVolume(float volume)
+        {
+            return Mathf.Clamp01(volume) * (BehindTheMenu ? MenuShare : 1f);
+        }
+
         public void Pickup(PickupKind kind, Vector3 at)
         {
             AudioClip clip;
