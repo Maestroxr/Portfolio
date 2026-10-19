@@ -221,7 +221,8 @@ namespace Portfolio.DeathRace
         {
             if (count > 0)
             {
-                parts.Add(count == 1 ? L(one) : LF(many, count));
+                // Each count stays on one line: the line breaks only between them.
+                parts.Add((count == 1 ? L(one) : LF(many, count)).Replace(' ', '\u00A0'));
             }
         }
 

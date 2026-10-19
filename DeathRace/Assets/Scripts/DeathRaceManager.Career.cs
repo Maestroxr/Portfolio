@@ -94,7 +94,8 @@ namespace Portfolio.DeathRace
         /// <summary>"Ada, Wasteland Circuit champion": the name the finished career of a champion is kept under.</summary>
         public static string TitleSaveName(CareerState state)
         {
-            return Portfolio.DeathRace.L.F("{0}, {1} champion", state.driverName, Portfolio.DeathRace.L.Data(state.League.Name));
+            string name = Portfolio.DeathRace.L.F("{0}, {1} champion", state.driverName, Portfolio.DeathRace.L.Data(state.League.Name));
+            return SaveLibrary.CleanName(name) ?? state.driverName;
         }
 
         private static int NewSeed()
@@ -127,6 +128,11 @@ namespace Portfolio.DeathRace
             }
             Autosave();
             RaceSetup setup = Career.Enter(career, index, DriverColor);
+            foreach (RaceEntrant entrant in setup.Entrants)
+            {
+                // The rivals race under their names in the language shown (the HUD, the minimap, the results).
+                entrant.Name = entrant.IsHuman ? entrant.Name : Portfolio.DeathRace.L.Data(entrant.Name);
+            }
             GarageWindow.For(this).Hide();
             BeginRace(setup);
             return true;

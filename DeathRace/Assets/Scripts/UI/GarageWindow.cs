@@ -343,7 +343,8 @@ namespace Portfolio.DeathRace
                     GunSpec spec = Guns.Of(gun);
                     return LF("{0} a second  ·  {1} m", RaceFormat.Number(Mathf.RoundToInt(spec.RoundsPerSecond)), RaceFormat.Number(Mathf.RoundToInt(spec.Range)));
                 case EquipmentKind _:
-                    return owned > 0 ? L("FITTED") : "";
+                    // FITTED shows on the price label of a fitting on the car.
+                    return "";
                 case SpecialKind special:
                     string count = base.StatusText(item, owned, result);
                     return State != null && special == State.armed ? count + "  ·  " + L("ARMED") : count;
@@ -408,7 +409,12 @@ namespace Portfolio.DeathRace
             switch (item.Tag)
             {
                 case GunKind gun:
-                    return CareerShopOf() != null && CareerShopOf().HasGun(gun) ? L("Mount") : L("Buy and Mount");
+                    CareerShop rules = CareerShopOf();
+                    if (rules != null && rules.Owned(Inventory, item) > 0)
+                    {
+                        return L("MOUNTED");
+                    }
+                    return rules != null && rules.HasGun(gun) ? L("Mount") : L("Buy and Mount");
                 case EquipmentKind _:
                     return L("Fit");
             }
@@ -767,8 +773,9 @@ namespace Portfolio.DeathRace
             float left = icon + 34f;
             ui.WordsAt(box, L(item.Title), 28f, look.text, TextAlignmentOptions.MidlineLeft, new Vector2(0f, 1f), new Vector2(left, -10f),
                 new Vector2(390f, 40f), FontStyles.Bold, true);
+            // The description stops short of the price (MAX is a long word in some languages).
             TMP_Text words = ui.WordsAt(box, L(item.Description), 19f, look.muted, TextAlignmentOptions.TopLeft, new Vector2(0f, 1f),
-                new Vector2(left, -50f), new Vector2(470f, height - 56f));
+                new Vector2(left, -50f), new Vector2(380f, height - 56f));
             words.fontSizeMin = 16f;
             words.textWrappingMode = TextWrappingModes.Normal;
             row.Pips = new Image[item.Max];
@@ -811,8 +818,15 @@ namespace Portfolio.DeathRace
             healthBar.Fill.color = car.health < 0.35f ? ui.Warn : car.health < 0.7f ? ui.Accent : look.good;
             healthText.text = RaceFormat.Percent(car.health);
             SpecialKind armed = state.armed;
-            armsText.text = LF("{0}  ·  {1} first ({2})", L(Guns.Of(stats.Gun).Name), L(Specials.Of(armed).Name),
-                RaceFormat.Number(state.consumables.Get(CareerShop.SpecialId(armed))));
+            int specials = 0;
+            foreach (SpecialSpec special in Specials.All)
+            {
+                specials += state.consumables.Get(special.Id);
+            }
+            string gun = L(Guns.Of(stats.Gun).Name);
+            armsText.text = specials > 0
+                ? LF("{0}  ·  {1} first ({2})", gun, L(Specials.Of(armed).Name), RaceFormat.Number(state.consumables.Get(CareerShop.SpecialId(armed))))
+                : LF("{0}  ·  no special weapons", gun);
 
             int missing = Career.MissingPoints(car);
             int unit = rules.Catalog[CareerShop.RepairId].Cost(1);
