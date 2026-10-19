@@ -25,6 +25,75 @@ namespace Portfolio.DeathRace
         public const float GunSpread = 2.2f;
 
         // ------------------------------------------------------------------------------------------------
+        // The other guns (Guns holds their table)
+        // ------------------------------------------------------------------------------------------------
+
+        /// <summary>The minigun: nearly twice the rate of lighter rounds that stray more; it carries more of them.</summary>
+        public const float MinigunRoundsPerSecond = 16f;
+        public const float MinigunDamage = 1.0f;
+        public const float MinigunRange = 62f;
+        public const float MinigunSpread = 4.5f;
+        public const float MinigunAmmoFactor = 1.8f;
+
+        /// <summary>The flamethrower: puffs of fire that hurt everything in a short cone ahead and set it burning.</summary>
+        public const float FlameRoundsPerSecond = 10f;
+        public const float FlameDamage = 1.9f;
+        public const float FlameRange = 18f;
+        public const float FlameCone = 30f;
+        public const float FlameAmmoFactor = 1.2f;
+
+        /// <summary>A car set burning by a flame takes this much a second for <see cref="BurnSeconds"/> (another flame starts it again).</summary>
+        public const float BurnDamagePerSecond = 3f;
+        public const float BurnSeconds = 2.5f;
+
+        /// <summary>The plasma cannon: three heavy bolts a second that fly (not hitscan) and burst a little where they land.</summary>
+        public const float PlasmaRoundsPerSecond = 3f;
+        public const float PlasmaDamage = 6.5f;
+        public const float PlasmaRange = 90f;
+        public const float PlasmaSpeed = 110f;
+        public const float PlasmaSplash = 1.5f;
+        public const float PlasmaAmmoFactor = 0.35f;
+
+        // ------------------------------------------------------------------------------------------------
+        // Special weapons
+        // ------------------------------------------------------------------------------------------------
+
+        /// <summary>An oil slick: its radius, how long it lies, and what a car that drives through it keeps of its grip and steering, and for how long.</summary>
+        public const float OilRadius = 4.5f;
+        public const float OilLifetime = 14f;
+        public const float OilSlickSeconds = 1.4f;
+        public const float OilGrip = 0.25f;
+        public const float OilSteering = 0.5f;
+
+        /// <summary>The car that poured a slick drives through it unharmed for this long.</summary>
+        public const float OilOwnerGrace = 1.5f;
+
+        /// <summary>Slicks lying on the track at once; the oldest dries up when another is poured.</summary>
+        public const int MaxOilSlicks = 12;
+
+        /// <summary>An EMP blast: its radius round the car, how long the cars in it are jammed, what they keep of their top speed, its damage.</summary>
+        public const float EmpRadius = 14f;
+        public const float EmpJamSeconds = 3f;
+        public const float EmpTopSpeed = 0.6f;
+        public const float EmpDamage = 5f;
+
+        /// <summary>A mortar shell: how far ahead of the car it lands (more at speed), how long it flies, its blast.</summary>
+        public const float MortarRange = 32f;
+        public const float MortarFlightSeconds = 1.1f;
+        public const float MortarDamage = 40f;
+        public const float MortarBlastRadius = 7f;
+        public const float MortarPush = 10f;
+
+        // ------------------------------------------------------------------------------------------------
+        // Fittings at work in a race
+        // ------------------------------------------------------------------------------------------------
+
+        /// <summary>The field welder: seconds without a hit before it starts, the share of the health it mends a second, and up to what share.</summary>
+        public const float WelderDelay = 4f;
+        public const float WelderPerSecond = 0.01f;
+        public const float WelderLimit = 0.6f;
+
+        // ------------------------------------------------------------------------------------------------
         // Mines
         // ------------------------------------------------------------------------------------------------
 

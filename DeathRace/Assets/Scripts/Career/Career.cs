@@ -198,7 +198,7 @@ namespace Portfolio.DeathRace
         /// </summary>
         public static CarLoadout AiLoadout(int tier, int day, Difficulty difficulty, IRandom random)
         {
-            tier = Mathf.Clamp(tier, 1, CarSpecs.Count);
+            tier = Mathf.Clamp(tier, 1, CarSpecs.MaxTier);
             var loadout = new CarLoadout { model = CarSpecs.OfTier(tier), health = 1f };
             int level = CareerRules.AiLevel(day, difficulty);
             foreach (UpgradeKind kind in CareerRules.Upgrades)
@@ -433,7 +433,7 @@ namespace Portfolio.DeathRace
             levels += (car.spikes ? 1 : 0) + (car.piercing ? 1 : 0);
             max += 2;
             float upgrades = max > 0 ? (float)levels / max : 0f;
-            return Mathf.Clamp01((spec.Tier - 1 + upgrades) / CarSpecs.Count);
+            return Mathf.Clamp01((spec.Tier - 1 + upgrades) / (CareerRules.MaxRivalTier + 1));
         }
 
         /// <summary>A driver's form on the day: a bell curve around zero (Box-Muller).</summary>

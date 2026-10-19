@@ -76,10 +76,14 @@ namespace Portfolio.DeathRace
     [Serializable]
     public sealed class CareerState
     {
-        /// <summary>The layout of the fields; a save of a later one is refused.</summary>
-        public const int CurrentVersion = 1;
+        /// <summary>The layout of the fields; a save of a later one is refused (2: leagues, guns, specials and the new fittings).</summary>
+        public const int CurrentVersion = 2;
 
         public int version = CurrentVersion;
+
+        /// <summary>The league the career races in (<see cref="LeagueKind"/>); a save from before the leagues reads 0, the first.</summary>
+        public int league;
+
         public string driverName = "";
 
         /// <summary>The player's colour: an index into the theme's driver colours (no rival shares it).</summary>
@@ -153,6 +157,9 @@ namespace Portfolio.DeathRace
         }
 
         public bool HasSabotage => !string.IsNullOrEmpty(sabotage);
+
+        /// <summary>The league of the career: its ladder, its numbers, its champion.</summary>
+        public LeagueSpec League => Leagues.Of(league);
 
         public RivalState Rival(string id)
         {

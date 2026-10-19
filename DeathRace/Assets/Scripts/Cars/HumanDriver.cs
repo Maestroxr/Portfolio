@@ -30,7 +30,7 @@ namespace Portfolio.DeathRace
                 return Override.Value;
             }
             float throttle = 0f, brake = 0f, left = 0f, right = 0f;
-            bool fire = false, nitro = false, mine = false, rocket = false;
+            bool fire = false, nitro = false, mine = false, rocket = false, special = false;
             foreach (PlayerControls seat in controls)
             {
                 if (seat == null)
@@ -45,6 +45,7 @@ namespace Portfolio.DeathRace
                 nitro |= seat.Held(DeathRaceControls.Nitro);
                 mine |= seat.Pressed(DeathRaceControls.Mine);
                 rocket |= seat.Pressed(DeathRaceControls.Rocket);
+                special |= seat.Pressed(DeathRaceControls.Special);
             }
             float target = Mathf.Clamp(right - left, -1f, 1f);
             // Keys are all or nothing: ease the wheel towards them; an analogue stick in between is taken as it is.
@@ -57,7 +58,8 @@ namespace Portfolio.DeathRace
                 Fire = fire,
                 Nitro = nitro,
                 DropMine = mine,
-                FireRocket = rocket
+                FireRocket = rocket,
+                Special = special
             };
         }
     }

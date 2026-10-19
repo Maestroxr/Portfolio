@@ -32,7 +32,13 @@ namespace Portfolio.DeathRace.Tests
             Assert.AreEqual(2, rules.MinHumans);
             Assert.IsTrue(rules.AllowComputers);
             Assert.IsNotNull(rules.Controls);
-            Assert.AreEqual(8, rules.Controls.Actions.Count, "pedals, wheel and four weapons");
+            Assert.AreEqual(9, rules.Controls.Actions.Count, "pedals, wheel, four weapons and the special");
+            ControlAction special = rules.Controls.Find(DeathRaceControls.Special);
+            Assert.IsNotNull(special);
+            for (int seat = 0; seat < 4; seat++)
+            {
+                Assert.IsTrue(rules.Controls.DefaultsFor(seat, special)[0].IsSet, $"seat {seat + 1} has a special weapon key");
+            }
             LocalMatch match = Match(rules, 2);
             match[1].Kind = SeatKind.Computer;
             Assert.IsNotNull(match.Problem(), "one person is a quick race, not split screen");

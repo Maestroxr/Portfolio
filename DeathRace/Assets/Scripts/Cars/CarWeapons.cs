@@ -49,7 +49,7 @@ namespace Portfolio.DeathRace
         public int RoundsHit => hitCount;
 
         /// <summary>The share of the burning nitro charge left, 0 to 1 (0 when none burns).</summary>
-        public float NitroLeft01 => stock.NitroLeft / CombatRules.NitroSeconds;
+        public float NitroLeft01 => stock.NitroLeft / Mathf.Max(0.01f, stock.NitroSeconds);
 
         public float GunRange => CombatRules.GunRange;
 
@@ -62,12 +62,47 @@ namespace Portfolio.DeathRace
         /// <summary>A rocket was fired (online: an action for the room).</summary>
         public event Action<Rocket> RocketFired;
 
+        /// <summary>An oil slick was poured (online: an action for the room).</summary>
+        public event Action<OilSlick> OilDropped;
+
+        /// <summary>An EMP blast went off round the car (online: an action for the room).</summary>
+        public event Action<EmpBlast> EmpFired;
+
+        /// <summary>A mortar shell was lobbed (online: an action for the room).</summary>
+        public event Action<MortarShell> MortarFired;
+
+        private SpecialKind armedSpecial;
+
+        /// <summary>The special weapon the button fires next (the armed one, or the next with any left); null when none are left.</summary>
+        public SpecialKind? NextSpecial => stock.NextSpecial(armedSpecial);
+
+        /// <summary>How many of <paramref name="kind"/> are left.</summary>
+        public int SpecialsLeft(SpecialKind kind)
+        {
+            return stock.SpecialsLeft(kind);
+        }
+
+        public int SpecialsUsed(SpecialKind kind)
+        {
+            return stock.SpecialsUsed(kind);
+        }
+
+        /// <summary>For the weapons work and the online race: raise the events of the special weapons.</summary>
+        protected void RaiseOilDropped(OilSlick slick) => OilDropped?.Invoke(slick);
+
+        protected void RaiseEmpFired(EmpBlast blast) => EmpFired?.Invoke(blast);
+
+        protected void RaiseMortarFired(MortarShell shell) => MortarFired?.Invoke(shell);
+
         /// <summary>Called by the factory once the car is set up: the loadout says what the car carries.</summary>
         public virtual void Setup(Car car, CarLoadout loadout)
         {
             this.car = car;
             int capacity = car != null ? car.Stats.AmmoCapacity : CarStats.Of(loadout).AmmoCapacity;
-            stock = new WeaponStock(capacity, loadout?.mines ?? 0, loadout?.rockets ?? 0, loadout?.nitro ?? 0);
+            CarStats stats = car != null ? car.Stats : CarStats.Of(loadout);
+            stock = new WeaponStock(capacity, loadout?.mines ?? 0, loadout?.rockets ?? 0, loadout?.nitro ?? 0, loadout?.oil ?? 0, loadout?.emp ?? 0,
+                loadout?.mortar ?? 0, Guns.Of(stats.Gun).RoundsPerSecond * stats.GunRate, stats.NitroSeconds);
+            armedSpecial = loadout != null ? loadout.special : SpecialKind.Oil;
             int seed = car != null && car.Race != null && car.Race.Setup != null ? car.Race.Setup.Seed : 0;
             int seat = car != null && car.Entrant != null ? car.Entrant.Seat : 0;
             random = new System.Random(unchecked(seed * 7919 + seat * 104729 + 17));

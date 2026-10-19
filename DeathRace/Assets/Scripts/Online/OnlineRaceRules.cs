@@ -127,7 +127,7 @@ namespace Portfolio.DeathRace
         public const int MaxTracks = 16;
         public const int MinLaps = 1;
         public const int MaxLaps = 9;
-        public const int CarCount = 6;
+        public const int CarCount = 12;
         public const int MinLength = 100;
         public const int MaxLength = 5000;
 

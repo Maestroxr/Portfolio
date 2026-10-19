@@ -157,6 +157,20 @@ namespace Portfolio.DeathRace
         public int MinesUsed;
         public int RocketsUsed;
         public int NitroUsed;
+        public int OilUsed;
+        public int EmpUsed;
+        public int MortarUsed;
+
+        /// <summary>How many of the special weapon <paramref name="kind"/> the car fired.</summary>
+        public int SpecialsUsed(SpecialKind kind)
+        {
+            switch (kind)
+            {
+                case SpecialKind.Oil: return OilUsed;
+                case SpecialKind.Emp: return EmpUsed;
+                default: return MortarUsed;
+            }
+        }
     }
 
     /// <summary>How a race went: the setup and every car's result, in the order of the places.</summary>
