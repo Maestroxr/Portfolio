@@ -45,7 +45,11 @@ namespace Portfolio.DeathRace.EditorTools
 
             // Item glows (the rings under pickups, the mine's lamp, the rocket's flame).
             ("GlowGreen", "4DFF7A", 1f), ("GlowRed", "FF3B3B", 1f), ("GlowAmber", "FFB52E", 1f), ("GlowBlue", "40AAFF", 1f),
-            ("GlowWhite", "FFFFFF", 1f), ("MineLight", "FF2A1F", 1f), ("Flame", "FFB040", 1f), ("FlameCore", "FFF2C0", 1f)
+            ("GlowWhite", "FFFFFF", 1f), ("MineLight", "FF2A1F", 1f), ("Flame", "FFB040", 1f), ("FlameCore", "FFF2C0", 1f),
+
+            // Added with the cars of the higher leagues (after the rest, so no colour above moves): the Spectre's light
+            // strips and the hot throat of the Apocalypse's jets.
+            ("GlowCyan", "3FE6FF", 1f), ("JetHot", "FF7A2A", 1f)
         };
 
         private static PaletteTexture palette;

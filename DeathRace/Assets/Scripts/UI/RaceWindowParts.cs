@@ -93,7 +93,7 @@ namespace Portfolio.DeathRace
             return Portfolio.DeathRace.L.Data(TrackLayouts.Of(track).Name);
         }
 
-        /// <summary>A driver of the career by id (a rival or The Warden), in the language shown.</summary>
+        /// <summary>A driver of the career by id (a rival or a champion of any league), in the language shown.</summary>
         public static string DriverName(CareerState state, string id)
         {
             RivalState rival = state?.Rival(id);
@@ -111,12 +111,13 @@ namespace Portfolio.DeathRace
             return Theme != null && Theme.rivalColors != null && Theme.rivalColors.Length > 0 ? Theme.RivalColor(colorIndex) : FallbackColor(colorIndex);
         }
 
-        /// <summary>The colour of a driver of the career by id; The Warden's is his own.</summary>
+        /// <summary>The colour of a driver of the career by id; a champion's is their own paint.</summary>
         public Color DriverColor(CareerState state, string id)
         {
-            if (id == Roster.WardenId)
+            LeagueSpec champion = Leagues.OfDriver(id);
+            if (champion != null && champion.IsChampion(id))
             {
-                return Career.WardenPaint;
+                return champion.ChampionPaint;
             }
             RivalState rival = state?.Rival(id);
             return rival != null ? DriverColor(rival.colorIndex) : kit.Look.muted;

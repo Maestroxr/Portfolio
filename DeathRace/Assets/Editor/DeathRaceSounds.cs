@@ -56,6 +56,7 @@ namespace Portfolio.DeathRace.EditorTools
             Save("Sell", Sell(), -15f);
             Save("Deny", Deny(), -16f);
             Save("Click", Click(), -20f);
+            BuildWeapons();
             Save("MenuMusic", MenuMusic(), -13f, true);
             Save("RaceMusic", RaceMusic(), -13f, true);
         }
@@ -91,6 +92,7 @@ namespace Portfolio.DeathRace.EditorTools
             sounds.click = Clip("Click");
             sounds.menuMusic = Clip("MenuMusic");
             sounds.raceMusic = Clip("RaceMusic");
+            FillWeapons(sounds);
         }
 
         /// <summary>Levels a clip to <paramref name="loudness"/> and writes it.</summary>

@@ -14,13 +14,30 @@ namespace Portfolio.DeathRace
         Muzzle = 5,
         Fire = 6,
         NitroFlame = 7,
-        Dust = 8
+        Dust = 8,
+
+        /// <summary>The flamethrower's jet of fire (a loop on the muzzle, along +z).</summary>
+        FlameJet = 9,
+
+        /// <summary>A plasma bolt bursting.</summary>
+        PlasmaBurst = 10,
+
+        /// <summary>An EMP blast: an electric ring growing over the road (1 m radius at size 1).</summary>
+        EmpBlast = 11,
+
+        /// <summary>Sparks crawling over a jammed car (a loop).</summary>
+        Electric = 12,
+
+        /// <summary>The sparks of a field welder at work (a loop).</summary>
+        Weld = 13
     }
 
     /// <summary>
     /// The effects drawn in code when the content has no prefab for one yet: the same parts a builder would make (a
     /// fireball, embers, smoke, a shock ring and a flash for an explosion; streaks for sparks; puffs for smoke and dust;
-    /// flames for fire and nitro), sized for a camera forty metres up. Each is an inactive template the pools copy.
+    /// flames for fire, nitro and the flamethrower; a violet flash for a plasma burst, a blue ring for an EMP, blue sparks
+    /// for a jammed car and orange ones for a welder), sized for a camera forty metres up. Each is an inactive template
+    /// the pools copy.
     /// </summary>
     public static class EffectFallbacks
     {
@@ -55,6 +72,21 @@ namespace Portfolio.DeathRace
                     break;
                 case EffectKind.NitroFlame:
                     NitroFlame(root.transform);
+                    break;
+                case EffectKind.FlameJet:
+                    FlameJet(root.transform);
+                    break;
+                case EffectKind.PlasmaBurst:
+                    PlasmaBurst(root.transform);
+                    break;
+                case EffectKind.EmpBlast:
+                    EmpBlast(root.transform);
+                    break;
+                case EffectKind.Electric:
+                    Electric(root.transform);
+                    break;
+                case EffectKind.Weld:
+                    Weld(root.transform);
                     break;
                 default:
                     Dust(root.transform);
@@ -244,6 +276,214 @@ namespace Portfolio.DeathRace
             Fade(glow, Color.white, Color.white, Color.white);
         }
 
+        /// <summary>The colours of plasma (violet, white hot in the middle) and of an EMP (electric blue).</summary>
+        public static readonly Color PlasmaColor = new Color(0.72f, 0.38f, 1f, 1f);
+
+        public static readonly Color EmpColor = new Color(0.4f, 0.78f, 1f, 1f);
+
+        /// <summary>
+        /// The flamethrower's jet along +z: puffs of fire that leave fast, slow down, swell and darken into smoke some
+        /// eighteen metres on, with the car's own speed added (they leave a moving car), and a white-hot tongue at the
+        /// nozzle. The fire takes the look's explosion colour.
+        /// </summary>
+        private static void FlameJet(Transform root)
+        {
+            // A body of flame drawn over the ground (it shows on bright sand too), a brighter glow inside it.
+            ParticleSystem body = System("Body Tint", root, CombatArt.Smoke, 3);
+            Loop(body, 0.5f, 0.7f);
+            Rate(body, 55f);
+            Size(body, 1.1f, 1.6f);
+            Speed(body, 26f, 32f);
+            Cone(body, 7f, 0.1f);
+            Drag(body, 0.8f);
+            Inherit(body, 0.95f);
+            Fade(body, new Color(1f, 0.95f, 0.85f, 0.95f), new Color(1f, 0.75f, 0.55f, 0.85f), new Color(0.3f, 0.2f, 0.15f, 1f), 0.06f);
+            Grow(body, 0.55f, 2.6f);
+            Spin(body, 160f);
+
+            ParticleSystem fire = System("Fire Tint", root, CombatArt.Glow, 4);
+            Loop(fire, 0.35f, 0.55f);
+            Rate(fire, 80f);
+            Size(fire, 0.9f, 1.3f);
+            Speed(fire, 26f, 32f);
+            Cone(fire, 6f, 0.08f);
+            Drag(fire, 0.8f);
+            Inherit(fire, 0.95f);
+            Fade(fire, Color.white, new Color(1f, 0.85f, 0.6f), new Color(0.6f, 0.2f, 0.05f));
+            Grow(fire, 0.6f, 2.1f);
+            Spin(fire, 200f);
+
+            ParticleSystem core = System("Core", root, CombatArt.Glow, 5);
+            Loop(core, 0.1f, 0.16f);
+            ParticleSystem.MainModule main = core.main;
+            main.simulationSpace = ParticleSystemSimulationSpace.Local;
+            Rate(core, 50f);
+            Size(core, 0.75f, 1f);
+            Speed(core, 14f, 18f);
+            Cone(core, 4f, 0.03f);
+            Colors(core, new Color(1f, 0.95f, 0.75f), new Color(1f, 0.85f, 0.5f));
+            Fade(core, Color.white, Color.white, new Color(1f, 0.6f, 0.2f));
+            Grow(core, 0.6f, 1.5f);
+
+            ParticleSystem smoke = System("Smoke", root, CombatArt.Smoke, 2);
+            Loop(smoke, 0.8f, 1.2f);
+            Rate(smoke, 16f);
+            Size(smoke, 1.2f, 1.7f);
+            Speed(smoke, 16f, 20f);
+            Cone(smoke, 9f, 0.1f);
+            Drag(smoke, 1.4f);
+            Inherit(smoke, 0.9f);
+            Colors(smoke, new Color(0.2f, 0.18f, 0.17f, 0.7f), new Color(0.3f, 0.28f, 0.26f, 0.6f));
+            Fade(smoke, new Color(1f, 1f, 1f, 0f), Color.white, Color.white, 0.3f);
+            Grow(smoke, 0.6f, 3f);
+            Lift(smoke, 1.2f);
+        }
+
+        /// <summary>A plasma bolt bursting: a white-violet flash, a ring on the road, violet sparks thrown out, a short light.</summary>
+        private static void PlasmaBurst(Transform root)
+        {
+            ParticleSystem flash = System("Flash", root, CombatArt.Glow, 6);
+            OneShot(flash, 0.1f, 0.12f, 0.18f);
+            Burst(flash, 2);
+            Size(flash, 4.2f, 5.2f);
+            Speed(flash, 0f, 0f);
+            Colors(flash, Color.white, Color.Lerp(PlasmaColor, Color.white, 0.5f));
+            Fade(flash, Color.white, PlasmaColor, PlasmaColor * 0.5f);
+
+            ParticleSystem sparks = System("Sparks", root, CombatArt.Glow, 5);
+            OneShot(sparks, 0.1f, 0.2f, 0.45f);
+            Burst(sparks, 18);
+            Size(sparks, 0.12f, 0.24f);
+            Speed(sparks, 8f, 18f);
+            Sphere(sparks, 0.3f, true);
+            Drag(sparks, 3f);
+            Stretch(sparks, 0.05f);
+            Colors(sparks, Color.Lerp(PlasmaColor, Color.white, 0.4f), PlasmaColor);
+            Fade(sparks, Color.white, Color.white, PlasmaColor);
+
+            ParticleSystem ring = System("Ring", root, CombatArt.Ring, 3);
+            OneShot(ring, 0.1f, 0.3f, 0.3f);
+            Burst(ring, 1);
+            Size(ring, 1.4f, 1.4f);
+            Speed(ring, 0f, 0f);
+            Colors(ring, PlasmaColor, PlasmaColor);
+            Fade(ring, Color.white, Color.white, PlasmaColor);
+            Grow(ring, 0.3f, 2.4f);
+            ring.GetComponent<ParticleSystemRenderer>().renderMode = ParticleSystemRenderMode.HorizontalBillboard;
+            ring.transform.localPosition = new Vector3(0f, 0.12f, 0f);
+
+            FlashLight(root, PlasmaColor, 8f, 5f, 1.5f);
+        }
+
+        /// <summary>
+        /// An EMP blast: a crisp blue ring racing out over the road to the blast's edge (1 m radius at size 1; the race
+        /// sizes it to the blast), a softer one behind it, blue sparks spat out, and a cold flash.
+        /// </summary>
+        private static void EmpBlast(Transform root)
+        {
+            // The ring texture's band lies at 0.82 of its radius: a particle 2.44 across draws a ring of 1 m radius.
+            ParticleSystem ring = System("Ring", root, CombatArt.Ring, 3);
+            OneShot(ring, 0.1f, 0.45f, 0.45f);
+            Burst(ring, 1);
+            Size(ring, 2.44f, 2.44f);
+            Speed(ring, 0f, 0f);
+            Colors(ring, Color.Lerp(EmpColor, Color.white, 0.3f), Color.Lerp(EmpColor, Color.white, 0.3f));
+            Fade(ring, Color.white, Color.white, EmpColor);
+            Grow(ring, 0.1f, 1f);
+            ring.GetComponent<ParticleSystemRenderer>().renderMode = ParticleSystemRenderMode.HorizontalBillboard;
+            ring.transform.localPosition = new Vector3(0f, 0.2f, 0f);
+
+            ParticleSystem halo = System("Halo", root, CombatArt.Ring, 2);
+            OneShot(halo, 0.1f, 0.6f, 0.6f);
+            Burst(halo, 1);
+            Size(halo, 2.2f, 2.2f);
+            Speed(halo, 0f, 0f);
+            Colors(halo, new Color(EmpColor.r, EmpColor.g, EmpColor.b, 0.5f), new Color(EmpColor.r, EmpColor.g, EmpColor.b, 0.5f));
+            Fade(halo, Color.white, Color.white, EmpColor);
+            Grow(halo, 0.05f, 0.9f);
+            halo.GetComponent<ParticleSystemRenderer>().renderMode = ParticleSystemRenderMode.HorizontalBillboard;
+            halo.transform.localPosition = new Vector3(0f, 0.15f, 0f);
+
+            // Played at the blast's radius (fourteen times its size): the sparks are authored small for it.
+            ParticleSystem sparks = System("Sparks", root, CombatArt.Glow, 5);
+            OneShot(sparks, 0.15f, 0.25f, 0.5f);
+            Burst(sparks, 40);
+            Size(sparks, 0.012f, 0.022f);
+            Speed(sparks, 2f, 4f);
+            Sphere(sparks, 0.2f, true);
+            Stretch(sparks, 0.08f);
+            Colors(sparks, Color.white, EmpColor);
+            Fade(sparks, Color.white, Color.white, EmpColor);
+
+            FlashLight(root, EmpColor, 4.3f, 6f, 2f);
+        }
+
+        /// <summary>Little blue arcs crawling over a jammed car: stretched sparks that flicker on and off over its body.</summary>
+        private static void Electric(Transform root)
+        {
+            ParticleSystem arcs = System("Arcs", root, CombatArt.Glow, 6);
+            Loop(arcs, 0.05f, 0.12f);
+            ParticleSystem.MainModule main = arcs.main;
+            main.simulationSpace = ParticleSystemSimulationSpace.Local;
+            Rate(arcs, 80f);
+            Size(arcs, 0.22f, 0.4f);
+            Speed(arcs, 8f, 16f);
+            BoxShape(arcs, new Vector3(1.6f, 0.6f, 3.6f));
+            Stretch(arcs, 0.09f);
+            Colors(arcs, Color.white, EmpColor);
+            Fade(arcs, Color.white, Color.white, EmpColor);
+
+            ParticleSystem glow = System("Glow", root, CombatArt.Glow, 3);
+            Loop(glow, 0.06f, 0.1f);
+            ParticleSystem.MainModule glowMain = glow.main;
+            glowMain.simulationSpace = ParticleSystemSimulationSpace.Local;
+            Rate(glow, 20f);
+            Size(glow, 2.4f, 3.6f);
+            Speed(glow, 0f, 0.2f);
+            BoxShape(glow, new Vector3(1.2f, 0.4f, 3f));
+            Colors(glow, new Color(EmpColor.r, EmpColor.g, EmpColor.b, 0.7f), new Color(0.7f, 0.9f, 1f, 0.6f));
+            Fade(glow, Color.white, Color.white, Color.white);
+        }
+
+        /// <summary>A field welder at work: a blue-white point spitting short orange sparks.</summary>
+        private static void Weld(Transform root)
+        {
+            ParticleSystem sparks = System("Sparks", root, CombatArt.Glow, 5);
+            Loop(sparks, 0.15f, 0.35f);
+            Rate(sparks, 50f);
+            Size(sparks, 0.16f, 0.26f);
+            Speed(sparks, 3f, 8f);
+            Sphere(sparks, 0.08f, true);
+            Gravity(sparks, 1.2f);
+            Stretch(sparks, 0.05f);
+            Colors(sparks, new Color(1f, 0.9f, 0.6f), new Color(1f, 0.6f, 0.2f));
+            Fade(sparks, Color.white, Color.white, new Color(1f, 0.4f, 0.1f));
+
+            ParticleSystem point = System("Point", root, CombatArt.Glow, 6);
+            Loop(point, 0.04f, 0.08f);
+            ParticleSystem.MainModule main = point.main;
+            main.simulationSpace = ParticleSystemSimulationSpace.Local;
+            Rate(point, 30f);
+            Size(point, 1.8f, 2.4f);
+            Speed(point, 0f, 0.1f);
+            Colors(point, new Color(0.85f, 0.92f, 1f), Color.white);
+            Fade(point, Color.white, Color.white, Color.white);
+        }
+
+        /// <summary>The flash of a one-shot: a disabled point light the effect lights and fades.</summary>
+        private static void FlashLight(Transform root, Color color, float range, float intensity, float height)
+        {
+            var light = new GameObject("Flash").AddComponent<Light>();
+            light.transform.SetParent(root, false);
+            light.transform.localPosition = new Vector3(0f, height, 0f);
+            light.type = LightType.Point;
+            light.color = color;
+            light.range = range;
+            light.intensity = intensity;
+            light.shadows = LightShadows.None;
+            light.enabled = false;
+        }
+
         private static void Dust(Transform root)
         {
             ParticleSystem dust = System("Dust Tint", root, CombatArt.Smoke, 0);
@@ -366,6 +606,24 @@ namespace Portfolio.DeathRace
             shape.shapeType = ParticleSystemShapeType.Cone;
             shape.angle = angle;
             shape.radius = radius;
+        }
+
+        private static void BoxShape(ParticleSystem system, Vector3 size)
+        {
+            ParticleSystem.ShapeModule shape = system.shape;
+            shape.enabled = true;
+            shape.shapeType = ParticleSystemShapeType.Box;
+            shape.scale = size;
+            shape.randomDirectionAmount = 1f;
+        }
+
+        /// <summary>The particles leave with this share of the emitter's own velocity (a flame jet from a moving car).</summary>
+        private static void Inherit(ParticleSystem system, float share)
+        {
+            ParticleSystem.InheritVelocityModule inherit = system.inheritVelocity;
+            inherit.enabled = true;
+            inherit.mode = ParticleSystemInheritVelocityMode.Initial;
+            inherit.curveMultiplier = share;
         }
 
         private static void Gravity(ParticleSystem system, float gravity)

@@ -4,10 +4,12 @@ using UnityEngine;
 namespace Portfolio.DeathRace.EditorTools
 {
     /// <summary>
-    /// The things that lie on the track or fly over it: the mine, the rocket and the four pickups. They are seen from
-    /// about sixty degrees above at race distance, so every one is a bold shape with a colour of its own (the mine's red
-    /// lamp, the green cash crate with its dollar sign, the white repair case with the red cross and a wrench, the olive
-    /// ammunition box with brass rounds, the blue nitro bottle). Origins are on the ground; the rocket faces +z.
+    /// The things that lie on the track or fly over it: the mine, the rocket, the oil slick's puddle, the mortar shell,
+    /// the plasma bolt and the four pickups. They are seen from about sixty degrees above at race distance, so every one
+    /// is a bold shape with a colour of its own (the mine's red lamp, the black oil with its rainbow sheen, the olive
+    /// shell with its yellow band, the white-hot bolt, the green cash crate with its dollar sign, the white repair case
+    /// with the red cross and a wrench, the olive ammunition box with brass rounds, the blue nitro bottle). Origins are on
+    /// the ground (the flying ones at their middle); the rocket, the shell and the bolt face +z.
     /// </summary>
     internal static class ItemMeshes
     {
@@ -67,6 +69,99 @@ namespace Portfolio.DeathRace.EditorTools
                 m.Color(UV(i % 2 == 0 ? "RocketNose" : "RocketBand")).Box(new Vector3(0f, r + 0.09f, 0f), new Vector3(0.02f, 0.18f, 0.26f));
                 m.Pop();
             }
+            return m;
+        }
+
+        // ------------------------------------------------------------------ special weapons and plasma
+
+        /// <summary>
+        /// The puddle of an oil slick: a flat disc of 1 m radius (the race scales it to the slick) with a lobed, ragged rim,
+        /// facing up at the origin; its texture is laid over it from above (u along x, v along z), so the dark body and
+        /// the rainbow sheen of <see cref="OilTexture"/> sit on it as painted.
+        /// </summary>
+        public static Mesh OilPuddle()
+        {
+            const int sides = 40;
+            var random = new System.Random(57);
+            float phaseA = (float)random.NextDouble() * Mathf.PI * 2f;
+            float phaseB = (float)random.NextDouble() * Mathf.PI * 2f;
+            var vertices = new Vector3[sides + 1];
+            var uvs = new Vector2[sides + 1];
+            var normals = new Vector3[sides + 1];
+            var triangles = new int[sides * 3];
+            vertices[0] = Vector3.zero;
+            uvs[0] = new Vector2(0.5f, 0.5f);
+            normals[0] = Vector3.up;
+            for (int i = 0; i < sides; i++)
+            {
+                float angle = i * Mathf.PI * 2f / sides;
+                float reach = 0.9f + 0.06f * Mathf.Sin(angle * 3f + phaseA) + 0.04f * Mathf.Sin(angle * 5f + phaseB) + 0.03f * (float)random.NextDouble();
+                var point = new Vector3(Mathf.Cos(angle) * reach, 0f, Mathf.Sin(angle) * reach);
+                vertices[i + 1] = point;
+                uvs[i + 1] = new Vector2(0.5f + point.x * 0.5f, 0.5f + point.z * 0.5f);
+                normals[i + 1] = Vector3.up;
+                // Clockwise seen from above: the disc faces the sky.
+                triangles[i * 3] = 0;
+                triangles[i * 3 + 1] = (i + 1) % sides + 1;
+                triangles[i * 3 + 2] = i + 1;
+            }
+            var mesh = new Mesh { name = "OilPuddle", vertices = vertices, uv = uvs, normals = normals, triangles = triangles };
+            mesh.RecalculateBounds();
+            return mesh;
+        }
+
+        /// <summary>
+        /// The oil on the puddle: nearly black, a thin film near the rim and in swirls shifting through the colours of
+        /// oil on water, a few glints of the sky, soft at the edge (the puddle's lobes cut the rest).
+        /// </summary>
+        public static Texture2D OilTexture()
+        {
+            return CarArt.ToTexture(128, 128, (u, v) =>
+            {
+                var p = new Vector2(u - 0.5f, v - 0.5f) * 2f;
+                float r = p.magnitude;
+                float a = Mathf.Atan2(p.y, p.x);
+                float swirl = Mathf.Sin(a * 3f + r * 11f) * 0.5f + 0.5f;
+                float film = Mathf.Clamp01(1f - Mathf.Abs(r - 0.72f) / 0.12f) * 0.8f + Mathf.Pow(swirl, 6f) * 0.5f * Mathf.Clamp01(r * 1.6f);
+                float hue = Mathf.Repeat(r * 1.9f + swirl * 0.35f + a * 0.08f, 1f);
+                Color sheen = Color.HSVToRGB(hue, 0.6f, 0.6f);
+                float glint = Mathf.Pow(Mathf.Clamp01(1f - new Vector2(p.x + 0.32f, p.y - 0.28f).magnitude / 0.16f), 2f) * 0.55f;
+                Color body = new Color(0.02f, 0.022f, 0.028f, 1f);
+                Color color = Color.Lerp(body, sheen, Mathf.Clamp01(film) * 0.42f) + new Color(glint, glint, glint * 1.1f, 0f);
+                color.a = Mathf.Clamp01((0.98f - r) / 0.06f) * 0.94f;
+                return color;
+            });
+        }
+
+        /// <summary>
+        /// A mortar shell along +z, 1.15 m (bigger than life, so it reads from above as it flies): an olive body with a
+        /// yellow band, a darker ogive nose and a brass fuze, a brass driving band, a tail boom with four fins.
+        /// </summary>
+        public static LowPolyBuilder MortarShell()
+        {
+            var m = new LowPolyBuilder();
+            const float r = 0.17f;
+            m.Color(UV("Olive")).Rod(new Vector3(0f, 0f, -0.2f), new Vector3(0f, 0f, 0.25f), r, 14, true);
+            m.Color(UV("OliveDark")).Rod(new Vector3(0f, 0f, 0.25f), new Vector3(0f, 0f, 0.5f), r, 14, true, 0.045f);
+            m.Color(UV("Brass")).Rod(new Vector3(0f, 0f, 0.5f), new Vector3(0f, 0f, 0.56f), 0.045f, 8, true, 0.02f);
+            m.Color(UV("Brass")).Rod(new Vector3(0f, 0f, 0.17f), new Vector3(0f, 0f, 0.22f), r * 1.05f, 14, true);
+            m.Color(UV("Hazard")).Rod(new Vector3(0f, 0f, 0.0f), new Vector3(0f, 0f, 0.06f), r * 1.02f, 14, true);
+            m.Color(UV("Olive")).Rod(new Vector3(0f, 0f, -0.36f), new Vector3(0f, 0f, -0.2f), 0.07f, 14, true, r);
+            m.Color(UV("Gunmetal")).Rod(new Vector3(0f, 0f, -0.6f), new Vector3(0f, 0f, -0.36f), 0.06f, 8, false);
+            for (int i = 0; i < 4; i++)
+            {
+                m.Push(new Vector3(0f, 0f, -0.52f), Quaternion.Euler(0f, 0f, 45f + i * 90f));
+                m.Color(UV("GunDark")).Box(new Vector3(0f, 0.12f, 0f), new Vector3(0.025f, 0.17f, 0.2f));
+                m.Pop();
+            }
+            return m;
+        }
+
+        /// <summary>The white-hot core of a plasma bolt along +z (its violet glow is a quad of its own; the race adds the trail).</summary>
+        public static LowPolyBuilder PlasmaCore()
+        {
+            var m = new LowPolyBuilder();
+            m.Color(UV("GlowWhite")).Sphere(Vector3.zero, new Vector3(0.26f, 0.26f, 0.56f), 5, 10, true);
             return m;
         }
 

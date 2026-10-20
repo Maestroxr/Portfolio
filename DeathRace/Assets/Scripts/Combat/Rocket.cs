@@ -6,7 +6,8 @@ namespace Portfolio.DeathRace
     /// <summary>
     /// A rocket fired forward from a car's roof. It leaves at the car's speed and more, burns up to its top speed, and for
     /// its first seconds homes onto the nearest car in a narrow cone ahead (turning only so fast, so a sharp swerve still
-    /// shakes it). It blows up on the first car or barrier it touches, or in the air when its fuel is out: a blast that
+    /// shakes it; a car with a radar jammer it never locks on to). It blows up on the first car or barrier it touches, or
+    /// in the air when its fuel is out: a blast that
     /// hurts and throws the cars around it. A trail of smoke and the flame of its motor follow it; the kill is the
     /// shooter's.
     /// </summary>
@@ -135,7 +136,7 @@ namespace Portfolio.DeathRace
             if (Target == null || Target.IsWrecked || retarget <= 0f)
             {
                 retarget = 0.15f;
-                Target = Targeting.NearestInCone(Targeting.CarsOf(race), Owner, transform.position, direction, CombatRules.RocketCone, CombatRules.RocketSeekRange);
+                Target = Targeting.NearestInCone(Targeting.CarsOf(race), Owner, transform.position, direction, CombatRules.RocketCone, CombatRules.RocketSeekRange, true);
             }
             if (Target == null)
             {

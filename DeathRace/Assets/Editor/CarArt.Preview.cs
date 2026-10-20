@@ -226,8 +226,9 @@ namespace Portfolio.DeathRace.EditorTools
         /// <summary>
         /// Batch entry (<c>-executeMethod Portfolio.DeathRace.EditorTools.CarArt.ContactSheet -artcars-out &lt;folder&gt;</c>,
         /// <c>-artcars-nobuild</c> to skip the rebuild): builds the car, item and effect art and prefabs, then renders
-        /// them into PNGs: the six cars by day and by night as the race camera sees them, close and at race height, their
-        /// states (braking, nitro, damaged, wrecked), the pictures of the garage, the items and frames of the effects.
+        /// them into PNGs: the cars by day and by night as the race camera sees them, six to a sheet close up, at race
+        /// height and from the side, and all twelve together at race height; their states (braking, nitro, damaged,
+        /// wrecked), the pictures of the garage, the items and frames of the effects.
         /// </summary>
         public static void ContactSheet()
         {
@@ -245,13 +246,20 @@ namespace Portfolio.DeathRace.EditorTools
                 DeathRaceTheme theme = PreviewTheme(night);
                 try
                 {
-                    using (var stage = new PreviewStage(night))
+                    for (int page = 0; page < 2; page++)
                     {
-                        CarLineup(stage, theme, folder, night);
+                        using (var stage = new PreviewStage(night))
+                        {
+                            CarLineup(stage, theme, folder, night, page);
+                        }
+                        using (var stage = new PreviewStage(night))
+                        {
+                            CarStates(stage, theme, folder, night, page);
+                        }
                     }
                     using (var stage = new PreviewStage(night))
                     {
-                        CarStates(stage, theme, folder, night);
+                        Field(stage, theme, folder, night);
                     }
                     using (var stage = new PreviewStage(night))
                     {
@@ -275,13 +283,16 @@ namespace Portfolio.DeathRace.EditorTools
             Debug.Log($"ART-CARS contact sheets written to {folder}");
         }
 
-        /// <summary>The six cars in a row of three by two, then the same at race height.</summary>
-        private static void CarLineup(PreviewStage stage, DeathRaceTheme theme, string folder, bool night)
+        /// <summary>
+        /// Six cars (page 0 the first six, page 1 the next six) in a row of three by two: close up, at race height and
+        /// from low at the side. The second page's files are named cars2-.
+        /// </summary>
+        private static void CarLineup(PreviewStage stage, DeathRaceTheme theme, string folder, bool night, int page)
         {
             float[] yaws = { 0f, 35f, 180f, 270f, 140f, 90f };
-            for (int i = 0; i < CarSpecs.Count; i++)
+            for (int i = 0; i < 6; i++)
             {
-                GameObject prefab = DeathRacePrefabBuilder.CarPrefab((CarModel)i);
+                GameObject prefab = DeathRacePrefabBuilder.CarPrefab((CarModel)(page * 6 + i));
                 if (prefab == null)
                 {
                     continue;
@@ -291,18 +302,39 @@ namespace Portfolio.DeathRace.EditorTools
                 car.GetComponent<CarModelView>().ApplyTheme(theme, PreviewPaints[i]);
             }
             string look = Look(night);
-            stage.Shoot(Path.Combine(folder, $"cars-{look}-close.png"), Vector3.zero, 26f, 60f, 40f);
-            stage.Shoot(Path.Combine(folder, $"cars-{look}-race.png"), Vector3.zero, 44f, 60f, 40f);
-            stage.Shoot(Path.Combine(folder, $"cars-{look}-side.png"), Vector3.zero, 22f, 30f, 40f);
+            string sheet = page == 0 ? "cars" : "cars2";
+            stage.Shoot(Path.Combine(folder, $"{sheet}-{look}-close.png"), Vector3.zero, 26f, 60f, 40f);
+            stage.Shoot(Path.Combine(folder, $"{sheet}-{look}-race.png"), Vector3.zero, 44f, 60f, 40f);
+            stage.Shoot(Path.Combine(folder, $"{sheet}-{look}-side.png"), Vector3.zero, 22f, 30f, 40f);
         }
 
-        /// <summary>One car per state: as new, braking, nitro, damaged, badly damaged, wrecked.</summary>
-        private static void CarStates(PreviewStage stage, DeathRaceTheme theme, string folder, bool night)
+        /// <summary>All the cars in three rows of four, heading the same way, at race height: how they compare in a race.</summary>
+        private static void Field(PreviewStage stage, DeathRaceTheme theme, string folder, bool night)
         {
-            string[] states = { "new", "braking", "nitro", "damaged", "battered", "wrecked" };
+            for (int i = 0; i < CarSpecs.Count; i++)
+            {
+                GameObject prefab = DeathRacePrefabBuilder.CarPrefab((CarModel)i);
+                if (prefab == null)
+                {
+                    continue;
+                }
+                var position = new Vector3((i % 4 - 1.5f) * 6.5f, 0f, (1 - i / 4) * 8f);
+                GameObject car = stage.Place(prefab, position, 0f);
+                car.GetComponent<CarModelView>().ApplyTheme(theme, PreviewPaints[(i + i / 4) % PreviewPaints.Length]);
+            }
+            stage.Shoot(Path.Combine(folder, $"field-{Look(night)}.png"), Vector3.zero, 44f, 60f, 40f);
+        }
+
+        /// <summary>One car per state: as new, braking, nitro, damaged, badly damaged, wrecked (page 1: the next six cars).</summary>
+        private static void CarStates(PreviewStage stage, DeathRaceTheme theme, string folder, bool night, int page)
+        {
+            // The second page puts the Apocalypse's jets in the nitro slot.
+            string[] states = page == 0
+                ? new[] { "new", "braking", "nitro", "damaged", "battered", "wrecked" }
+                : new[] { "new", "braking", "wrecked", "damaged", "battered", "nitro" };
             for (int i = 0; i < states.Length; i++)
             {
-                GameObject prefab = DeathRacePrefabBuilder.CarPrefab((CarModel)(i % CarSpecs.Count));
+                GameObject prefab = DeathRacePrefabBuilder.CarPrefab((CarModel)((page * 6 + i) % CarSpecs.Count));
                 if (prefab == null)
                 {
                     continue;
@@ -321,7 +353,7 @@ namespace Portfolio.DeathRace.EditorTools
                     case "wrecked": view.SetWrecked(true); break;
                 }
             }
-            stage.Shoot(Path.Combine(folder, $"states-{Look(night)}.png"), Vector3.zero, 26f, 60f, 40f);
+            stage.Shoot(Path.Combine(folder, $"{(page == 0 ? "states" : "states2")}-{Look(night)}.png"), Vector3.zero, 26f, 60f, 40f);
         }
 
         /// <summary>The mine, the rocket and the four pickups in a row, close up and at race height.</summary>
@@ -410,12 +442,17 @@ namespace Portfolio.DeathRace.EditorTools
             }
         }
 
-        /// <summary>The garage pictures of both looks on one sheet (over a mid grey, so the transparency shows).</summary>
+        /// <summary>
+        /// The garage pictures of both looks on one sheet, six to a row (the day rows on top, the night rows below), over a
+        /// grey check so the transparency shows.
+        /// </summary>
         private static void PictureSheet(string folder)
         {
             const int cell = 256;
             const int cellHeight = 192;
-            var sheet = new Texture2D(cell * CarSpecs.Count, cellHeight * 2, TextureFormat.RGBA32, false);
+            const int columns = 6;
+            int rowsPerLook = (CarSpecs.Count + columns - 1) / columns;
+            var sheet = new Texture2D(cell * columns, cellHeight * rowsPerLook * 2, TextureFormat.RGBA32, false);
             var pixels = new Color[sheet.width * sheet.height];
             for (int i = 0; i < pixels.Length; i++)
             {
@@ -423,22 +460,24 @@ namespace Portfolio.DeathRace.EditorTools
                 int y = i / sheet.width / 16;
                 pixels[i] = (x + y) % 2 == 0 ? new Color(0.32f, 0.32f, 0.34f) : new Color(0.4f, 0.4f, 0.42f);
             }
-            for (int row = 0; row < 2; row++)
+            for (int look = 0; look < 2; look++)
             {
                 for (int i = 0; i < CarSpecs.Count; i++)
                 {
-                    Sprite sprite = Picture((CarModel)i, row == 1);
+                    Sprite sprite = Picture((CarModel)i, look == 1);
                     if (sprite == null)
                     {
                         continue;
                     }
+                    // Rows count from the bottom of the texture: the day rows go on top.
+                    int row = (1 - look) * rowsPerLook + (rowsPerLook - 1 - i / columns);
                     Texture2D texture = Readable(sprite.texture);
                     for (int y = 0; y < cellHeight; y++)
                     {
                         for (int x = 0; x < cell; x++)
                         {
                             Color c = texture.GetPixelBilinear((x + 0.5f) / cell, (y + 0.5f) / cellHeight);
-                            int index = (row * cellHeight + y) * sheet.width + i * cell + x;
+                            int index = (row * cellHeight + y) * sheet.width + i % columns * cell + x;
                             pixels[index] = Color.Lerp(pixels[index], new Color(c.r, c.g, c.b, 1f), c.a);
                         }
                     }

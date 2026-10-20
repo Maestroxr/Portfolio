@@ -33,7 +33,10 @@ namespace Portfolio.DeathRace
         /// <summary>The share of the acceleration a car has in reverse.</summary>
         public const float ReverseAcceleration = 0.6f;
 
-        /// <summary>Nitro: the top speed and the pull it adds (+35 %, +60 %).</summary>
+        /// <summary>
+        /// Nitro: the top speed and the pull it adds (+35 %, +60 % stock; the nitro system's <see cref="NitroPower"/>
+        /// scales the extra).
+        /// </summary>
         public const float NitroTopSpeed = 1.35f;
         public const float NitroAcceleration = 1.6f;
 
@@ -78,6 +81,7 @@ namespace Portfolio.DeathRace
             Grip = Mathf.Max(0.1f, stats.Grip);
             Steering = Mathf.Max(0.1f, stats.Steering);
             Mass = Mathf.Max(100f, stats.Mass);
+            NitroPower = stats.NitroPower > 0f ? stats.NitroPower : 1f;
             float heft = ReferenceMass / Mass;
             LateralGrip = BaseLateralGrip * Grip * Mathf.Pow(heft, 0.15f);
             Brake = BaseBrake * (0.85f + 0.15f * Grip);
@@ -89,6 +93,15 @@ namespace Portfolio.DeathRace
         public float Grip { get; }
         public float Steering { get; }
         public float Mass { get; }
+
+        /// <summary>What the nitro system makes of a charge: its extra top speed and pull times this (1 = stock).</summary>
+        public float NitroPower { get; }
+
+        /// <summary>What a burning charge multiplies the top speed by (1.35 stock, more with the nitro system).</summary>
+        public float NitroTopShare => 1f + (NitroTopSpeed - 1f) * NitroPower;
+
+        /// <summary>What a burning charge multiplies the pull by (1.6 stock, more with the nitro system).</summary>
+        public float NitroPullShare => 1f + (NitroAcceleration - 1f) * NitroPower;
 
         /// <summary>The sideways acceleration the tyres hold at low speed, m/s^2.</summary>
         public float LateralGrip { get; }
@@ -104,17 +117,18 @@ namespace Portfolio.DeathRace
         /// <summary>The top speed now (with or without nitro).</summary>
         public float TopSpeedWith(bool nitro)
         {
-            return nitro ? TopSpeed * NitroTopSpeed : TopSpeed;
+            return nitro ? TopSpeed * NitroTopShare : TopSpeed;
         }
 
         /// <summary>
         /// The pull of the engine at full throttle at <paramref name="speed"/> (forward, m/s): all of the acceleration from a
         /// standstill, fading along the power curve to nothing at the top speed, and a gentle drag back down above it.
+        /// <paramref name="topShare"/> is what is left of the top speed (an EMP's jam leaves a share).
         /// </summary>
-        public float DriveAcceleration(float speed, bool nitro)
+        public float DriveAcceleration(float speed, bool nitro, float topShare = 1f)
         {
-            float top = TopSpeedWith(nitro);
-            float acceleration = nitro ? Acceleration * NitroAcceleration : Acceleration;
+            float top = Mathf.Max(1f, TopSpeedWith(nitro) * Mathf.Clamp01(topShare <= 0f ? 1f : topShare));
+            float acceleration = nitro ? Acceleration * NitroPullShare : Acceleration;
             float share = Mathf.Max(0f, speed) / top;
             if (share >= 1f)
             {

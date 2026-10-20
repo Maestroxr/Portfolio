@@ -37,7 +37,7 @@ namespace Portfolio.DeathRace
             return true;
         }
 
-        /// <summary>How many tracks (from the first) the careers have opened.</summary>
+        /// <summary>How many tracks (from the first) the careers of the first league have opened (kept for older devices).</summary>
         public int CareerTracks => Value("CareerTracks", DeathRaceCampaign.OpenFromStart);
 
         public void OpenCareerTracks(int count)
@@ -48,11 +48,66 @@ namespace Portfolio.DeathRace
             }
         }
 
+        /// <summary>The tracks any career has opened, a bit per track index (with the count of the first league's careers).</summary>
+        public int CareerTrackMask => Value("CareerTrackMask");
+
+        /// <summary>Whether a career on this device has opened track <paramref name="track"/>.</summary>
+        public bool IsCareerTrackOpen(int track)
+        {
+            return track >= 0 && (track < CareerTracks || (track < 31 && (CareerTrackMask & (1 << track)) != 0));
+        }
+
+        /// <summary>Remembers that a career opened <paramref name="track"/> (for quick races and split screen).</summary>
+        public void OpenCareerTrack(int track)
+        {
+            if (track >= 0 && track < 31 && !IsCareerTrackOpen(track))
+            {
+                SetValue("CareerTrackMask", CareerTrackMask | (1 << track));
+            }
+        }
+
+        public void OpenCareerTracks(System.Collections.Generic.IEnumerable<int> tracks)
+        {
+            foreach (int track in tracks)
+            {
+                OpenCareerTrack(track);
+            }
+        }
+
+        /// <summary>Championships won in any league.</summary>
         public int ChampionshipsWon => Value("Championships");
 
         public void WinChampionship()
         {
             SetValue("Championships", ChampionshipsWon + 1);
+        }
+
+        /// <summary>Times the champion of <paramref name="league"/> was beaten on this device (the first league's count is <see cref="ChampionshipsWon"/> for older devices).</summary>
+        public int LeagueTitles(int league)
+        {
+            return league == 0 && !HasLeagueTitles ? ChampionshipsWon : Value($"LeagueTitles.{league}");
+        }
+
+        /// <summary>Whether any league title was recorded per league (devices from before the leagues only counted championships).</summary>
+        private bool HasLeagueTitles => Value("LeagueTitles.Recorded") > 0;
+
+        /// <summary>The champion of <paramref name="league"/> was beaten: counts the title and the championship.</summary>
+        public void WinLeague(int league)
+        {
+            if (!HasLeagueTitles)
+            {
+                // Carry the championships of an older device over to the first league before counting per league.
+                SetValue("LeagueTitles.0", ChampionshipsWon);
+                SetValue("LeagueTitles.Recorded", 1);
+            }
+            SetValue($"LeagueTitles.{league}", Value($"LeagueTitles.{league}") + 1);
+            WinChampionship();
+        }
+
+        /// <summary>A league opens once the one before it has been won on this device; the first is always open.</summary>
+        public bool IsLeagueOpen(int league)
+        {
+            return league <= 0 || LeagueTitles(league - 1) > 0;
         }
 
         public int Wrecks => Value("Wrecks");
@@ -68,7 +123,11 @@ namespace Portfolio.DeathRace
         /// <summary>Forgets everything (the settings panel's reset, tests).</summary>
         public void ResetAll(int trackCount)
         {
-            var values = new System.Collections.Generic.List<string> { "CareerTracks", "Championships", "Wrecks" };
+            var values = new System.Collections.Generic.List<string>
+            {
+                "CareerTracks", "CareerTrackMask", "Championships", "Wrecks", "LeagueTitles.Recorded", "LeagueTitles.0", "LeagueTitles.1",
+                "LeagueTitles.2"
+            };
             for (int i = 0; i < trackCount; i++)
             {
                 values.Add($"BestLap.{i}");

@@ -83,7 +83,7 @@ namespace Portfolio.DeathRace.Tests
                 Assert.AreEqual(TrackLayouts.Of(track).Laps, RoomOptions.Number(options, OnlineRaceRules.TrackLapsOption, -1));
                 int length = RoomOptions.Number(options, OnlineRaceRules.LengthOption, -1);
                 Assert.That(length, Is.InRange(OnlineRaceRules.MinLength, OnlineRaceRules.MaxLength), TrackLayouts.Of(track).Name);
-                Assert.That(length, Is.InRange(350, 1300), "the tracks are 450 to 1100 m: " + TrackLayouts.Of(track).Name);
+                Assert.That(length, Is.InRange(350, 1500), "the tracks are 450 to 1400 m: " + TrackLayouts.Of(track).Name);
             }
             Assert.AreEqual((int)DeathRaceLocalRules.DefaultCar, RoomOptions.Number(OnlineRaceSetup.OptionsFor(0, ""), OnlineRaceRules.CarOption, -1));
         }

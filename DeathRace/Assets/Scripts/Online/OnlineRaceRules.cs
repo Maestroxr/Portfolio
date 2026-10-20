@@ -25,6 +25,15 @@ namespace Portfolio.DeathRace
         /// <summary>A car was wrecked, judged by its own device, which names the killer (payload <see cref="EncodeWreck"/>).</summary>
         public const uint WreckAction = 3;
 
+        /// <summary>A car poured an oil slick: every device lays it (payload <see cref="EncodeOil"/>, the mine's layout).</summary>
+        public const uint OilAction = 4;
+
+        /// <summary>A car set off an EMP blast: every device shows it and jams the cars it drives in reach (payload <see cref="EncodeEmp"/>).</summary>
+        public const uint EmpAction = 5;
+
+        /// <summary>A car lobbed a mortar shell: every device flies it and judges its blast on the cars it drives (payload <see cref="EncodeMortar"/>).</summary>
+        public const uint MortarAction = 6;
+
         /// <summary>The longest payload of a race's action.</summary>
         public const int MaxPayloadLength = 64;
 
@@ -127,7 +136,7 @@ namespace Portfolio.DeathRace
         public const int MaxTracks = 16;
         public const int MinLaps = 1;
         public const int MaxLaps = 9;
-        public const int CarCount = 6;
+        public const int CarCount = 12;
         public const int MinLength = 100;
         public const int MaxLength = 5000;
 
@@ -219,6 +228,23 @@ namespace Portfolio.DeathRace
             public float Speed;
         }
 
+        /// <summary>An EMP blast as its action carries it: where it went off.</summary>
+        public struct EmpPulse
+        {
+            public float X;
+            public float Z;
+        }
+
+        /// <summary>A mortar shell as its action carries it: where it left and where it lands.</summary>
+        public struct MortarLob
+        {
+            public float X;
+            public float Y;
+            public float Z;
+            public float TargetX;
+            public float TargetZ;
+        }
+
         /// <summary>"id,x,z,yaw" with the place in centimetres and the yaw in tenths of a degree.</summary>
         public static string EncodeMine(MineDrop mine)
         {
@@ -261,6 +287,64 @@ namespace Portfolio.DeathRace
                 X = values[0] / 100f, Y = values[1] / 100f, Z = values[2] / 100f,
                 DirectionX = (float)(dx / length), DirectionZ = (float)(dz / length), Speed = Math.Max(0, values[5]) / 100f
             };
+            return true;
+        }
+
+        /// <summary>An oil slick is written as a mine is: "id,x,z,yaw" (its number in the car's race, where it lies).</summary>
+        public static string EncodeOil(MineDrop slick)
+        {
+            return EncodeMine(slick);
+        }
+
+        public static bool TryDecodeOil(string payload, out MineDrop slick)
+        {
+            return TryDecodeMine(payload, out slick);
+        }
+
+        /// <summary>"x,z" in centimetres.</summary>
+        public static string EncodeEmp(EmpPulse pulse)
+        {
+            return Join(Centi(pulse.X), Centi(pulse.Z));
+        }
+
+        public static bool TryDecodeEmp(string payload, out EmpPulse pulse)
+        {
+            pulse = default;
+            if (!TrySplit(payload, 2, out int[] values))
+            {
+                return false;
+            }
+            pulse = new EmpPulse { X = values[0] / 100f, Z = values[1] / 100f };
+            return true;
+        }
+
+        /// <summary>The farthest a shell can land from where it left, in metres (what a payload is held to).</summary>
+        public const float MortarReach = 120f;
+
+        /// <summary>"x,y,z,tx,tz": where the shell left and where it lands, in centimetres.</summary>
+        public static string EncodeMortar(MortarLob lob)
+        {
+            return Join(Centi(lob.X), Centi(lob.Y), Centi(lob.Z), Centi(lob.TargetX), Centi(lob.TargetZ));
+        }
+
+        public static bool TryDecodeMortar(string payload, out MortarLob lob)
+        {
+            lob = default;
+            if (!TrySplit(payload, 5, out int[] values))
+            {
+                return false;
+            }
+            var decoded = new MortarLob
+            {
+                X = values[0] / 100f, Y = values[1] / 100f, Z = values[2] / 100f, TargetX = values[3] / 100f, TargetZ = values[4] / 100f
+            };
+            float dx = decoded.TargetX - decoded.X;
+            float dz = decoded.TargetZ - decoded.Z;
+            if (dx * dx + dz * dz > MortarReach * MortarReach)
+            {
+                return false;
+            }
+            lob = decoded;
             return true;
         }
 

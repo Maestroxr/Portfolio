@@ -290,8 +290,9 @@ public static partial class Module
     }
 
     /// <summary>
-    /// The actions of a race: a mine, a rocket or a wreck of a car the sender drives (their own seat or a companion's), with
-    /// a payload that reads. A wreck credits the killer it names with a kill and marks the wrecked racer.
+    /// The actions of a race: a mine, a rocket, an oil slick, an EMP blast, a mortar shell or a wreck of a car the sender
+    /// drives (their own seat or a companion's), with a payload that reads. A wreck credits the killer it names with a kill
+    /// and marks the wrecked racer.
     /// </summary>
     static partial void ValidateAction(ReducerContext ctx, Room room, RoomMember member, ref RoomAction action, ref bool decisive, ref string? error)
     {
@@ -317,6 +318,24 @@ public static partial class Module
                 if (!OnlineRaceRules.TryDecodeRocket(action.Payload, out _))
                 {
                     error = "This rocket does not read.";
+                }
+                break;
+            case OnlineRaceRules.OilAction:
+                if (!OnlineRaceRules.TryDecodeOil(action.Payload, out _))
+                {
+                    error = "This oil slick does not read.";
+                }
+                break;
+            case OnlineRaceRules.EmpAction:
+                if (!OnlineRaceRules.TryDecodeEmp(action.Payload, out _))
+                {
+                    error = "This EMP blast does not read.";
+                }
+                break;
+            case OnlineRaceRules.MortarAction:
+                if (!OnlineRaceRules.TryDecodeMortar(action.Payload, out _))
+                {
+                    error = "This mortar shell does not read.";
                 }
                 break;
             case OnlineRaceRules.WreckAction:

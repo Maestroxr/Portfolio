@@ -7,7 +7,8 @@ namespace Portfolio.DeathRace.EditorTools
     /// The effects of a race, all generated: the particle textures (flare, fire puff, smoke puff, spark, shock ring,
     /// scorch mark, tracer and tyre tread), their URP particle materials, the debris meshes, and the effect prefabs that
     /// COMBAT plays: explosion, big explosion (a wreck), sparks, damage smoke, black smoke, muzzle flash, fire, nitro
-    /// flame, tyre dust and the scorch decal.
+    /// flame, tyre dust and the scorch decal, and those of the workshop's weapons (the flamethrower's jet, a plasma
+    /// burst, an EMP ring, a jammed car's sparks, a welder's: <c>DeathRaceEffectsBuilder.Weapons.cs</c>).
     ///
     /// What the race expects of them (COMBAT's RaceEffects): a root without physics holding the particle systems, all
     /// simulated in world space, playing on awake; one-shots do not loop, loops do (they trail behind moving cars).

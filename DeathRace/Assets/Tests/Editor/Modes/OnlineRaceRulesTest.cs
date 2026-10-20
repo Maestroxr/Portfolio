@@ -47,6 +47,42 @@ namespace Portfolio.DeathRace.Tests
         }
 
         [Test]
+        public void TheSpecialWeaponsReadBack()
+        {
+            var slick = new OnlineRaceRules.MineDrop { Id = 3, X = 12.25f, Z = -7.5f, Yaw = 90f };
+            Assert.IsTrue(OnlineRaceRules.TryDecodeOil(OnlineRaceRules.EncodeOil(slick), out OnlineRaceRules.MineDrop oil));
+            Assert.AreEqual(3, oil.Id);
+            Assert.AreEqual(-7.5f, oil.Z, 0.006f);
+
+            string empPayload = OnlineRaceRules.EncodeEmp(new OnlineRaceRules.EmpPulse { X = -300.5f, Z = 41.04f });
+            Assert.IsTrue(OnlineRaceRules.TryDecodeEmp(empPayload, out OnlineRaceRules.EmpPulse emp), empPayload);
+            Assert.AreEqual(-300.5f, emp.X, 0.006f);
+            Assert.AreEqual(41.04f, emp.Z, 0.006f);
+
+            var lob = new OnlineRaceRules.MortarLob { X = 5f, Y = 1.4f, Z = 10f, TargetX = 25f, TargetZ = 40f };
+            string mortarPayload = OnlineRaceRules.EncodeMortar(lob);
+            Assert.IsTrue(OnlineRaceRules.TryDecodeMortar(mortarPayload, out OnlineRaceRules.MortarLob mortar), mortarPayload);
+            Assert.AreEqual(1.4f, mortar.Y, 0.006f);
+            Assert.AreEqual(25f, mortar.TargetX, 0.006f);
+            Assert.AreEqual(40f, mortar.TargetZ, 0.006f);
+            Assert.LessOrEqual(mortarPayload.Length, OnlineRaceRules.MaxPayloadLength);
+
+            Assert.IsFalse(OnlineRaceRules.TryDecodeEmp("1,2,3", out _), "a pulse is two numbers");
+            Assert.IsFalse(OnlineRaceRules.TryDecodeMortar(OnlineRaceRules.EncodeMortar(new OnlineRaceRules.MortarLob { TargetX = 500f }), out _),
+                "no shell lands that far away");
+            Assert.AreNotEqual(OnlineRaceRules.OilAction, OnlineRaceRules.MineAction);
+            Assert.AreNotEqual(OnlineRaceRules.EmpAction, OnlineRaceRules.WreckAction);
+            Assert.AreNotEqual(OnlineRaceRules.MortarAction, OnlineRaceRules.RocketAction);
+        }
+
+        [Test]
+        public void EveryCarOfTheGameCanBeARoomsCar()
+        {
+            Assert.AreEqual(CarSpecs.Count, OnlineRaceRules.CarCount, "the server holds a room's car to this many");
+            Assert.GreaterOrEqual(OnlineRaceRules.MaxTracks, TrackLayouts.Count);
+        }
+
+        [Test]
         public void PayloadsThatDoNotReadAreRefused()
         {
             Assert.IsFalse(OnlineRaceRules.TryDecodeMine("", out _));
@@ -79,6 +115,7 @@ namespace Portfolio.DeathRace.Tests
             Assert.IsTrue(firing.Nitro);
             Assert.IsFalse(firing.DropMine, "mines come from the room's actions");
             Assert.IsFalse(firing.FireRocket, "rockets come from the room's actions");
+            Assert.IsFalse(firing.Special, "so do the special weapons");
             CarInput wrecked = RemoteDriver.Input(OnlineRaceRules.PackState(true, true, false, true, false));
             Assert.IsFalse(wrecked.Fire);
             Assert.IsFalse(wrecked.Nitro);

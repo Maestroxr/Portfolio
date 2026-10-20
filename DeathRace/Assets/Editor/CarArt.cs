@@ -5,7 +5,7 @@ namespace Portfolio.DeathRace.EditorTools
 {
     /// <summary>
     /// The car side of a look: the palette and materials of the cars in each look (day and night), the shared glows of
-    /// the cars (headlight beams, tail glow, shadow, nitro flame), the pictures of the six cars, and what
+    /// the cars (headlight beams, tail glow, shadow, nitro flame), the pictures of the twelve cars, and what
     /// <see cref="DeathRaceThemeBuilder"/> asks of them for each theme (<see cref="Dress"/>).
     /// </summary>
     internal static partial class CarArt
@@ -36,7 +36,9 @@ namespace Portfolio.DeathRace.EditorTools
 
         /// <summary>
         /// The colour each car wears in the garage's pictures (in a race it wears its driver's): the rust of the
-        /// Rustbucket, the Hornet's yellow, the Bulldog's green, the Viper's red, the Reaper's black, the Tyrant's crimson.
+        /// Rustbucket, the Hornet's yellow, the Bulldog's green, the Viper's red, the Reaper's black, the Tyrant's crimson,
+        /// the Jackal's beach teal, the Mauler's security blue, the Banshee's plum, the Spectre's slate, the Goliath's
+        /// olive drab and the Apocalypse's pearl white.
         /// </summary>
         public static Color SignatureColor(CarModel model)
         {
@@ -47,7 +49,13 @@ namespace Portfolio.DeathRace.EditorTools
                 case CarModel.Bulldog: return new Color(0.24f, 0.52f, 0.3f);
                 case CarModel.Viper: return new Color(0.84f, 0.12f, 0.1f);
                 case CarModel.Reaper: return new Color(0.2f, 0.2f, 0.24f);
-                default: return new Color(0.55f, 0.07f, 0.09f);
+                case CarModel.Tyrant: return new Color(0.55f, 0.07f, 0.09f);
+                case CarModel.Jackal: return new Color(0.1f, 0.62f, 0.66f);
+                case CarModel.Mauler: return new Color(0.2f, 0.3f, 0.52f);
+                case CarModel.Banshee: return new Color(0.44f, 0.14f, 0.62f);
+                case CarModel.Spectre: return new Color(0.3f, 0.34f, 0.4f);
+                case CarModel.Goliath: return new Color(0.42f, 0.43f, 0.22f);
+                default: return new Color(0.9f, 0.9f, 0.92f);
             }
         }
 
@@ -174,7 +182,7 @@ namespace Portfolio.DeathRace.EditorTools
 
         // ------------------------------------------------------------------ pictures
 
-        /// <summary>The six cars seen from above at an angle, transparent, per look (the garage, the dealer, the HUD).</summary>
+        /// <summary>The cars seen from above at an angle, transparent, per look (the garage, the dealer, the HUD).</summary>
         public static void RenderPictures()
         {
             foreach (bool night in new[] { false, true })

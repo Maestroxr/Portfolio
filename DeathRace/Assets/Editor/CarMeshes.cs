@@ -43,6 +43,17 @@ namespace Portfolio.DeathRace.EditorTools
 
         public int Count => Points.Length;
 
+        /// <summary>The same section moved <paramref name="dx"/> across: a fender pod or a nacelle beside the body.</summary>
+        public Ring Shifted(float dx)
+        {
+            var points = new Vector2[Points.Length];
+            for (int i = 0; i < points.Length; i++)
+            {
+                points[i] = Points[i] + new Vector2(dx, 0f);
+            }
+            return new Ring(Z, TopBand, points);
+        }
+
         public Vector3 Point(int index)
         {
             Vector2 p = Points[(index % Points.Length + Points.Length) % Points.Length];
@@ -112,8 +123,9 @@ namespace Portfolio.DeathRace.EditorTools
 
     /// <summary>
     /// A car model as built: the meshes of its parts (the palette body, the painted panels, the head and tail light
-    /// lenses, the wheels) and where its wheels, gun muzzle, mine chute, rocket mount, exhausts and lights are. The car
-    /// faces +z with its wheels on the ground (y = 0); the prefab builder turns it into a prefab with a CarModelView.
+    /// lenses, the lamps that glow all the time, the wheels) and where its wheels, gun muzzle, mine chute, rocket mount,
+    /// exhausts and lights are. The car faces +z with its wheels on the ground (y = 0); the prefab builder turns it into
+    /// a prefab with a CarModelView.
     /// </summary>
     internal sealed class CarRig
     {
@@ -122,6 +134,19 @@ namespace Portfolio.DeathRace.EditorTools
         public readonly LowPolyBuilder Paint = new LowPolyBuilder();
         public readonly LowPolyBuilder Heads = new LowPolyBuilder();
         public readonly LowPolyBuilder Tails = new LowPolyBuilder();
+
+        /// <summary>
+        /// Lamps that glow by day and by night and flare up while the nitro burns (the Spectre's light strips, the
+        /// Apocalypse's jet nozzles); most cars have none.
+        /// </summary>
+        public readonly LowPolyBuilder Glows = new LowPolyBuilder();
+
+        /// <summary>How glossy the paint is against the look's paint (1); the Spectre's matte finish is less.</summary>
+        public float PaintGloss = 1f;
+
+        /// <summary>The size of the nitro flames against the usual size for a car of this width (the jets burn bigger).</summary>
+        public float FlameScale = 1f;
+
         public LowPolyBuilder FrontWheel;
         public LowPolyBuilder RearWheel;
         public float FrontRadius;
@@ -159,6 +184,12 @@ namespace Portfolio.DeathRace.EditorTools
         public LowPolyBuilder P(string color = "Paint")
         {
             return Paint.Color(CarArt.UV(color));
+        }
+
+        /// <summary>The glow builder, colour set (a palette colour that glows, e.g. "GlowCyan", "Flame").</summary>
+        public LowPolyBuilder G(string color)
+        {
+            return Glows.Color(CarArt.UV(color));
         }
 
         public Face BodyFace(string color)
@@ -282,36 +313,79 @@ namespace Portfolio.DeathRace.EditorTools
         public static void Panel(LowPolyBuilder target, string color, IList<Ring> rings, int segment, int band,
             float u0, float u1, float v0, float v1, float lift = 0.01f)
         {
+            Vector3 p00 = OnFace(rings, segment, band, u0, v0);
+            Vector3 p10 = OnFace(rings, segment, band, u1, v0);
+            Vector3 p11 = OnFace(rings, segment, band, u1, v1);
+            Vector3 p01 = OnFace(rings, segment, band, u0, v1);
+            Vector3 normal = Outward(rings, segment, p00, p10, p11, p01);
+            Vector3 offset = normal * lift;
+            target.Color(UV(color));
+            target.QuadFacing(p00 + offset, p10 + offset, p11 + offset, p01 + offset, normal);
+        }
+
+        /// <summary>The point <paramref name="u"/> across and <paramref name="v"/> along one face of a loft (see <see cref="Panel"/>).</summary>
+        public static Vector3 OnFace(IList<Ring> rings, int segment, int band, float u, float v)
+        {
             Ring a = rings[segment];
             Ring b = rings[segment + 1];
-            Vector3 a0 = a.Point(band);
-            Vector3 a1 = a.Point(band + 1);
-            Vector3 b0 = b.Point(band);
-            Vector3 b1 = b.Point(band + 1);
+            return Vector3.Lerp(Vector3.Lerp(a.Point(band), a.Point(band + 1), u), Vector3.Lerp(b.Point(band), b.Point(band + 1), u), v);
+        }
 
-            Vector3 At(float u, float v)
-            {
-                return Vector3.Lerp(Vector3.Lerp(a0, a1, u), Vector3.Lerp(b0, b1, u), v);
-            }
+        /// <summary>The outward normal of one face of a loft.</summary>
+        public static Vector3 FaceNormal(IList<Ring> rings, int segment, int band)
+        {
+            return Outward(rings, segment, OnFace(rings, segment, band, 0.1f, 0.1f), OnFace(rings, segment, band, 0.9f, 0.1f),
+                OnFace(rings, segment, band, 0.9f, 0.9f), OnFace(rings, segment, band, 0.1f, 0.9f));
+        }
 
-            Vector3 p00 = At(u0, v0);
-            Vector3 p10 = At(u1, v0);
-            Vector3 p11 = At(u1, v1);
-            Vector3 p01 = At(u0, v1);
+        /// <summary>The normal of the quad p00 p10 p11 p01 on segment <paramref name="segment"/> of a loft, turned away from its middle.</summary>
+        private static Vector3 Outward(IList<Ring> rings, int segment, Vector3 p00, Vector3 p10, Vector3 p11, Vector3 p01)
+        {
             Vector3 normal = Vector3.Cross(p10 - p00, p01 - p00);
             if (normal.sqrMagnitude < 1e-10f)
             {
                 normal = Vector3.Cross(p11 - p10, p01 - p10);
             }
-            Vector3 center = (a.Centroid + b.Centroid) * 0.5f;
+            Vector3 center = (rings[segment].Centroid + rings[segment + 1].Centroid) * 0.5f;
             if (Vector3.Dot(normal, (p00 + p11) * 0.5f - center) < 0f)
             {
                 normal = -normal;
             }
-            normal.Normalize();
-            Vector3 offset = normal * lift;
-            target.Color(UV(color));
-            target.QuadFacing(p00 + offset, p10 + offset, p11 + offset, p01 + offset, normal);
+            return normal.normalized;
+        }
+
+        /// <summary>
+        /// A riveted armour plate laid on one face of a loft (<paramref name="u0"/>..<paramref name="u1"/> across,
+        /// <paramref name="v0"/>..<paramref name="v1"/> along, as <see cref="Panel"/>) with a rivet at each corner.
+        /// </summary>
+        public static void RivetedPanel(CarRig rig, string color, IList<Ring> rings, int segment, int band,
+            float u0, float u1, float v0, float v1, float lift = 0.014f)
+        {
+            Panel(rig.Body, color, rings, segment, band, u0, u1, v0, v1, lift);
+            Vector3 normal = FaceNormal(rings, segment, band);
+            float du = (u1 - u0) * 0.08f;
+            float dv = (v1 - v0) * 0.08f;
+            foreach ((float u, float v) in new[] { (u0 + du, v0 + dv), (u1 - du, v0 + dv), (u0 + du, v1 - dv), (u1 - du, v1 - dv) })
+            {
+                Rivet(rig, OnFace(rings, segment, band, u, v) + normal * lift, normal);
+            }
+        }
+
+        /// <summary>A rivet head at <paramref name="at"/> on a surface facing <paramref name="normal"/>.</summary>
+        public static void Rivet(CarRig rig, Vector3 at, Vector3 normal, float size = 0.045f)
+        {
+            rig.Body.Push(at, Quaternion.FromToRotation(Vector3.up, normal));
+            rig.B("Rivet").Cylinder(Vector3.zero, size * 0.5f, size * 0.36f, size * 0.4f, 6);
+            rig.Body.Pop();
+        }
+
+        /// <summary>A row of <paramref name="count"/> rivets from <paramref name="from"/> to <paramref name="to"/> on a surface facing <paramref name="normal"/>.</summary>
+        public static void Rivets(CarRig rig, Vector3 from, Vector3 to, int count, Vector3 normal, float size = 0.045f)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                Rivet(rig, count == 1 ? (from + to) * 0.5f : Vector3.Lerp(from, to, i / (float)(count - 1)), normal, size);
+            }
         }
 
         /// <summary>A light diagonal band across a window: the shine that makes glass read as glass.</summary>
@@ -392,12 +466,52 @@ namespace Portfolio.DeathRace.EditorTools
         {
             for (int i = 0; i < 4; i++)
             {
-                Vector3 wheel = rig.Wheels[i];
-                float radius = (i < 2 ? rig.FrontRadius : rig.RearRadius) + extra;
-                float side = Mathf.Sign(wheel.x);
-                rig.Body.Push(new Vector3(side * x, wheel.y, wheel.z), Quaternion.Euler(0f, 0f, 90f));
-                rig.B(color).Torus(Vector3.zero, radius, tube, 10, 5, 180f, false, -90f);
-                rig.Body.Pop();
+                Arch(rig, i, x, tube, color, extra);
+            }
+        }
+
+        /// <summary>The flare over one wheel (0 front left, 1 front right, 2 rear left, 3 rear right), <paramref name="x"/> out from the middle.</summary>
+        public static void Arch(CarRig rig, int wheel, float x, float tube = 0.055f, string color = "Black", float extra = 0.06f)
+        {
+            Vector3 centre = rig.Wheels[wheel];
+            float radius = (wheel < 2 ? rig.FrontRadius : rig.RearRadius) + extra;
+            float side = Mathf.Sign(centre.x);
+            rig.Body.Push(new Vector3(side * x, centre.y, centre.z), Quaternion.Euler(0f, 0f, 90f));
+            rig.B(color).Torus(Vector3.zero, radius, tube, 10, 5, 180f, false, -90f);
+            rig.Body.Pop();
+        }
+
+        /// <summary>
+        /// A mudguard over one wheel: an arc of plates <paramref name="width"/> wide, <paramref name="gap"/> above the
+        /// tyre, from <paramref name="from"/> degrees (behind the wheel, 0) over its top (90) to <paramref name="to"/>
+        /// (in front, 180); in the driver's paint, or in <paramref name="color"/> of the palette.
+        /// </summary>
+        public static void Fender(CarRig rig, int wheel, float width, float gap = 0.06f, float from = 20f, float to = 160f, string color = null,
+            int steps = 7)
+        {
+            Vector3 centre = rig.Wheels[wheel];
+            float radius = (wheel < 2 ? rig.FrontRadius : rig.RearRadius) + gap;
+            LowPolyBuilder target = color == null ? rig.P() : rig.B(color);
+            for (int i = 0; i < steps; i++)
+            {
+                float a0 = Mathf.Lerp(from, to, i / (float)steps) * Mathf.Deg2Rad;
+                float a1 = Mathf.Lerp(from, to, (i + 1) / (float)steps) * Mathf.Deg2Rad;
+                Vector3 p0 = centre + new Vector3(0f, Mathf.Sin(a0), -Mathf.Cos(a0)) * radius;
+                Vector3 p1 = centre + new Vector3(0f, Mathf.Sin(a1), -Mathf.Cos(a1)) * radius;
+                Vector3 middle = (p0 + p1) * 0.5f;
+                target.Push(middle, Quaternion.LookRotation(p1 - p0, middle - centre));
+                target.BeveledBox(Vector3.zero, new Vector3(width, 0.04f, (p1 - p0).magnitude + 0.03f), 0.012f);
+                target.Pop();
+            }
+        }
+
+        /// <summary>A thin glowing strip through <paramref name="points"/> (a light line on a body), in the glow renderer.</summary>
+        public static void GlowLine(CarRig rig, string color, float thickness, params Vector3[] points)
+        {
+            rig.G(color);
+            for (int i = 0; i + 1 < points.Length; i++)
+            {
+                rig.Glows.Rod(points[i], points[i + 1], thickness, 4, false);
             }
         }
 
@@ -552,7 +666,13 @@ namespace Portfolio.DeathRace.EditorTools
                 case CarModel.Bulldog: Bulldog(rig); break;
                 case CarModel.Viper: Viper(rig); break;
                 case CarModel.Reaper: Reaper(rig); break;
-                default: Tyrant(rig); break;
+                case CarModel.Tyrant: Tyrant(rig); break;
+                case CarModel.Jackal: Jackal(rig); break;
+                case CarModel.Mauler: Mauler(rig); break;
+                case CarModel.Banshee: Banshee(rig); break;
+                case CarModel.Spectre: Spectre(rig); break;
+                case CarModel.Goliath: Goliath(rig); break;
+                default: Apocalypse(rig); break;
             }
             return rig;
         }

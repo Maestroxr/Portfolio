@@ -10,7 +10,8 @@ namespace Portfolio.DeathRace.EditorTools
 
         public static readonly string[] Names =
         {
-            "Explosion", "BigExplosion", "Sparks", "Smoke", "BlackSmoke", "MuzzleFlash", "Fire", "NitroFlame", "Dust", "Scorch"
+            "Explosion", "BigExplosion", "Sparks", "Smoke", "BlackSmoke", "MuzzleFlash", "Fire", "NitroFlame", "Dust", "Scorch",
+            "FlameJet", "PlasmaBurst", "EmpBlast", "Electric", "Weld"
         };
 
         public static GameObject Prefab(string name)
@@ -31,6 +32,7 @@ namespace Portfolio.DeathRace.EditorTools
             Save(NitroFlame());
             Save(Dust());
             Save(Scorch());
+            BuildWeaponPrefabs();
         }
 
         private static void Save(GameObject root)

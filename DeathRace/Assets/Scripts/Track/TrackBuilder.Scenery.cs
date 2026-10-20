@@ -5,13 +5,13 @@ using UnityEngine;
 namespace Portfolio.DeathRace
 {
     /// <summary>
-    /// The scenery half of a track's look: the set pieces of the layout (fire pits, container stacks, tyre walls), a few
-    /// landmarks in the big open spaces, lamps along the road (lit at night, a handful of them with real lights), and the
-    /// theme's props scattered round it all. The scatter keeps off the road and the barriers, keeps the gaps between two
-    /// close parts of the track low and open, lets things grow taller only as they stand further off (landmarks keep
-    /// well away south of the road, where they would stand between the camera, which looks north, and the cars), and
-    /// grows things bigger further out. At the end the static meshes are merged per
-    /// material into a few chunks, so hundreds of props cost a handful of draw calls.
+    /// The scenery half of a track's look: the set pieces of the layout (fire pits, container stacks, tyre walls, and the
+    /// tanks, pipe racks, wrecks and boulders of TrackBuilder.Pieces.cs), a few landmarks in the big open spaces, lamps
+    /// along the road (lit at night, a handful of them with real lights), and the theme's props scattered round it all.
+    /// The scatter keeps off the road and the barriers, keeps the gaps between two close parts of the track low and open,
+    /// lets things grow taller only as they stand further off (landmarks keep well away south of the road, where they
+    /// would stand between the camera, which looks north, and the cars), and grows things bigger further out. At the end
+    /// the static meshes are merged per material into a few chunks, so hundreds of props cost a handful of draw calls.
     /// </summary>
     public static partial class TrackBuilder
     {
@@ -62,6 +62,7 @@ namespace Portfolio.DeathRace
             {
                 containers[i] = new TrackMesh();
             }
+            var pieceMeshes = new PieceMeshes();
             var random = new System.Random(d.Track.Layout.Seed * 31 + 5);
             GameObject pit = Named(d, FirePitProp);
             GameObject barrel = Named(d, BurningBarrelProp);
@@ -110,6 +111,18 @@ namespace Portfolio.DeathRace
                         taken.Add(new Vector3(spot.x, spot.y, 7f));
                         break;
                     }
+                    case SetPieceKind.StorageTank:
+                        StorageTank(d, pieceMeshes, distance, side, piece.Offset > 0f ? piece.Offset : 6f, random, taken);
+                        break;
+                    case SetPieceKind.PipeRack:
+                        PipeRack(d, pieceMeshes, distance, side, piece.Offset > 0f ? piece.Offset : 1.2f, random, taken);
+                        break;
+                    case SetPieceKind.Wrecks:
+                        Wrecks(d, holder, pieceMeshes, distance, side, piece.Offset > 0f ? piece.Offset : 0.4f, random, taken);
+                        break;
+                    case SetPieceKind.Boulders:
+                        Boulders(d, pieceMeshes, distance, side, piece.Offset > 0f ? piece.Offset : 0.8f, random, taken);
+                        break;
                     default:
                     {
                         TyreWall(d, rubber, rims, distance, side, piece.Offset > 0f ? piece.Offset : 0.9f, taken);
@@ -117,6 +130,7 @@ namespace Portfolio.DeathRace
                     }
                 }
             }
+            pieceMeshes.Draw(d, holder);
             DrawIfAny(d, "Fire Pit Stones", stone, TrackMaterials.Plain("stone", new Color(0.36f, 0.33f, 0.3f, 1f), 0.1f), true, holder);
             DrawIfAny(d, "Fire Pit Coals", coals, TrackMaterials.Plain("coals", new Color(0.12f, 0.07f, 0.05f, 1f), 0.1f, new Color(1.6f, 0.45f, 0.08f, 1f)), false, holder);
             DrawIfAny(d, "Tyres", rubber, TrackMaterials.Plain("tyre", new Color(0.07f, 0.07f, 0.075f, 1f), 0.35f), true, holder);

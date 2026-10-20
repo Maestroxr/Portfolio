@@ -100,6 +100,9 @@ namespace Portfolio.DeathRace
         /// <summary>What a cash pickup is worth.</summary>
         public int CashPerPickup = 50;
 
+        /// <summary>What wrecking a car pays (a career race's bounty, which the HUD shows with the kill); 0 for none.</summary>
+        public int Bounty;
+
         public bool Pickups = true;
 
         public RaceEntrant EntrantAt(int seat)
@@ -157,6 +160,20 @@ namespace Portfolio.DeathRace
         public int MinesUsed;
         public int RocketsUsed;
         public int NitroUsed;
+        public int OilUsed;
+        public int EmpUsed;
+        public int MortarUsed;
+
+        /// <summary>How many of the special weapon <paramref name="kind"/> the car fired.</summary>
+        public int SpecialsUsed(SpecialKind kind)
+        {
+            switch (kind)
+            {
+                case SpecialKind.Oil: return OilUsed;
+                case SpecialKind.Emp: return EmpUsed;
+                default: return MortarUsed;
+            }
+        }
     }
 
     /// <summary>How a race went: the setup and every car's result, in the order of the places.</summary>

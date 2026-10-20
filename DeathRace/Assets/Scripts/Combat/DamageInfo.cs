@@ -11,7 +11,19 @@ namespace Portfolio.DeathRace
         Ram = 3,
         Wall = 4,
         /// <summary>The blast of a car being wrecked nearby.</summary>
-        Explosion = 5
+        Explosion = 5,
+
+        /// <summary>A flamethrower's fire, and the burning it leaves.</summary>
+        Flame = 6,
+
+        /// <summary>A plasma bolt and its burst.</summary>
+        Plasma = 7,
+
+        /// <summary>A mortar shell's blast.</summary>
+        Mortar = 8,
+
+        /// <summary>An EMP blast's jolt.</summary>
+        Emp = 9
     }
 
     /// <summary>

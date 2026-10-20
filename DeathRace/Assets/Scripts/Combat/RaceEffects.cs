@@ -6,7 +6,8 @@ namespace Portfolio.DeathRace
 {
     /// <summary>
     /// The effects of a race, pooled from the content's prefabs and coloured by the theme: explosions, sparks, smoke,
-    /// muzzle flashes, tracers, scorch marks, dust, the screen shake of a blast. One per race, on the race's root
+    /// muzzle flashes, tracers, scorch marks, dust, the flamethrower's jet, plasma bursts, EMP rings, the sparks of a
+    /// jammed car and of a welder, the screen shake of a blast. One per race, on the race's root
     /// (<see cref="Race.Effects"/>); the pools die with the race. Until the builders made a prefab, a stand-in drawn in
     /// code (<see cref="EffectFallbacks"/>) plays instead, so nothing is ever missing. A few uses per frame at most of
     /// each kind, so a pile-up of blasts cannot flood the frame.
@@ -49,7 +50,10 @@ namespace Portfolio.DeathRace
         /// <summary>The content the effects come from (the mines and rockets take their models from it too).</summary>
         public DeathRaceContent Content => content;
 
-        /// <summary>Something was played: its kind ("explosion", "big explosion", "sparks", "muzzle", "scorch") and where (development checks).</summary>
+        /// <summary>
+        /// Something was played: its kind ("explosion", "big explosion", "sparks", "muzzle", "scorch", "plasma burst",
+        /// "emp") and where (development checks).
+        /// </summary>
         public event Action<string, Vector3> Played;
 
         public Color TracerColor => theme != null ? theme.tracer : new Color(1f, 0.85f, 0.4f, 1f);
@@ -133,10 +137,39 @@ namespace Portfolio.DeathRace
         /// <summary>The streak of a round from <paramref name="from"/> to where it stopped.</summary>
         public virtual void Tracer(Vector3 from, Vector3 to)
         {
+            Tracer(from, to, 0.34f, 0.09f);
+        }
+
+        /// <summary>A streak <paramref name="width"/> wide that lasts <paramref name="seconds"/> (the minigun's are thinner and quicker).</summary>
+        public virtual void Tracer(Vector3 from, Vector3 to, float width, float seconds)
+        {
             TracerLine line = FreeTracer();
             if (line != null)
             {
-                line.Play(from, to, TracerColor, 0.09f, 0.34f);
+                line.Play(from, to, TracerColor, seconds, width);
+            }
+        }
+
+        /// <summary>The colour of plasma (the bolts, their bursts) and of an EMP's electricity: the same in every look.</summary>
+        public Color PlasmaColor => EffectFallbacks.PlasmaColor;
+
+        public Color EmpColor => EffectFallbacks.EmpColor;
+
+        /// <summary>A plasma bolt bursting at <paramref name="position"/> (<paramref name="size"/> 1 = a bolt's burst).</summary>
+        public virtual void PlasmaBurst(Vector3 position, float size = 1f)
+        {
+            if (Play(EffectKind.PlasmaBurst, position, Quaternion.identity, size, PlasmaColor, Night ? 1.6f : 0.8f) != null)
+            {
+                Played?.Invoke("plasma burst", position);
+            }
+        }
+
+        /// <summary>An EMP blast's ring racing out over the road to <paramref name="radius"/>.</summary>
+        public virtual void EmpBlast(Vector3 position, float radius)
+        {
+            if (Play(EffectKind.EmpBlast, new Vector3(position.x, 0f, position.z), Quaternion.identity, radius, EmpColor, Night ? 2f : 1f, true) != null)
+            {
+                Played?.Invoke("emp", position);
             }
         }
 
@@ -285,6 +318,11 @@ namespace Portfolio.DeathRace
                 case EffectKind.Muzzle: return content.muzzleFlash;
                 case EffectKind.Fire: return content.fire;
                 case EffectKind.NitroFlame: return content.nitroFlame;
+                case EffectKind.FlameJet: return content.flameJet;
+                case EffectKind.PlasmaBurst: return content.plasmaBurst;
+                case EffectKind.EmpBlast: return content.empBlast;
+                case EffectKind.Electric: return content.electric;
+                case EffectKind.Weld: return content.weld;
                 default: return content.dust;
             }
         }
@@ -298,6 +336,11 @@ namespace Portfolio.DeathRace
                 case EffectKind.Dust: return 40;
                 case EffectKind.Explosion: return 12;
                 case EffectKind.BigExplosion: return 6;
+                case EffectKind.PlasmaBurst: return 20;
+                case EffectKind.EmpBlast: return 6;
+                case EffectKind.FlameJet: return 12;
+                case EffectKind.Electric: return 12;
+                case EffectKind.Weld: return 12;
                 default: return 16;
             }
         }

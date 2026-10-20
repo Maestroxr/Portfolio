@@ -19,6 +19,19 @@ namespace Portfolio.DeathRace
         public bool Wrecked;
         public bool Finished;
         public float Health01;
+
+        /// <summary>It carries a radar jammer: a rocket fired at it will not home.</summary>
+        public bool Jammer;
+
+        /// <summary>An EMP has it jammed already (no point jamming it again).</summary>
+        public bool Jammed;
+    }
+
+    /// <summary>An oil slick a computer driver sees on the road: where it lies and how far it reaches.</summary>
+    public struct AiSlick
+    {
+        public Vector2 Position;
+        public float Radius;
     }
 
     /// <summary>What a computer driver sees and knows this frame: the input of its decisions.</summary>
@@ -44,6 +57,23 @@ namespace Portfolio.DeathRace
         public int Rockets;
         public int NitroCharges;
         public bool NitroActive;
+
+        /// <summary>How long a charge burns (0: the stock's <see cref="CombatRules.NitroSeconds"/>).</summary>
+        public float NitroSeconds;
+
+        /// <summary>The gun on the bonnet: its reach and how it is aimed.</summary>
+        public GunKind Gun;
+
+        /// <summary>The special weapon the button fires next, and how many of it are left (0: none at all).</summary>
+        public SpecialKind NextSpecial;
+
+        public int Specials;
+
+        /// <summary>Under an EMP's jam: nothing fires.</summary>
+        public bool Jammed;
+
+        /// <summary>On oil: the tyres hardly hold.</summary>
+        public bool Slicked;
         /// <summary>A barrier right in front of the nose.</summary>
         public bool WallAhead;
         /// <summary>The rubber band: below 1 eases off (far ahead of the people), above 1 pushes (far behind).</summary>
@@ -53,16 +83,22 @@ namespace Portfolio.DeathRace
         public List<AiOther> Others;
         /// <summary>Mines and other hazards on the road ahead.</summary>
         public List<Vector2> Hazards;
+
+        /// <summary>Oil slicks on the road ahead (null: none).</summary>
+        public List<AiSlick> Slicks;
     }
 
     /// <summary>
     /// The computer's driver. It follows the track's racing line (a blend of it towards the middle of the road the less
     /// skilled it is) with pure pursuit steering, and holds the speed its <see cref="SpeedProfile"/> allows, so it brakes
     /// for the bends it sees coming. It passes slower cars on the side with room, keeps off cars beside it, steers round
-    /// wrecks and mines, and when it is stuck against a barrier or facing the wrong way it backs out and turns. It fights:
-    /// the machine gun when a car sits in a narrow cone ahead, a mine when one is close behind, a rocket at a car ahead,
-    /// nitro on the straights. Skill (0 to 1) scales the line, the cornering and braking, the reaction time and the aim,
-    /// and a light rubber band keeps the people in the race without anyone noticing.
+    /// wrecks, mines and oil slicks, and when it is stuck against a barrier or facing the wrong way it backs out and turns.
+    /// It fights: the gun when a car sits in its sights within the gun's reach (the flamethrower close and wide, the
+    /// plasma cannon leading its target a little), a mine when one is close behind, a rocket at a car ahead (not at one
+    /// with a radar jammer, if it knows better), nitro on the straights, and the special weapon the button fires next when
+    /// it suits: oil for a car close behind, an EMP when rivals crowd round, a mortar at a car 20-45 m ahead on the line.
+    /// While jammed it holds its fire. Skill (0 to 1) scales the line, the cornering and braking, the reaction time and
+    /// the aim, and a light rubber band keeps the people in the race without anyone noticing.
     ///
     /// <see cref="Think"/> works on an <see cref="AiSense"/> alone, so its decisions can be tested on plain geometry;
     /// <see cref="Drive"/> gathers that sense from the car and its race.
@@ -87,6 +123,7 @@ namespace Portfolio.DeathRace
         private readonly Dictionary<int, float> passSides = new Dictionary<int, float>();
         private readonly List<AiOther> others = new List<AiOther>();
         private readonly List<Vector2> hazards = new List<Vector2>();
+        private readonly List<AiSlick> slicks = new List<AiSlick>();
         private readonly Collider[] hazardHits = new Collider[16];
 
         // What skill makes of the driver.
@@ -124,6 +161,8 @@ namespace Portfolio.DeathRace
         private float chasedFor;
         private float mineReady;
         private float rocketReady;
+        private float specialReady;
+        private float oilChasedFor;
         private float nitroReady;
         private float nitroUntil;
         private float lastThrottle;
@@ -247,6 +286,7 @@ namespace Portfolio.DeathRace
                 // The green light: the weapons' first chances come a while into the race, each driver at its own moment.
                 mineReady = clock + 8f + (float)random.NextDouble() * 8f;
                 rocketReady = clock + 6f + (float)random.NextDouble() * 8f;
+                specialReady = clock + 9f + (float)random.NextDouble() * 8f;
                 nitroReady = clock + 1f + (float)random.NextDouble() * 5f;
             }
             racingClock += deltaTime;
@@ -320,8 +360,9 @@ namespace Portfolio.DeathRace
             State = Cruise ? "cruise" : followSpeed < SpeedProfile.Unlimited ? "following" : throttle < 0f ? "braking" : "racing";
             lastThrottle = throttle;
 
-            // A clean start: nobody shoots in the first moments off the grid (the cars are nose to tail there).
-            if (sense.Armed && !Cruise && racingClock >= Mathf.Lerp(3.5f, 2f, Skill))
+            // A clean start: nobody shoots in the first moments off the grid (the cars are nose to tail there). A jammed car
+            // holds its fire (nothing would answer), and its chances wait for it.
+            if (sense.Armed && !Cruise && !sense.Jammed && racingClock >= Mathf.Lerp(3.5f, 2f, Skill))
             {
                 Fight(sense, deltaTime, steer, top, ref input);
             }
@@ -343,20 +384,25 @@ namespace Portfolio.DeathRace
             float speed = Mathf.Max(0f, sense.Speed);
             float avoidRange = Mathf.Clamp(8f + speed * 0.9f, 12f, 42f);
 
-            if (sense.Others != null && sense.Armed && !Cruise && sense.Ammo > 0)
+            if (sense.Others != null && sense.Armed && !Cruise && !sense.Jammed && sense.Ammo > 0)
             {
-                // Lining up a shot: drift towards a car a little way ahead that is not being caught (one that is, is passed).
+                // Lining up a shot: drift towards a car a little way ahead that is not being caught (one that is, is passed);
+                // the flamethrower has to get close for it.
+                bool flame = Guns.Of(sense.Gun).IsFlame;
+                float nearShot = flame ? 4f : 10f;
+                float farShot = flame ? 16f : 40f;
                 foreach (AiOther other in sense.Others)
                 {
                     float delta = path.Delta(sense.Distance, other.Distance);
-                    if (other.Wrecked || other.Finished || delta < 10f || delta > 40f || Mathf.Abs(other.Offset - offset) > 6f)
+                    if (other.Wrecked || other.Finished || delta < nearShot || delta > farShot || Mathf.Abs(other.Offset - offset) > 6f)
                     {
                         continue;
                     }
                     float closing = speed - Vector2.Dot(other.Velocity, path.TangentAt(other.Distance));
                     if (closing < 3f)
                     {
-                        offset = Mathf.Lerp(offset, other.Offset, 0.45f * Skill * (1f - Mathf.Clamp01((delta - 25f) / 15f)));
+                        float fade = 1f - Mathf.Clamp01((delta - farShot * 0.625f) / (farShot * 0.375f));
+                        offset = Mathf.Lerp(offset, other.Offset, 0.45f * Skill * fade);
                         break;
                     }
                 }
@@ -440,6 +486,46 @@ namespace Portfolio.DeathRace
                     }
                 }
             }
+
+            if (sense.Slicks != null)
+            {
+                foreach (AiSlick slick in sense.Slicks)
+                {
+                    // A slick is wide: it is steered round from further off, on the side with more room.
+                    float slickDistance = path.Project(slick.Position, sense.Distance, 50f);
+                    float delta = path.Delta(sense.Distance, slickDistance);
+                    if (delta <= -slick.Radius || delta > avoidRange + slick.Radius || !Notices(slick.Position))
+                    {
+                        continue;
+                    }
+                    float lateral = path.SignedOffset(slick.Position, slickDistance);
+                    float clearance = sense.CarHalfWidth + slick.Radius + 0.4f;
+                    if (Mathf.Abs(offset - lateral) >= clearance)
+                    {
+                        continue;
+                    }
+                    float left = lateral + clearance;
+                    float right = lateral - clearance;
+                    bool leftFits = left <= limit;
+                    bool rightFits = right >= -limit;
+                    float target;
+                    if (leftFits != rightFits)
+                    {
+                        target = leftFits ? left : right;
+                    }
+                    else if (leftFits)
+                    {
+                        target = Mathf.Abs(left - offset) <= Mathf.Abs(right - offset) ? left : right;
+                    }
+                    else
+                    {
+                        // No way round: as far to the side with the more road as it goes (it only clips the edge).
+                        target = limit - lateral >= lateral + limit ? limit : -limit;
+                    }
+                    float weight = 1f - Mathf.Clamp01((delta - 8f) / Mathf.Max(1f, avoidRange - 8f));
+                    offset = Mathf.Lerp(offset, target, weight * Mathf.Lerp(0.6f, 1f, Skill));
+                }
+            }
             return Mathf.Clamp(offset, -limit, limit);
         }
 
@@ -493,15 +579,28 @@ namespace Portfolio.DeathRace
             return true;
         }
 
-        /// <summary>The guns, the mines, the rockets and the nitro.</summary>
+        /// <summary>The gun, the mines, the rockets, the special weapons and the nitro.</summary>
         private void Fight(in AiSense sense, float deltaTime, float steer, float top, ref CarInput input)
         {
             Vector2 right = new Vector2(sense.Forward.y, -sense.Forward.x);
             Vector2 muzzle = sense.Position + sense.Forward * sense.CarHalfLength;
-            float gunRange = CombatRules.GunRange * Mathf.Lerp(0.45f, 0.85f, Skill);
+            GunSpec gun = Guns.Of(sense.Gun);
+            // A flame reaches as far as it reaches; a gun's rounds are worth firing only so far off (the better the driver,
+            // the further it trusts its aim), a bolt that takes its time to get there less far.
+            float trust = gun.IsFlame ? Mathf.Lerp(0.75f, 0.95f, Skill)
+                : gun.IsProjectile ? Mathf.Lerp(0.4f, 0.7f, Skill)
+                : Mathf.Lerp(0.45f, 0.85f, Skill);
+            float gunRange = gun.Range * trust;
+            float speed = Mathf.Max(0f, sense.Speed);
             bool inSights = false;
             bool rocketShot = false;
             bool mineShot = false;
+            bool oilShot = false;
+            bool mortarShot = false;
+            int empCaught = 0;
+            float empNearest = float.MaxValue;
+            float empReach = CombatRules.EmpRadius * Mathf.Lerp(0.6f, 0.85f, Skill);
+            float mortarLanding = CombatRules.MortarReach(speed);
             if (sense.Others != null)
             {
                 foreach (AiOther other in sense.Others)
@@ -516,23 +615,55 @@ namespace Portfolio.DeathRace
                     {
                         continue;
                     }
+                    if (gun.IsProjectile)
+                    {
+                        // A bolt takes a while to get there: aim where the car will be (a good driver leads it more truly).
+                        float closing = gun.ProjectileSpeed + speed - Vector2.Dot(other.Velocity, sense.Forward);
+                        float flight = distance / Mathf.Max(20f, closing);
+                        to += other.Velocity * flight * Mathf.Lerp(0.3f, 1f, Skill);
+                    }
                     float angle = Vector2.Angle(sense.Forward, to);
-                    float cone = Mathf.Atan((other.HalfWidth * 0.8f + aimTolerance) / distance) * Mathf.Rad2Deg;
+                    float cone = gun.IsFlame
+                        ? gun.Cone * 0.5f * Mathf.Lerp(0.6f, 0.9f, Skill) + Mathf.Atan(other.HalfWidth / Mathf.Max(1f, distance)) * Mathf.Rad2Deg
+                        : Mathf.Atan((other.HalfWidth * 0.8f + aimTolerance) / distance) * Mathf.Rad2Deg;
                     if (distance < gunRange && angle < cone)
                     {
                         inSights = true;
                     }
                     float rocketCone = Mathf.Lerp(13f, 7f, Skill);
-                    if (distance > 14f && distance < 65f && angle < rocketCone && (other.Health01 < 0.45f || Skill > 0.35f))
+                    bool homes = !other.Jammer || Skill < 0.3f;
+                    if (distance > 14f && distance < 65f && angle < rocketCone && homes && (other.Health01 < 0.45f || Skill > 0.35f))
                     {
                         rocketShot = true;
                     }
                     Vector2 rel = other.Position - sense.Position;
                     float along = Vector2.Dot(rel, sense.Forward);
                     float side = Vector2.Dot(rel, right);
-                    if (along < -2.5f && along > -(9f + Mathf.Max(0f, sense.Speed) * 0.3f) && Mathf.Abs(side) < 2.4f)
+                    if (along < -2.5f && along > -(9f + speed * 0.3f) && Mathf.Abs(side) < 2.4f)
                     {
                         mineShot = true;
+                    }
+                    if (along < -2.5f && along > -(12f + speed * 0.35f) && Mathf.Abs(side) < 3.2f)
+                    {
+                        oilShot = true;
+                    }
+                    float apart = rel.magnitude;
+                    if (apart < empReach && !other.Jammed)
+                    {
+                        empCaught++;
+                        empNearest = Mathf.Min(empNearest, apart);
+                    }
+                    // The shell comes down a fixed way ahead of where it left: fire when this car will be about there by then.
+                    float delta = path.Delta(sense.Distance, other.Distance);
+                    if (delta >= 20f && delta <= 45f)
+                    {
+                        float otherSpeed = Vector2.Dot(other.Velocity, path.TangentAt(other.Distance));
+                        float miss = delta + Mathf.Max(0f, otherSpeed) * CombatRules.MortarFlightSeconds - mortarLanding;
+                        float aim = CombatRules.MortarBlastRadius * Mathf.Lerp(0.9f, 0.45f, Skill);
+                        if (Mathf.Abs(miss) < aim && Mathf.Abs(other.Offset - sense.Offset) < CombatRules.MortarBlastRadius * 0.8f)
+                        {
+                            mortarShot = true;
+                        }
                     }
                 }
             }
@@ -579,19 +710,45 @@ namespace Portfolio.DeathRace
                 input.FireRocket = random.NextDouble() < Mathf.Lerp(0.5f, 1f, Skill);
             }
 
+            // The special the button fires next, when the moment suits it: oil for a car that sat on this one's tail a moment,
+            // an EMP when two rivals are near (or one right alongside), a mortar when a car will be where the shell lands.
+            oilChasedFor = oilShot ? oilChasedFor + deltaTime : 0f;
+            if (sense.Specials > 0 && clock >= specialReady)
+            {
+                bool suits;
+                switch (sense.NextSpecial)
+                {
+                    case SpecialKind.Oil:
+                        suits = oilChasedFor > Mathf.Lerp(0.9f, 0.4f, Skill);
+                        break;
+                    case SpecialKind.Emp:
+                        suits = empCaught >= 2 || (empCaught >= 1 && empNearest < CombatRules.EmpRadius * 0.45f);
+                        break;
+                    default:
+                        suits = mortarShot;
+                        break;
+                }
+                if (suits)
+                {
+                    specialReady = clock + Mathf.Lerp(5f, 11f, (float)random.NextDouble()) * weaponPatience;
+                    input.Special = random.NextDouble() < Mathf.Lerp(0.55f, 1f, Skill);
+                }
+            }
+
             // Nitro: on a straight long enough for a whole charge, when it is not already burning.
+            float charge = sense.NitroSeconds > 0f ? sense.NitroSeconds : CombatRules.NitroSeconds;
             if (clock < nitroUntil)
             {
                 input.Nitro = true;
             }
             else if (sense.NitroCharges > 0 && !sense.NitroActive && clock >= nitroReady && Mathf.Abs(steer) < 0.35f && sense.Speed > top * 0.5f)
             {
-                float burn = Mathf.Max(0f, sense.Speed) * 1.15f * CombatRules.NitroSeconds;
+                float burn = Mathf.Max(0f, sense.Speed) * 1.15f * charge;
                 float needed = handling.TopSpeedWith(true) * topShare * (sense.Pace > 1.01f ? 0.85f : 0.95f);
                 if (profile.MinAhead(sense.Distance, burn) >= needed)
                 {
                     nitroUntil = clock + NitroTap;
-                    nitroReady = clock + CombatRules.NitroSeconds + Mathf.Lerp(7f, 2f, Skill) * (0.7f + 0.6f * (float)random.NextDouble());
+                    nitroReady = clock + charge + Mathf.Lerp(7f, 2f, Skill) * (0.7f + 0.6f * (float)random.NextDouble());
                     input.Nitro = true;
                 }
             }
@@ -667,11 +824,22 @@ namespace Portfolio.DeathRace
             };
             if (car.Weapons != null)
             {
-                sense.Ammo = car.Weapons.Ammo;
-                sense.Mines = car.Weapons.Mines;
-                sense.Rockets = car.Weapons.Rockets;
-                sense.NitroCharges = car.Weapons.NitroCharges;
-                sense.NitroActive = car.Weapons.NitroActive;
+                CarWeapons weapons = car.Weapons;
+                sense.Ammo = weapons.Ammo;
+                sense.Mines = weapons.Mines;
+                sense.Rockets = weapons.Rockets;
+                sense.NitroCharges = weapons.NitroCharges;
+                sense.NitroActive = weapons.NitroActive;
+                sense.NitroSeconds = car.Stats.NitroSeconds;
+                sense.Gun = weapons.Gun;
+                SpecialKind? next = weapons.NextSpecial;
+                sense.NextSpecial = next ?? SpecialKind.Oil;
+                sense.Specials = next.HasValue ? weapons.SpecialsLeft(next.Value) : 0;
+            }
+            if (car.Status != null)
+            {
+                sense.Jammed = car.Status.IsJammed;
+                sense.Slicked = car.Status.IsSlicked;
             }
             if (Mathf.Abs(sense.Speed) < 8f)
             {
@@ -704,7 +872,9 @@ namespace Portfolio.DeathRace
                     HalfWidth = halfAcross,
                     Wrecked = other.IsWrecked,
                     Finished = other.HasFinished,
-                    Health01 = other.Health != null ? other.Health.Health01 : 1f
+                    Health01 = other.Health != null ? other.Health.Health01 : 1f,
+                    Jammer = other.Stats.Jammer,
+                    Jammed = other.Status != null && other.Status.IsJammed
                 });
             }
 
@@ -721,7 +891,22 @@ namespace Portfolio.DeathRace
                     Vector3 point = hazardHits[i].transform.position;
                     hazards.Add(new Vector2(point.x, point.z));
                 }
+                slicks.Clear();
+                Vector2 middle = new Vector2(centre.x, centre.z);
+                foreach (OilSlick slick in OilSlick.Active)
+                {
+                    if (slick == null || (slick.Race != null && slick.Race != race))
+                    {
+                        continue;
+                    }
+                    Vector2 at = new Vector2(slick.Position.x, slick.Position.z);
+                    if ((at - middle).sqrMagnitude <= (reach + 2f + slick.Radius) * (reach + 2f + slick.Radius))
+                    {
+                        slicks.Add(new AiSlick { Position = at, Radius = slick.Radius });
+                    }
+                }
             }
+            sense.Slicks = slicks;
             return sense;
         }
 

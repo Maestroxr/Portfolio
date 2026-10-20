@@ -11,12 +11,23 @@ namespace Portfolio.DeathRace
     /// <summary>
     /// A race against the computer, set up in one window: the tracks on the left (stars and best lap of each; the ones
     /// not open yet locked, with what opens them), the map of the track picked in the middle, and on the right the car
-    /// (any of the six, with its picture and stats), how hard the computer races and how many laps. Start races it.
+    /// (any of the twelve, with its picture and stats), how hard the computer races and how many laps. Start races it.
     /// The picks are remembered for the session (and so for Race Again).
+    ///
+    /// The tracks are a list that scrolls; its rows are as tall as lets every track show at once (the twelve of today
+    /// fit in rows of about 53 pixels, a shorter list keeps the roomy rows of 78), and only a longer table would scroll.
     /// </summary>
     public sealed class QuickRaceWindow : DeathRaceWindow
     {
-        private const float RowHeight = 78f;
+        private const float MaxRowHeight = 78f;
+        private const float MinRowHeight = 52f;
+        private const float RowSpacing = 6f;
+
+        // The list of tracks: from 40 to 640 across the panel, 130 above its bottom to 146 below its top.
+        private const float ListLeft = 40f;
+        private const float ListRight = 640f;
+        private const float ListBottom = 130f;
+        private const float ListTop = 146f;
 
         private static readonly string[] Difficulties = { "Easy", "Medium", "Hard" };
 
@@ -85,16 +96,14 @@ namespace Portfolio.DeathRace
             hint.text = L("Pick a track, a car and how hard the computer races. No money, no ladder: just the race.");
 
             // The tracks.
-            RectTransform list = Area(panel, "Tracks");
-            Span(list, new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(40f, 130f), new Vector2(640f, -146f));
-            var layout = list.gameObject.AddComponent<VerticalLayoutGroup>();
-            layout.spacing = 8f;
-            layout.childControlHeight = false;
-            layout.childControlWidth = true;
-            layout.childForceExpandHeight = false;
+            RectTransform holder = Area(panel, "Tracks");
+            Span(holder, new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(ListLeft, ListBottom), new Vector2(ListRight, -ListTop));
+            RectTransform list = kit.ScrollList(holder, "Track List", Vector2.zero, Vector2.zero, RowSpacing);
+            kit.ScrollBar(list.GetComponentInParent<ScrollRect>(), holder);
+            float rowHeight = RowHeight(TrackLayouts.Count, PanelSize.y - ListBottom - ListTop);
             for (int i = 0; i < TrackLayouts.Count; i++)
             {
-                rows.Add(BuildRow(list, i, look));
+                rows.Add(BuildRow(list, i, look, rowHeight));
             }
 
             // The track picked.
@@ -151,10 +160,22 @@ namespace Portfolio.DeathRace
             ui.ButtonAt(panel, "Back", look.row, new Vector2(1f, 0f), new Vector2(-360f, 36f), new Vector2(220f, 76f), Hide);
         }
 
-        private TrackRow BuildRow(RectTransform list, int index, OverlayLook look)
+        /// <summary>How tall a row is when <paramref name="count"/> rows share <paramref name="room"/> pixels (within the limits).</summary>
+        public static float RowHeight(int count, float room)
         {
+            if (count <= 0)
+            {
+                return MaxRowHeight;
+            }
+            return Mathf.Clamp((room - RowSpacing * (count - 1)) / count, MinRowHeight, MaxRowHeight);
+        }
+
+        private TrackRow BuildRow(RectTransform list, int index, OverlayLook look, float height)
+        {
+            // The words and stars shrink with the row (78 pixels is the roomy row these sizes were drawn for).
+            float scale = Mathf.Lerp(0.8f, 1f, Mathf.InverseLerp(MinRowHeight, MaxRowHeight, height));
             var row = new TrackRow { Track = index };
-            row.Rect = kit.Row(list, RowHeight);
+            row.Rect = kit.Row(list, height);
             row.Back = row.Rect.GetComponent<Image>();
             row.Back.raycastTarget = true;
             row.Picked = ui.Highlight(row.Rect, Accent, 0.32f);
@@ -162,12 +183,12 @@ namespace Portfolio.DeathRace
             Button pick = row.Rect.gameObject.AddComponent<Button>();
             pick.targetGraphic = row.Back;
             pick.onClick.AddListener(() => Pick(index));
-            row.Name = ui.WordsAt(row.Rect, TrackName(index), 28f, look.text, TextAlignmentOptions.MidlineLeft, new Vector2(0f, 1f),
-                new Vector2(20f, -6f), new Vector2(380f, 38f), FontStyles.Bold);
-            row.Detail = ui.WordsAt(row.Rect, "", 20f, look.muted, TextAlignmentOptions.MidlineLeft, new Vector2(0f, 0f), new Vector2(20f, 6f),
-                new Vector2(500f, 30f));
-            row.Stars = ui.Stars(row.Rect, 3, new Vector2(1f, 0.5f), new Vector2(-136f, 0f), 34f);
-            row.Lock = Shape(row.Rect, ui.Lock, look.muted, new Vector2(1f, 0.5f), new Vector2(-24f, 0f), new Vector2(40f, 40f));
+            row.Name = ui.WordsAt(row.Rect, TrackName(index), 28f * scale, look.text, TextAlignmentOptions.MidlineLeft, new Vector2(0f, 1f),
+                new Vector2(20f, -height * 0.06f), new Vector2(380f, height * 0.5f), FontStyles.Bold);
+            row.Detail = ui.WordsAt(row.Rect, "", 20f * scale, look.muted, TextAlignmentOptions.MidlineLeft, new Vector2(0f, 0f),
+                new Vector2(20f, height * 0.06f), new Vector2(500f, height * 0.38f));
+            row.Stars = ui.Stars(row.Rect, 3, new Vector2(1f, 0.5f), new Vector2(-136f * scale, 0f), 34f * scale);
+            row.Lock = Shape(row.Rect, ui.Lock, look.muted, new Vector2(1f, 0.5f), new Vector2(-24f, 0f), new Vector2(40f, 40f) * scale);
             return row;
         }
 
@@ -270,17 +291,53 @@ namespace Portfolio.DeathRace
             return campaign == null || campaign.Count == 0 || campaign.IsUnlocked(index, Game.Progress);
         }
 
-        /// <summary>What opens a track: the Showdown's arena the title, the others a star on the track before or the career.</summary>
+        /// <summary>
+        /// What opens a track (<see cref="DeathRaceCampaign.IsUnlocked"/>): the Showdown's arena a title; the others a star
+        /// on the ordinary track before, or a career that reaches them: the rank of a Wasteland career that opens one of
+        /// its tracks, or the league whose career opens one of the tracks the Wasteland never races.
+        /// </summary>
         private string LockReason(int index)
         {
             if (TrackLayouts.Of(index).Showdown)
             {
                 return L("Beat The Warden in a career to race here.");
             }
-            int rank = CareerRules.RankOpening(index);
-            string before = TrackName(Mathf.Max(0, index - 1));
+            string before = TrackName(Mathf.Max(0, DeathRaceCampaign.PreviousOrdinary(index, Game != null ? Game.Tracks : null)));
+            LeagueSpec league = FirstLeagueRacing(index);
+            if (league != null && league.Kind != LeagueKind.Wasteland)
+            {
+                return LF("A podium at {0} or a career in the {1} opens it.", before, Portfolio.DeathRace.L.Data(league.Name));
+            }
+            int rank = RankOpening(league, index);
             return rank > 0 ? LF("A podium at {0} or {1} in a career opens it.", before, RaceFormat.Rank(rank))
                 : LF("A podium at {0} opens it.", before);
+        }
+
+        /// <summary>The first league whose career races <paramref name="track"/>, or null.</summary>
+        private static LeagueSpec FirstLeagueRacing(int track)
+        {
+            foreach (LeagueSpec league in Leagues.All)
+            {
+                if (league.Tracks != null && System.Array.IndexOf(league.Tracks, track) >= 0)
+                {
+                    return league;
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// The rank a career of <paramref name="league"/> reaches to open <paramref name="track"/>: 0 when it is open from
+        /// the career's first day, or not one of the league's tracks.
+        /// </summary>
+        public static int RankOpening(LeagueSpec league, int track)
+        {
+            if (league == null || league.Tracks == null || league.TrackRanks == null)
+            {
+                return 0;
+            }
+            int step = System.Array.IndexOf(league.Tracks, track) - league.StartTracks;
+            return System.Array.IndexOf(league.Tracks, track) >= 0 && step >= 0 && step < league.TrackRanks.Length ? league.TrackRanks[step] : 0;
         }
 
         public static string BiomeName(Biome biome)

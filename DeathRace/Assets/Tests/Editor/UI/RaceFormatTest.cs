@@ -51,13 +51,14 @@ namespace Portfolio.DeathRace.Tests
         }
 
         [Test]
-        public void StatBarsAreSharesOfTheWardensCar()
+        public void StatBarsAreSharesOfTheBestCars()
         {
+            // The bars go by the best of all the cars fully upgraded (CarBarsTest): The Warden's Tyrant fills at least half of each.
             CarStats warden = Career.WardenLoadout().Stats();
-            Assert.AreEqual(1f, CarBars.Speed(warden), 1e-4f);
-            Assert.AreEqual(1f, CarBars.Acceleration(warden), 1e-4f);
-            Assert.AreEqual(1f, CarBars.Handling(warden), 1e-4f);
-            Assert.AreEqual(1f, CarBars.Armour(warden), 1e-4f);
+            foreach (System.Func<CarStats, float> bar in new System.Func<CarStats, float>[] { CarBars.Speed, CarBars.Acceleration, CarBars.Handling, CarBars.Armour })
+            {
+                Assert.That(bar(warden), Is.InRange(0.5f, 1f));
+            }
             CarStats rustbucket = new CarLoadout { model = CarModel.Rustbucket }.Stats();
             CarStats upgraded = CarLoadout.Upgraded(CarModel.Rustbucket, 2).Stats();
             foreach (System.Func<CarStats, float> bar in new System.Func<CarStats, float>[] { CarBars.Speed, CarBars.Acceleration, CarBars.Handling, CarBars.Armour })

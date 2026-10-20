@@ -19,8 +19,17 @@ MonoBehaviour:
   - {fileID: 2082812125280972796, guid: ab0b0cf14b5c85a4b8f4e9afbfb59776, type: 3}
   - {fileID: 6141275993014936847, guid: 2407d6e72ad23a149b8dd41a99400b11, type: 3}
   - {fileID: 9132755492544285223, guid: 5ced94ebea249bd43a260bba95ec80aa, type: 3}
+  - {fileID: 5427139292161102057, guid: a73f16679ebe97e4fa1f984a3d23cbec, type: 3}
+  - {fileID: 7872070111716049247, guid: fe6315b6fb7a98843a1090d80f1608d6, type: 3}
+  - {fileID: 1155498032379125196, guid: f922fe97ef7af2d4d9b648267c12ca31, type: 3}
+  - {fileID: 9055691708858809251, guid: 346db2b215975ae418e6297c900158e6, type: 3}
+  - {fileID: 717293048498006232, guid: 06ccccf9e15216f4498af615c1d39dcb, type: 3}
+  - {fileID: 35001084129747146, guid: 732d443ff01e5094b975de922b5389a9, type: 3}
   mine: {fileID: 5867865995761979649, guid: 37b3344a47297c849a3970d9a023704d, type: 3}
   rocket: {fileID: 2929051935440101728, guid: d048fed2ff9f3054fba336a68967be8a, type: 3}
+  oilSlick: {fileID: 7989205267952152238, guid: 72da566ac59a4c047b6bd674b8affec2, type: 3}
+  mortarShell: {fileID: 9056750116955724117, guid: 4369f486f6bc2db4d95dfdf398d1d524, type: 3}
+  plasmaBolt: {fileID: 5783113856147146421, guid: e72d5ae2fd7122f4c8b022a5e24bb091, type: 3}
   pickups:
   - {fileID: 6638183341047015915, guid: 2e2a1e8dbff35854a9e7f4ddcdae4a04, type: 3}
   - {fileID: 1701229417416892731, guid: aff2fb63431fa134cbecf198dbd2ee7d, type: 3}
@@ -36,6 +45,11 @@ MonoBehaviour:
   nitroFlame: {fileID: 3148758368934216136, guid: debf1f2d3bc7fb34fb449d14d94efda3, type: 3}
   dust: {fileID: 2460247774467116330, guid: 87e68d63b27b76948b0df95a083509a8, type: 3}
   scorch: {fileID: 9045587197343408108, guid: 3790a36d5c207ba4d84024e6c14f7a8e, type: 3}
+  flameJet: {fileID: 1894227349173513550, guid: a726abbc8f47e0348b0490e7e877eb1b, type: 3}
+  plasmaBurst: {fileID: 3635483642875187046, guid: c307b64795163b140a9647f416444cf7, type: 3}
+  empBlast: {fileID: 3964227908097229108, guid: 88c33679690c33e46ab54925a9f0b296, type: 3}
+  electric: {fileID: 116272551623885837, guid: e5cce748923aeb14590f510797fb9421, type: 3}
+  weld: {fileID: 1538223974630960872, guid: 4efb0e5aae49e9348a03b620e457b0bc, type: 3}
   tracer: {fileID: 2100000, guid: 816502406dab72f4281a4ad79385db1c, type: 2}
   skid: {fileID: 2100000, guid: 1abe164a00a49704bac1dee104a621a0, type: 2}
   sounds:
@@ -51,6 +65,15 @@ MonoBehaviour:
     mineArm: {fileID: 8300000, guid: dd8d34aeff1b4a84fb3a5d7c12e07f3d, type: 3}
     rocketLaunch: {fileID: 8300000, guid: 03799d82377390943aca5383c9118b0a, type: 3}
     nitro: {fileID: 8300000, guid: 3ea07a40e9684934f9c02615fdd0d615, type: 3}
+    minigun: {fileID: 8300000, guid: 7f536ea24a4b14b4997f503deea4b680, type: 3}
+    flame: {fileID: 8300000, guid: b68c1b566d02d8e4684260c6ed99c090, type: 3}
+    plasmaShot: {fileID: 8300000, guid: ca7c9c01183e66b4f94ede5bd0700b96, type: 3}
+    plasmaBurst: {fileID: 8300000, guid: 0c72c15dc266a904f90ea21cd8b59519, type: 3}
+    oilPour: {fileID: 8300000, guid: 7720a0ab087734f4faaa316f89d4d758, type: 3}
+    emp: {fileID: 8300000, guid: cc21c91d4a8b16a46a9474b2368643a2, type: 3}
+    mortarLaunch: {fileID: 8300000, guid: 9675f5a31b565814ba1c91b4769b4713, type: 3}
+    mortarWhistle: {fileID: 8300000, guid: f38919a8639a66b409820a2a5a4ca70b, type: 3}
+    jammed: {fileID: 8300000, guid: a96966595e1050f44b5dfe599c59f9de, type: 3}
     pickupCash: {fileID: 8300000, guid: f8e1e47ddec5eda40b29a607c891014a, type: 3}
     pickupRepair: {fileID: 8300000, guid: ef806e4d01e1ea74aa62124f196d03fd, type: 3}
     pickupAmmo: {fileID: 8300000, guid: 7ec71205ed8a0044883a626fb0cf3030, type: 3}

@@ -24,11 +24,14 @@ namespace Portfolio.DeathRace
         /// <summary>Fires a rocket (pressed this step).</summary>
         public bool FireRocket;
 
+        /// <summary>Fires the special weapon armed, or the next one there is (pressed this step).</summary>
+        public bool Special;
+
         public static CarInput Idle => default;
 
         public override string ToString()
         {
-            return $"throttle {Throttle:0.00} steer {Steer:0.00}{(Fire ? " fire" : "")}{(Nitro ? " nitro" : "")}{(DropMine ? " mine" : "")}{(FireRocket ? " rocket" : "")}";
+            return $"throttle {Throttle:0.00} steer {Steer:0.00}{(Fire ? " fire" : "")}{(Nitro ? " nitro" : "")}{(DropMine ? " mine" : "")}{(FireRocket ? " rocket" : "")}{(Special ? " special" : "")}";
         }
     }
 
