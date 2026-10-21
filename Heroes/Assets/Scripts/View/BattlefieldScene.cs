@@ -89,7 +89,7 @@ namespace Portfolio.Heroes
         private bool unloading;
 
         /// <summary>The scene on its way in, while <see cref="Load"/> waits for it.</summary>
-        private static AsyncOperation loading;
+        private static SceneLoad loading;
 
         /// <summary>The field last handed over by <see cref="Load"/>, until it is unloaded.</summary>
         private static BattlefieldScene current;
@@ -105,7 +105,7 @@ namespace Portfolio.Heroes
         public bool IsDragging => orbit.Turned;
 
         /// <summary>Whether a battlefield is on its way in (<see cref="Load"/> waits for the scene).</summary>
-        public static bool Loading => loading != null && !loading.isDone;
+        public static bool Loading => loading != null && !loading.IsDone;
 
         /// <summary>Whether the camera is still gliding in at the start of the battle.</summary>
         public bool InIntro => introStart >= 0f && Time.unscaledTime - introStart < IntroLength;
@@ -113,26 +113,28 @@ namespace Portfolio.Heroes
         // ------------------------------------------------------------------ loading and unloading
 
         /// <summary>
-        /// Loads the HeroesBattle scene next to the ones open (or, when the build does not have it, makes a scene in code
-        /// with a field of its own) and hands its field over once it is there.
+        /// Loads the HeroesBattle scene next to the ones open, from the build or from the game's content, whichever has
+        /// it (or, when neither does, makes a scene in code with a field of its own) and hands its field over once it is
+        /// there.
         /// </summary>
         public static IEnumerator Load(HeroesArt art, Action<BattlefieldScene> ready, VolumeProfile look = null)
         {
             BattlefieldScene found = null;
             if (GameLauncher.CanLoadScene(SceneName))
             {
-                AsyncOperation operation = GameLauncher.LoadSceneAdditive(SceneName);
-                loading = operation;
-                while (operation != null && !operation.isDone)
+                SceneLoad load = GameLauncher.LoadSceneAdditive(SceneName);
+                loading = load;
+                while (load != null && !load.IsDone)
                 {
                     yield return null;
                 }
-                if (loading == operation)
+                if (loading == load)
                 {
                     loading = null;
                 }
-                // The scene just loaded is the last one open; one of the same name may still be on its way out.
-                Scene scene = SceneManager.GetSceneAt(SceneManager.sceneCount - 1);
+                // The load knows its scene; failing that, the scene just loaded is the last one open (one of the same
+                // name may still be on its way out).
+                Scene scene = load != null && load.Scene.IsValid() ? load.Scene : SceneManager.GetSceneAt(SceneManager.sceneCount - 1);
                 if (scene.name != SceneName)
                 {
                     scene = SceneManager.GetSceneByName(SceneName);
@@ -184,11 +186,11 @@ namespace Portfolio.Heroes
         /// </summary>
         public static void Abandon()
         {
-            AsyncOperation pending = loading;
+            SceneLoad pending = loading;
             loading = null;
-            if (pending != null && !pending.isDone)
+            if (pending != null && !pending.IsDone)
             {
-                pending.completed += _ => Sweep(false);
+                pending.Completed += _ => Sweep(false);
             }
             Sweep(true);
         }

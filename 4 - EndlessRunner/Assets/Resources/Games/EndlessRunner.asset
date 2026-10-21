@@ -17,12 +17,37 @@ MonoBehaviour:
   description: 'Run through five worlds: dodge crates, jump hurdles, slide under barriers and climb ramps onto wagons to grab the coins. Eight campaign levels with three stars each, plus an endless run. Two looks: the classic worlds and the Night Shift.'
   icon: {fileID: 21300000, guid: ff0f2497ed1c95744a62c6ef5b8f771c, type: 3}
   sortOrder: 4
-  scenePath: Assets/Scenes/EndlessRunner.unity
+  scenePath: Packages/com.skinnerboxes.endlessrunner/Scenes/EndlessRunner.unity
   extraScenePaths: []
-  theme: {fileID: 11400000, guid: 32438ac614d30f24e8ff68c9dce23db0, type: 2}
-  themes:
-  - {fileID: 11400000, guid: 32438ac614d30f24e8ff68c9dce23db0, type: 2}
-  - {fileID: 11400000, guid: 9151d5eb2b6342944ac866f146250c5f, type: 2}
+  themeReference:
+    m_AssetGUID: 32438ac614d30f24e8ff68c9dce23db0
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  themeReferences:
+  - m_AssetGUID: 32438ac614d30f24e8ff68c9dce23db0
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  - m_AssetGUID: 9151d5eb2b6342944ac866f146250c5f
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  themeCards:
+  - guid: 32438ac614d30f24e8ff68c9dce23db0
+    assetName: Classic
+    displayName: Classic
+    screenshot: {fileID: 21300000, guid: 4e34c6947b6bb8b4c997f58e9c043b79, type: 3}
+    preview: {fileID: 21300000, guid: ff0f2497ed1c95744a62c6ef5b8f771c, type: 3}
+  - guid: 9151d5eb2b6342944ac866f146250c5f
+    assetName: NightShift
+    displayName: Night Shift
+    screenshot: {fileID: 21300000, guid: 6a8d33da501e3954d862a7d154817da3, type: 3}
+    preview: {fileID: 21300000, guid: 49a45a381fa578f47a626ac169fce8fb, type: 3}
+  builtIn: 0
   database: skinnerboxes-endlessrunner
   scene: {fileID: 102900000, guid: 75def2e6118654349bc1f291612b504a, type: 3}
   extraScenes: []

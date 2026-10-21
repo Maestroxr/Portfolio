@@ -17,13 +17,38 @@ MonoBehaviour:
   description: A turn based strategy of heroes, towns and armies, fought on a hexagonal map.
   icon: {fileID: 21300000, guid: 928cbd1773fdd5747aaa49db7815490c, type: 3}
   sortOrder: 50
-  scenePath: Assets/Scenes/Heroes.unity
+  scenePath: Packages/com.skinnerboxes.heroes/Scenes/Heroes.unity
   extraScenePaths:
-  - Assets/Scenes/HeroesBattle.unity
-  theme: {fileID: 11400000, guid: 80acc357fb220544cbd8b7de5d76b325, type: 2}
-  themes:
-  - {fileID: 11400000, guid: 80acc357fb220544cbd8b7de5d76b325, type: 2}
-  - {fileID: 11400000, guid: 3514cbed3cb97c34d9ae4ed867231007, type: 2}
+  - Packages/com.skinnerboxes.heroes/Scenes/HeroesBattle.unity
+  themeReference:
+    m_AssetGUID: 80acc357fb220544cbd8b7de5d76b325
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  themeReferences:
+  - m_AssetGUID: 80acc357fb220544cbd8b7de5d76b325
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  - m_AssetGUID: 3514cbed3cb97c34d9ae4ed867231007
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  themeCards:
+  - guid: 80acc357fb220544cbd8b7de5d76b325
+    assetName: Classic
+    displayName: Classic
+    screenshot: {fileID: 21300000, guid: 44672b0975034db43b2f1fd84ed8d62f, type: 3}
+    preview: {fileID: 21300000, guid: 5e84ebc3bfe4eef43b70a7b9dfcc0335, type: 3}
+  - guid: 3514cbed3cb97c34d9ae4ed867231007
+    assetName: GrimRealm
+    displayName: Grim Realm
+    screenshot: {fileID: 21300000, guid: 8fae8ad89d3bbf141911e7d464d84210, type: 3}
+    preview: {fileID: 21300000, guid: 59457d54ec870f14ab4ade9d6064eb6c, type: 3}
+  builtIn: 0
   database: skinnerboxes-heroes
   scene: {fileID: 102900000, guid: b2639f4f5a056204f93fdf4e08f9b7b4, type: 3}
   extraScenes:
