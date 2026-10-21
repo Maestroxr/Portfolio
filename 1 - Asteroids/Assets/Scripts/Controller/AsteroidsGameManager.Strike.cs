@@ -880,7 +880,9 @@ namespace Portfolio.Asteroids
                 return;
             }
             bool party = IsParty;
-            if (landed || working == null || !(party ? AnyLocalShipAlive : ship.IsAlive))
+            // The shared screen flies the seats of others and banks nothing; a device whose seat the screen flies banks
+            // its money on the results (AsteroidsGameManager.Coop.cs).
+            if (landed || working == null || SceneShipParked || !(party ? AnyLocalShipAlive : ship.IsAlive))
             {
                 return;
             }
@@ -965,10 +967,12 @@ namespace Portfolio.Asteroids
                 return;
             }
             StrikeGunnery guns = ship.Strike;
+            // The shared screen has no pilot of its own: no wallet, and the money of the whole room.
+            bool screen = IsScreenDevice;
             var state = new StrikeHudState
             {
-                Wallet = walletAtStart,
-                MissionMoney = FliesSquad && squad != null ? squad.TeamScore : score.Score,
+                Wallet = screen ? 0 : walletAtStart,
+                MissionMoney = screen && online != null ? (int)Mathf.Clamp(online.RoomScore, 0, int.MaxValue) : FliesSquad && squad != null ? squad.TeamScore : score.Score,
                 Energy = Mathf.Clamp01(working.Energy / StrikeRules.MaxEnergy),
                 Shield = working.PhaseShields > 0 ? Mathf.Clamp01(working.ShieldPoints / StrikeRules.PhaseShieldPoints) : 0f,
                 PhaseShields = working.PhaseShields,

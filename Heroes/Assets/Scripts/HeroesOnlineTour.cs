@@ -4,6 +4,7 @@ using System.Linq;
 using Gamebox;
 using Gamebox.Online;
 using Gamebox.UI;
+using Portfolio.Heroes.UI;
 using UnityEngine;
 
 namespace Portfolio.Heroes
@@ -30,10 +31,25 @@ namespace Portfolio.Heroes
     /// they would. The host's room takes two players and the host's own party; a plain host that waits for a party of
     /// another device is given the size with <c>-gamebox-room-players</c>. The roles combine: <c>hostpartysaves</c> plays
     /// the saved game with its party, whose end of the game called off is the standings of every realm.
+    ///
+    /// <c>hostscreen</c> opens the room as its shared screen: nothing is played there, the tour only watches the whole
+    /// game (as host the screen moves the computer seats and the wilds) and takes pictures of the map, of the first
+    /// battle and its results, and of the standings at the end. <c>joinremote</c> joins as a remote control: the pilot
+    /// plays through the panel of the remote (<see cref="RemotePanel"/>: its question answered, its battles fought with
+    /// Auto combat, Next Hero and End Turn pressed) and sends its heroes over the map as before, and takes pictures of
+    /// the panel; with <c>-heroes-online-switch &lt;seconds&gt;</c> it plays on its own device after that many seconds
+    /// of the game and goes back to the remote after as many more, and writes down that the game goes on either way.
+    /// <c>joinown</c> joins a room with a shared screen but plays on its own device, as <c>join</c> does.
     /// </summary>
     public class HeroesOnlineTour : OnlineTour
     {
         private const string Argument = "-heroes-online";
+
+        /// <summary>The command line switch that has a remote play on its own device after so many seconds of the game, and go back after as many more.</summary>
+        private const string SwitchArgument = "-heroes-online-switch";
+
+        /// <summary>Seconds the shared screen waits for anything to happen on the table before it gives up.</summary>
+        private const float ScreenPatience = 150f;
 
         /// <summary>The room of the tour: a small random map with no clock and no computer players, fought out on battlefields.</summary>
         private const string TourOptions = "size=0;bots=0;turn=0;treasure=2;monsters=2;battles=1";
@@ -75,6 +91,9 @@ namespace Portfolio.Heroes
 
         private HeroesGame Game => manager != null ? manager.Game : null;
 
+        /// <summary>The panel of the remote while this device plays as one, else null (the pilot then plays as on any device).</summary>
+        private RemotePanel Panel => Online != null && Online.ShowsRemotePanel ? RemotePanel.Current : null;
+
         private IEnumerator Start()
         {
             OpenLog();
@@ -108,9 +127,11 @@ namespace Portfolio.Heroes
 
             if (Hosting)
             {
-                yield return HostRoom("Tour room", -1, manager.Online.ComposeOptions(-1, Options), (byte)(TablePlayers + PartyExtras));
+                int players = NumberArgument(RoomPlayersArgument, TablePlayers + PartyExtras);
+                yield return HostRoom("Tour room", -1, manager.Online.ComposeOptions(-1, Options), (byte)players);
                 yield return Shot("01_room");
-                yield return WaitForGuests(1, 150f);
+                // The shared screen plays no seat: every player of the room comes from another device.
+                yield return WaitForGuests(AsScreen ? players : 1, 150f);
                 yield return new WaitForSeconds(0.5f);
                 yield return Shot("02_ready");
                 StartRoom();
@@ -132,8 +153,15 @@ namespace Portfolio.Heroes
                  $"{Game.State.map.grid.columns}x{Game.State.map.grid.rows}, seed {Game.State.seed}, battles {Game.State.rules.battleStyle}");
             yield return new WaitForSeconds(2f);
             yield return Shot("03_map");
-            yield return Play(Resaves ? 2 : Days);
-            if (Resaves)
+            if (AsScreen)
+            {
+                yield return Watch();
+            }
+            else
+            {
+                yield return Play(Resaves ? 2 : Days);
+            }
+            if (Resaves && !AsScreen)
             {
                 yield return PlayTheSave();
             }
@@ -147,8 +175,116 @@ namespace Portfolio.Heroes
         private string SeatsHere()
         {
             IReadOnlyList<int> seats = manager.LocalSeats;
+            if (seats.Count == 0)
+            {
+                return "no seat (the shared screen)";
+            }
             string list = string.Join(", ", seats.Select(SeatName));
             return seats.Count == 1 ? $"seat {list}" : $"seats {list}";
+        }
+
+        /// <summary>
+        /// The shared screen's part: nothing to play, only the whole game to watch (as host it moves the computer seats and
+        /// the wilds) until the players are done and the room is back in the lobby. It writes down what the screen shows
+        /// (whose realm the panels follow, every battle, which has to come onto this screen) and whatever should never
+        /// happen on it (a wait for a human, a question, the hand-over screen), and takes pictures of the first battle, its
+        /// results and the standings at the end.
+        /// </summary>
+        private IEnumerator Watch()
+        {
+            float idle = 0f;
+            int lastDay = -1;
+            int battles = 0;
+            int shown = 0;
+            bool fighting = false;
+            bool resultsShot = false;
+            bool complained = false;
+            int lastApplied = -1;
+            Note($"the shared screen: viewer {manager.Viewer}, shared {manager.IsSharedScreen}, fog of nobody {manager.Map.Fog.Viewer == null}, " +
+                 $"panels {(manager.HeroesUI.Hud.IsShown ? "shown" : "off")}, following {manager.WatchedState?.name ?? "nobody"}, host {Online.IsHost}");
+            while (Game != null && (Server.CurrentRoom == null || Server.CurrentRoom.IsPlaying) && idle < ScreenPatience)
+            {
+                // The table is alive while actions keep coming (a long battle is many of them): only a silent table counts as idle.
+                if (manager.Lockstep != null && manager.Lockstep.Applied != lastApplied)
+                {
+                    lastApplied = manager.Lockstep.Applied;
+                    idle = 0f;
+                }
+                if (Game.State.day != lastDay)
+                {
+                    lastDay = Game.State.day;
+                    Note($"day {lastDay} begins: the panels follow {manager.WatchedState?.name ?? "nobody"}, it is seat {Game.WaitingPlayer}'s turn");
+                    idle = 0f;
+                }
+                if (Game.InBattle != fighting)
+                {
+                    fighting = Game.InBattle;
+                    if (fighting)
+                    {
+                        battles++;
+                        Note($"battle {battles}: seat {Game.Battle.attackerPlayer} against {Game.Battle.defenderPlayer}, style {Game.Battle.style}");
+                        if (battles == 1)
+                        {
+                            StartCoroutine(IntroShot());
+                            StartCoroutine(ShotLater("05_battle", 2.5f));
+                        }
+                    }
+                    else
+                    {
+                        Note($"battle {battles} over; it came onto this screen: {shown >= battles}");
+                    }
+                    idle = 0f;
+                }
+                if (manager.Battle.Running && shown < battles)
+                {
+                    shown = battles;
+                    Note($"battle {battles} is on the screen (shown here {manager.IsLocalBattle})");
+                }
+                if (manager.HeroesUI.Bar.Results.IsOpen && !resultsShot)
+                {
+                    resultsShot = true;
+                    yield return new WaitForSeconds(0.5f);
+                    yield return Shot("06_results");
+                    Note("the results of a battle are on the screen; they close by themselves");
+                }
+                if (!complained && (manager.WaitingForHuman || manager.HeroesUI.Choice.IsOpen || manager.IsHandingOver))
+                {
+                    complained = true;
+                    Note($"FAILED: the shared screen asks somebody: waiting for a human {manager.WaitingForHuman}, choice open {manager.HeroesUI.Choice.IsOpen}, " +
+                         $"handing over {manager.IsHandingOver}");
+                }
+                yield return null;
+                if (Idle(ref idle))
+                {
+                    Note($"watching: seat {Game.WaitingPlayer}, events {Game.HasEvents}, battle {Game.InBattle}, computer move on its way {manager.Online.AwaitingComputer}, " +
+                         $"actions {manager.Lockstep.Applied}, day {Game.State.day}");
+                }
+            }
+            Note($"watch loop over: {battles} battles, {shown} on the screen, room {(Server.CurrentRoom != null ? Server.CurrentRoom.Phase.ToString() : "gone")}, " +
+                 $"game {(Game == null ? "gone" : Game.IsOver ? $"over, winner {Game.State.winner}" : "running")}, idle {idle:F0} s, " +
+                 $"checksum {(Game != null ? manager.Lockstep.Checksum().ToString("X8") : "-")} after {(Game != null ? manager.Lockstep.Applied : 0)} actions");
+            // The players left: the room called the game off, and the screen shows the standings.
+            yield return WaitFor(() => manager.HeroesUI.Results.IsOpen, 15f, "the standings");
+            yield return new WaitForSeconds(0.6f);
+            yield return Shot("07_standings");
+            Note($"the end on the screen: standings {(manager.HeroesUI.Results.IsOpen ? "shown" : "not shown")}, won here {Game != null && manager.WonHere(Game.State)}");
+        }
+
+        /// <summary>
+        /// A remote plays on its own device from now on (<paramref name="own"/>), or goes back to being a remote: the
+        /// panel goes or comes, the map's panels come back or go, and the game has to go on either way.
+        /// </summary>
+        private IEnumerator Switch(bool own, int number)
+        {
+            string answer = null;
+            Online.SetRemoteMode(!own, error => answer = error ?? "ok");
+            yield return WaitFor(() => answer != null, 15f, own ? "the switch to this device" : "the switch back to the remote");
+            yield return WaitFor(() => Online.IsRemote != own, 10f, own ? "own device" : "remote mode");
+            yield return new WaitForSeconds(1f);
+            Note($"switch {number} {(own ? "to own device" : "back to the remote")}: {answer}; remote {Online.IsRemote}, panel {(Panel != null ? "up" : "gone")}, " +
+                 $"map panels {(manager.HeroesUI.Hud.IsShown ? "shown" : "off")}, remote view {manager.HeroesUI.RemoteView}, viewer {manager.Viewer}, " +
+                 $"seat {manager.LocalSeat}, deciding {manager.OnlineDeciding()}, choice open {manager.HeroesUI.Choice.IsOpen}");
+            yield return Shot(own ? "14_own_device" : "15_remote_again");
         }
 
         private string SeatName(int seat)
@@ -175,6 +311,13 @@ namespace Portfolio.Heroes
             int handovers = 0;
             int screen = manager.LocalSeat;
             bool fighting = false;
+            // A remote of a shared screen: its panel is pictured once, and it may switch to its own device and back.
+            float switchAfter = NumberArgument(SwitchArgument, 0f);
+            float switchAt = switchAfter > 0f ? Time.realtimeSinceStartup + switchAfter : float.PositiveInfinity;
+            int switches = 0;
+            int endedBeforeSwitch = -1;
+            bool panelShot = false;
+            bool choiceShot = false;
             // The other client has to get its turns too, so a day here is a couple of moves and then an end.
             while (ended < turns && Game != null && !Game.IsOver && idle < Patience && (Server.CurrentRoom == null || Server.CurrentRoom.IsPlaying))
             {
@@ -182,6 +325,26 @@ namespace Portfolio.Heroes
                 {
                     lastDay = Game.State.day;
                     Note($"day {lastDay} begins");
+                }
+                if (!panelShot && Panel != null)
+                {
+                    panelShot = true;
+                    yield return new WaitForSeconds(0.5f);
+                    yield return Shot("11_panel");
+                    Note($"the remote panel shows: mode {Panel.Mode}, map panels {(manager.HeroesUI.Hud.IsShown ? "shown" : "off")}, remote view {manager.HeroesUI.RemoteView}");
+                }
+                if (Time.realtimeSinceStartup >= switchAt && !manager.IsPassing && switches < 2)
+                {
+                    switches++;
+                    bool own = switches == 1;
+                    if (own)
+                    {
+                        endedBeforeSwitch = ended;
+                    }
+                    yield return Switch(own, switches);
+                    switchAt = switches < 2 ? Time.realtimeSinceStartup + switchAfter : float.PositiveInfinity;
+                    idle = 0f;
+                    continue;
                 }
                 if (manager.LocalSeat != screen)
                 {
@@ -246,7 +409,23 @@ namespace Portfolio.Heroes
                 }
                 if (Game.State.pending.Count > 0 && Game.State.pending[0].player == manager.LocalSeat && !manager.IsPassing)
                 {
-                    manager.Commands.Choose(0);
+                    RemotePanel panel = Panel;
+                    if (panel != null && !choiceShot)
+                    {
+                        choiceShot = true;
+                        yield return new WaitForSeconds(0.4f);
+                        yield return Shot("13_panel_choice");
+                        Note($"the panel asks: {Game.State.pending[0].kind} (mode {panel.Mode}); the first option is taken");
+                    }
+                    if (panel != null)
+                    {
+                        // The remote answers through its panel (once the map has caught up and the question is its own).
+                        panel.PressChoice(0);
+                    }
+                    else
+                    {
+                        manager.Commands.Choose(0);
+                    }
                     yield return new WaitForSeconds(0.5f);
                     idle = 0f;
                     continue;
@@ -257,11 +436,20 @@ namespace Portfolio.Heroes
                     int side = current != null ? Game.Battle.PlayerOf(current.side) : -1;
                     if (manager.WaitingForHuman && manager.OnlineDeciding() && current != null && manager.IsLocalSeat(side))
                     {
-                        // The seat fights the way the computer would.
-                        GameCommand move = BattleAI.Next(Game) ?? GameCommand.BattleDefend(side, current.id);
-                        if (!manager.Online.Submit(move))
+                        RemotePanel panel = Panel;
+                        if (panel != null)
                         {
-                            manager.Commands.BattleDefend(current.id);
+                            // A remote fights through its panel: a move of auto combat at a time.
+                            panel.PressAuto();
+                        }
+                        else
+                        {
+                            // The seat fights the way the computer would.
+                            GameCommand move = BattleAI.Next(Game) ?? GameCommand.BattleDefend(side, current.id);
+                            if (!manager.Online.Submit(move))
+                            {
+                                manager.Commands.BattleDefend(current.id);
+                            }
                         }
                         yield return new WaitForSeconds(0.4f);
                         idle = 0f;
@@ -280,7 +468,18 @@ namespace Portfolio.Heroes
                 }
                 if (manager.WaitingForHuman && Game.WaitingPlayer == manager.LocalSeat && !manager.IsPassing)
                 {
-                    HeroState hero = moves < 2 ? manager.NextHero() : null;
+                    RemotePanel panel = Panel;
+                    HeroState hero = null;
+                    if (moves < 2 && panel != null)
+                    {
+                        // The remote's Next Hero puts the hero in hand; the map is the control for sending him somewhere.
+                        panel.PressNextHero();
+                        hero = manager.Selected;
+                    }
+                    else if (moves < 2)
+                    {
+                        hero = manager.NextHero();
+                    }
                     int target = hero != null ? Prize(hero) : -1;
                     if (hero != null && target >= 0)
                     {
@@ -300,8 +499,16 @@ namespace Portfolio.Heroes
                     }
                     ended++;
                     moves = 0;
-                    Note(manager.LocalSeats.Count > 1 ? $"seat {SeatName(Game.WaitingPlayer)} ends day {Game.State.day}" : $"ending day {Game.State.day}");
-                    manager.Commands.EndTurn();
+                    Note(manager.LocalSeats.Count > 1 ? $"seat {SeatName(Game.WaitingPlayer)} ends day {Game.State.day}"
+                        : panel != null ? $"ending day {Game.State.day} from the panel" : $"ending day {Game.State.day}");
+                    if (panel != null)
+                    {
+                        panel.PressEndTurn();
+                    }
+                    else
+                    {
+                        manager.Commands.EndTurn();
+                    }
                     yield return new WaitForSeconds(1.2f);
                     idle = 0f;
                     continue;
@@ -320,6 +527,10 @@ namespace Portfolio.Heroes
             Note($"play loop over: turns {ended}/{turns}, battles {battles}, hand-overs {handovers}, screens {curtains}, idle {idle:F0} s, " +
                  $"game {ending}, checksum {(Game != null ? manager.Lockstep.Checksum().ToString("X8") : "-")} after " +
                  $"{(Game != null ? manager.Lockstep.Applied : 0)} actions");
+            if (endedBeforeSwitch >= 0)
+            {
+                Note($"the game went on after the switch: {ended - endedBeforeSwitch} turns ended since, switches {switches}, remote now {Online.IsRemote}");
+            }
         }
 
         /// <summary>

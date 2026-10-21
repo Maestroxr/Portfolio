@@ -29,6 +29,13 @@ namespace Portfolio.MemoryCards
     /// each of them, with a picture of the first. The log names the seats: who sits where and at which device, every turn,
     /// and the results.
     ///
+    /// The roles of a shared screen: <c>hostscreen</c> opens the room as its screen and plays nothing (the host's room takes
+    /// <c>-memorycards-players</c> players, all of them from other devices, and the pictures show the board of the screen),
+    /// <c>joinremote</c> joins as a remote control and plays through the remote panel (the autopilot taps its grid), and
+    /// <c>joinown</c> joins such a room but plays on its own device, as <c>join</c> does. With <c>-memorycards-switch N</c> a
+    /// remote plays on its own device N seconds into the game and is a remote again N seconds later, and the log says how
+    /// the game went on through both.
+    ///
     /// The roles <c>hosttournament</c> and
     /// <c>jointournament</c> play a tournament instead of a room: the host opens one (two a match, as many entrants as
     /// <c>-memorycards-entrants</c>, default 4, with <c>-memorycards-ready</c> seconds to show up for a match, default 30)
@@ -51,12 +58,15 @@ namespace Portfolio.MemoryCards
         private const string ReadyArgument = "-memorycards-ready";
         private const string StartInArgument = "-memorycards-startin";
         private const string FewestArgument = "-memorycards-fewest";
+        private const string SwitchArgument = "-memorycards-switch";
         /// <summary>Which of the levels a room can play the host picks unless told otherwise: the third, or the last.</summary>
         private const int LevelChoice = 2;
         private const int TurnSeconds = 10;
 
         private MemoryCardsGameManager manager;
         private int handOvers;
+        /// <summary>The turns the server began in the running game, for the log of a device that switches between the remote and its own screen.</summary>
+        private int turnsSeen;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Launch()
@@ -119,7 +129,8 @@ namespace Portfolio.MemoryCards
                 int players = Mathf.Clamp(NumberArgument(PlayersArgument, VersusMatch.MinPlayers) + PartyExtras, VersusMatch.MinPlayers, VersusMatch.MaxPlayers);
                 yield return HostRoom("Tour room", level, options, (byte)players);
                 yield return Shot("01_room");
-                yield return WaitForGuests(1, 120f);
+                // A shared screen plays no seat: every player of its room is a guest from another device.
+                yield return WaitForGuests(AsScreen ? players : 1, 120f);
                 yield return new WaitForSeconds(0.5f);
                 yield return Shot("02_everybody_ready");
                 StartRoom();
@@ -137,14 +148,21 @@ namespace Portfolio.MemoryCards
                 yield return Fail("the game did not start");
                 yield break;
             }
-            Note("playing; seats: " + string.Join(", ", Server.Members.Select(member => $"{member.Seat} {Server.NameOf(member.Identity)}{AtThisDevice(member)}")));
+            Note("playing; seats: " + string.Join(", ", Server.Members.Select(member => $"{member.Seat} {Server.NameOf(member.Identity)}{AtThisDevice(member)}"))
+                + (manager.online.IsScreen ? "; this device is the shared screen" : manager.online.IsRemote ? "; this device is a remote control" : ""));
             var pilot = gameObject.AddComponent<MemoryCardsAutopilot>();
             pilot.manager = manager;
             pilot.mistakeRate = Mathf.Clamp01(NumberArgument(MistakesArgument, 0.1f));
             pilot.avoidBombs = !HasArgument(BombsArgument);
             pilot.interval = 0.55f;
-            pilot.enabled = Role != "idle";
+            // Nothing plays at the shared screen; a remote plays through its panel (the autopilot taps there).
+            pilot.enabled = Role != "idle" && !AsScreen;
             Coroutine curtains = StartCoroutine(LiftCurtains());
+            float switchAfter = NumberArgument(SwitchArgument, 0f);
+            if (switchAfter > 0f && !Hosting)
+            {
+                StartCoroutine(SwitchDevices(switchAfter));
+            }
             yield return new WaitForSeconds(7f);
             yield return Shot("03_playing");
             if (Role == "quitter")
@@ -203,8 +221,46 @@ namespace Portfolio.MemoryCards
             RoomMemberInfo member = Server.Members.FirstOrDefault(other => other.Seat == turn.Seat);
             if (member != null && Server.CurrentRoom != null && Server.CurrentRoom.IsPlaying)
             {
-                Note($"turn {turn.Number}: seat {turn.Seat} {Server.NameOf(member.Identity)}{AtThisDevice(member)}");
+                turnsSeen++;
+                Note($"turn {turn.Number}: seat {turn.Seat} {Server.NameOf(member.Identity)}{AtThisDevice(member)}"
+                    + (manager.online.ShowsRemotePanel ? " (on the remote panel)" : ""));
             }
+        }
+
+        /// <summary>
+        /// With <c>-memorycards-switch N</c>: N seconds into the game a remote plays on its own device instead
+        /// (<see cref="OnlineGameController.SetRemoteMode"/>, what the panel's button does), and N seconds later it is a remote
+        /// again. The game has to go on through both, which the turns in the log show; pictures of both faces.
+        /// </summary>
+        private IEnumerator SwitchDevices(float after)
+        {
+            yield return new WaitForSeconds(after);
+            MemoryCardsOnlineController online = manager.online;
+            if (!manager.IsOnlineVersus || Over || !online.IsRemote)
+            {
+                Note($"no switch: remote {online.IsRemote}, over {Over}");
+                yield break;
+            }
+            Note($"switching to this device after {turnsSeen} turns (panel {online.ShowsRemotePanel}, {online.RemoteBoard?.CardCount ?? 0} cards on it)");
+            online.SetRemoteMode(false, error => Note("own device: " + (error ?? "ok")));
+            yield return WaitFor(() => !online.IsRemote && !online.ShowsRemotePanel, 10f, "the game on this device");
+            int turnsThen = turnsSeen;
+            yield return new WaitForSeconds(1f);
+            yield return Shot("s1_own_device");
+            yield return new WaitForSeconds(after);
+            if (Over)
+            {
+                Note($"the game ended on this device after {turnsSeen - turnsThen} more turns");
+                yield break;
+            }
+            Note($"switching back to the remote after {turnsSeen - turnsThen} turns on this device");
+            online.SetRemoteMode(true, error => Note("remote again: " + (error ?? "ok")));
+            yield return WaitFor(() => online.IsRemote && online.ShowsRemotePanel, 10f, "the remote panel again");
+            turnsThen = turnsSeen;
+            yield return new WaitForSeconds(1f);
+            yield return Shot("s2_remote_again");
+            yield return WaitFor(() => Over || turnsSeen > turnsThen, 60f, "a turn on the remote again");
+            Note($"the game went on as a remote: {turnsSeen - turnsThen} turns since{(Over ? ", and ended" : "")}");
         }
 
         /// <summary>

@@ -22,6 +22,13 @@ namespace Portfolio.MemoryCards
     /// controller): each holds a seat of the room, the manager plays every one of them (<see cref="OnlineSeats"/>), a
     /// flip goes out for the seat whose turn it is (<see cref="Flip"/>), and the device is handed over between its seats
     /// when the party asked for that (<see cref="HandOverTo"/>).
+    ///
+    /// A room may play on a shared screen (<see cref="OnlineGameController.IsScreen"/>): the screen is a client with no seat
+    /// of its own that mirrors the board like any other, shows every flip as it arrives, names the players in the banners
+    /// and the standings in the results, and never lets a card be clicked. A player at a remote control
+    /// (<see cref="OnlineGameController.IsRemote"/>) keeps running the game and sending the flips of their seat as always,
+    /// behind the remote panel, whose content is a grid of the same mirror sized for a phone (<see cref="RemoteBoard"/>,
+    /// <see cref="BuildRemotePanel"/>); the game's own interface rests while the panel shows (<see cref="OnPresentationChanged"/>).
     /// </summary>
     public class MemoryCardsOnlineController : OnlineGameController
     {
@@ -39,6 +46,15 @@ namespace Portfolio.MemoryCards
         private int lastHandOverSeat = -1;
 
         public MemoryCardsGameManager MemoryCards => BaseManager as MemoryCardsGameManager;
+
+        /// <summary>The grid of the remote panel, once this device showed the panel as a remote control; null before, and on the screen.</summary>
+        public RemoteBoard RemoteBoard { get; private set; }
+
+        /// <summary>
+        /// The remote panel is the whole interface of a remote: its own grid of the board, sized for a phone held in the hand
+        /// (<see cref="RemoteBoard"/>), rather than the board laid out for the television behind a strip.
+        /// </summary>
+        public override bool RemotePanelCoversGame => true;
 
         private GameServerClient Client => Server as GameServerClient;
 
@@ -135,6 +151,22 @@ namespace Portfolio.MemoryCards
             return new MemoryCardsProgress(storage, GameType.MemoryCards);
         }
 
+        /// <summary>The content of the remote panel: the player's score and the grid of the board they tap (<see cref="RemoteBoard"/>).</summary>
+        protected override void BuildRemotePanel(RectTransform content, RemotePanelKit kit)
+        {
+            RemoteBoard = RemoteBoard.Build(kit, this);
+        }
+
+        /// <summary>
+        /// The remote panel showed or went (this device became a remote control or plays on its own again, in the lobby or
+        /// mid-game): the game's own interface rests while the panel covers it, and is back the moment it goes, with the
+        /// mirror as it is; a turn based game needs nothing else to switch.
+        /// </summary>
+        protected override void OnPresentationChanged()
+        {
+            MemoryCards?.ShowGameView(!ShowsRemotePanel);
+        }
+
         protected override void Start()
         {
             base.Start();
@@ -186,7 +218,10 @@ namespace Portfolio.MemoryCards
             yield return $"SELECT * FROM flip_event WHERE room_id = {room.Id}";
         }
 
-        /// <summary>The server dealt: the manager gets the board and the seats, then loads the level and starts.</summary>
+        /// <summary>
+        /// The server dealt: the manager gets the board and the seats, then loads the level and starts. A shared screen holds
+        /// no seat (<see cref="OnlineSeats"/> with nothing played here): it mirrors the board for the players at their remotes.
+        /// </summary>
         protected override void OnRoomStarted(RoomInfo room)
         {
             MemoryCardsGameManager manager = MemoryCards;
@@ -216,7 +251,7 @@ namespace Portfolio.MemoryCards
                     deviceSeat = member.Seat;
                 }
             }
-            if (names.Count < VersusMatch.MinPlayers || localSeats.Count == 0)
+            if (names.Count < VersusMatch.MinPlayers || localSeats.Count == 0 && !IsScreen)
             {
                 // The other player dropped between the start and its arrival here; the server is ending the game already.
                 Report(MemoryCardsText.T("The other player left before the game began."));

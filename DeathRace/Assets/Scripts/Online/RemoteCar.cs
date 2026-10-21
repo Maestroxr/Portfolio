@@ -40,6 +40,12 @@ namespace Portfolio.DeathRace
         /// <summary>When the last pose arrived (unscaled time), or -1.</summary>
         public float LastPoseTime { get; private set; } = -1f;
 
+        /// <summary>The newest pose, or null before the first (what a device that takes the car over mid-race starts from).</summary>
+        public RoomPoseInfo? LastPose { get; private set; }
+
+        /// <summary>The puppet let go of the car (<see cref="Detach"/>): nothing of it moves the car any more.</summary>
+        public bool Detached { get; private set; }
+
         /// <summary>Makes <paramref name="car"/> the puppet of the player at <paramref name="roomSeat"/>.</summary>
         public static RemoteCar Attach(Car car, RemoteDriver driver, byte roomSeat)
         {
@@ -59,10 +65,52 @@ namespace Portfolio.DeathRace
             return remote;
         }
 
+        /// <summary>
+        /// The car is this device's to drive from now on (its seat was handed over mid-race): the puppet lets go of the
+        /// body, which moves on by its own physics from where the last pose put it, at the speed it said, and goes. The
+        /// health stays what its device last reported (the model already shows it); the caller gives the car its driver,
+        /// its stock and the right to judge hits on it.
+        /// </summary>
+        public void Detach()
+        {
+            if (Detached)
+            {
+                return;
+            }
+            Detached = true;
+            enabled = false;
+            if (Car != null && Car.Body != null && Car.Body.Rigidbody != null)
+            {
+                Rigidbody body = Car.Body.Rigidbody;
+                body.isKinematic = false;
+                body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+                if (LastPose.HasValue)
+                {
+                    RoomPoseInfo last = LastPose.Value;
+                    Vector3 position = last.Position;
+                    position.y = body.position.y;
+                    Quaternion rotation = Quaternion.Euler(0f, last.Heading, 0f);
+                    body.position = position;
+                    body.rotation = rotation;
+                    transform.SetPositionAndRotation(position, rotation);
+                    Vector3 velocity = last.Velocity;
+                    velocity.y = 0f;
+                    body.linearVelocity = velocity;
+                    body.angularVelocity = Vector3.zero;
+                }
+            }
+            Destroy(this);
+        }
+
         /// <summary>A pose of the car arrived.</summary>
         public void Add(RoomPoseInfo pose)
         {
+            if (Detached)
+            {
+                return;
+            }
             poses.Add(pose, Time.unscaledTime);
+            LastPose = pose;
             LastPoseTime = Time.unscaledTime;
             if (Driver != null)
             {
@@ -99,7 +147,7 @@ namespace Portfolio.DeathRace
 
         private void FixedUpdate()
         {
-            if (Car == null || Car.Body == null || Car.Body.Rigidbody == null)
+            if (Detached || Car == null || Car.Body == null || Car.Body.Rigidbody == null)
             {
                 return;
             }

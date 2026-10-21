@@ -225,7 +225,7 @@ namespace Portfolio.Asteroids
                             }
                         }
                     }
-                    else
+                    else if (coop.DrivesOwnSeat)
                     {
                         online?.PilotOut((byte)coop.LocalSeat, score.Score);
                     }

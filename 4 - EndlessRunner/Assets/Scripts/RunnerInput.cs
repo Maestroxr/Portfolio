@@ -67,18 +67,31 @@ namespace Portfolio.EndlessRunner
 
     /// <summary>
     /// Reads the runner's controls once per frame: arrow keys, WASD and space on a keyboard, or swipes with a finger
-    /// or the mouse. Presses that start on the interface are ignored.
+    /// or the mouse. Presses that start on the interface are ignored, unless the input is the interface (the remote
+    /// control's pad, which is made of nothing else).
     /// </summary>
     internal sealed class RunnerInput : IRunnerInput
     {
         /// <summary>Swipe length that counts as a swipe, as a share of the screen height.</summary>
         private const float SwipeThreshold = 0.06f;
 
+        private readonly bool ignoresInterface;
         private Vector2 pressPosition;
         private bool tracking;
         private bool consumed;
 
         private QueuedMoves queued;
+
+        /// <summary>The keys and swipes of the runner played alone: a swipe that starts on a button or a panel is the interface's.</summary>
+        public RunnerInput() : this(true)
+        {
+        }
+
+        /// <summary>With <paramref name="ignoresInterface"/> false every swipe counts, wherever it starts (the remote control's pad).</summary>
+        public RunnerInput(bool ignoresInterface)
+        {
+            this.ignoresInterface = ignoresInterface;
+        }
 
         public bool Left { get; private set; }
         public bool Right { get; private set; }
@@ -124,7 +137,7 @@ namespace Portfolio.EndlessRunner
             if (pressed)
             {
                 EventSystem events = EventSystem.current;
-                tracking = events == null || !events.IsPointerOverGameObject(pointerId);
+                tracking = !ignoresInterface || events == null || !events.IsPointerOverGameObject(pointerId);
                 consumed = false;
                 pressPosition = position;
                 return;

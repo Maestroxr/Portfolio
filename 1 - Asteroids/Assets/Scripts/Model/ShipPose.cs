@@ -6,6 +6,8 @@ namespace Portfolio.Asteroids
     /// What a ship shows of itself to the other pilots of a shared mission, next to where it is: the two numbers that
     /// travel with a pose of the base server. The state holds what changes in a moment (a change is sent at once), the
     /// value what changes slowly: the hull that was picked in the hangar, and how much hull and shield are left.
+    /// The upper bits of the state carry what another device needs to take the seat over mid-mission (a remote control
+    /// turning into a player on their own device, or back): the ships left, the bombs, the weapon and its level.
     /// </summary>
     public struct ShipPose
     {
@@ -17,6 +19,10 @@ namespace Portfolio.Asteroids
         private const uint DronesBit = 32;
         private const uint BeamBit = 64;
         private const int BeamKindShift = 24;
+        private const int LivesShift = 8;
+        private const int BombsShift = 12;
+        private const int WeaponShift = 16;
+        private const int WeaponLevelShift = 20;
 
         public bool Alive;
         public bool Thrusting;
@@ -41,10 +47,24 @@ namespace Portfolio.Asteroids
         /// <summary>Shield charge, 0 to 1.</summary>
         public float Shield;
 
+        /// <summary>Ships left, the one flying included, 0 to 15 (state bits 8 to 11).</summary>
+        public int Lives;
+
+        /// <summary>Nova bombs (megabombs in strike), 0 to 7 (state bits 12 to 14).</summary>
+        public int Bombs;
+
+        /// <summary>The field weapon (<see cref="WeaponType"/> as a number), 0 to 15 (state bits 16 to 19).</summary>
+        public int Weapon;
+
+        /// <summary>The level of the field weapon, 0 to 7 (state bits 20 to 22).</summary>
+        public int WeaponLevel;
+
         public uint PackState()
         {
             return (Alive ? AliveBit : 0u) | (Thrusting ? ThrustingBit : 0u) | (Dashing ? DashingBit : 0u) |
-                   (Invulnerable ? InvulnerableBit : 0u) | (Magnet ? MagnetBit : 0u) | (Drones ? DronesBit : 0u) | (Beam ? BeamBit : 0u);
+                   (Invulnerable ? InvulnerableBit : 0u) | (Magnet ? MagnetBit : 0u) | (Drones ? DronesBit : 0u) | (Beam ? BeamBit : 0u) |
+                   ((uint)Mathf.Clamp(Lives, 0, 15) << LivesShift) | ((uint)Mathf.Clamp(Bombs, 0, 7) << BombsShift) |
+                   ((uint)Mathf.Clamp(Weapon, 0, 15) << WeaponShift) | ((uint)Mathf.Clamp(WeaponLevel, 0, 7) << WeaponLevelShift);
         }
 
         public int PackValue()
@@ -63,6 +83,10 @@ namespace Portfolio.Asteroids
                 Magnet = (state & MagnetBit) != 0,
                 Drones = (state & DronesBit) != 0,
                 Beam = (state & BeamBit) != 0,
+                Lives = (int)((state >> LivesShift) & 0xF),
+                Bombs = (int)((state >> BombsShift) & 0x7),
+                Weapon = (int)((state >> WeaponShift) & 0xF),
+                WeaponLevel = (int)((state >> WeaponLevelShift) & 0x7),
                 BeamKind = (value >> BeamKindShift) & 0xF,
                 Hull = value & 0xF,
                 Health = ((value >> 8) & 0x7F) / 100f,

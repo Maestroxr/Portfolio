@@ -45,8 +45,11 @@ namespace Portfolio.BoardGames
 
         public TableSetup Setup => table != null ? table.Setup : null;
 
-        /// <summary>Whether the table is the room's: a game played online, through the action log of the server.</summary>
-        public bool IsOnlineGame => table != null && onlineSeats.Any;
+        /// <summary>
+        /// Whether the table is the room's: a game played online, through the action log of the server. The shared
+        /// screen of a room plays one with no seat of its own (<see cref="onlineSeats"/> empty).
+        /// </summary>
+        public bool IsOnlineGame => table != null && onlineTable;
 
         /// <summary>
         /// Online: the table seat the people at this device act for now (the seat to act when it is theirs, else the first

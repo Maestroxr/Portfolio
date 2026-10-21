@@ -57,17 +57,17 @@ namespace Portfolio.Asteroids
 
         /// <summary>
         /// The seats played at a device in the order a shared mission takes them: <paramref name="device"/> (its own seat)
-        /// first, then the other seats of <paramref name="local"/> in seat order. Without a seat of its own the device has
-        /// no seats.
+        /// first, then the other seats of <paramref name="local"/> in seat order. Without a seat of its own the device
+        /// flies the seats of <paramref name="local"/> alone: a shared screen, which holds no seat, drives the seats of its
+        /// remote controls.
         /// </summary>
         public static List<byte> Order(byte device, IEnumerable<byte> local)
         {
             var ordered = new List<byte>();
-            if (device == NoSeat)
+            if (device != NoSeat)
             {
-                return ordered;
+                ordered.Add(device);
             }
-            ordered.Add(device);
             var others = new List<byte>();
             if (local != null)
             {

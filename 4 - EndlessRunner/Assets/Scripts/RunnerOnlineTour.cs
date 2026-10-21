@@ -29,6 +29,13 @@ namespace Portfolio.EndlessRunner
     /// that Retry races again, the race of four lets one runner run out of hearts and watch the others, and a run alone
     /// afterwards checks that the game for one is back. Run the players with <c>-gamebox-identity</c> to tell them apart,
     /// and <c>-gamebox-server</c> / <c>-gamebox-database</c> for a test server.
+    /// A room on a shared screen: <c>hostscreen</c> opens the room as the screen, which runs nobody of its own (it starts
+    /// the race once <c>-runner-guests</c> players, one by default, are ready, and takes pictures of the race it shows),
+    /// <c>joinremote</c> joins as a remote control and plays through the panel's seam (<see cref="RunnerRemotePilot"/>:
+    /// the moves go to the screen as the pad's would, and the pictures show the panel), and <c>joinown</c> joins such a
+    /// room but plays on its own device, as <c>join</c> does. <c>-runner-switch &lt;seconds&gt;</c> has a remote play on
+    /// its own device from then on, and <c>-runner-switch-back &lt;seconds&gt;</c> makes it a remote again later: the
+    /// race has to go on through both.
     /// </summary>
     public class RunnerOnlineTour : OnlineTour
     {
@@ -37,6 +44,9 @@ namespace Portfolio.EndlessRunner
         private const string GiveUpArgument = "-runner-give-up";
         private const string RacesArgument = "-runner-races";
         private const string LocalPlayersArgument = "-runner-local-players";
+        private const string RaceGuestsArgument = "-runner-guests";
+        private const string SwitchArgument = "-runner-switch";
+        private const string SwitchBackArgument = "-runner-switch-back";
 
         /// <summary>The runners the host's room takes: as many as a race has, so a party fits on either side.</summary>
         private const byte RoomRunners = 4;
@@ -44,7 +54,14 @@ namespace Portfolio.EndlessRunner
         private RunnerGameManager manager;
         // The autopilots of the runners at this device: one, or one per runner of a party.
         private readonly System.Collections.Generic.List<RunnerAutopilot> pilots = new System.Collections.Generic.List<RunnerAutopilot>();
+        // The pilot of this device as a remote control, while it is one.
+        private RunnerRemotePilot remotePilot;
         private bool left;
+        // The race on: when it began, the tag of its pictures, and the switches between the remote and this device made.
+        private float raceStarted;
+        private string shotTag = string.Empty;
+        private bool switchedToOwn;
+        private bool switchedBack;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Launch()
@@ -112,7 +129,7 @@ namespace Portfolio.EndlessRunner
                 string tag = number == 1 ? string.Empty : $"race{number}_";
                 if (Hosting)
                 {
-                    yield return WaitForGuests(1, 120f);
+                    yield return WaitForGuests(Mathf.Max(1, NumberArgument(RaceGuestsArgument, 1)), 120f);
                     yield return new WaitForSeconds(0.5f);
                     yield return Shot($"{tag}02_everybody_ready");
                     StartRoom();
@@ -206,27 +223,32 @@ namespace Portfolio.EndlessRunner
                 yield return Fail("the race did not start");
                 yield break;
             }
-            Note($"racing on seat {string.Join(", ", manager.LocalSeats)} of {manager.Racers.Count}; the track holds {manager.track.LevelCoins} coins; "
-                + $"layout of the first 250 m: {manager.track.LayoutHash(250f):X8}");
+            bool screen = Online.IsScreen;
+            Note($"racing as {(screen ? "the shared screen" : Online.IsRemote ? "a remote control" : "a device of its own")}: "
+                + $"driving seats {string.Join(", ", manager.DrivenSeats)} of {manager.Racers.Count}, own seat {Online.LocalSeat}; "
+                + $"the track holds {manager.track.LevelCoins} coins; layout of the first 250 m: {manager.track.LayoutHash(250f):X8}");
             if (manager.InParty)
             {
-                Note("a party at this device: " + string.Join(", ", manager.LocalRuns.Select(run =>
+                Note("runs at this device: " + string.Join(", ", manager.LocalRuns.Select(run =>
                     $"seat {run.Racer.Seat} {run.Seat.Name} lane {run.Runner.Lane} viewport {run.Camera.View.rect}")));
             }
-            if (Role != "crash")
+            if (Role != "crash" && !screen)
             {
-                PilotLocalRunners();
+                Pilot();
             }
             float giveUp = NumberArgument(GiveUpArgument, -1f);
-            float started = Time.unscaledTime;
-            yield return new WaitForSeconds(1.2f);
+            raceStarted = Time.unscaledTime;
+            shotTag = tag;
+            switchedToOwn = false;
+            switchedBack = false;
+            yield return WaitOrEnd(1.2f);
             yield return Shot($"{tag}03_countdown");
             float[] pauses = { 4.5f, 6f, 8f, 10f };
             for (int i = 0; i < pauses.Length && !Ended; i++)
             {
                 yield return WaitOrEnd(pauses[i]);
                 Progress();
-                yield return Shot($"{tag}{4 + i:00}_{(manager.IsWatching ? "watching" : "running")}");
+                yield return Shot($"{tag}{4 + i:00}_{(OwnRunOver ? "watching" : "running")}");
                 if (Role == "quitter" && i == 1)
                 {
                     Note("leaving the race");
@@ -250,29 +272,34 @@ namespace Portfolio.EndlessRunner
                     manager.ActiveController.TransitionState(BaseGameState.Running);
                 }
             }
-            while (!Ended && !manager.IsWatching && Time.unscaledTime - started < 300f)
+            while (!Ended && !OwnRunOver && Time.unscaledTime - raceStarted < 300f)
             {
-                if (pilots.Count > 0 && giveUp > 0f && Time.unscaledTime - started > giveUp)
+                if (pilots.Count > 0 && giveUp > 0f && Time.unscaledTime - raceStarted > giveUp)
                 {
                     Note("giving up: the autopilot lets go");
                     DropPilots();
                 }
-                yield return null;
+                yield return Step();
             }
-            Note(Ended || manager.IsWatching ? "the own run is over" : "TIMEOUT waiting for the end of the own run");
-            if (manager.IsWatching)
+            Note(Ended || OwnRunOver ? "the own run is over" : "TIMEOUT waiting for the end of the own run");
+            if (!Ended && OwnRunOver)
             {
                 Progress();
-                yield return new WaitForSeconds(2.5f);
+                yield return WaitOrEnd(2.5f);
                 yield return Shot($"{tag}08_watching");
                 yield return WaitOrEnd(6f);
-                if (manager.IsWatching)
+                if (!Ended)
                 {
                     Progress();
                     yield return Shot($"{tag}08_watching_later");
                 }
             }
-            yield return WaitFor(() => Ended, 600f, "the end of the race");
+            while (!Ended && Time.unscaledTime - raceStarted < 900f)
+            {
+                yield return Step();
+            }
+            Note(Ended ? "got the end of the race" : "TIMEOUT waiting for the end of the race");
+            StopRemotePilot();
             yield return new WaitForSeconds(2.5f);
             yield return Shot($"{tag}09_results");
             Report();
@@ -544,6 +571,128 @@ namespace Portfolio.EndlessRunner
                 Note("runs here: " + string.Join(", ", manager.LocalRuns.Select(run =>
                     $"seat {run.Racer.Seat} {run.Seat.Name} {run.Phase} {run.Distance:0} m {run.Coins} c {run.Hearts} h place {run.Racer.Place}")));
             }
+            if (Online != null && Online.IsRemote)
+            {
+                RunnerGhost own = manager.GhostOf(Online.LocalSeat);
+                Note($"remote: status \"{Online.RemoteStatus}\"; moves sent {(remotePilot != null ? remotePilot.Moves : 0)}; "
+                    + $"own ghost {(own != null && own.HasPose ? $"at {own.Distance:0} m, {own.Hearts} hearts" : "without a pose")}; spectating {manager.Spectates}");
+            }
+            if (Online != null && Online.IsScreen)
+            {
+                Note($"screen: driving {string.Join(", ", manager.DrivenSeats)}; spectating {manager.Spectates}; split screen {manager.InParty}");
+            }
+        }
+
+        /// <summary>Whether the run this device is responsible for is over: the own run, or on a remote the seat its screen runs.</summary>
+        private bool OwnRunOver => Ended || (Online != null && Online.IsRemote ? manager.IsRacerDone(Online.LocalSeat) : manager.IsWatching);
+
+        /// <summary>A frame of the race, and the switch between the remote control and this device when it is due.</summary>
+        private IEnumerator Step()
+        {
+            yield return null;
+            if (SwitchDue())
+            {
+                yield return Switch();
+            }
+        }
+
+        private bool SwitchDue()
+        {
+            if (Ended || Online == null || !Online.RoomHasScreen || Online.IsScreen || !manager.InRace)
+            {
+                return false;
+            }
+            float elapsed = Time.unscaledTime - raceStarted;
+            float switchAt = NumberArgument(SwitchArgument, -1f);
+            float switchBackAt = NumberArgument(SwitchBackArgument, -1f);
+            if (!switchedToOwn && switchAt >= 0f && elapsed >= switchAt && Online.IsRemote)
+            {
+                return true;
+            }
+            return switchedToOwn && !switchedBack && switchBackAt >= 0f && elapsed >= switchBackAt && !Online.IsRemote;
+        }
+
+        /// <summary>
+        /// A remote plays on this device from now on (its runner goes on from the last pose the screen sent), or a device
+        /// becomes a remote again (the screen takes its runner over): the pilots change hands, the pictures show both.
+        /// </summary>
+        private IEnumerator Switch()
+        {
+            bool toOwn = Online.IsRemote;
+            if (toOwn)
+            {
+                switchedToOwn = true;
+            }
+            else
+            {
+                switchedBack = true;
+            }
+            Note($"switching to {(toOwn ? "this device" : "the remote control")} at {Time.unscaledTime - raceStarted:0.0} s; status before: \"{Online.RemoteStatus}\"; "
+                + $"own ghost {(manager.GhostOf(Online.LocalSeat) is { HasPose: true } ghost ? $"at {ghost.Distance:0} m" : "without a pose")}");
+            string answer = null;
+            Online.SetRemoteMode(!toOwn, error => answer = error ?? "ok");
+            yield return WaitFor(() => answer != null, 10f, "the answer to the switch");
+            Note("switch: " + answer);
+            yield return WaitFor(() => Online.IsRemote == !toOwn, 10f, "the switch to take");
+            yield return null;
+            yield return null;
+            if (toOwn)
+            {
+                StopRemotePilot();
+                if (Role != "crash")
+                {
+                    PilotLocalRunners();
+                }
+                RunnerRun run = manager.Main;
+                Note($"own runner now: seat {run.Runner.Seat}, {run.Phase}, {run.Distance:0} m, {run.Coins} coins, {run.Hearts} hearts, running {run.Runner.IsRunning}, "
+                    + $"at {run.Runner.transform.position}, lane {run.Runner.Lane}; driving {string.Join(", ", manager.DrivenSeats)}; spectating {manager.Spectates}");
+                yield return new WaitForSeconds(1.5f);
+                Progress();
+                yield return Shot($"{shotTag}06_own_device");
+            }
+            else
+            {
+                DropPilots();
+                if (Role != "crash")
+                {
+                    StartRemotePilot();
+                }
+                Note($"a remote again: driving {string.Join(", ", manager.DrivenSeats)}; spectating {manager.Spectates}; watching {manager.IsWatching}");
+                yield return new WaitForSeconds(1.5f);
+                Progress();
+                yield return Shot($"{shotTag}07_remote_again");
+            }
+        }
+
+        /// <summary>An autopilot for the runners at this device, or the pilot of the remote control when this device is one.</summary>
+        private void Pilot()
+        {
+            if (Online != null && Online.IsRemote)
+            {
+                StartRemotePilot();
+            }
+            else
+            {
+                PilotLocalRunners();
+            }
+        }
+
+        private void StartRemotePilot()
+        {
+            if (remotePilot == null)
+            {
+                remotePilot = gameObject.AddComponent<RunnerRemotePilot>();
+                remotePilot.Begin(manager, manager.online, Online.LocalSeat);
+            }
+        }
+
+        private void StopRemotePilot()
+        {
+            if (remotePilot != null)
+            {
+                Destroy(remotePilot);
+                remotePilot = null;
+            }
         }
 
         /// <summary>An autopilot on every runner at this device that has none: the runner of the scene, or each runner of a party.</summary>
@@ -587,13 +736,14 @@ namespace Portfolio.EndlessRunner
             }
         }
 
+        /// <summary>Waits <paramref name="seconds"/> unless the race ends first; a switch of devices that is due happens meanwhile.</summary>
         private IEnumerator WaitOrEnd(float seconds)
         {
             float waited = 0f;
             while (waited < seconds && !Ended)
             {
                 waited += Time.unscaledDeltaTime;
-                yield return null;
+                yield return Step();
             }
         }
     }

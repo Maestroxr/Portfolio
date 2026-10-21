@@ -161,6 +161,21 @@ namespace Portfolio.Asteroids
         }
 
 
+        /// <summary>
+        /// The seats flown at this device changed in the middle of the mission (<paramref name="seats"/>, the device's own
+        /// first): the shared screen took the seat of a remote control over, or let it go to the player's own device. What
+        /// arrives for these seats is this device's own doing from now on, and what their ships do goes out under them.
+        /// </summary>
+        public void SetSeats(IReadOnlyList<byte> seats)
+        {
+            localSeats = new DeviceSeats(seats);
+        }
+
+
+        /// <summary>The seats flown at this device, the device's own first (tests).</summary>
+        public IReadOnlyList<byte> Seats => localSeats.All;
+
+
         /// <summary>The mission is over or the pilot left it: the field is on its own again.</summary>
         public void End()
         {

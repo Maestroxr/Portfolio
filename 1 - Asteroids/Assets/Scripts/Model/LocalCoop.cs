@@ -224,6 +224,24 @@ namespace Portfolio.Asteroids
 
         public int Count => pilots.Count;
 
+        /// <summary>
+        /// A pilot joins the squad in the middle of the mission (a seat the shared screen takes over from a player's own
+        /// device): with <paramref name="lives"/> ships and a keeper of their own holding <paramref name="score"/> so far.
+        /// </summary>
+        public SquadPilot Add(LocalSeat seat, int lives, int score = 0)
+        {
+            var pilot = new SquadPilot(seat.Index, seat.Name, seat.Color, lives);
+            pilot.Score.Reset(score);
+            pilots.Add(pilot);
+            return pilot;
+        }
+
+        /// <summary>The pilot of <paramref name="seat"/> leaves the squad (the seat is flown elsewhere from now on); false when there was none.</summary>
+        public bool Remove(int seat)
+        {
+            return pilots.RemoveAll(pilot => pilot.Seat == seat) > 0;
+        }
+
         /// <summary>The pilot of <paramref name="seat"/>, or null.</summary>
         public SquadPilot this[int seat] => pilots.Find(pilot => pilot.Seat == seat);
 

@@ -957,10 +957,16 @@ namespace Portfolio.Asteroids
                     lives = Mathf.Clamp(coop.Lives, 1, AsteroidSettings.LivesLimit);
                 }
             }
-            if (FliesSquad)
+            if (FliesSquad || SceneShipParked)
             {
-                // The wingmen, the pilots' scores and ships, the starts (AsteroidsGameManager.Local.cs).
+                // The wingmen, the pilots' scores and ships, the starts (AsteroidsGameManager.Local.cs); the shared screen
+                // keeps a squad even before it flies a seat, for the seats it takes over mid-mission.
                 PrepareLocalMission(strike);
+            }
+            if (SceneShipParked)
+            {
+                // Nobody flies the scene's ship here: the shared screen, or a player on a remote control.
+                ParkSceneShip();
             }
             livesLost = 0;
             score.Reset();
@@ -1088,8 +1094,9 @@ namespace Portfolio.Asteroids
         private void UpdateHints(float deltaTime)
         {
             AsteroidsLevel mission = Mission;
-            // The hints name the keys of the single player game: several pilots at this device have keys of their own.
-            if (mission == null || hintIndex >= mission.HintCount || FliesSquad)
+            // The hints name the keys of the single player game: several pilots at this device have keys of their own, and
+            // nobody flies at a shared screen or on a remote control.
+            if (mission == null || hintIndex >= mission.HintCount || FliesSquad || SceneShipParked)
             {
                 return;
             }
@@ -1120,11 +1127,12 @@ namespace Portfolio.Asteroids
                 return;
             }
             // With several pilots at this device the HUD shows the squad's score; every pilot's own is on the pilots list
-            // (a party's comes from the online controller with the other pilots of the room).
+            // (a party's comes from the online controller with the other pilots of the room). The shared screen shows the
+            // score of the whole room.
             bool local = FliesSquad;
             var hud = new HudState
             {
-                Score = local ? squad.TeamScore : score.Score,
+                Score = IsScreenDevice && online != null ? (int)Mathf.Clamp(online.RoomScore, 0, int.MaxValue) : local ? squad.TeamScore : score.Score,
                 Multiplier = local ? 1 : score.Multiplier,
                 ComboTime = !local && score.Combo > 0 ? score.ComboTime / ScoreKeeper.ComboWindow : 0f,
                 Objective = FollowsSimulator ? objective.Status(Mathf.Max(1, coopWave), coopProgress) : objective.Status(director != null ? director.WaveNumber : 1),

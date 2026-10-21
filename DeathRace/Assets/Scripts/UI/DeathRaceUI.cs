@@ -21,7 +21,17 @@ namespace Portfolio.DeathRace
 
         private readonly HashSet<object> covers = new HashSet<object>();
 
+        /// <summary>The application is shutting down: a window closing then leaves the title screen's corners alone (their objects go in any order).</summary>
+        private static bool quitting;
+
         private DeathRaceManager Game => Manager as DeathRaceManager;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void WatchQuitting()
+        {
+            quitting = false;
+            Application.quitting += () => quitting = true;
+        }
 
         /// <summary>Whether one of the game's windows has the menu stepped aside.</summary>
         public bool IsCovered => covers.Count > 0;
@@ -75,8 +85,8 @@ namespace Portfolio.DeathRace
 
         public void Uncover(object owner)
         {
-            // A window closing as the scene goes away may outlive the menu by a moment.
-            if (this == null)
+            // A window closing as the scene goes away may outlive the menu by a moment, or the corners at the quit.
+            if (this == null || quitting)
             {
                 return;
             }

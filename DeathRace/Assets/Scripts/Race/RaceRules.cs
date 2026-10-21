@@ -134,6 +134,47 @@ namespace Portfolio.DeathRace
             return time - since >= ComputerGrace ? RacePhase.Over : RacePhase.Finishing;
         }
 
+        /// <summary>
+        /// The phase after this moment of an online race as this device runs it. The cars driven here (the Human runners)
+        /// may change mid-race (a seat handed between a shared screen and the player's own device), so the race goes back
+        /// to Racing while any of them still runs, finishes <see cref="ComputerGrace"/> seconds after the last of them is
+        /// done, and with none driven here (a shared screen showing puppets only, a remote control) runs until every car
+        /// is done: a seat handed to this device later still has a race to run, and the room ends it anyway.
+        /// </summary>
+        public static RacePhase NextOnline(RacePhase phase, IReadOnlyList<Runner> runners, float time, ref float since)
+        {
+            if (phase != RacePhase.Racing && phase != RacePhase.Finishing)
+            {
+                return phase;
+            }
+            bool anyHuman = false;
+            bool humansDone = true;
+            bool allDone = true;
+            foreach (Runner runner in runners)
+            {
+                allDone &= runner.Done;
+                if (runner.Human)
+                {
+                    anyHuman = true;
+                    humansDone &= runner.Done;
+                }
+            }
+            if (allDone)
+            {
+                return RacePhase.Over;
+            }
+            if (!anyHuman || !humansDone)
+            {
+                return RacePhase.Racing;
+            }
+            if (phase == RacePhase.Racing)
+            {
+                since = time;
+                return RacePhase.Finishing;
+            }
+            return time - since >= ComputerGrace ? RacePhase.Over : RacePhase.Finishing;
+        }
+
         /// <summary>The places (from 1) of <paramref name="standings"/>, in their order.</summary>
         public static int[] Places(IReadOnlyList<Standing> standings)
         {

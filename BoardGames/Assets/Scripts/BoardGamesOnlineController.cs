@@ -19,6 +19,15 @@ namespace Portfolio.BoardGames
     /// of their own (<see cref="LockstepOnlineController{TCommand}.TableSeats"/>), and a command may be sent for whichever
     /// of their seats the table waits for. With two seats a party of two would fill the table, and two people at one
     /// device playing each other is local play: the server does not start such a room (Server/Lib.cs).
+    ///
+    /// A room may play on a shared screen (<see cref="OnlineGameController.IsScreen"/>): the screen runs the table with
+    /// no seat of its own and shows the whole game (the manager plays nobody's turn there, and the computer's as the
+    /// host). A player's device that is a remote control of it (<see cref="OnlineGameController.IsRemote"/>) runs the
+    /// game as every client does and sends its moves the same way: the board stays its control under the remote frame,
+    /// which does not cover the game (<see cref="RemotePanelCoversGame"/>); the game's HUD moves in between the frame's
+    /// header and footer (<see cref="BoardGamesUI.SetRemoteLayout"/>), and the frame's header carries the game's own
+    /// words for the turn and the clock. Switching between the remote and the device itself mid-game changes the
+    /// presentation alone (<see cref="OnPresentationChanged"/>).
     /// </summary>
     public sealed class BoardGamesOnlineController : LockstepOnlineController<BoardCommand>, IBoardCommands
     {
@@ -26,6 +35,10 @@ namespace Portfolio.BoardGames
 
         /// <summary>The room option of the backgammon doubling cube: "1" plays with it (the default), "0" without.</summary>
         public const string CubeOption = "cube";
+
+        /// <summary>The frame's header (with its gap) and footer, for the HUD's layout before the frame is built to be asked.</summary>
+        private const float FrameTop = 160f;
+        private const float FrameBottom = 110f;
 
         private RoomOptionSpec[] optionSpecs;
 
@@ -179,6 +192,76 @@ namespace Portfolio.BoardGames
                 seats.Add(new SavedSeatInfo(seat.name, !seat.computer, (byte)i, (byte)Mathf.Clamp(seat.level, 0, RuleSets.ComputerLevels - 1)));
             }
             return seats;
+        }
+
+        // ------------------------------------------------------------------ the shared screen and the remote
+
+        /// <summary>On a remote the board stays the control: the frame is drawn around the game, which keeps showing.</summary>
+        public override bool RemotePanelCoversGame => false;
+
+        /// <summary>
+        /// The frame's header on a remote: the game's own words for the turn ("Roll the dice", "{0} doubles: take or
+        /// drop?", "Your move") and the seconds left on the room's clock; null while the device is no remote, for the
+        /// frame's own line.
+        /// </summary>
+        public string RemoteStatusLine
+        {
+            get
+            {
+                BoardGamesManager manager = Games;
+                if (!ShowsRemotePanel || manager == null || manager.Table == null)
+                {
+                    return null;
+                }
+                string words = manager.TurnWords ?? "";
+                float remaining = manager.ClockRemaining;
+                return remaining >= 0f ? $"{words}  {Mathf.CeilToInt(remaining)}" : words;
+            }
+        }
+
+        /// <summary>
+        /// The remote panel adds nothing of its own: the board under the frame takes the moves, and the game's HUD, laid
+        /// out between the frame's header and footer (<see cref="BoardGamesUI.SetRemoteLayout"/>), keeps the seat panels,
+        /// the backgammon buttons, the promotion picker and Resign; the frame's header carries <see cref="RemoteStatusLine"/>.
+        /// </summary>
+        protected override void BuildRemotePanel(RectTransform content, RemotePanelKit kit)
+        {
+        }
+
+        /// <summary>This device became a remote of the room's screen or stopped being one, in the lobby or mid-game: the HUD moves in under the frame, or back.</summary>
+        protected override void OnPresentationChanged()
+        {
+            ApplyPresentation();
+        }
+
+        /// <summary>Once a frame while connected: the frame's header follows the game's words for the turn.</summary>
+        protected override void OnServerTick()
+        {
+            base.OnServerTick();
+            RemoteControlUI frame = RemoteUI;
+            if (frame != null)
+            {
+                frame.SetStatusLine(RemoteStatusLine);
+            }
+        }
+
+        /// <summary>The HUD's layout for the presentation now: under the frame while the remote panel shows, else the usual one.</summary>
+        private void ApplyPresentation()
+        {
+            BoardGamesManager manager = Games;
+            BoardGamesUI ui = manager != null ? manager.UI as BoardGamesUI : null;
+            if (ui == null)
+            {
+                return;
+            }
+            bool remote = ShowsRemotePanel;
+            RectTransform content = RemoteUI != null ? RemoteUI.Content : null;
+            float top = content != null ? -content.offsetMax.y : FrameTop;
+            float bottom = content != null ? content.offsetMin.y : FrameBottom;
+            if (ui.IsRemoteLayout != remote)
+            {
+                ui.SetRemoteLayout(remote, top, bottom);
+            }
         }
 
         // ------------------------------------------------------------------ the log

@@ -30,6 +30,10 @@ namespace Portfolio.Monopoly.Server
         public uint Place;
         [DataMember(Name = "joined_at")]
         public SpacetimeDB.Timestamp JoinedAt;
+        [DataMember(Name = "screen")]
+        public bool Screen;
+        [DataMember(Name = "remote")]
+        public bool Remote;
 
         public RoomMember(
             SpacetimeDB.Identity Identity,
@@ -39,7 +43,9 @@ namespace Portfolio.Monopoly.Server
             bool Playing,
             long Score,
             uint Place,
-            SpacetimeDB.Timestamp JoinedAt
+            SpacetimeDB.Timestamp JoinedAt,
+            bool Screen,
+            bool Remote
         )
         {
             this.Identity = Identity;
@@ -50,6 +56,8 @@ namespace Portfolio.Monopoly.Server
             this.Score = Score;
             this.Place = Place;
             this.JoinedAt = JoinedAt;
+            this.Screen = Screen;
+            this.Remote = Remote;
         }
 
         public RoomMember()

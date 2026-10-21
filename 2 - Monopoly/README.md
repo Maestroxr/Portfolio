@@ -164,6 +164,26 @@ call of `MonopolyController` already, so an online match is played in step over 
   private room; `hostparty` / `joinparty` bring companions (`-gamebox-companions`, one by default) and guests
   (`-gamebox-guests`) to the device and play every seat of it, lifting the hand-over screen as a person would.
 
+**A shared screen and remote controls.** A room can play on one screen (a TV, a tablet on the table: *Plays on: a
+shared screen* when opening the room) while everybody holds their own device as a remote control (BaseGame's README,
+"Shared screen and remote controls"). The screen holds no seat: it shows the whole match as any client does (every
+token, the dice, the cards, the title deed and the auction of whoever is up, the clock and the banners calling the
+players by name), moves the computer players as the host, never asks a decision of anybody and never hands the
+device over, and its results celebrate whoever won with the standings and no "you". A remote keeps running the match
+on its device as every client does, but shows the remote panel instead of the board: the player's cash, net worth and
+square (and their Get Out of Jail Free cards), a line saying whose move it is and what is asked, their properties
+with the buildings and the build, sell, mortgage and lift buttons of the property manager whenever managing is
+allowed, and the decision the match waits for from them as big buttons (roll; pay the fine or use the card in jail;
+the bus rides; the best pick or GO on triples; buy or auction; three bids and pass; go bankrupt; end the turn; accept
+or decline an offer), each going through the same `IMonopolyCommands` seam the board uses (`SeatPanelModel` works out
+what to show, `MonopolyRemotePanel` draws it); once the match is over the panel lists the standings. Trades are
+proposed from the trade window of the device: *Play on this device* in the panel's footer brings the board back at any
+time, with any pending decision shown there, and *Use as a remote control* in the match menu goes back. The tour roles
+`hostscreen` (the room as its screen, waiting for `-monopoly-players` guests, two by default), `joinremote` (plays
+every decision through the panel's buttons and writes down a GAP when the panel lacks one) and `joinown` (joins such a
+room but plays on its own device) play it; `-monopoly-switch N` makes a remote switch to its own device after N
+seconds and back after twice as long.
+
 ## Phones and tablets
 
 The game runs on Android with the shared mobile code of BaseGame (see its README, "Phones and tablets"). The camera

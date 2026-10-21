@@ -760,6 +760,16 @@ namespace Portfolio.DeathRace
             Sync();
         }
 
+        /// <summary>
+        /// Sets the stock outright: what a car taken over from another device mid-race carries, as reckoned from the room's
+        /// log (<see cref="HandedOverStock"/>). The rounds and the nitro charges spent so far stay counted.
+        /// </summary>
+        public void Restock(HandedOverStock.Stock carried)
+        {
+            stock.Set(carried.Ammo, carried.Mines, carried.Rockets, carried.Nitro, carried.Oil, carried.Emp, carried.Mortar);
+            Sync();
+        }
+
         /// <summary>The car was wrecked: nothing fires any more.</summary>
         public virtual void Disarm()
         {

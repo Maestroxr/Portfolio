@@ -245,6 +245,28 @@ How it is built:
   default) and `-gamebox-guests` guests to the device first, and every runner there runs with an autopilot of its own.
   The host's room takes four runners, so a guest's party fits too.
 
+### Shared screen and remote controls
+
+A room can play on a shared screen (the lobby's **Plays on: a shared screen**; see BaseGame's `remote.md`): the screen
+holds no seat and runs nobody of its own, and every player holds their phone as a remote control. The screen shows
+the whole race: the runners of its remotes run on it as a party does, each in a part of the split screen with its own
+HUD, moved by the swipes and taps that arrive from the phone (`OnlineGameController.ControlsOf` hands the manager a
+`PlayerControls` over the remote's packets, which `SeatInput` reads like a keyboard), while the players who chose their
+own device are ghosts; the screen sends the poses, claims the coins and finishes for the seats it runs, and when
+nobody runs on it at all (every player on their own device) it follows the leading ghost and shows the winner and the
+standings at the end, without a "you". The remote panel on the phone (`RunnerRemotePanel`) shows what the screen
+publishes for the seat four times a second (`RunnerRemoteStatus`: hearts, coins, score, distance, place, the power-ups
+left, and whether the run is on, finished or out of hearts, in the frame's line) and a pad: swipe anywhere on it, tap
+Left / Right / Jump / Slide, or press the keys of a runner played alone; under the panel the phone keeps the race as
+ghosts, its own runner among them. **Play on this device** takes the seat back mid-race: the phone's runner starts
+where the last pose left it, with the hearts of the pose, the coins the server counted and the power-ups of the last
+status, invulnerable for a moment (`RunnerGameManager.SeatDriverChanged`), while the screen turns its run into a
+ghost; **Use as a remote control** goes the other way, and a run that was ending at the moment of the switch ends with
+the server first. The tour's roles `hostscreen` (the screen; `-runner-guests` says how many remotes it waits for),
+`joinremote` (a remote played through the panel's seam by `RunnerRemotePilot`, which reads the ghost of its seat) and
+`joinown` (a player in such a room on their own device) play it, with `-runner-switch <seconds>` and
+`-runner-switch-back <seconds>` for the switches.
+
 ## Phones and tablets
 
 The game runs on Android with the shared mobile code of BaseGame (see its README, "Phones and tablets"). Swipes are

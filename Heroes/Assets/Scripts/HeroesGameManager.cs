@@ -91,6 +91,12 @@ namespace Portfolio.Heroes
 
         public PlayerState ViewerState => Game != null ? Game.State.Player(Viewer) : null;
 
+        /// <summary>
+        /// The realm whose treasury, heroes and towns the panels show: the viewer's, or on the shared screen of a room,
+        /// which has no realm of its own, the one whose turn it is.
+        /// </summary>
+        public PlayerState WatchedState => ViewerState ?? (IsSharedScreen && Game != null ? Game.State.Player(Game.State.currentPlayer) : null);
+
         public override IGameController Controller => controller;
         public override IGameUI UI => ui;
         public override ICampaign Campaign => campaign;
@@ -317,9 +323,9 @@ namespace Portfolio.Heroes
 
             Build();
             // Online the screen belongs to the seat of the player at this device (of several, the one the game goes on
-            // with), from the first frame; in a hot seat to the person who plays next, whom the hand-over screen asks for
-            // before anything shows.
-            Viewer = IsOnlineGame && localSeat >= 0 ? localSeat
+            // with), from the first frame, and the shared screen of a room to nobody (-1: the fog hides nothing); in a hot
+            // seat to the person who plays next, whom the hand-over screen asks for before anything shows.
+            Viewer = IsOnlineGame ? localSeat
                 : IsHotSeat && HotSeat.NextPerson(game.State, game.State.currentPlayer) is int next && next >= 0 ? next
                 : FirstHuman(game);
             Map.Sync();
@@ -328,9 +334,8 @@ namespace Portfolio.Heroes
             ui.CloseAll();
             ui.Refresh();
 
-            HeroState first = Game.State.Player(Viewer)?.heroes.Count > 0
-                ? Game.State.Hero(Game.State.Player(Viewer).heroes[0])
-                : null;
+            PlayerState watched = WatchedState;
+            HeroState first = watched?.heroes.Count > 0 ? Game.State.Hero(watched.heroes[0]) : null;
             if (first != null)
             {
                 cameraRig?.Snap(Map.Point(first.cell));

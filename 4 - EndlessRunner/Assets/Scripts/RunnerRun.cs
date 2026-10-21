@@ -102,6 +102,21 @@ namespace Portfolio.EndlessRunner
             ClearPowerUps();
         }
 
+        /// <summary>
+        /// A run taken over in the middle of a race (the seat of a remote control the shared screen drives from now on,
+        /// or a player back on their own device): what the last pose and the server's books say its runner has, after
+        /// <see cref="Reset"/>. Hearts within the run's, the coins as the server counted them, the distance it got to.
+        /// </summary>
+        public void SeedProgress(int heartsLeft, int coins, int pointsPerCoin, float distance)
+        {
+            Hearts = Mathf.Clamp(heartsLeft, 0, MaxHearts);
+            HeartsLost = MaxHearts - Hearts;
+            Coins = Mathf.Max(0, coins);
+            CoinPoints = Coins * pointsPerCoin;
+            Distance = Mathf.Max(0f, distance);
+            Z = distance;
+        }
+
         /// <summary>The runner is at <paramref name="z"/>: the distance is the farthest it got.</summary>
         public void RunTo(float z)
         {

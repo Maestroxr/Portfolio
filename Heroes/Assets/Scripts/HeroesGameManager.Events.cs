@@ -222,11 +222,11 @@ namespace Portfolio.Heroes
         /// <summary>
         /// Whether an event is the business of the player at this device: one of their own realm, or of no realm in
         /// particular. Only those are written in the chronicle (whose lines are in the second person, "joins your
-        /// cause") and heard.
+        /// cause") and heard. The shared screen of a room, which belongs to nobody, writes and hears every realm's.
         /// </summary>
         private bool Own(GameEvent what)
         {
-            return what.player < 0 || what.player == Viewer;
+            return what.player < 0 || what.player == Viewer || IsSharedScreen;
         }
 
         /// <summary>Whether the player at this device can see <paramref name="cell"/>, so what happens there shows on the map.</summary>
@@ -281,8 +281,9 @@ namespace Portfolio.Heroes
             {
                 sound?.Play(Sfx.NewDay, 0.6f);
                 HeroState hero = NextHero() ?? (player.heroes.Count > 0 ? Game.State.Hero(player.heroes[0]) : null);
-                // Online the camera stays with the player at this device on the turns of the others.
-                if (hero != null && player.index == Viewer)
+                // Online the camera stays with the player at this device on the turns of the others; the shared screen of
+                // a room follows every turn.
+                if (hero != null && (player.index == Viewer || IsSharedScreen))
                 {
                     Select(hero);
                 }
@@ -306,13 +307,13 @@ namespace Portfolio.Heroes
                 Map.Sync();
                 yield break;
             }
-            bool watched = Game.State.Player(Viewer) != null && Game.State.Player(Viewer).Explored(what.c);
+            bool watched = IsSharedScreen || Game.State.Player(Viewer) != null && Game.State.Player(Viewer).Explored(what.c);
             if (!watched && !Options.showEnemyMoves)
             {
                 Map.Warp(hero.id, what.c);
                 yield break;
             }
-            if (Viewer == what.player && cameraRig != null && !cameraRig.IsVisible(Map.Point(what.c)))
+            if ((Viewer == what.player || IsSharedScreen) && cameraRig != null && !cameraRig.IsVisible(Map.Point(what.c)))
             {
                 cameraRig.Focus(Map.Point(what.c));
             }
@@ -447,7 +448,7 @@ namespace Portfolio.Heroes
             }
             sound?.Play(Sfx.Flag);
             ui.Log(what.text, what.player);
-            if (town != null && Viewer == what.player)
+            if (town != null && (Viewer == what.player || IsSharedScreen))
             {
                 ui.Announce(town.name, what.text);
                 yield return Beat(0.7f);

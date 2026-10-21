@@ -239,6 +239,19 @@ the career rank, or for tracks 9-11 a career in the Iron League).
   are its own device's, as its hits are); a pickup or a mine belongs to the first device that claims it; finishing is
   reported to the server, which ranks the room. When the first car finishes the others have thirty seconds. Private
   rooms, players at one device (companions) and tournaments are BaseGame's.
+- **Shared screen and remote controls** (BaseGame's screen rooms: a device opens the room as the screen, the players
+  join from their phones as remotes). The screen drives the seats of its remotes as a split screen race: a view and a
+  HUD per remote, each car on the controls that arrive from its phone, the screen sending their poses, claims and
+  results; a player on their own device is a puppet there, as anywhere. The remote panel on a phone shows the race in
+  three lines the screen publishes a few times a second (rank and lap, hull, ammo, mines, rockets, nitro, kills, cash
+  and the special armed; a finish or a wreck) over the pad: the stick accelerates, brakes and steers, four buttons fire
+  the gun, burn nitro, drop a mine and fire a rocket, a fifth beside them fires the special weapon (a desktop remote
+  presses the first seat's keys). A player may switch mid-race from the remote to their own device and back: the seat's
+  car turns from a puppet into a car driven there from its last pose, with its stock reckoned from the room's log
+  (`HandedOverStock`), or back; the race here never ends by its own clock while nobody is driven here (the room ends
+  it). Tours: `hostscreen` (the room opens as the screen; it drives nothing itself), `joinremote` (plays through the
+  pad from the seat's puppet), `joinown` (plays on its own device); `-deathrace-online-switch <t>` has a remote play on
+  its own device from race time t and go back `-deathrace-online-switch-back` seconds later.
 - **The server module** (`Server/Lib.cs`, database `skinnerboxes-deathrace`): the base server plus the race's tables
   (`RaceTrack`, `RaceRacer`, `RaceClaim`, `DeathRaceStats`) and reducers (`ClaimPickup`, `ClaimMine`, `FinishRace`);
   `Assets/Scripts/Online/OnlineRaceRules.cs` is compiled into the module and the game alike (the actions and their

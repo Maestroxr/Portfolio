@@ -176,7 +176,7 @@ namespace Portfolio.Asteroids
                 var seat = new LocalSeat(member.Seat) { Name = member.Name, Color = CoopRules.SeatColor(member.Seat) };
                 AddLocalPilot(seat, member.Controls, member.Slot);
             }
-            if (MobilePlatform.UsesTouch && localPilots.Count > 0)
+            if (MobilePlatform.UsesTouch && localPilots.Count > 0 && !SceneShipParked)
             {
                 localPilots[0].Ship.OwnControls = null;
             }
@@ -193,7 +193,8 @@ namespace Portfolio.Asteroids
         {
             AsteroidsPlayer prefab = online != null && online.shipPrefab != null ? online.shipPrefab : ship;
             AsteroidsPlayer flown = ship;
-            bool wingman = localPilots.Count > 0;
+            // The scene's ship is the device's own seat; when nobody flies that here (the shared screen), every pilot is a wingman.
+            bool wingman = localPilots.Count > 0 || SceneShipParked;
             if (wingman)
             {
                 flown = Instantiate(prefab, ship.transform.parent);
@@ -329,8 +330,12 @@ namespace Portfolio.Asteroids
             }
             bool party = IsParty;
             int ships = strike ? 1 : party ? Mathf.Clamp(coop.Lives, 1, AsteroidSettings.LivesLimit) : LocalCoopRules.Lives(LocalMatch);
-            squad = new LocalSquad(seats, ships, party ? score : null);
-            lives = squad.Pilots[0].Lives;
+            // On the shared screen no pilot is the device's own: every pilot keeps a score of their own.
+            squad = new LocalSquad(seats, ships, party && !SceneShipParked ? score : null);
+            if (squad.Count > 0)
+            {
+                lives = squad.Pilots[0].Lives;
+            }
             localLifeBonus = 0;
             int count = localPilots.Count;
             int places = party ? Mathf.Max(count, coop.Pilots) : count;

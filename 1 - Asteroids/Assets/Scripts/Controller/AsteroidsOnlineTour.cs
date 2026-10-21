@@ -31,6 +31,14 @@ namespace Portfolio.Asteroids
     /// code, and <c>hostparty</c> / <c>joinparty</c> bring other players to the device first (the companions, and guests
     /// with <c>-gamebox-guests</c>), whose ships the manager flies here as a party: the tour puts the autopilot on every ship
     /// flown at this device, and the log names the pilot of every seat.
+    ///
+    /// The shared screen: <c>hostscreen</c> opens the room as its screen, waits for two ready guests, starts the mission
+    /// and flies nothing itself (the screen flies the seats of the remotes from their pads); <c>joinremote</c> joins as a
+    /// remote control and plays through the pad: the autopilot reads the stand-in of its own ship (which the screen
+    /// flies) and the tour feeds what it wants to <see cref="OnlineGameController.SetPadState"/> every frame;
+    /// <c>joinown</c> joins the screen's room and plays on its own device, as <c>join</c> does. <c>-asteroids-switch
+    /// &lt;seconds&gt;</c> makes a remote switch to playing on its own device that long after the mission began (the
+    /// autopilot takes the scene's ship), and <c>-asteroids-switch-back &lt;seconds&gt;</c> makes it a remote again.
     /// </summary>
     public class AsteroidsOnlineTour : OnlineTour
     {
@@ -42,6 +50,8 @@ namespace Portfolio.Asteroids
         private const string SkipToBossArgument = "-asteroids-skip-to-boss";
         private const string KitArgument = "-asteroids-kit";
         private const string WeaponArgument = "-asteroids-weapon";
+        private const string SwitchArgument = "-asteroids-switch";
+        private const string SwitchBackArgument = "-asteroids-switch-back";
 
         private static readonly float[] ShotTimes = { 4f, 12f, 24f, 40f, 60f, 90f };
 
@@ -52,6 +62,9 @@ namespace Portfolio.Asteroids
         private bool pilotSaved;
         private bool hadPilot;
         private StrikeLoadout savedPilot;
+        private bool pilotsOn;
+        private RemoteShip padShip;
+        private Behaviour padPilot;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Launch()
@@ -94,7 +107,8 @@ namespace Portfolio.Asteroids
                 // says otherwise).
                 yield return HostRoom("Tour room", NumberArgument(LevelArgument, 0), options, (byte)Mathf.Max(CoopRules.MaxPilots, 2 + PartyExtras));
                 yield return Shot("01_room");
-                yield return WaitForGuests(1, 180f);
+                // A shared screen holds no seat: the room needs two players at other devices.
+                yield return WaitForGuests(AsScreen ? 2 : 1, 180f);
                 yield return new WaitForSeconds(0.5f);
                 yield return Shot("02_everybody_ready");
                 StartRoom();
@@ -118,11 +132,10 @@ namespace Portfolio.Asteroids
             Note($"pilots at this device: {DescribeSeats()}");
             yield return Shot("03_briefing");
             yield return WaitFor(() => manager.IsMissionActive, 20f, "the countdown");
-            List<Behaviour> pilots = Autopilots(strike);
-            foreach (Behaviour pilot in pilots)
-            {
-                pilot.enabled = true;
-            }
+            // The screen flies nothing of its own (the remotes' pads fly their seats); a remote flies its own seat only
+            // while it plays on its own device.
+            List<Behaviour> pilots = AsScreen ? new List<Behaviour>() : Autopilots(strike);
+            SetPilots(pilots, !AsScreen && manager.online.DrivesOwnSeat);
             (WeaponType type, int level)? weapon = strike ? null : WeaponFromArguments();
             if (weapon.HasValue)
             {
@@ -134,6 +147,10 @@ namespace Portfolio.Asteroids
             float[] times = strike ? StrikeShotTimes : ShotTimes;
             float leaveAfter = NumberArgument(LeaveArgument, -1f);
             float skipAfter = strike ? NumberArgument(SkipToBossArgument, -1f) : -1f;
+            float switchAfter = NumberArgument(SwitchArgument, -1f);
+            float switchBackAfter = NumberArgument(SwitchBackArgument, -1f);
+            float switchShotAt = -1f;
+            string switchShot = null;
             float began = Time.realtimeSinceStartup;
             int shot = 0;
             while (!Ended)
@@ -144,11 +161,47 @@ namespace Portfolio.Asteroids
                     // A crate picked up on the way switched weapons: the run is about this one.
                     manager.Ship.Weapons.Set(weapon.Value.type, weapon.Value.level);
                 }
+                if (!AsScreen)
+                {
+                    // The autopilot flies the scene's ship while this device flies its own seat; otherwise the pad does.
+                    bool drivesOwn = manager.online.DrivesOwnSeat;
+                    if (drivesOwn != pilotsOn)
+                    {
+                        SetPilots(pilots, drivesOwn);
+                        Note($"t+{elapsed:0.0}s this device {(drivesOwn ? "flies its own seat" : "flies nothing: the screen flies its seat")}; {DescribeSeats()}");
+                    }
+                    if (!drivesOwn && manager.online.IsRemote)
+                    {
+                        FeedPad(strike);
+                    }
+                }
                 if (shot < times.Length && elapsed >= times[shot])
                 {
                     Note($"t+{times[shot]:0}s {Describe()}");
                     yield return Shot($"04_flying_{shot + 1}");
                     shot++;
+                }
+                if (switchAfter >= 0f && elapsed >= switchAfter)
+                {
+                    switchAfter = -1f;
+                    Note("switching to this device");
+                    manager.online.SetRemoteMode(false, error => Note("own device: " + (error ?? "ok")));
+                    switchShotAt = elapsed + 2f;
+                    switchShot = "04_own_device";
+                }
+                if (switchBackAfter >= 0f && elapsed >= switchBackAfter)
+                {
+                    switchBackAfter = -1f;
+                    Note("switching back to the remote control");
+                    manager.online.SetRemoteMode(true, error => Note("remote control: " + (error ?? "ok")));
+                    switchShotAt = elapsed + 2f;
+                    switchShot = "04_remote_again";
+                }
+                if (switchShotAt >= 0f && elapsed >= switchShotAt)
+                {
+                    switchShotAt = -1f;
+                    Note($"t+{elapsed:0.0}s {Describe()}");
+                    yield return Shot(switchShot);
                 }
                 if (skipAfter >= 0f && elapsed >= skipAfter)
                 {
@@ -177,13 +230,7 @@ namespace Portfolio.Asteroids
                 }
                 yield return null;
             }
-            foreach (Behaviour pilot in pilots)
-            {
-                if (pilot != null)
-                {
-                    pilot.enabled = false;
-                }
-            }
+            SetPilots(pilots, false);
             Note($"ended after {Time.realtimeSinceStartup - began:0.0}s in state {manager.State}; {Describe()}");
             yield return new WaitForSeconds(2.5f);
             yield return Shot("05_results");
@@ -294,6 +341,58 @@ namespace Portfolio.Asteroids
         }
 
 
+        /// <summary>Switches the autopilots of the ships flown at this device on or off.</summary>
+        private void SetPilots(List<Behaviour> pilots, bool on)
+        {
+            pilotsOn = on;
+            foreach (Behaviour pilot in pilots)
+            {
+                if (pilot != null)
+                {
+                    pilot.enabled = on;
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// A remote control's frame: the autopilot reads the stand-in of this device's own ship (which the screen flies
+        /// from this pad) and what it wants goes out as the pad's stick and buttons. Without a stand-in yet the pad only
+        /// holds fire.
+        /// </summary>
+        private void FeedPad(bool strike)
+        {
+            RemoteShip own = manager.RemoteShipAt(manager.online.LocalSeat);
+            if (own == null)
+            {
+                manager.online.SetPadState(Vector2.zero, Vector2.zero, RemotePadPacket.Bit(LocalCoopRules.Fire), 0);
+                return;
+            }
+            if (padShip != own || padPilot == null)
+            {
+                padShip = own;
+                padPilot = strike ? StrikePilot(own.Player) : own.GetComponent<AsteroidsAutopilot>();
+                if (padPilot != null)
+                {
+                    // Read by the tour only: the stand-in is never simulated here.
+                    padPilot.enabled = false;
+                }
+                // A stand-in knows no playfield (it is only moved); the autopilot looks at the one of this device.
+                if (own.Player.Field == null)
+                {
+                    own.Player.Field = manager.Field;
+                }
+            }
+            if (!(padPilot is IShipInput input))
+            {
+                return;
+            }
+            input.Read(own.Player, Time.deltaTime);
+            RemotePadPacket.From(input, strike, out Vector2 stick, out uint held, out uint pressed);
+            manager.online.SetPadState(stick, Vector2.zero, held, pressed);
+        }
+
+
         /// <summary>The strike autopilot of <paramref name="ship"/>; added when the ship has none yet.</summary>
         private static Behaviour StrikePilot(AsteroidsPlayer ship)
         {
@@ -342,15 +441,17 @@ namespace Portfolio.Asteroids
         }
 
 
-        /// <summary>The seats flown at this device and by whom: the device's own first.</summary>
+        /// <summary>The seats flown at this device and by whom: the device's own first (none on the shared screen or a remote control).</summary>
         private string DescribeSeats()
         {
-            List<byte> seats = manager.online.PartySeats();
+            AsteroidsOnlineController online = manager.online;
+            List<byte> seats = online.PartySeats();
             string party = manager.IsParty
                 ? string.Join(", ", manager.LocalPilots.Select(pilot => $"seat {pilot.Seat.Index} {pilot.Seat.Name} ({(pilot.Wingman ? "wingman" : "scene ship")}, " +
-                    $"controls {(pilot.Ship.OwnControls is LocalShipInput input && input.Controls != null ? "set " + manager.online.LocalIndexOf((byte)pilot.Seat.Index) : "none")})"))
-                : $"seat {manager.online.LocalSeat} alone";
-            return $"{seats.Count} ({party}); stand-ins for seats [{string.Join(", ", manager.RemoteShips.Select(remote => remote.Seat))}]";
+                    $"controls {(pilot.Ship.OwnControls is LocalShipInput input && input.Controls != null ? "set " + online.DrivenIndexOf((byte)pilot.Seat.Index) : "none")})"))
+                : online.DrivesOwnSeat ? $"seat {online.LocalSeat} alone" : "none";
+            string device = online.IsScreen ? "the shared screen" : online.IsRemote ? $"a remote control of seat {online.LocalSeat}" : $"a device of seat {online.LocalSeat}";
+            return $"{seats.Count} ({party}) on {device}; stand-ins for seats [{string.Join(", ", manager.RemoteShips.Select(remote => remote.Seat))}]";
         }
 
 
@@ -374,6 +475,10 @@ namespace Portfolio.Asteroids
                 party = "party: " + string.Join("; ", manager.LocalPilots.Select(pilot =>
                     $"seat {pilot.Seat.Index} {pilot.Seat.Name} {(pilot.Ship.IsAlive ? "flying" : "down")} at ({pilot.Ship.Position.x:0.0}, {pilot.Ship.Position.y:0.0}), " +
                     $"score {pilot.Record?.Score.Score}, kills {pilot.Record?.Score.Kills}, ships {pilot.Record?.Lives}{(pilot.Record != null && pilot.Record.Out ? ", OUT" : "")}")) + "; ";
+            }
+            if (manager.online.IsRemote && !manager.online.DrivesOwnSeat)
+            {
+                party += $"remote status [{manager.online.RemoteStatus}]; ";
             }
             return $"{strike}score {manager.Scoring.Score}, lives {manager.Lives}, ship ({ship.Position.x:0.0}, {ship.Position.y:0.0}) {(ship.IsAlive ? "alive" : "down")}; " +
                    $"{party}others: [{ships}]; field: targets {field.Targets.Count}, enemy shots {field.EnemyShots.Count}, pickups {field.Rewards.Count}, " +

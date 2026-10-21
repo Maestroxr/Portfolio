@@ -16,7 +16,11 @@ namespace Portfolio.EndlessRunner
     /// The manager runs the race itself (RunnerGameManager.Online.cs); this class passes on what arrives and what goes.
     /// Several people may race from this device (the companions of the base: players who signed in here, or guests, and
     /// play through its connection): every call for a runner names its seat, and the manager runs each of them in a part
-    /// of the screen on a set of controls of their own (<see cref="OnlineGameController.ControlsOf"/>).
+    /// of the screen on a set of controls of their own (<see cref="OnlineGameController.ControlsOf"/>). A room that plays
+    /// on a shared screen runs the same way: the screen drives the seats of its remote controls from the controls that
+    /// arrive over the network, tells each remote how its runner is doing (<see cref="RunnerRemoteStatus"/>), and the
+    /// remote shows the status and a pad (<see cref="RunnerRemotePanel"/>) instead of the game. A player who switches
+    /// between the remote and their own device mid-race hands the seat over (<see cref="OnSeatDriverChanged"/>).
     /// </summary>
     public class RunnerOnlineController : OnlineGameController
     {
@@ -170,8 +174,9 @@ namespace Portfolio.EndlessRunner
 
         /// <summary>
         /// The host started the race: the manager gets the runners and the seed, then loads the level and starts. The
-        /// runners at this device come with their seats, the device's own first; when several run here, each with the
-        /// controls the local play of the game binds for them (the device's player on the first set).
+        /// runners driven at this device come with their seats, the device's own first (on the shared screen, the seats
+        /// of its remotes); when their runs are explicit (several here, or a remote's seat), each with its controls: the
+        /// ones the local play of the game binds (the device's player on the first set), or the packets of a remote.
         /// </summary>
         protected override void OnRoomStarted(RoomInfo room)
         {
@@ -186,19 +191,23 @@ namespace Portfolio.EndlessRunner
             {
                 // A seed of the room fits a System.Random as long as it is positive.
                 Seed = Mathf.Max(1, (int)(room.Seed & int.MaxValue)),
-                LocalSeat = Server.LocalSeat
+                LocalSeat = Server.LocalSeat,
+                Screen = IsScreen
             };
             foreach (RoomMemberInfo member in Server.Members)
             {
                 seats[member.Identity] = member.Seat;
-                setup.Racers.Add(new Racer { Seat = member.Seat, Name = NameOf(member), Local = Server.IsLocal(member) });
+                setup.Racers.Add(new Racer { Seat = member.Seat, Name = NameOf(member), Local = DrivesSeat(member.Seat) });
             }
-            var local = new List<byte>(LocalSeats);
-            local.Sort((a, b) => LocalIndexOf(a).CompareTo(LocalIndexOf(b)));
-            foreach (byte seat in local)
+            var driven = new List<byte>(DrivenSeats);
+            driven.Sort((a, b) => DrivenIndexOf(a).CompareTo(DrivenIndexOf(b)));
+            foreach (byte seat in driven)
             {
-                setup.LocalSeats.Add(seat);
-                if (local.Count > 1)
+                setup.DrivenSeats.Add(seat);
+            }
+            if (setup.IsParty)
+            {
+                foreach (byte seat in driven)
                 {
                     setup.Controls[seat] = ControlsOf(seat);
                 }
@@ -206,6 +215,42 @@ namespace Portfolio.EndlessRunner
             manager.PrepareRace(setup);
             base.OnRoomStarted(room);
             PassMembers();
+        }
+
+
+        /// <summary>
+        /// Mid-race, a seat is driven here from now on (a remote control of this screen, or the player of this device
+        /// back from their remote) or no longer: the manager turns its ghost into a run from its last pose, or back.
+        /// The status the screen last sent this device carries the power-ups its runner had.
+        /// </summary>
+        protected override void OnSeatDriverChanged(byte seat, bool drivenHere)
+        {
+            RunnerGameManager manager = Runner;
+            if (manager == null || !manager.InRace)
+            {
+                return;
+            }
+            RoomMemberInfo member = Server.MemberAt(seat);
+            RoomPoseInfo? lastPose = member != null && Server.Poses.TryGetValue(member.Identity, out RoomPoseInfo pose) ? pose : (RoomPoseInfo?)null;
+            manager.SeatDriverChanged(seat, drivenHere, drivenHere ? ControlsOf(seat) : null, lastPose, drivenHere && !IsScreen ? RemoteStatus : null,
+                member != null && member.Playing, member == null);
+        }
+
+
+        /// <summary>The remote panel of a runner: how the runner is doing, as the screen says, and the pad that moves it.</summary>
+        protected override void BuildRemotePanel(RectTransform content, RemotePanelKit kit)
+        {
+            RunnerRemotePanel.Build(kit, this);
+        }
+
+
+        /// <summary>The panel went (the player plays on this device): the line it wrote in the frame goes with it.</summary>
+        protected override void OnPresentationChanged()
+        {
+            if (!IsRemote)
+            {
+                RemoteUI?.SetStatusLine(null);
+            }
         }
 
         protected override void OnServerTick()

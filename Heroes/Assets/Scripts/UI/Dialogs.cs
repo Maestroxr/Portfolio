@@ -411,7 +411,8 @@ namespace Portfolio.Heroes.UI
             bool online = Manager.IsOnlineGame;
             PlayerState winner = state.Player(state.winner);
             bool personWon = online ? Manager.WonHere(state) : winner != null && winner.human;
-            Heading.text = Words.T(personWon ? "Victory" : "Defeat");
+            // The shared screen of a room, which played no realm, has nothing to celebrate or to mourn.
+            Heading.text = online && Manager.IsSharedScreen ? Words.T("Game over") : Words.T(personWon ? "Victory" : "Defeat");
 
             TextMeshProUGUI verdict = UIKit.Heading(Body, "Verdict",
                 winner != null ? Words.F("{0} wins!", Words.Name(winner.name)) : Words.T("Nobody wins."), 34f);

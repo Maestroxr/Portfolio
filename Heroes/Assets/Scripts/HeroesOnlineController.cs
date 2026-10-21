@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Gamebox;
 using Gamebox.Online;
+using Portfolio.Heroes.UI;
 using UnityEngine;
 
 namespace Portfolio.Heroes
@@ -55,7 +56,12 @@ namespace Portfolio.Heroes
         /// </summary>
         protected override void RecordOnlineResult(RoomInfo room, RoomMemberInfo me)
         {
-            var progress = (HeroesProgress)OnlineProgress;
+            var progress = OnlineProgress as HeroesProgress;
+            if (progress == null || me == null || IsScreen || me.IsScreen)
+            {
+                // The shared screen of a room played no realm: nothing to record.
+                return;
+            }
             if (me.Place != 1)
             {
                 progress.RecordLoss();
@@ -200,6 +206,29 @@ namespace Portfolio.Heroes
         public void HandOverSeat(int tableSeat, System.Action ready, string detail, Color color)
         {
             HandOver(RoomSeatOf(tableSeat), ready, detail, color);
+        }
+
+        // ------------------------------------------------------------------ the shared screen and the remotes
+
+        /// <summary>
+        /// The map stays the control on a remote too (a hero is sent where the player taps): the frame of the panel is a
+        /// strip around it, and the panel adds what the map lacks under it.
+        /// </summary>
+        public override bool RemotePanelCoversGame => false;
+
+        /// <summary>
+        /// The game's content of the remote panel: the seat's treasury and date, its hero in hand, the question the rules
+        /// put to it, and its commands (<see cref="RemotePanel"/>).
+        /// </summary>
+        protected override void BuildRemotePanel(RectTransform content, RemotePanelKit kit)
+        {
+            RemotePanel.Build(this, content, kit);
+        }
+
+        /// <summary>This device became a remote control or stopped being one: the panels and prompts of the map make way for the panel, or come back.</summary>
+        protected override void OnPresentationChanged()
+        {
+            Heroes?.ApplyPresentation();
         }
 
         /// <summary>Whether the game is waiting for a player at this device right now.</summary>

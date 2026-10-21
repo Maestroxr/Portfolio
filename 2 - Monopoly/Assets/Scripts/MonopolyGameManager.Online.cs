@@ -78,6 +78,19 @@ namespace Portfolio.Monopoly
         /// <summary>Whether more than one person plays at this device: then the words of the match call them by name, not "you".</summary>
         private bool SeveralPlayHere => localSeats.Count > 1;
 
+        /// <summary>
+        /// Whether this device is the shared screen of its room: it holds no seat, shows the whole match for everybody
+        /// and, as the host, moves the computer players; nothing is ever asked of "you" on it.
+        /// </summary>
+        public bool IsScreen => online != null && online.IsScreen;
+
+        /// <summary>
+        /// Whether this device plays as a remote control of the room's shared screen right now: the match runs here as on
+        /// every client, but the remote panel is the interface (<see cref="MonopolyRemotePanel"/>) and the board, its
+        /// prompts and popups stay out of sight under it.
+        /// </summary>
+        public bool RemoteMode => online != null && online.ShowsRemotePanel;
+
         internal LockstepMatch Lockstep => lockstep;
 
         /// <summary>Where the commands of the interface go: to the server in an online match, else straight to the rules engine.</summary>
@@ -203,6 +216,36 @@ namespace Portfolio.Monopoly
         private void ReturnToRoom()
         {
             RequestState(BaseGameState.Initialization);
+        }
+
+        /// <summary>
+        /// This device became a remote of the room's shared screen, or a player on its own device again (the base's
+        /// <see cref="OnlineGameController.OnPresentationChanged"/>, in the lobby or mid-match): the interface is covered or
+        /// given back, the prompts of the board go, and the director looks at the table again, so a decision the match
+        /// waits for from a seat here is offered where it now belongs (the panel, or the board).
+        /// </summary>
+        internal void PresentationChanged()
+        {
+            bool covered = RemoteMode;
+            ui.SetCovered(covered);
+            if (lockstep == null || Match == null)
+            {
+                return;
+            }
+            if (covered)
+            {
+                ui.Actions.Hide();
+                ui.Manage.Close();
+                ui.Trade.Close();
+                ui.Offer.Close();
+                ui.Auction.Close();
+                if (ui.Deed.IsOffer)
+                {
+                    ui.Deed.Close();
+                }
+                board.ClearHighlights();
+            }
+            onlineVersion++;
         }
 
         // ------------------------------------------------------------------ what the server sends
@@ -506,7 +549,11 @@ namespace Portfolio.Monopoly
                         {
                             continue;
                         }
-                        ui.Offer.Show(Match, offer, ui.TokenSprite(from.token), accept => online.AnswerTrade(seat, accept));
+                        if (!RemoteMode)
+                        {
+                            // On a remote the panel asks (SeatPanelModel.Choices); nothing opens on the board under it.
+                            ui.Offer.Show(Match, offer, ui.TokenSprite(from.token), accept => online.AnswerTrade(seat, accept));
+                        }
                         WaitingForHuman = true;
                     }
                     else

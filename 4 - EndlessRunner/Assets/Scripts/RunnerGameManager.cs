@@ -50,6 +50,11 @@ namespace Portfolio.EndlessRunner
         public string Standings;
         /// <summary>Several runners at this device raced online (a party): the results name the winner.</summary>
         public bool Party;
+        /// <summary>
+        /// Nobody at this device ran the race (the shared screen, or a device whose player was out before it took its
+        /// seat back): the results name the winner and show the standings without a place of one's own.
+        /// </summary>
+        public bool Spectator;
 
         /// <summary>The run was a race of several runners at this device: the results are the standings.</summary>
         public bool Local;
@@ -338,6 +343,11 @@ namespace Portfolio.EndlessRunner
             EndLocalMatch();
             phase = RunPhase.Menu;
             ClearPowerUps(Main);
+            if (runner != null && !runner.gameObject.activeSelf)
+            {
+                // A race watched from the shared screen (or a remote control) kept the runner out of sight.
+                runner.gameObject.SetActive(true);
+            }
             int level = LevelIndex;
             if (!menuVisited)
             {
@@ -645,6 +655,13 @@ namespace Portfolio.EndlessRunner
         /// </summary>
         private void ApplyPerks()
         {
+            if (race != null && (race.Screen || race.Spectates))
+            {
+                // The shared screen runs the runners of its remotes, not one of the account here; a device that runs
+                // nobody has nothing to give them to.
+                coinMagnet = false;
+                return;
+            }
             coinMagnet = CloudEconomy.Owns(RunnerShop.CoinMagnetId);
             if (CloudEconomy.Owns(RunnerShop.HeadStartId))
             {
@@ -677,6 +694,13 @@ namespace Portfolio.EndlessRunner
             sounds?.Play(sounds.go);
             phase = RunPhase.Running;
             phaseTime = 0f;
+            if (race != null && race.Spectates)
+            {
+                // Nobody runs here: the views follow the runners of the others from the first meter.
+                phase = RunPhase.Watching;
+                runEnded = true;
+                return;
+            }
             foreach (RunnerRun run in Runs)
             {
                 run.Enter(RunPhase.Running);

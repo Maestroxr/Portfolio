@@ -183,11 +183,28 @@ the standings go by score, then by sets found (equal on both is a draw).
   one of them to another starts behind BaseGame's hand-over screen (the server's turn clock runs on meanwhile); a set
   lets the same player go on without it. The lifetime counts of the device (sets, best combo) take what every player
   at it found; the online progress is the device's alone.
+- **A shared screen and remote controls** (BaseGame's, see its README): a room opened as a shared screen shows the
+  whole game on a television or a tablet while every player holds a phone. The screen is a client with no seat of its
+  own (`OnlineSeats` with nothing played here, `MemoryCardsOnlineController.OnRoomStarted` lets it in): it mirrors the
+  board like any other client, shows every flip as it arrives, names the players in the turn banners and on the
+  scoreboard, ticks the last seconds of every turn, never lets a card be clicked and shows the standings in the results
+  without a "you". A phone in remote mode keeps running the game and sends its flips itself, as any client does;
+  the remote panel covers the game's interface (`RemotePanelCoversGame`, `OnPresentationChanged` hides the canvas) and
+  shows the player's score, sets and mistakes, a line that says whether they may tap, and a grid of the same mirror
+  sized for the phone (`RemoteBoard`, `Scripts/UI/RemoteBoard.cs`): the backs of the hidden cards, the faces of the
+  cards that are up, the sets found faintly. A tap on a hidden card on the player's turn goes through the same seam as a
+  click on the board (`ClickCard`, the same gates, the same `FlipCard`). *Play on this device* in the panel's footer
+  brings the game's own board back with the mirror as it is, and *Use as a remote control* in the match menu the panel;
+  nothing of the game changes hands, so a player may switch as often as they like mid-game.
 - The online tour (`MemoryCardsOnlineTour`, `-memorycards-online <role>`) plays every role of BaseGame's tours: `host`
   / `join`, `hostprivate` / `joinprivate` and `hostparty` / `joinparty` (with `-gamebox-companions` and
   `-gamebox-guests`). A host that waits for a party from another device opens a bigger room with
   `-memorycards-players <n>`, and `-memorycards-handover` has the parties hand the device over (the tour lifts the
-  screen, with a picture of the first).
+  screen, with a picture of the first). The roles of a shared screen: `hostscreen` opens the room as its screen and
+  plays nothing (pictures of the screen's board), `joinremote` joins as a remote and plays through the remote panel
+  (the autopilot taps its grid; pictures of the panel), `joinown` joins such a room but plays on its own device, and
+  `-memorycards-switch <seconds>` has a remote play on its own device that many seconds into the game and go back to
+  the remote as many seconds later, the game going on through both.
 
 ## Phones and tablets
 

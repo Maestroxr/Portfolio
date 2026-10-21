@@ -26,6 +26,10 @@ namespace Portfolio.EndlessRunner
 
         private readonly Dictionary<TrackPiece, TrackPiecePool> pools = new Dictionary<TrackPiece, TrackPiecePool>();
         private readonly Dictionary<TerrainBehaviour, TerrainCache> tileCaches = new Dictionary<TerrainBehaviour, TerrainCache>();
+        // The same pools by the name of their prefab: a theme loaded from a content bundle in a player holds copies of the
+        // prefabs the scene's pools were made with, equal in everything but identity.
+        private readonly Dictionary<string, TrackPiecePool> poolsByName = new Dictionary<string, TrackPiecePool>();
+        private readonly Dictionary<string, TerrainCache> tileCachesByName = new Dictionary<string, TerrainCache>();
         private readonly List<TrackPiece> active = new List<TrackPiece>();
         private readonly List<Collidable> pickups = new List<Collidable>();
         private readonly List<Obstacle> obstacles = new List<Obstacle>();
@@ -89,6 +93,7 @@ namespace Portfolio.EndlessRunner
                 if (pool != null && pool.Prefab != null)
                 {
                     pools[pool.Prefab] = pool;
+                    poolsByName[pool.Prefab.name] = pool;
                 }
             }
             foreach (TerrainCache cache in tilePools)
@@ -96,8 +101,29 @@ namespace Portfolio.EndlessRunner
                 if (cache != null && cache.Prefab != null)
                 {
                     tileCaches[cache.Prefab] = cache;
+                    tileCachesByName[cache.Prefab.name] = cache;
                 }
             }
+        }
+
+        /// <summary>The pool of <paramref name="prefab"/>: the very object, else the pool of the prefab of that name (a copy from a content bundle); null for none.</summary>
+        private TrackPiecePool PoolOf(TrackPiece prefab)
+        {
+            if (prefab == null)
+            {
+                return null;
+            }
+            return pools.TryGetValue(prefab, out TrackPiecePool pool) || poolsByName.TryGetValue(prefab.name, out pool) ? pool : null;
+        }
+
+        /// <summary>The cache of tiles of <paramref name="prefab"/>, by the object or by its name (see <see cref="PoolOf"/>); null for none.</summary>
+        private TerrainCache CacheOf(TerrainBehaviour prefab)
+        {
+            if (prefab == null)
+            {
+                return null;
+            }
+            return tileCaches.TryGetValue(prefab, out TerrainCache cache) || tileCachesByName.TryGetValue(prefab.name, out cache) ? cache : null;
         }
 
         /// <summary>Clears the track and lays out <paramref name="runLevel"/> from scratch.</summary>
@@ -348,7 +374,8 @@ namespace Portfolio.EndlessRunner
 
         private void SpawnTile(TilePlacement placement)
         {
-            if (placement.Prefab == null || !tileCaches.TryGetValue(placement.Prefab, out TerrainCache cache))
+            TerrainCache cache = CacheOf(placement.Prefab);
+            if (cache == null)
             {
                 return;
             }
@@ -362,7 +389,8 @@ namespace Portfolio.EndlessRunner
 
         private void SpawnPiece(PiecePlacement placement)
         {
-            if (placement.Prefab == null || taken.Contains(placement.Id) || !pools.TryGetValue(placement.Prefab, out TrackPiecePool pool))
+            TrackPiecePool pool = taken.Contains(placement.Id) ? null : PoolOf(placement.Prefab);
+            if (pool == null)
             {
                 return;
             }

@@ -320,14 +320,15 @@ namespace Portfolio.Heroes
         // ------------------------------------------------------------------ names
 
         /// <summary>
-        /// The name a person of a hot seat (or a player of an online game several people play at this device) is called
-        /// by, in the colour of their realm (rich text), or null when the game is neither, or <paramref name="player"/> is
-        /// no person here: the interface then says "you" or "the enemy" as it always does.
+        /// The name a person of a hot seat (or a player of an online game several people play at this device, or anybody
+        /// on the shared screen of a room, which belongs to nobody) is called by, in the colour of their realm (rich
+        /// text), or null when the game is none of these, or <paramref name="player"/> is no person here: the interface
+        /// then says "you" or "the enemy" as it always does.
         /// </summary>
         public string HotSeatName(int player)
         {
-            PlayerState seat = SharesDevice && Game != null ? Game.State.Player(player) : null;
-            if (seat == null || !seat.human || IsOnlineGame && !IsLocalSeat(player))
+            PlayerState seat = (SharesDevice || IsSharedScreen) && Game != null ? Game.State.Player(player) : null;
+            if (seat == null || !seat.human || IsOnlineGame && !IsLocalSeat(player) && !IsSharedScreen)
             {
                 return null;
             }

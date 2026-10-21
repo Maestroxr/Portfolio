@@ -129,6 +129,29 @@ namespace Portfolio.MemoryCards
             return IsOnlineVersus && onlineBoard.Seats.IsYou(seat);
         }
 
+        /// <summary>The board seat of the device's own player online, or -1 (a shared screen, or no online game).</summary>
+        internal int DeviceSeat => onlineBoard != null ? onlineBoard.Seats.Device : -1;
+
+        /// <summary>
+        /// Whether a tap at this device flips a card right now online: the turn of a seat played here began and its player
+        /// took the board, and no mistake is showing. The board and the remote panel (<see cref="RemoteBoard"/>) ask alike.
+        /// </summary>
+        internal bool MayFlipOnline => IsOnlineVersus && IsPlaying && onlineTurnBegan && onlineTurnReady && onlineBoard.Seats.IsLocal(versus.Current) && !mirrorMismatch;
+
+        /// <summary>
+        /// Shows or hides the whole interface of the game, its canvas: a device that plays as a remote control of a shared
+        /// screen shows the remote panel in its place (<see cref="MemoryCardsOnlineController.OnPresentationChanged"/>) while
+        /// the game runs on underneath, and gets it back as it is the moment the panel goes.
+        /// </summary>
+        internal void ShowGameView(bool shown)
+        {
+            Canvas canvas = gameUI != null ? gameUI.GetComponentInParent<Canvas>() : null;
+            if (canvas != null)
+            {
+                canvas.enabled = shown;
+            }
+        }
+
         #region Level select
 
         /// <summary>
@@ -628,8 +651,7 @@ namespace Portfolio.MemoryCards
         private void RequestOnlineFlip(Flippable view)
         {
             MemoryCard card = round.Cards[view.Index];
-            if (!onlineTurnBegan || !onlineTurnReady || !onlineBoard.Seats.IsLocal(versus.Current) || card.State != CardState.Hidden || mirrorMismatch
-                || online == null)
+            if (!MayFlipOnline || card.State != CardState.Hidden || online == null)
             {
                 return;
             }
@@ -805,7 +827,9 @@ namespace Portfolio.MemoryCards
             int shown = onlineBoard != null ? onlineBoard.Seats.Device : -1;
             PlayerScore = shown >= 0 && shown < versus.Seats.Count ? versus.Seats[shown].Score : versus.Standings()[0].Score;
             gameUI.UpdateVersus(versus.Seats, IsOnlineVersus && !onlineTurnBegan ? -1 : versus.Current, fraction, seconds);
-            if (seconds >= 0f && seconds <= 5f && PlayedHere(versus.Current))
+            // The last seconds tick for a player at this device, and on a shared screen for everybody in front of it.
+            bool hurries = PlayedHere(versus.Current) || IsOnlineVersus && online != null && online.IsScreen;
+            if (seconds >= 0f && seconds <= 5f && hurries)
             {
                 int second = Mathf.CeilToInt(seconds);
                 if (second > 0 && second != lastTick)

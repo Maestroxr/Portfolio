@@ -70,7 +70,7 @@ namespace Portfolio.Asteroids.Tests
             CollectionAssert.AreEqual(new byte[] { 2, 0, 3 }, DeviceSeats.Order(2, new byte[] { 3, 2, 0, 3 }), "The device, then the others by seat, each once.");
             CollectionAssert.AreEqual(new byte[] { 1 }, DeviceSeats.Order(1, new byte[] { 1 }), "Alone at the device.");
             CollectionAssert.AreEqual(new byte[] { 0 }, DeviceSeats.Order(0, null));
-            CollectionAssert.IsEmpty(DeviceSeats.Order(DeviceSeats.NoSeat, new byte[] { 0, 1 }), "Without a seat of its own the device flies none.");
+            CollectionAssert.AreEqual(new byte[] { 0, 1 }, DeviceSeats.Order(DeviceSeats.NoSeat, new byte[] { 1, 0 }), "Without a seat of its own (a shared screen) the device flies the seats it drives, by seat.");
         }
 
 

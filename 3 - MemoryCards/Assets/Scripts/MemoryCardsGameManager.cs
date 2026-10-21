@@ -196,6 +196,9 @@ namespace Portfolio.MemoryCards
         /// <summary>Whether cards can be clicked right now.</summary>
         internal bool IsPlaying => IsGameRunning && phase == Phase.Playing && round != null && !round.IsOver;
 
+        /// <summary>The board is being dealt or shown for memorizing: nobody flips yet.</summary>
+        internal bool IsMemorizing => phase == Phase.Dealing || phase == Phase.Preview;
+
         /// <summary>The step of the round the game is in (menu, dealing, preview, playing, busy, finished).</summary>
         internal string CurrentPhase => phase.ToString();
 
@@ -205,6 +208,22 @@ namespace Portfolio.MemoryCards
         {
             return card != null && card.Id >= 0 && card.Id < views.Count ? views[card.Id] : null;
         }
+
+        /// <summary>
+        /// The face of a card of the round for a view of the board elsewhere (the remote panel): the animal's sprite or the
+        /// special's; null while the face is unknown (a card of an online board that has not turned yet).
+        /// </summary>
+        internal Sprite FaceOf(MemoryCard card)
+        {
+            if (card == null || card.Kind == CardKind.Unknown)
+            {
+                return null;
+            }
+            return card.Kind == CardKind.Animal ? AnimalSprite(card.Animal) : SpecialFace(card.Kind);
+        }
+
+        /// <summary>The back of the cards of the board, for a view of it elsewhere.</summary>
+        internal Sprite BackSprite => CardBack;
 
 
         protected override void Awake()

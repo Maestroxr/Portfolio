@@ -52,8 +52,12 @@ namespace Portfolio.Heroes.UI
         private BaseGameState shownState = BaseGameState.Initialization;
         private bool leaveArmed;
         private string leaveWords;
+        private bool remoteView;
 
         public bool Busy => busy;
+
+        /// <summary>Whether this device plays as a remote control of the room's shared screen (<see cref="SetRemoteView"/>).</summary>
+        public bool RemoteView => remoteView;
 
         public TownScreen Town => town;
 
@@ -195,6 +199,26 @@ namespace Portfolio.Heroes.UI
             hud?.Show(on);
             if (!on)
             {
+                TooltipBox.Hide(this);
+            }
+        }
+
+        /// <summary>
+        /// This device plays as a remote control of the room's shared screen (<paramref name="remote"/>), or not any more.
+        /// As a remote the map stays the control under the panel's frame, which has the treasury, the hero in hand, the
+        /// questions and the commands of the seat (<see cref="RemotePanel"/>): the bars and the column of the adventure
+        /// map and the choice dialog keep out of its way, and come back on the player's own device.
+        /// </summary>
+        public void SetRemoteView(bool remote)
+        {
+            remoteView = remote;
+            if (hud != null)
+            {
+                hud.Compact = remote;
+            }
+            if (remote)
+            {
+                choice?.Close();
                 TooltipBox.Hide(this);
             }
         }
@@ -744,6 +768,12 @@ namespace Portfolio.Heroes.UI
 
         public void ShowChoice(PendingChoice pending)
         {
+            if (remoteView)
+            {
+                // The remote panel asks the question; the dialog would stand over the map under the panel's frame.
+                choice.Close();
+                return;
+            }
             choice.Show(pending);
         }
 
@@ -812,7 +842,8 @@ namespace Portfolio.Heroes.UI
 
         public void OpenTown()
         {
-            PlayerState viewer = manager.ViewerState;
+            // (On the shared screen of a room: the first town of the realm whose turn it is, to look at.)
+            PlayerState viewer = manager.WatchedState;
             if (viewer != null && viewer.towns.Count > 0)
             {
                 town.Open(Game.State.Town(viewer.towns[0]));

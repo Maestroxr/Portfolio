@@ -89,6 +89,13 @@ namespace Portfolio.Heroes
         /// <summary>Whether several people play online at this device, sharing its screen as a hot seat does.</summary>
         public bool IsOnlineParty => IsOnlineGame && localSeats.Count > 1;
 
+        /// <summary>
+        /// Whether this device is the shared screen of its room (<see cref="OnlineGameController.IsScreen"/>): it plays no
+        /// seat and watches the whole game, every realm's land in sight and every battle on its screen, while as host it
+        /// moves the computer seats and the wilds. Nothing on it is anybody's to press; the players hold remote controls.
+        /// </summary>
+        public bool IsSharedScreen => IsOnlineGame && localSeats.Count == 0;
+
         /// <summary>Whether a player at this device plays <paramref name="seat"/> of the online game.</summary>
         public bool IsLocalSeat(int seat)
         {
@@ -116,10 +123,13 @@ namespace Portfolio.Heroes
         /// <summary>The map of an online game plays faster while the rules are ahead of it.</summary>
         private float OnlinePace => lockstep != null && Game != null && Game.HasEvents ? CatchUpPace : 1f;
 
-        /// <summary>Whether a player at this device fights the battle that <paramref name="started"/> (its BattleStarted event) begins.</summary>
+        /// <summary>
+        /// Whether a player at this device fights the battle that <paramref name="started"/> (its BattleStarted event)
+        /// begins, or this device is the shared screen of the room, which shows every battle of the table.
+        /// </summary>
         public bool TakesPart(GameEvent started)
         {
-            if (!IsOnlineGame || started == null)
+            if (!IsOnlineGame || started == null || IsSharedScreen)
             {
                 return true;
             }
@@ -156,7 +166,9 @@ namespace Portfolio.Heroes
         {
             OnlineTable table = onlineTable;
             onlineTable = null;
-            if (table == null || table.Seats.Count < 2 || table.LocalSeats.Count == 0)
+            // The shared screen of a room plays no seat: it watches the table, and hosts it.
+            bool screen = online != null && online.IsScreen;
+            if (table == null || table.Seats.Count < 2 || table.LocalSeats.Count == 0 && !screen)
             {
                 UI?.UpdateError("The table of the online game did not arrive.");
                 return;
@@ -184,9 +196,10 @@ namespace Portfolio.Heroes
             localSeats.AddRange(table.LocalSeats);
             ResetHotSeat();
             // With several players here the screen goes first to the one the game goes on with (nobody holds it yet: the
-            // director hands it over before anything shows); alone, it is the player's from the first frame.
+            // director hands it over before anything shows); alone, it is the player's from the first frame; the shared
+            // screen of a room belongs to nobody (-1), and sees everything.
             int first = IsOnlineParty ? HotSeat.HandOverTo(lockstep.Game.State, -1, lockstep.Game.WaitingPlayer, localSeats) : -1;
-            localSeat = first >= 0 ? first : localSeats[0];
+            localSeat = first >= 0 ? first : localSeats.Count > 0 ? localSeats[0] : -1;
             onlineVersion = 0;
             reportedDay = -1;
             calledOff = false;
@@ -300,12 +313,14 @@ namespace Portfolio.Heroes
         /// <summary>
         /// The scenario of the room is over. The ending belongs to the players at this device: a victory when a realm of
         /// theirs won (<see cref="WonHere"/>). One player here is told how their realm did; several see the standings of
-        /// every realm, called by name. Nothing at this device changes for it: the campaign keeps its stars and unlocks,
-        /// and the saved game of the title screen stays.
+        /// every realm, called by name, and so does the shared screen of a room, which played no realm (a person's win is
+        /// its victory music). Nothing at this device changes for it: the campaign keeps its stars and unlocks, and the
+        /// saved game of the title screen stays.
         /// </summary>
         private IEnumerator FinishOnline(GameState state, int days)
         {
-            bool won = WonHere(state);
+            PlayerState winner = state.Player(state.winner);
+            bool won = IsSharedScreen ? winner != null && winner.human : WonHere(state);
             if (won)
             {
                 sound?.PlayVictoryMusic();
@@ -315,7 +330,7 @@ namespace Portfolio.Heroes
                 sound?.PlayDefeatMusic();
             }
             yield return new WaitForSeconds(0.6f);
-            if (IsOnlineParty)
+            if (IsOnlineParty || IsSharedScreen)
             {
                 ui.ShowHotSeatEnd(state, days);
             }
@@ -344,6 +359,29 @@ namespace Portfolio.Heroes
                 }
             }
             return false;
+        }
+
+        /// <summary>
+        /// This device became a remote control of the room's shared screen, or stopped being one
+        /// (<see cref="OnlineGameController.OnPresentationChanged"/>). As a remote the map stays the control under the
+        /// panel's frame, but the panels of the adventure map and the questions of the rules keep out of its way (the
+        /// panel has them: <see cref="RemotePanel"/>). On its own device again the player gets the map back as it was
+        /// before, their hero in hand, and the director offers them the decision it waits on once more.
+        /// </summary>
+        internal void ApplyPresentation()
+        {
+            bool remote = online != null && online.ShowsRemotePanel;
+            ui.SetRemoteView(remote);
+            if (lockstep == null || Game == null || Map == null)
+            {
+                return;
+            }
+            if (!remote && localSeat >= 0 && Game.State.Player(localSeat) != null)
+            {
+                ShowViewOf(localSeat);
+            }
+            // The director looks at the game again: a choice or a battle it offered goes to the panel, or comes back.
+            onlineVersion++;
         }
 
         // ------------------------------------------------------------------ what the server sends

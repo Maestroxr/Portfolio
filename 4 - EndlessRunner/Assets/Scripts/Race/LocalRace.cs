@@ -45,6 +45,15 @@ namespace Portfolio.EndlessRunner
             runs.Add(run);
         }
 
+        /// <summary>
+        /// Takes <paramref name="run"/> out of the race (its runner is played elsewhere from now on: a remote control that
+        /// switched to its own device); false when it was not in it. The runs that stay keep their order.
+        /// </summary>
+        public bool Remove(RunnerRun run)
+        {
+            return run != null && runs.Remove(run);
+        }
+
         /// <summary>The run whose runner sits at <paramref name="seat"/> (of the match, or of the room), or null.</summary>
         public RunnerRun RunAt(int seat)
         {
