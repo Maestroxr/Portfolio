@@ -60,5 +60,23 @@ namespace Portfolio.MemoryCards.Tests
             Assert.IsFalse(seats.IsLocal(0));
             Assert.IsTrue(seats.IsYou(1));
         }
+
+        [Test]
+        public void ASharedScreenPlaysNoSeat()
+        {
+            // The shared screen of a room holds no seat: nothing is played at it, and nobody there is "you".
+            var seats = new OnlineSeats(new[] { 0, 1, 2 }, new int[0], -1);
+            Assert.AreEqual(3, seats.Count);
+            CollectionAssert.IsEmpty(seats.Local);
+            Assert.AreEqual(-1, seats.Device);
+            Assert.IsFalse(seats.IsParty);
+            for (int seat = 0; seat < 3; seat++)
+            {
+                Assert.IsFalse(seats.IsLocal(seat), $"seat {seat} is played elsewhere");
+                Assert.IsFalse(seats.IsYou(seat), $"seat {seat} is not you");
+            }
+            Assert.AreEqual(1, seats.BoardSeatOf(1), "the flips still map to the board");
+            Assert.AreEqual(2, seats.RoomSeatOf(2));
+        }
     }
 }

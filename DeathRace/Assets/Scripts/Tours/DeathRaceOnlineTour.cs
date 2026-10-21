@@ -19,6 +19,14 @@ namespace Portfolio.DeathRace
     /// (pickups and mines claimed, wrecks, the results reported), every action of the room, the cars every few seconds
     /// (where this device's are, how fresh the poses of the others are), the standings the room sent (a STANDINGS line to
     /// compare between the players) and anything that went wrong. The host opens the match menu once mid race.
+    ///
+    /// The shared screen: <c>hostscreen</c> opens the room as its screen and drives nothing itself (the seats of the
+    /// remotes race on their pads; the screen's pictures show the split screen of their views); <c>joinremote</c> joins
+    /// as a remote control and plays through the panel, the computer driving the seat's puppet by the pad
+    /// (<see cref="RemoteRacePanel.PadStateOf"/> into <see cref="DeathRaceOnlineController.FeedPad"/> every frame; its
+    /// pictures are the panel's); <c>joinown</c> joins the screen's room and plays on its own device as <c>join</c> does.
+    /// With <c>-deathrace-online-switch &lt;t&gt;</c> a remote plays on its own device from race time t (the seat is handed
+    /// over mid-race) and goes back to the remote <c>-deathrace-online-switch-back</c> seconds later (default 20).
     /// </summary>
     public class DeathRaceOnlineTour : OnlineTour
     {
@@ -28,11 +36,15 @@ namespace Portfolio.DeathRace
         private const string OthersArgument = "-deathrace-online-guests";
         private const string SkillArgument = "-deathrace-online-skill";
         private const string StopArgument = "-deathrace-online-stop";
+        private const string SwitchArgument = "-deathrace-online-switch";
+        private const string SwitchBackArgument = "-deathrace-online-switch-back";
 
         private const float RacePatience = 420f;
 
         private DeathRaceManager manager;
         private DeathRaceOnlineController online;
+        private AiDriver remotePilot;
+        private int remotePackets;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Launch()
@@ -120,9 +132,14 @@ namespace Portfolio.DeathRace
                 yield return Fail("the race did not start");
                 yield break;
             }
-            PilotLocalCars(race);
+            if (!AsScreen)
+            {
+                // The screen drives the remotes' seats from their pads: the computer takes nothing over there.
+                PilotLocalCars(race);
+            }
             Note($"racing on {race.Track.Layout.Name}, {race.Laps} laps, seed {race.Setup.Seed}: "
-                + string.Join(", ", race.Cars.Select(car => $"seat {car.Entrant.RoomSeat} {car.Entrant.Name} {car.Entrant.Driver} grid P{car.Racer.Place}")));
+                + string.Join(", ", race.Cars.Select(car => $"seat {car.Entrant.RoomSeat} {car.Entrant.Name} {car.Entrant.Driver} grid P{car.Racer.Place}"))
+                + (online.IsScreen ? " (the shared screen)" : online.IsRemote ? " (a remote control)" : ""));
             yield return new WaitForSeconds(RaceDirector.GridSeconds + 1f);
             yield return Shot("04_countdown");
 
@@ -132,14 +149,47 @@ namespace Portfolio.DeathRace
             int shot = 0;
             bool matchMenuShown = false;
             float stopAt = NumberArgument(StopArgument, -1f);
+            float switchAt = NumberArgument(SwitchArgument, -1f);
+            float switchBackAt = -1f;
             while (!Ended && Time.unscaledTime - start < RacePatience)
             {
                 Race current = online.OnlineRace;
                 float raceTime = current != null ? current.Time : 0f;
+                if (online.IsRemote && online.ShowsRemotePanel)
+                {
+                    PilotRemote();
+                }
+                else if (!AsScreen)
+                {
+                    PilotNewLocalCars();
+                }
                 if (shot < shots.Length && raceTime > shots[shot])
                 {
                     shot++;
                     yield return Shot($"{4 + shot:00}_racing");
+                }
+                if (switchAt > 0f && raceTime > switchAt && online.IsRemote)
+                {
+                    // The player takes the race onto their own device: the seat is handed over from the screen.
+                    switchAt = -1f;
+                    switchBackAt = raceTime + Mathf.Max(5f, NumberArgument(SwitchBackArgument, 20f));
+                    Note($"switching to this device at t {raceTime:0.0} ({remotePackets} pad packets sent)");
+                    online.SetRemoteMode(false, error => Note("play on this device: " + (error ?? "ok")));
+                    yield return WaitFor(() => !online.IsRemote && online.LocalCars.ContainsKey(Server.LocalSeat), 15f, "the seat on this device");
+                    yield return new WaitForSeconds(1.5f);
+                    Progress();
+                    yield return Shot("11_own_device");
+                }
+                if (switchBackAt > 0f && raceTime > switchBackAt && !online.IsRemote)
+                {
+                    // And back to the remote: the screen takes the seat over again.
+                    switchBackAt = -1f;
+                    Note($"switching back to the remote at t {raceTime:0.0}");
+                    online.SetRemoteMode(true, error => Note("remote again: " + (error ?? "ok")));
+                    yield return WaitFor(() => online.IsRemote && !online.LocalCars.ContainsKey(Server.LocalSeat), 15f, "the seat back at the screen");
+                    yield return new WaitForSeconds(1.5f);
+                    Progress();
+                    yield return Shot("12_remote_again");
                 }
                 if (Hosting && !matchMenuShown && raceTime > 18f && manager.IsRacing)
                 {
@@ -200,6 +250,38 @@ namespace Portfolio.DeathRace
             Note($"cars at this device: {string.Join(", ", online.LocalCars.Keys)}; of the others: {string.Join(", ", online.RemoteCars.Keys)}");
         }
 
+        /// <summary>A car handed to this device mid-race (a remote that plays on its own device now) gets the computer driver too.</summary>
+        private void PilotNewLocalCars()
+        {
+            foreach (KeyValuePair<byte, Car> local in online.LocalCars)
+            {
+                Car car = local.Value;
+                if (car != null && car.Driver is HumanDriver)
+                {
+                    car.Driver = new AiDriver(Mathf.Clamp01(NumberArgument(SkillArgument, 0.85f)), 9000 + local.Key);
+                    Note($"seat {local.Key} is driven here now: the computer takes its wheel");
+                }
+            }
+        }
+
+        /// <summary>
+        /// A remote control plays through the pad: the computer decides what the seat's car should do from its puppet
+        /// here (which follows the poses the screen sends), and the decision goes out as the pad's state, which the screen
+        /// reads as the seat's controls.
+        /// </summary>
+        private void PilotRemote()
+        {
+            if (!online.RemoteCars.TryGetValue(Server.LocalSeat, out RemoteCar puppet) || puppet == null || puppet.Car == null)
+            {
+                return;
+            }
+            remotePilot ??= new AiDriver(Mathf.Clamp01(NumberArgument(SkillArgument, 0.85f)), 9000 + Server.LocalSeat);
+            CarInput input = remotePilot.Drive(puppet.Car, Time.deltaTime);
+            RemoteRacePanel.PadStateOf(input, out Vector2 stick, out uint held, out uint pressed);
+            online.FeedPad(stick, held, pressed);
+            remotePackets++;
+        }
+
         /// <summary>Where every car is: this device's by their own physics, the others' by their poses.</summary>
         private void Progress()
         {
@@ -208,6 +290,10 @@ namespace Portfolio.DeathRace
             {
                 Note("no race");
                 return;
+            }
+            if (online.IsRemote)
+            {
+                Note($"remote: panel {(online.ShowsRemotePanel ? "shown" : "hidden")}, {remotePackets} pad states, status \"{online.RemoteStatus}\"");
             }
             var parts = new List<string>();
             foreach (KeyValuePair<byte, Car> local in online.LocalCars)

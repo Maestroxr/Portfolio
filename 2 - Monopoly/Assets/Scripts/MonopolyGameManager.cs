@@ -428,8 +428,9 @@ namespace Portfolio.Monopoly
             cameraRig?.ClearFocus();
             PlayerState winner = Match.winner >= 0 ? Match.players[Match.winner] : null;
             // Online the player at this device wins or loses; the stars and the saved game belong to the games played here.
+            // The shared screen of a room, which plays no seat, celebrates whichever person at the table won.
             bool onlineMatch = IsOnlineMatch;
-            bool humanWon = winner != null && PlayedHere(winner);
+            bool humanWon = winner != null && (PlayedHere(winner) || IsScreen && !winner.bot);
             int stars = onlineMatch ? 0 : MonopolyCampaign.StarsFor(Match);
             bool best = false;
             if (!onlineMatch && Match.players.Any(p => !p.bot))
@@ -504,6 +505,13 @@ namespace Portfolio.Monopoly
         private void ShowDecision(PlayerState player)
         {
             cameraRig?.ClearFocus();
+            if (RemoteMode)
+            {
+                // The remote panel asks the same decision in its own way (SeatPanelModel.Choices): nothing opens on the
+                // board under it, and the director still waits for the seat.
+                ui.Actions.Hide();
+                return;
+            }
             int seat = player.index;
             Color color = MonopolyStyle.PlayerColor(player.color);
             Sprite token = ui.TokenSprite(player.token);
@@ -602,28 +610,8 @@ namespace Portfolio.Monopoly
 
         private int SuggestDestination(int seat)
         {
-            // The same choice a computer player would make.
-            int best = 0;
-            float bestScore = float.MinValue;
-            for (int space = 0; space < Match.SpaceCount; space++)
-            {
-                SpaceData data = Match.Space(space);
-                float score = data.IsProperty && !Match.Deed(space).Owned ? BotBrain.Valuation(Match, seat, space) : data.kind == SpaceKind.Go ? Match.rules.salary : 0f;
-                if (data.IsProperty && Match.Deed(space).Owned && Match.Owner(space) != seat)
-                {
-                    score = -Match.Rent(space, 7);
-                }
-                if (data.kind == SpaceKind.GoToJail)
-                {
-                    score = -200f;
-                }
-                if (score > bestScore)
-                {
-                    bestScore = score;
-                    best = space;
-                }
-            }
-            return best;
+            // The same choice a computer player would make (and the remote panel's Best pick).
+            return SeatPanelModel.SuggestDestination(Match, seat);
         }
 
         /// <summary>
@@ -681,7 +669,7 @@ namespace Portfolio.Monopoly
         /// <summary>A click or tap on a space of the board.</summary>
         public void BoardClicked(int space)
         {
-            if (Match == null || space < 0 || !IsGameRunning)
+            if (Match == null || space < 0 || !IsGameRunning || RemoteMode)
             {
                 return;
             }
@@ -700,7 +688,7 @@ namespace Portfolio.Monopoly
 
         public void BoardHovered(int space)
         {
-            if (Match != null && Match.phase == MatchPhase.MoveAnywhere && WaitingForHuman)
+            if (Match != null && Match.phase == MatchPhase.MoveAnywhere && WaitingForHuman && !RemoteMode)
             {
                 board.Hover(space, new Color(1f, 1f, 1f, 0.9f));
             }

@@ -63,6 +63,9 @@ namespace Portfolio.EndlessRunner
         /// <summary>What the runner is doing, by the newest pose.</summary>
         public RunnerPoseState LatestState => poses.HasPose ? RunnerPoseState.Unpack(poses.Latest.State) : default;
 
+        /// <summary>The newest pose itself (<see cref="HasPose"/> first): where the runner really is, ahead of the ghost.</summary>
+        public RoomPoseInfo LatestPose => poses.Latest;
+
         /// <summary>The hearts the runner has left, or -1 before the first pose.</summary>
         public int Hearts => poses.HasPose ? poses.Latest.Value : -1;
 

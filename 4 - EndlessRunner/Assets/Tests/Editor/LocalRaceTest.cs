@@ -321,10 +321,73 @@ namespace Portfolio.EndlessRunner.Tests
         public void ARaceIsAPartyWhenSeveralRunnersRunAtThisDevice()
         {
             var setup = new RunnerGameManager.RaceSetup { LocalSeat = 1 };
-            setup.LocalSeats.Add(1);
+            setup.DrivenSeats.Add(1);
             Assert.IsFalse(setup.IsParty, "one runner here races as it always did");
-            setup.LocalSeats.Add(3);
+            setup.DrivenSeats.Add(3);
             Assert.IsTrue(setup.IsParty);
+        }
+
+        [Test]
+        public void TheSharedScreenRunsEveryRemoteAsAPartyAndWatchesWithNone()
+        {
+            // The screen holds no seat: a remote's seat is never the device's own, so even one is an explicit run.
+            // The screen holds no seat (the base's NoSeat, 255).
+            var screen = new RunnerGameManager.RaceSetup { LocalSeat = 255, Screen = true };
+            Assert.IsTrue(screen.Spectates, "a screen whose players all run on their own devices only watches");
+            Assert.IsFalse(screen.IsParty);
+            screen.DrivenSeats.Add(2);
+            Assert.IsTrue(screen.IsParty, "the seat of a remote is run on the split screen machinery, with its own seat");
+            Assert.IsFalse(screen.Spectates);
+            screen.DrivenSeats.Remove(2);
+            Assert.IsTrue(screen.Spectates, "the last remote went to its own device: the screen watches again");
+
+            // A remote control drives nothing: its screen runs its seat.
+            var remote = new RunnerGameManager.RaceSetup { LocalSeat = 0 };
+            Assert.IsTrue(remote.Spectates);
+            Assert.IsFalse(remote.IsParty);
+            remote.DrivenSeats.Add(0);
+            Assert.IsFalse(remote.IsParty, "back on its own device, the player's runner races as it always did");
+            Assert.IsFalse(remote.Spectates);
+        }
+
+        [Test]
+        public void ARunLeavesTheRaceWhenItsSeatIsPlayedElsewhere()
+        {
+            RunnerRun one = Run(40f, RunPhase.Running);
+            RunnerRun two = Run(55f, RunPhase.Running);
+            RunnerRun three = Run(30f, RunPhase.Running);
+            LocalRace race = Race(one, two, three);
+            Assert.IsTrue(race.Remove(two));
+            Assert.IsFalse(race.Remove(two), "gone already");
+            CollectionAssert.AreEqual(new[] { one, three }, race.Runs, "the runs that stay keep their order");
+            Assert.AreSame(one, race.Leader());
+            Assert.IsTrue(race.TrySpan(out float front, out float back));
+            Assert.AreEqual(40f, front);
+            Assert.AreEqual(30f, back);
+            Assert.IsNull(race.RunAt(1), "the seat of the run that left is nobody's here");
+            one.Phase = RunPhase.Watching;
+            three.Phase = RunPhase.Watching;
+            Assert.IsTrue(race.IsOver, "the run that left does not hold the race up");
+        }
+
+        [Test]
+        public void ARunTakenOverMidRaceStartsFromWhatIsKnownOfIt()
+        {
+            var run = new RunnerRun(null, null);
+            run.Reset(3);
+            run.SeedProgress(2, 14, 10, 123.4f);
+            Assert.AreEqual(2, run.Hearts);
+            Assert.AreEqual(3, run.MaxHearts);
+            Assert.AreEqual(1, run.HeartsLost);
+            Assert.AreEqual(14, run.Coins);
+            Assert.AreEqual(140f, run.CoinPoints);
+            Assert.AreEqual(123.4f, run.Distance, 0.001f);
+            Assert.AreEqual(123.4f, run.Z, 0.001f);
+            Assert.AreEqual(123 + 140, Mathf.FloorToInt(run.Score));
+            run.SeedProgress(7, -3, 10, -5f);
+            Assert.AreEqual(3, run.Hearts, "no more hearts than the run has");
+            Assert.AreEqual(0, run.Coins);
+            Assert.AreEqual(0f, run.Distance);
         }
 
         [Test]

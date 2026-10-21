@@ -17,12 +17,37 @@ MonoBehaviour:
   description: 'Three asteroid field campaigns: split asteroids, dodge mines, comets and black holes, fight saucers, wasps and bosses, upgrade your guns, then see how long you last in the endless Deep Field. Then take the war to the planets in three Planet Strike campaigns of vertical scrolling air and ground combat, with a Supply Room to spend your earnings in and a boss at the end of every mission. Co-op for up to four pilots.'
   icon: {fileID: 21300000, guid: 43cf11e63e82a3c47bd9794efea99b95, type: 3}
   sortOrder: 1
-  scenePath: Assets/Scenes/Asteroids.unity
+  scenePath: Packages/com.skinnerboxes.asteroids/Scenes/Asteroids.unity
   extraScenePaths: []
-  theme: {fileID: 11400000, guid: 960c283ad36f2024c9250d0451d98986, type: 2}
-  themes:
-  - {fileID: 11400000, guid: 960c283ad36f2024c9250d0451d98986, type: 2}
-  - {fileID: 11400000, guid: 841800b646dff0f48967087adb339a3a, type: 2}
+  themeReference:
+    m_AssetGUID: 960c283ad36f2024c9250d0451d98986
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  themeReferences:
+  - m_AssetGUID: 960c283ad36f2024c9250d0451d98986
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  - m_AssetGUID: 841800b646dff0f48967087adb339a3a
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  themeCards:
+  - guid: 960c283ad36f2024c9250d0451d98986
+    assetName: Classic
+    displayName: Classic
+    screenshot: {fileID: 21300000, guid: fce46e7f8cb59054fa522999cf97d880, type: 3}
+    preview: {fileID: 21300000, guid: d77d12b0161e4c84dacd143dc334acb6, type: 3}
+  - guid: 841800b646dff0f48967087adb339a3a
+    assetName: Arcade80s
+    displayName: Arcade 80s
+    screenshot: {fileID: 21300000, guid: 3a4142fe0890af84c96ec13b3148afec, type: 3}
+    preview: {fileID: 21300000, guid: ab2fd70af753fd84f84e6576d7fa7099, type: 3}
+  builtIn: 0
   database: skinnerboxes-asteroids
   scene: {fileID: 102900000, guid: 9fc0d4010bbf28b4594072e72b8655ab, type: 3}
   extraScenes: []

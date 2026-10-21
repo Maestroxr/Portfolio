@@ -211,5 +211,21 @@ namespace Portfolio.DeathRace
         {
             Rockets += Mathf.Max(0, rockets);
         }
+
+        /// <summary>
+        /// Sets what is left outright (a car taken over from another device mid-race, whose stock is reckoned from the
+        /// room's log): the rounds (up to the capacity), the mines, rockets and nitro charges, and the special weapons. What
+        /// was used so far is kept.
+        /// </summary>
+        public void Set(int ammo, int mines, int rockets, int nitro, int oil, int emp, int mortar)
+        {
+            Ammo = Mathf.Clamp(ammo, 0, AmmoCapacity);
+            Mines = Mathf.Max(0, mines);
+            Rockets = Mathf.Max(0, rockets);
+            NitroCharges = Mathf.Max(0, nitro);
+            specials[(int)SpecialKind.Oil] = Mathf.Max(0, oil);
+            specials[(int)SpecialKind.Emp] = Mathf.Max(0, emp);
+            specials[(int)SpecialKind.Mortar] = Mathf.Max(0, mortar);
+        }
     }
 }

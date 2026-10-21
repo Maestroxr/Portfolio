@@ -10,6 +10,8 @@ namespace Portfolio.MemoryCards
     /// ice, plays the wild card and the clocks and, unless told otherwise, stays away from bombs. In an online game
     /// the board only knows the cards that were turned, so there it plays like somebody with a perfect memory, and
     /// its clicks count on the turns of the players at this device only (every one of them, when several sit here).
+    /// While the device plays as a remote control of a shared screen it taps the grid of the remote panel instead of the
+    /// board (<see cref="RemoteBoard.Tap"/>), as a person at the phone would.
     /// </summary>
     public class MemoryCardsAutopilot : MonoBehaviour
     {
@@ -49,14 +51,29 @@ namespace Portfolio.MemoryCards
                 // Click a face up card to flip the mistake back.
                 if (round.Revealed.Count > 0)
                 {
-                    manager.ClickCard(manager.ViewOf(round.Revealed[0]));
+                    Tap(round.Revealed[0]);
                 }
                 return;
             }
             MemoryCard next = Choose(round);
             if (next != null)
             {
-                manager.ClickCard(manager.ViewOf(next));
+                Tap(next);
+            }
+        }
+
+        /// <summary>Clicks <paramref name="card"/>: on the remote panel while it shows (the seam a player at a remote uses), else on the board.</summary>
+        private void Tap(MemoryCard card)
+        {
+            MemoryCardsOnlineController online = manager.online;
+            RemoteBoard panel = online != null && online.ShowsRemotePanel ? online.RemoteBoard : null;
+            if (panel != null)
+            {
+                panel.Tap(card.Id);
+            }
+            else
+            {
+                manager.ClickCard(manager.ViewOf(card));
             }
         }
 

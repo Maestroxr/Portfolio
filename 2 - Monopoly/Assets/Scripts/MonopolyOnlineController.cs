@@ -26,6 +26,12 @@ namespace Portfolio.Monopoly
 
         public MonopolyGameManager Monopoly => BaseManager as MonopolyGameManager;
 
+        /// <summary>The game's content of the remote panel while the panel is built (<see cref="BuildRemotePanel"/>), else null.</summary>
+        public MonopolyRemotePanel Panel { get; private set; }
+
+        /// <summary>The remote panel is the whole interface of a remote: the board stays out of sight under it.</summary>
+        public override bool RemotePanelCoversGame => true;
+
         private MonopolyMatch Match => Monopoly != null ? Monopoly.Match : null;
 
         public override int MaxPlayersLimit => 4;
@@ -103,6 +109,11 @@ namespace Portfolio.Monopoly
         /// </summary>
         private void AskForToken(PlayerProfile profile)
         {
+            if (Server.IsScreenConnection)
+            {
+                // The shared screen moves no token of its own.
+                return;
+            }
             int token = SetupUI.PreferredToken();
             if (token >= 0 && profile.Avatar != token)
             {
@@ -147,6 +158,42 @@ namespace Portfolio.Monopoly
         protected override IReadOnlyList<SavedSeatInfo> SavedSeats(SavedGame save)
         {
             return Monopoly != null ? Monopoly.SavedSeats(save) : null;
+        }
+
+        // ------------------------------------------------------------------ the shared screen and the remotes
+
+        /// <summary>
+        /// The content of the remote panel: the seat's cash, square and properties, and its decisions as big buttons
+        /// (<see cref="MonopolyRemotePanel"/>, over <see cref="SeatPanelModel"/>). The device keeps running the match
+        /// under it and sends the seat's moves through this controller as the board would.
+        /// </summary>
+        protected override void BuildRemotePanel(RectTransform content, RemotePanelKit kit)
+        {
+            Panel = MonopolyRemotePanel.Build(content, kit, this);
+        }
+
+        /// <summary>This device became a remote of the room's screen or stopped being one: the manager hides or shows the board and its prompts.</summary>
+        protected override void OnPresentationChanged()
+        {
+            Monopoly?.PresentationChanged();
+        }
+
+        /// <summary>Whether a decision sent for <paramref name="seat"/> now would go: the check <see cref="Roll"/> and the other decisions make.</summary>
+        internal bool MayDecide(int seat)
+        {
+            return Deciding(seat);
+        }
+
+        /// <summary>Whether a property command sent for <paramref name="seat"/> now would go: the check <see cref="Build"/> and the others make.</summary>
+        internal bool MayManage(int seat)
+        {
+            return Managing(seat);
+        }
+
+        /// <summary>Whether an answer to the offer on the table sent for <paramref name="seat"/> now would go (<see cref="AnswerTrade"/>).</summary>
+        internal bool MayAnswer(int seat)
+        {
+            return IsPlaying && Monopoly != null && Monopoly.OnlineAnswering(seat) && !AwaitingEcho;
         }
 
         // ------------------------------------------------------------------ the log

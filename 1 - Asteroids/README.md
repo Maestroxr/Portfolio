@@ -546,6 +546,26 @@ room's host simulates the world** exactly as in the single player game (waves, s
   the saved pilot's kit; a won mission pays the party's money into the saved pilot once when one of its ships lands,
   and the device's own kit is banked when its ship is home. Tournaments take one player a device; the campaign progress
   online is the device player's.
+- **Shared screen and remote controls** (BaseGame's README, "Shared screen and remote controls"). A room opened as a
+  shared screen plays the whole mission on it: the screen simulates the world as the host and flies the seat of
+  every pilot who holds a remote control, as a wingman of the party above, from the stick and buttons the remote
+  streams (`OnlineGameController.ControlsOf` hands the screen a `PlayerControls` over the remote's packets, which the
+  same `LocalShipInput` reads; `DeviceSeats.Order` takes the seats the screen drives although it holds none). The
+  screen sends their poses, shots, hits, claims, scores and ends under their seats, shows the pilots list with every
+  seat and the results with everybody's places (no "you"), and tells every remote what its seat is up to
+  (`RemoteSeatStatus`: ships left, score, weapon and level, novas, hull and shield; in a strike money, energy, phase
+  shields, megabombs and the special). The remote's device shows that as the rows of its panel over the pad of the
+  pilots' control scheme (`AsteroidsOnlineController.BuildRemotePanel`), keeps the world running underneath as puppets
+  (its own ship is a stand-in too) and flies nothing; the scene's ship is parked. A pilot who switches to playing on
+  their own device mid-mission takes the seat over from its last pose, which carries the ships left, the weapon and
+  the bombs (`ShipPose`), with the score the server has and, in a strike, the loadout the screen wrote into the status;
+  the screen turns its wingman into a stand-in (`AsteroidsGameManager.Screen.cs`, `FieldReplication.SetSeats`). Switching
+  back goes the other way. In a planet strike a remote sends its loadout to the screen as a room action
+  (`StrikeLoadoutText`), so the screen flies the seat with the pilot's own kit, and a won mission pays the money the
+  seat earned into the remote's saved pilot when its ship was still flying (the kit is only lent, as for a party's
+  wingman); the screen banks nothing. The online tour plays it with `hostscreen` (the room as a screen, two guests),
+  `joinremote` (the autopilot reads the stand-in of its own ship and feeds the pad) and `joinown` (plays on its own
+  device); `-asteroids-switch <s>` and `-asteroids-switch-back <s>` switch a remote mid-mission.
 
 ## Phones and tablets
 

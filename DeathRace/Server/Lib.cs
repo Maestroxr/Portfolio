@@ -291,8 +291,8 @@ public static partial class Module
 
     /// <summary>
     /// The actions of a race: a mine, a rocket, an oil slick, an EMP blast, a mortar shell or a wreck of a car the sender
-    /// drives (their own seat or a companion's), with a payload that reads. A wreck credits the killer it names with a kill
-    /// and marks the wrecked racer.
+    /// drives (their own seat, a companion's, or a remote's when the sender is the room's shared screen), with a payload
+    /// that reads. A wreck credits the killer it names with a kill and marks the wrecked racer.
     /// </summary>
     static partial void ValidateAction(ReducerContext ctx, Room room, RoomMember member, ref RoomAction action, ref bool decisive, ref string? error)
     {
@@ -301,7 +301,7 @@ public static partial class Module
         {
             action.Seat = member.Seat;
         }
-        if (action.Seat != member.Seat && (MemberAt(ctx, room.Id, action.Seat) is not { } other || DeviceOf(ctx, other.Identity) != ctx.Sender))
+        if (action.Seat != member.Seat && (MemberAt(ctx, room.Id, action.Seat) is not { } other || ActingDeviceOf(ctx, other.Identity) != ctx.Sender))
         {
             error = "This car is not yours to drive.";
             return;

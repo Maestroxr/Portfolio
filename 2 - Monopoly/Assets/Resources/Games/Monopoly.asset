@@ -17,12 +17,37 @@ MonoBehaviour:
   description: Roll, buy, build and trade your way around the world. Up to four players at one screen, computer opponents on three levels, and six ways to play.
   icon: {fileID: 21300000, guid: 2d2e152d29f24e948f13f4f66410da00, type: 3}
   sortOrder: 2
-  scenePath: Assets/Scenes/Monopoly.unity
+  scenePath: Packages/com.skinnerboxes.monopoly/Scenes/Monopoly.unity
   extraScenePaths: []
-  theme: {fileID: 11400000, guid: 84e24ec8d06124e498c387a82d4bc3ae, type: 2}
-  themes:
-  - {fileID: 11400000, guid: 84e24ec8d06124e498c387a82d4bc3ae, type: 2}
-  - {fileID: 11400000, guid: a82beea7583d6e64fb9a5e423dda6f6a, type: 2}
+  themeReference:
+    m_AssetGUID: 84e24ec8d06124e498c387a82d4bc3ae
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  themeReferences:
+  - m_AssetGUID: 84e24ec8d06124e498c387a82d4bc3ae
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  - m_AssetGUID: a82beea7583d6e64fb9a5e423dda6f6a
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  themeCards:
+  - guid: 84e24ec8d06124e498c387a82d4bc3ae
+    assetName: Classic
+    displayName: Classic
+    screenshot: {fileID: 21300000, guid: 71925acae4f95c2428156e1edbdd3b28, type: 3}
+    preview: {fileID: 21300000, guid: 7436435c30eeaf643bc6ade01b5ccc18, type: 3}
+  - guid: a82beea7583d6e64fb9a5e423dda6f6a
+    assetName: GalacticTrade
+    displayName: Galactic Trade
+    screenshot: {fileID: 21300000, guid: b3b03104095b65148b2b4e9d94b94570, type: 3}
+    preview: {fileID: 21300000, guid: e51a50b2a8d3e3549bef31518744bcba, type: 3}
+  builtIn: 0
   database: skinnerboxes-monopoly
   scene: {fileID: 102900000, guid: be2f5998378f411db509a27d80c3125f, type: 3}
   extraScenes: []

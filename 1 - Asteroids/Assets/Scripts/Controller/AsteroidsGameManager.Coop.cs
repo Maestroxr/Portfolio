@@ -39,8 +39,13 @@ namespace Portfolio.Asteroids
         {
             /// <summary>This client simulates the world (the host of the room).</summary>
             public bool Simulates;
-            /// <summary>The seat of the device's own pilot.</summary>
+            /// <summary>The seat of the device's own pilot (<see cref="DeviceSeats.NoSeat"/> on the shared screen, which holds none).</summary>
             public int LocalSeat;
+            /// <summary>
+            /// The device's own seat is flown here, by the scene's ship: false on the shared screen and on a device whose
+            /// player plays through a remote control (the screen flies the seat); changes mid-mission when the player switches.
+            /// </summary>
+            public bool DrivesOwnSeat = true;
             /// <summary>Place of the device's own pilot among the pilots, by seat, for the start positions.</summary>
             public int Slot;
             public int Pilots;
@@ -172,7 +177,8 @@ namespace Portfolio.Asteroids
             {
                 ReleaseLocalPilots();
             }
-            if (setup.Party != null && setup.Party.Count > 1 && ship != null && field != null)
+            // A party when several pilots fly here, or when the only ones are not the device's own (the shared screen).
+            if (setup.Party != null && (setup.Party.Count > 1 || setup.Party.Count > 0 && !setup.DrivesOwnSeat) && ship != null && field != null)
             {
                 CreatePartyPilots(setup.Party);
             }
@@ -610,7 +616,7 @@ namespace Portfolio.Asteroids
             phaseTime = 0f;
             ui?.Announce(IsStrike ? T("SHIP DESTROYED") : T("OUT OF SHIPS"), T("Watching the other pilots"), new Color(1f, 0.35f, 0.3f));
             sounds?.GameOver();
-            if (!IsParty)
+            if (!IsParty && coop.DrivesOwnSeat)
             {
                 online?.PilotOut((byte)coop.LocalSeat, score.Score);
             }
@@ -653,6 +659,12 @@ namespace Portfolio.Asteroids
             phase = MissionPhase.Results;
             AsteroidsLevel mission = Mission;
             bool party = IsParty;
+            // Nothing of this device's own flew (a remote control's seat was flown by the shared screen, or the screen flew
+            // no seat): the seat's score is what the server has for it, with the ships left bonus the screen added.
+            bool parked = !party && SceneShipParked;
+            int shown = party ? squad.TeamScore
+                : parked ? IsScreenDevice || online == null ? 0 : (int)Mathf.Clamp(online.OwnSeatScore, 0, int.MaxValue)
+                : score.Score;
             var result = new MissionResult
             {
                 Title = mission != null ? mission.Title : "Mission",
@@ -660,12 +672,12 @@ namespace Portfolio.Asteroids
                 Endless = false,
                 Coop = true,
                 Standings = online != null ? online.DescribeStandings() : string.Empty,
-                Score = party ? squad.TeamScore : score.Score,
-                LifeBonus = victory ? party ? localLifeBonus : lives * lifeBonus : 0,
-                Kills = party ? squad.Kills : score.Kills,
-                Accuracy = party ? squad.Accuracy : score.Accuracy,
-                MaxCombo = party ? squad.MaxCombo : score.MaxCombo,
-                Crystals = party ? squad.Crystals : score.Crystals,
+                Score = shown,
+                LifeBonus = victory ? party ? localLifeBonus : parked ? 0 : lives * lifeBonus : 0,
+                Kills = party ? squad.Kills : parked ? 0 : score.Kills,
+                Accuracy = party ? squad.Accuracy : parked ? 0f : score.Accuracy,
+                MaxCombo = party ? squad.MaxCombo : parked ? 0 : score.MaxCombo,
+                Crystals = party ? squad.Crystals : parked ? 0 : score.Crystals,
                 Time = missionTime,
                 Wave = director != null ? director.WaveNumber : 0
             };
@@ -687,7 +699,20 @@ namespace Portfolio.Asteroids
             bool party = IsParty;
             int earned = (int)Mathf.Clamp(party ? squad.TeamScore : score.Score, 0, int.MaxValue);
             bool landed = victory && working != null && (party ? AnyLocalShipAlive : ship != null && ship.IsAlive);
-            if (landed && party)
+            if (SceneShipParked)
+            {
+                // The shared screen banks nothing (it flew the seats of others). A device whose seat the screen flew banks
+                // the money the seat earned there, like a party's wingman: when the ship was still flying after the win.
+                earned = IsScreenDevice || online == null ? 0 : (int)Mathf.Clamp(online.OwnSeatScore, 0, int.MaxValue);
+                landed = victory && !IsScreenDevice && online != null && online.OwnSeatFlying;
+                if (landed)
+                {
+                    Pilot.CommitMission(null, earned);
+                    progress?.SavePilot(Pilot);
+                }
+                DiscardCoopPilot();
+            }
+            else if (landed && party)
             {
                 Land();
                 DiscardCoopPilot();

@@ -873,7 +873,8 @@ namespace Portfolio.Asteroids
         }
 
 
-        private void SetBombs(int count)
+        /// <summary>The bombs the ship carries, within its capacity (a seat taken over mid-mission brings its count along).</summary>
+        internal void SetBombs(int count)
         {
             Bombs = Mathf.Clamp(count, 0, BombCapacity);
             BombsChanged?.Invoke(Bombs);

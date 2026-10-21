@@ -315,6 +315,33 @@ A battle is shown only on the screens of the players who fight it. The others se
 client that only watches never holds the table up, and a client whose rules have run ahead plays the map a little
 faster until it catches up. There is no saving and no pausing online: the menu is the match menu of the room.
 
+### Shared screen and remote controls
+
+A room can play on a shared screen (the lobby's "Plays on: a shared screen"), with every player holding a phone as a
+remote control (the base's `OnlineGameController.Remotes.cs`, `RemoteControlUI`). The **screen** is a client with no
+seat (`HeroesGameManager.IsSharedScreen`: `LocalSeats` is empty, the viewer is nobody): it lays the map out and runs the
+rules like every other client, and as host it moves the computer seats and the wilds; its fog hides nothing, the bar
+and the column follow the realm whose turn it is (`WatchedState`), the chronicle writes every realm's lines, the camera
+follows every hero that moves, every battle of the table comes onto its screen (`TakesPart` is true there; the results
+of a battle close by themselves after a glance, told as the winner's), nothing on it is anybody's to press (no
+decision is ever offered to it, no question opens, no hand-over screen), and the end is the standings of every realm
+under "Game over". It records no win or loss, and reports no score: the players' devices report their own seats.
+
+A **remote** keeps running the game as every client does and sends its seat's commands itself; the map stays the
+control under the frame of the panel (`RemotePanelCoversGame` is false: a hero is sent where the player taps, a town
+opens as on any device), and the panel (`UI/RemotePanel.cs`, built by `HeroesOnlineController.BuildRemotePanel`) adds
+under the frame's header what the frame hides: the treasury and the date, the hero in hand with his movement, mana and
+army, a line on what the rules wait for, and the commands of the moment: Next Hero and End Turn on the map, the options
+of a question (a level up, a chest, the arena), and Auto combat (the computer's battle sense, which never retreats on
+its own), Wait, Defend and Retreat (pressed twice) in a battle, through the same commands the interface sends. What
+the panel offers comes from `Model/RemoteView.cs`, worked out from the game and tested outside Unity. While the panel
+is up the bars and the column of the map and the choice dialog keep out of its way (`HeroesUI.SetRemoteView`,
+`AdventureHud.Compact`); the battle bar stays, so a stack is still aimed by a tap on the field. Playing on the device
+itself instead (the frame's "Play on this device", or back) changes the presentation only
+(`HeroesGameManager.ApplyPresentation`): the map's panels come back with the player's hero in hand, and the director
+offers the decision it waits on once more. The tour roles `hostscreen`, `joinremote` and `joinown` play it ("Checking
+it").
+
 ## Code
 
 | Folder | What is in it |
@@ -395,7 +422,13 @@ without these arguments, and in a release player, nothing of it runs:
   (`-gamebox-companions <n>`, one by default, and `-gamebox-guests <n>`), and the tour then plays whichever realm of the
   device the game waits for and writes down whenever the screen changes hands; `-heroes-online-handover` asks for the
   hand-over screen between them, which the tour lifts. The host's room takes two players and the host's own party; a
-  plain `host` that waits for a `joinparty` is given the size with `-gamebox-room-players <n>`.
+  plain `host` that waits for a `joinparty` is given the size with `-gamebox-room-players <n>`. `hostscreen` opens
+  the room as its shared screen and only watches (the map, the first battle and its results, the standings at the
+  end); `joinremote` joins as a remote control and plays through its panel (pictures of the panel, of a question on
+  it and of a battle), and with `-heroes-online-switch <seconds>` plays on its own device after that many seconds and
+  goes back to the remote after as many more, writing down that the game went on; `joinown` joins a room with a
+  shared screen on its own device, as `join`. Run `hostscreen` with two `joinremote`, or with a switching `joinremote`
+  and a `joinown`; `-heroes-online-turn 6` keeps the days short.
 
 ## Art
 

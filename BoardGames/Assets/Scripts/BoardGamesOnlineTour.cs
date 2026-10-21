@@ -27,8 +27,13 @@ namespace Portfolio.BoardGames
     /// (four by default) that start a match <c>-boardgames-ready</c> seconds after it is drawn, and <c>jointournament</c>
     /// enters the first open one; everybody plays their matches and the bracket is photographed after each. Every action
     /// of the log is written down with the checksum of the table after it, so the logs of the players show whether they
-    /// stayed in step. Run the players with <c>-gamebox-identity</c> to tell them apart, and <c>-gamebox-server</c> /
-    /// <c>-gamebox-database</c> for a test server. Without the argument it does nothing.
+    /// stayed in step. A room on a shared screen: <c>hostscreen</c> opens the room as its screen, which plays no seat
+    /// (it watches, plays the computer's seat as the host and photographs the game every half minute); <c>joinremote</c>
+    /// joins as a remote control and plays its seat through the board under the remote frame, as <c>join</c> does;
+    /// <c>joinown</c> joins such a room and plays on its own device. With <c>-boardgames-switch &lt;seconds&gt;</c> a
+    /// remote switches to its own device after that many seconds of play and back as long after, and the tour writes
+    /// down that the game went on both times. Run the players with <c>-gamebox-identity</c> to tell them apart, and
+    /// <c>-gamebox-server</c> / <c>-gamebox-database</c> for a test server. Without the argument it does nothing.
     /// </summary>
     public class BoardGamesOnlineTour : OnlineTour
     {
@@ -36,6 +41,11 @@ namespace Portfolio.BoardGames
         private const string LevelArgument = "-boardgames-level";
         private const string EntrantsArgument = "-boardgames-entrants";
         private const string ReadyArgument = "-boardgames-ready";
+        /// <summary>Seconds of play after which a remote switches to its own device, and after which again it goes back to the remote (0: never).</summary>
+        private const string SwitchArgument = "-boardgames-switch";
+        /// <summary>Seconds between the pictures the shared screen takes of the game, and how many at most.</summary>
+        private const float ScreenShotEvery = 30f;
+        private const int ScreenShots = 8;
         /// <summary>Seconds a move may take in the rooms of the tour.</summary>
         private const int TurnSeconds = 20;
         /// <summary>Minutes after which the host calls the game off, should it not be over by then.</summary>
@@ -159,11 +169,27 @@ namespace Portfolio.BoardGames
                 yield break;
             }
             Note($"playing {SeatsHere()} of {Seats()}");
+            Note($"this device: {(online.IsScreen ? "the shared screen" : online.IsRemote ? "a remote control" : online.RoomHasScreen ? "a player's own device in a screen room" : "a player's device")}, "
+                + $"host {Server.IsHost}, panel {online.ShowsRemotePanel}, players {Players()}");
             piloting = true;
             StartCoroutine(Pilot());
             StartCoroutine(ShotWhen("04_the_clock_runs_down", () => WaitingForSomebodyElse && Server.Turn != null && Server.Turn.Remaining < 6f));
-            StartCoroutine(ShotWhen("05_turn_10", () => Game != null && Game.Turn >= 10 && manager.WaitingForHuman, 0.4f));
+            // The screen waits for nobody: its picture of turn 10 is taken whoever is to act.
+            StartCoroutine(ShotWhen("05_turn_10", () => Game != null && Game.Turn >= 10 && (manager.WaitingForHuman || AsScreen), 0.4f));
             StartCoroutine(ShotWhen(HighlightShot(), Highlight, 1f));
+            if (AsScreen)
+            {
+                StartCoroutine(ScreenPictures());
+            }
+            if (online.IsRemote)
+            {
+                StartCoroutine(ShotWhen("r1_remote_panel", () => online.ShowsRemotePanel && manager.WaitingForHuman, 0.5f));
+            }
+            float switchAfter = NumberArgument(SwitchArgument, 0f);
+            if (switchAfter > 0f && online.IsRemote)
+            {
+                StartCoroutine(SwitchDevices(switchAfter));
+            }
             yield return new WaitForSeconds(5f);
             yield return Shot("03_first_moves");
 
@@ -455,6 +481,69 @@ namespace Portfolio.BoardGames
                     Note($"the manager refused {command}");
                 }
             }
+        }
+
+        /// <summary>The shared screen's pictures of the game as the players see it there, every half minute while it runs.</summary>
+        private IEnumerator ScreenPictures()
+        {
+            for (int i = 1; i <= ScreenShots && !Over; i++)
+            {
+                yield return new WaitForSeconds(ScreenShotEvery);
+                if (Over || manager.Table == null)
+                {
+                    yield break;
+                }
+                Note($"the screen shows: {manager.TurnWords}; {TableState()}; resign button {(manager.LocalSeat >= 0 ? "shown" : "hidden")}, waiting for a person here {manager.WaitingForHuman}");
+                yield return Shot($"s{i}_screen_turn_{(Game != null ? Game.Turn : 0)}");
+            }
+        }
+
+        /// <summary>
+        /// A remote switches to its own device after <paramref name="after"/> seconds of play and back as long after: the
+        /// game has to go on both times (the table keeps taking the log, the pilot keeps sending), and the remote frame
+        /// has to go and come back with the HUD laid out for it or for the device.
+        /// </summary>
+        private IEnumerator SwitchDevices(float after)
+        {
+            yield return new WaitForSeconds(after);
+            if (Over || manager.Table == null)
+            {
+                yield break;
+            }
+            int applied = manager.Table.Applied;
+            Note($"switching to this device: {TableState()}");
+            string answer = null;
+            online.SetRemoteMode(false, error => answer = error ?? "ok");
+            yield return WaitFor(() => answer != null, 10f, "the answer to playing on this device");
+            Note("play on this device: " + answer);
+            yield return WaitFor(() => !online.IsRemote && !online.ShowsRemotePanel, 10f, "the remote frame to go");
+            yield return new WaitForSeconds(1.5f);
+            yield return Shot("r2_own_device");
+            Note($"on this device: remote {online.IsRemote}, panel {online.ShowsRemotePanel}, HUD under the frame {HudUnderFrame()}, waiting for a person here {manager.WaitingForHuman}");
+            yield return WaitFor(() => Over || manager.Table == null || manager.Table.Applied > applied, 60f, "the game to go on at this device");
+            Note($"the game went on at this device: {TableState()}");
+            yield return new WaitForSeconds(after);
+            if (Over || manager.Table == null)
+            {
+                yield break;
+            }
+            applied = manager.Table.Applied;
+            answer = null;
+            online.SetRemoteMode(true, error => answer = error ?? "ok");
+            yield return WaitFor(() => answer != null, 10f, "the answer to using the remote again");
+            Note("use as a remote control: " + answer);
+            yield return WaitFor(() => online.IsRemote && online.ShowsRemotePanel, 10f, "the remote frame to come back");
+            yield return new WaitForSeconds(1.5f);
+            yield return Shot("r3_remote_again");
+            Note($"a remote again: remote {online.IsRemote}, panel {online.ShowsRemotePanel}, HUD under the frame {HudUnderFrame()}, frame line '{online.RemoteStatusLine}'");
+            yield return WaitFor(() => Over || manager.Table == null || manager.Table.Applied > applied, 60f, "the game to go on as a remote");
+            Note($"the game went on as a remote: {TableState()}");
+        }
+
+        /// <summary>Whether the game's HUD is laid out under the remote frame now.</summary>
+        private bool HudUnderFrame()
+        {
+            return manager.UI is BoardGamesUI ui && ui.IsRemoteLayout;
         }
 
         /// <summary>The moment of the game worth a picture: a king in draughts, a check in chess, a hit or the cube in backgammon.</summary>

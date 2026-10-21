@@ -31,6 +31,8 @@ namespace Portfolio.EndlessRunner
         private RunnerRun[] alone;
         // What a local race made and takes away again: the other runners, their cameras and the names over the heads.
         private readonly List<GameObject> localParts = new List<GameObject>();
+        // The parts of each run among them, for a run that goes before the race is over (its seat is played elsewhere now).
+        private readonly Dictionary<RunnerRun, List<GameObject>> runParts = new Dictionary<RunnerRun, List<GameObject>>();
         private LocalStandingsBoard standingsBoard;
         // The models moved aside while one view draws, and where they were.
         private readonly List<(Transform model, Vector3 position)> steppedAside = new List<(Transform, Vector3)>();
@@ -111,10 +113,11 @@ namespace Portfolio.EndlessRunner
 
 
         /// <summary>
-        /// The runners at this device of an online race, when there are several (a party: the device's player and the
-        /// companions who play through its connection): a runner, a camera and a HUD for each, as in a local race, the
-        /// device's player first, each on the controls the race gives its seat and in the colour its runner has on every
-        /// device. The runners of the other devices are ghosts in every view (RunnerGameManager.Online.cs).
+        /// The runners driven at this device in an online race, when their runs are explicit (a party: the device's player
+        /// and the companions who play through its connection; or the shared screen with the seats of its remotes): a
+        /// runner, a camera and a HUD for each, as in a local race, the device's player first, each on the controls the
+        /// race gives its seat (the keys of a seat here, the packets of a remote control) and in the colour its runner has
+        /// on every device. The runners of the other devices are ghosts in every view (RunnerGameManager.Online.cs).
         /// </summary>
         private void SetUpParty()
         {
@@ -123,7 +126,7 @@ namespace Portfolio.EndlessRunner
             var seats = new List<LocalSeat>();
             var inputs = new List<IRunnerInput>();
             var partyRacers = new List<Racer>();
-            foreach (int seatOfRoom in race.LocalSeats)
+            foreach (int seatOfRoom in race.DrivenSeats)
             {
                 Racer racer = RacerAt(seatOfRoom);
                 if (racer == null)
@@ -146,59 +149,153 @@ namespace Portfolio.EndlessRunner
         /// </summary>
         private void SetUpRuns(IReadOnlyList<LocalSeat> seats, IReadOnlyList<IRunnerInput> inputs, IReadOnlyList<Racer> runnersOfRoom)
         {
-            RunnerGameTheme look = ThemeAs<RunnerGameTheme>();
-            Transform hudRoot = ui != null ? ui.SplitScreenRoot : null;
-            var active = new List<IPlayer>();
+            BeginRuns();
             for (int i = 0; i < seats.Count; i++)
             {
-                LocalSeat seat = seats[i];
-                RunnerPlayer player = i == 0 ? runner : CreateLocalRunner(seat);
-                RunnerCamera view = i == 0 ? runnerCamera : CreateLocalCamera(player, seat);
-                RunnerRun run = i == 0 ? Main : new RunnerRun(player, view);
-                // Two runners share the screen side by side: a tall view suits a runner that runs into the screen.
-                Rect viewport = SplitScreen.Viewport(i, seats.Count, true);
-                if (view.View != null)
-                {
-                    view.View.rect = viewport;
-                }
-                player.InputSource = inputs[i];
-                player.Assign(runnersOfRoom != null ? runnersOfRoom[i].Seat : seat.Index, PlayerControl.Local, seat.Name);
-                RunnerGhost.Tint(player.animator, player.transform, seat.Color);
-                localParts.Add(RunnerGhost.AddLabel(player.transform, seat.Name, seat.Color, ghostLabelMaterial));
-                if (hudRoot != null)
-                {
-                    run.Hud = RunnerSeatHud.Create(hudRoot, viewport, seat, look);
-                    localParts.Add(run.Hud.gameObject);
-                }
-                if (runnersOfRoom != null)
-                {
-                    localRace.Add(run, seat, runnersOfRoom[i]);
-                }
-                else
-                {
-                    localRace.Add(run, seat);
-                }
-                active.Add(player);
+                AddRun(seats[i], inputs[i], runnersOfRoom != null ? runnersOfRoom[i] : null);
             }
-            IReadOnlyList<RunnerRun> runs = localRace.Runs;
-            for (int i = 0; i < runs.Count; i++)
+            LayoutRuns();
+            var active = new List<IPlayer>();
+            foreach (RunnerRun run in localRace.Runs)
             {
-                for (int j = i + 1; j < runs.Count; j++)
-                {
-                    Physics.IgnoreCollision(runs[i].Runner.Body, runs[j].Runner.Body);
-                }
+                active.Add(run.Runner);
             }
             ActivePlayers = active;
-            Rect? spare = SplitScreen.Spare(seats.Count);
-            if (spare.HasValue && hudRoot != null)
-            {
-                standingsBoard = LocalStandingsBoard.Create(hudRoot, spare.Value, look);
-                localParts.Add(standingsBoard.gameObject);
-            }
+            ui?.ShowSplitScreen(true);
+        }
+
+
+        /// <summary>The split screen wakes for a race at this device (or the runs of a party), with no run in it yet.</summary>
+        private void BeginRuns()
+        {
+            localRace ??= new LocalRace(null);
             // The glows and the names face every view, not only the first one.
             Billboard.FaceEveryCamera = true;
             StepAsideInViews(true);
-            ui?.ShowSplitScreen(true);
+        }
+
+
+        /// <summary>
+        /// One more run of the split screen: the runner of the scene while it is free (with its camera and <see cref="Main"/>),
+        /// else a copy of the runner prefab and of the camera; the name over the head, the HUD, and the runner moving on
+        /// <paramref name="input"/>. The run carries <paramref name="runnerOfRoom"/> in a party (its seat of the room),
+        /// else a line of its own on the scoreboard of the local race. <see cref="LayoutRuns"/> places the views next.
+        /// </summary>
+        private RunnerRun AddRun(LocalSeat seat, IRunnerInput input, Racer runnerOfRoom)
+        {
+            RunnerGameTheme look = ThemeAs<RunnerGameTheme>();
+            Transform hudRoot = ui != null ? ui.SplitScreenRoot : null;
+            bool sceneRunner = localRace.RunOf(runner) == null;
+            int partsBefore = localParts.Count;
+            RunnerPlayer player = sceneRunner ? runner : CreateLocalRunner(seat);
+            RunnerCamera view = sceneRunner ? runnerCamera : CreateLocalCamera(player, seat);
+            RunnerRun run = sceneRunner ? Main : new RunnerRun(player, view);
+            if (sceneRunner)
+            {
+                runner.gameObject.SetActive(true);
+                runnerCamera.Watch(null);
+            }
+            player.InputSource = input;
+            player.Assign(runnerOfRoom != null ? runnerOfRoom.Seat : seat.Index, PlayerControl.Local, seat.Name);
+            RunnerGhost.Tint(player.animator, player.transform, seat.Color);
+            localParts.Add(RunnerGhost.AddLabel(player.transform, seat.Name, seat.Color, ghostLabelMaterial));
+            if (hudRoot != null)
+            {
+                run.Hud = RunnerSeatHud.Create(hudRoot, new Rect(0f, 0f, 1f, 1f), seat, look);
+                localParts.Add(run.Hud.gameObject);
+            }
+            // Runners run through each other.
+            foreach (RunnerRun other in localRace.Runs)
+            {
+                Physics.IgnoreCollision(player.Body, other.Runner.Body);
+            }
+            if (runnerOfRoom != null)
+            {
+                localRace.Add(run, seat, runnerOfRoom);
+            }
+            else
+            {
+                localRace.Add(run, seat);
+            }
+            runParts[run] = localParts.GetRange(partsBefore, localParts.Count - partsBefore);
+            return run;
+        }
+
+
+        /// <summary>
+        /// Lays the runs over the screen by their count (two side by side: a tall view suits a runner that runs into the
+        /// screen; three or four in quarters), each HUD over its view, and the standings board in the quarter of three
+        /// that no runner has. Again whenever a run comes or goes mid-race.
+        /// </summary>
+        private void LayoutRuns()
+        {
+            IReadOnlyList<RunnerRun> runs = localRace.Runs;
+            for (int i = 0; i < runs.Count; i++)
+            {
+                Rect viewport = SplitScreen.Viewport(i, runs.Count, true);
+                if (runs[i].Camera.View != null)
+                {
+                    runs[i].Camera.View.rect = viewport;
+                }
+                runs[i].Hud?.MoveTo(viewport);
+            }
+            Rect? spare = SplitScreen.Spare(runs.Count);
+            Transform hudRoot = ui != null ? ui.SplitScreenRoot : null;
+            if (standingsBoard != null && !spare.HasValue)
+            {
+                localParts.Remove(standingsBoard.gameObject);
+                Destroy(standingsBoard.gameObject);
+                standingsBoard = null;
+            }
+            if (spare.HasValue && standingsBoard == null && hudRoot != null)
+            {
+                standingsBoard = LocalStandingsBoard.Create(hudRoot, spare.Value, ThemeAs<RunnerGameTheme>());
+                localParts.Add(standingsBoard.gameObject);
+            }
+        }
+
+
+        /// <summary>
+        /// Takes <paramref name="run"/> out of the split screen in the middle of a race (its seat is played elsewhere from
+        /// now on): its runner, view, name and HUD go; the runner of the scene only hides, to be free for the next run.
+        /// </summary>
+        private void RemoveRun(RunnerRun run)
+        {
+            run.Runner.StopRun();
+            ClearPowerUps(run);
+            localRace.Remove(run);
+            ActivePlayers.Remove(run.Runner);
+            if (themes != null && runnerCamera != null && (themes.follow == null || themes.follow == run.Camera.transform))
+            {
+                themes.follow = runnerCamera.transform;
+            }
+            if (runParts.TryGetValue(run, out List<GameObject> parts))
+            {
+                foreach (GameObject part in parts)
+                {
+                    localParts.Remove(part);
+                    if (part != null)
+                    {
+                        Destroy(part);
+                    }
+                }
+                runParts.Remove(run);
+            }
+            if (run.Runner == runner)
+            {
+                runner.gameObject.SetActive(false);
+                runner.InputSource = null;
+                runner.Assign(-1, PlayerControl.Local);
+                RunnerGhost.Tint(runner.animator, runner.transform, null);
+                run.Seat = null;
+                run.Racer = null;
+                run.Phase = RunPhase.Menu;
+            }
+            else
+            {
+                PlayerList.Remove(run.Runner);
+            }
+            run.Hud = null;
         }
 
 
@@ -276,6 +373,7 @@ namespace Portfolio.EndlessRunner
                 }
             }
             localParts.Clear();
+            runParts.Clear();
             standingsBoard = null;
             localRace = null;
             localResultsShown = false;
@@ -287,6 +385,7 @@ namespace Portfolio.EndlessRunner
             first.Phase = RunPhase.Menu;
             if (runner != null)
             {
+                runner.gameObject.SetActive(true);
                 runner.InputSource = null;
                 runner.Assign(-1, PlayerControl.Local);
                 RunnerGhost.Tint(runner.animator, runner.transform, null);
@@ -370,6 +469,10 @@ namespace Portfolio.EndlessRunner
         {
             // Runners side by side reach a coin in the same frame: who is first to try goes round, so no seat always wins it.
             IReadOnlyList<RunnerRun> runs = localRace.Runs;
+            if (runs.Count == 0)
+            {
+                return;
+            }
             int firstToTry = Time.frameCount % runs.Count;
             for (int i = 0; i < runs.Count; i++)
             {
@@ -566,10 +669,12 @@ namespace Portfolio.EndlessRunner
         }
 
 
+        /// <summary>Every HUD shows its run; the shared screen tells every remote control the same about its seat.</summary>
         private void RefreshLocalHuds()
         {
             foreach (RunnerRun run in localRace.Runs)
             {
+                PublishRunStatus(run);
                 RunnerSeatHud hud = run.Hud;
                 if (hud == null)
                 {

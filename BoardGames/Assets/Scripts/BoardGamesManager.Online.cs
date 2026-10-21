@@ -15,14 +15,20 @@ namespace Portfolio.BoardGames
     /// host, through the log like everybody else. The seats played at this device are the player's own and those of the
     /// players who joined at the same device (<see cref="DeviceSeats"/>): with two of them the table is theirs alone, and
     /// the game treats them as local play treats two people, by name, with the hand-over the party asked for in the lobby
-    /// and the board turning to the one to act when the setting says so. The results lead back to the room.
+    /// and the board turning to the one to act when the setting says so. The results lead back to the room. The shared
+    /// screen of a room (<see cref="OnlineGameController.IsScreen"/>) runs the same table with no seat at all: it shows
+    /// the board and both seats as players elsewhere, takes no click, plays the computer seat as the room's host and
+    /// names the winner; a player's device that is a remote control of it runs the game as every client does, with
+    /// the board as its control under the remote frame (<see cref="BoardGamesOnlineController"/>).
     /// </summary>
     public partial class BoardGamesManager : ILockstepHost<BoardCommand>
     {
         [SerializeField] private BoardGamesOnlineController online;
 
-        /// <summary>The table seats played at this device in the running online game; none offline.</summary>
+        /// <summary>The table seats played at this device in the running online game; none offline, and none on the shared screen.</summary>
         private DeviceSeats onlineSeats = DeviceSeats.None;
+        /// <summary>Whether the table on the board is the room's (<see cref="IsOnlineGame"/>), whether or not a seat of it is played here.</summary>
+        private bool onlineTable;
         private TableSetup onlineSetup;
         private SaveData onlineSaved;
         private uint onlineSeed;
@@ -46,7 +52,11 @@ namespace Portfolio.BoardGames
             onlineSaved = saved;
         }
 
-        /// <summary>Seats the table the server set up and starts the game from the seed of the room, as every other client does.</summary>
+        /// <summary>
+        /// Seats the table the server set up and starts the game from the seed of the room, as every other client does.
+        /// The shared screen of the room starts it with no seat of its own (the controller said so: an empty
+        /// <see cref="LockstepSetup.TableSeats"/>) and watches.
+        /// </summary>
         private void StartOnlineTable()
         {
             TableSetup setup = onlineSetup;
@@ -56,7 +66,7 @@ namespace Portfolio.BoardGames
             onlineSetup = null;
             onlineSaved = null;
             preparedSeats = DeviceSeats.None;
-            if (setup == null || !seats.Any)
+            if (setup == null)
             {
                 UI?.UpdateError(L.T("The table of the online game did not arrive."));
                 return;
@@ -82,13 +92,14 @@ namespace Portfolio.BoardGames
                 EndLocalMatch();
             }
             onlineSeats = seats;
+            onlineTable = true;
             BeginTable(setup, seed, game);
         }
 
         /// <summary>The session is over (the results were left, the room was, the connection dropped): the table is cleared.</summary>
         protected override void OnSessionChanged()
         {
-            if (InSession || (!onlineSeats.Any && onlineSetup == null))
+            if (InSession || (!onlineTable && onlineSetup == null))
             {
                 return;
             }
@@ -96,6 +107,7 @@ namespace Portfolio.BoardGames
             onlineSaved = null;
             preparedSeats = DeviceSeats.None;
             onlineSeats = DeviceSeats.None;
+            onlineTable = false;
             if (table != null)
             {
                 EndTable();

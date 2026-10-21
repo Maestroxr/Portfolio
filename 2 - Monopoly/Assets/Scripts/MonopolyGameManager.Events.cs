@@ -209,7 +209,8 @@ namespace Portfolio.Monopoly
                         ui.Deed.Close();
                     }
                     sound?.Play(Sfx.Card);
-                    yield return ui.Cards.Reveal(e.deck, e.text, player, PlayedHere(player), Beat(2.3f));
+                    // A remote cannot press OK on a card under its panel: the card goes by itself there.
+                    yield return ui.Cards.Reveal(e.deck, e.text, player, PlayedHere(player) && !RemoteMode, Beat(2.3f));
                     break;
                 }
                 case MatchEventKind.LeftJail:

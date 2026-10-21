@@ -31,9 +31,11 @@ namespace Portfolio.EndlessRunner.Server
             AddTable(Admin = new(conn));
             AddTable(CoinClaim = new(conn));
             AddTable(Companion = new(conn));
+            AddTable(MyRemoteStatus = new(conn));
             AddTable(MyRoomCodes = new(conn));
             AddTable(MyTournamentCodes = new(conn));
             AddTable(PlayerData = new(conn));
+            AddTable(RemoteInput = new(conn));
             AddTable(Room = new(conn));
             AddTable(RoomAction = new(conn));
             AddTable(RoomMember = new(conn));
@@ -545,9 +547,11 @@ namespace Portfolio.EndlessRunner.Server
             new QueryBuilder().From.Admin().ToSql(),
             new QueryBuilder().From.CoinClaim().ToSql(),
             new QueryBuilder().From.Companion().ToSql(),
+            new QueryBuilder().From.MyRemoteStatus().ToSql(),
             new QueryBuilder().From.MyRoomCodes().ToSql(),
             new QueryBuilder().From.MyTournamentCodes().ToSql(),
             new QueryBuilder().From.PlayerData().ToSql(),
+            new QueryBuilder().From.RemoteInput().ToSql(),
             new QueryBuilder().From.Room().ToSql(),
             new QueryBuilder().From.RoomAction().ToSql(),
             new QueryBuilder().From.RoomMember().ToSql(),
@@ -569,9 +573,11 @@ namespace Portfolio.EndlessRunner.Server
         public global::SpacetimeDB.Table<Admin, AdminCols, AdminIxCols> Admin() => new("admin", new AdminCols("admin"), new AdminIxCols("admin"));
         public global::SpacetimeDB.Table<CoinClaim, CoinClaimCols, CoinClaimIxCols> CoinClaim() => new("coin_claim", new CoinClaimCols("coin_claim"), new CoinClaimIxCols("coin_claim"));
         public global::SpacetimeDB.Table<Companion, CompanionCols, CompanionIxCols> Companion() => new("companion", new CompanionCols("companion"), new CompanionIxCols("companion"));
+        public global::SpacetimeDB.Table<RemoteStatus, MyRemoteStatusCols, MyRemoteStatusIxCols> MyRemoteStatus() => new("my_remote_status", new MyRemoteStatusCols("my_remote_status"), new MyRemoteStatusIxCols("my_remote_status"));
         public global::SpacetimeDB.Table<RoomCode, MyRoomCodesCols, MyRoomCodesIxCols> MyRoomCodes() => new("my_room_codes", new MyRoomCodesCols("my_room_codes"), new MyRoomCodesIxCols("my_room_codes"));
         public global::SpacetimeDB.Table<TournamentCode, MyTournamentCodesCols, MyTournamentCodesIxCols> MyTournamentCodes() => new("my_tournament_codes", new MyTournamentCodesCols("my_tournament_codes"), new MyTournamentCodesIxCols("my_tournament_codes"));
         public global::SpacetimeDB.Table<PlayerData, PlayerDataCols, PlayerDataIxCols> PlayerData() => new("player_data", new PlayerDataCols("player_data"), new PlayerDataIxCols("player_data"));
+        public global::SpacetimeDB.Table<RemoteInput, RemoteInputCols, RemoteInputIxCols> RemoteInput() => new("remote_input", new RemoteInputCols("remote_input"), new RemoteInputIxCols("remote_input"));
         public global::SpacetimeDB.Table<Room, RoomCols, RoomIxCols> Room() => new("room", new RoomCols("room"), new RoomIxCols("room"));
         public global::SpacetimeDB.Table<RoomAction, RoomActionCols, RoomActionIxCols> RoomAction() => new("room_action", new RoomActionCols("room_action"), new RoomActionIxCols("room_action"));
         public global::SpacetimeDB.Table<RoomMember, RoomMemberCols, RoomMemberIxCols> RoomMember() => new("room_member", new RoomMemberCols("room_member"), new RoomMemberIxCols("room_member"));
@@ -689,10 +695,13 @@ namespace Portfolio.EndlessRunner.Server
                 Reducer.RemoveCompanion args => Reducers.InvokeRemoveCompanion(eventContext, args),
                 Reducer.ReportScore args => Reducers.InvokeReportScore(eventContext, args),
                 Reducer.SavePlayerData args => Reducers.InvokeSavePlayerData(eventContext, args),
+                Reducer.SendInput args => Reducers.InvokeSendInput(eventContext, args),
                 Reducer.SetAvatar args => Reducers.InvokeSetAvatar(eventContext, args),
                 Reducer.SetLook args => Reducers.InvokeSetLook(eventContext, args),
                 Reducer.SetName args => Reducers.InvokeSetName(eventContext, args),
                 Reducer.SetReady args => Reducers.InvokeSetReady(eventContext, args),
+                Reducer.SetRemote args => Reducers.InvokeSetRemote(eventContext, args),
+                Reducer.SetRemoteStatus args => Reducers.InvokeSetRemoteStatus(eventContext, args),
                 Reducer.SetRoomSave args => Reducers.InvokeSetRoomSave(eventContext, args),
                 Reducer.StartRoom args => Reducers.InvokeStartRoom(eventContext, args),
                 Reducer.StartTournament args => Reducers.InvokeStartTournament(eventContext, args),

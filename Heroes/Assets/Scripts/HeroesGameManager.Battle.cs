@@ -25,6 +25,9 @@ namespace Portfolio.Heroes
         /// </summary>
         private const float ResultsGlance = 3f;
 
+        /// <summary>How long the shared screen of a room, where nobody presses anything, shows the results of a battle before the map comes back.</summary>
+        private const float ScreenGlance = 6f;
+
         private BattlefieldScene battlefield;
         private MapBattlefield mapField;
         /// <summary>Whether the battle the director is playing out is on the screen.</summary>
@@ -113,7 +116,8 @@ namespace Portfolio.Heroes
             // A dialog taken away some other way (the interface cleared) counts as closed.
             while (!closed && Game != null && Battle.Running && ui.Bar.Results.IsOpen)
             {
-                if (IsOnlineGame && Time.unscaledTime > shown + (TableWaitsForThisDevice ? ResultsGlance : ResultsPatience))
+                float patience = TableWaitsForThisDevice ? ResultsGlance : IsSharedScreen ? ScreenGlance : ResultsPatience;
+                if (IsOnlineGame && Time.unscaledTime > shown + patience)
                 {
                     ui.Bar.Results.Close();
                 }
@@ -141,11 +145,11 @@ namespace Portfolio.Heroes
         /// <summary>
         /// The side the end of a battle is told for (its victory or defeat, its sound): the player's at this device, and
         /// when people at this device lead both sides (a hot seat, or two players here online), the winner's, since one of
-        /// them has won either way.
+        /// them has won either way; the shared screen of a room, which fights for nobody, tells it as the winner's too.
         /// </summary>
         private int ResultSide(BattleState battle, BattleResult result)
         {
-            if (PlaysHere(battle.attackerPlayer) && PlaysHere(battle.defenderPlayer))
+            if (IsSharedScreen || PlaysHere(battle.attackerPlayer) && PlaysHere(battle.defenderPlayer))
             {
                 return result == BattleResult.AttackerWon || result == BattleResult.DefenderFled ? 0 : 1;
             }
@@ -258,9 +262,9 @@ namespace Portfolio.Heroes
             {
                 mapField = new MapBattlefield(Map, cameraRig, transform);
                 // The land around the field as the player here who fights has explored it: in a hot seat the map may
-                // still be showing the other player's.
+                // still be showing the other player's. The shared screen of a room keeps the whole land in sight.
                 PlayerState fighter = Game.State.Player(start.PlayerOf(MySide(start)));
-                mapField.Open(start, ui.Bar.FreeArea(), fighter != null && fighter.human ? fighter : null);
+                mapField.Open(start, ui.Bar.FreeArea(), fighter != null && fighter.human && !IsSharedScreen ? fighter : null);
                 Battle.Begin(start, mapField, Game);
                 ui.BeginBattle(start);
                 ui.ShowAdventureHud(false);

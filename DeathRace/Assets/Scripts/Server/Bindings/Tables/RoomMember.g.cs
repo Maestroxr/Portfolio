@@ -58,6 +58,8 @@ namespace Portfolio.DeathRace.Server
         public global::SpacetimeDB.Col<RoomMember, long> Score { get; }
         public global::SpacetimeDB.Col<RoomMember, uint> Place { get; }
         public global::SpacetimeDB.Col<RoomMember, SpacetimeDB.Timestamp> JoinedAt { get; }
+        public global::SpacetimeDB.Col<RoomMember, bool> Screen { get; }
+        public global::SpacetimeDB.Col<RoomMember, bool> Remote { get; }
 
         public RoomMemberCols(string tableName)
         {
@@ -69,6 +71,8 @@ namespace Portfolio.DeathRace.Server
             Score = new global::SpacetimeDB.Col<RoomMember, long>(tableName, "score");
             Place = new global::SpacetimeDB.Col<RoomMember, uint>(tableName, "place");
             JoinedAt = new global::SpacetimeDB.Col<RoomMember, SpacetimeDB.Timestamp>(tableName, "joined_at");
+            Screen = new global::SpacetimeDB.Col<RoomMember, bool>(tableName, "screen");
+            Remote = new global::SpacetimeDB.Col<RoomMember, bool>(tableName, "remote");
         }
     }
 

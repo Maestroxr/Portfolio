@@ -13,12 +13,12 @@ namespace Portfolio.Asteroids.Server
 {
     public sealed partial class RemoteReducers : RemoteBase
     {
-        public delegate void CreateRoomHandler(ReducerEventContext ctx, string name, byte maxPlayers, int level, string options, bool isPrivate);
+        public delegate void CreateRoomHandler(ReducerEventContext ctx, string name, byte maxPlayers, int level, string options, bool isPrivate, bool asScreen);
         public event CreateRoomHandler? OnCreateRoom;
 
-        public void CreateRoom(string name, byte maxPlayers, int level, string options, bool isPrivate)
+        public void CreateRoom(string name, byte maxPlayers, int level, string options, bool isPrivate, bool asScreen)
         {
-            conn.InternalCallReducer(new Reducer.CreateRoom(name, maxPlayers, level, options, isPrivate));
+            conn.InternalCallReducer(new Reducer.CreateRoom(name, maxPlayers, level, options, isPrivate, asScreen));
         }
 
         public bool InvokeCreateRoom(ReducerEventContext ctx, Reducer.CreateRoom args)
@@ -41,7 +41,8 @@ namespace Portfolio.Asteroids.Server
                 args.MaxPlayers,
                 args.Level,
                 args.Options,
-                args.IsPrivate
+                args.IsPrivate,
+                args.AsScreen
             );
             return true;
         }
@@ -63,13 +64,16 @@ namespace Portfolio.Asteroids.Server
             public string Options;
             [DataMember(Name = "is_private")]
             public bool IsPrivate;
+            [DataMember(Name = "as_screen")]
+            public bool AsScreen;
 
             public CreateRoom(
                 string Name,
                 byte MaxPlayers,
                 int Level,
                 string Options,
-                bool IsPrivate
+                bool IsPrivate,
+                bool AsScreen
             )
             {
                 this.Name = Name;
@@ -77,6 +81,7 @@ namespace Portfolio.Asteroids.Server
                 this.Level = Level;
                 this.Options = Options;
                 this.IsPrivate = IsPrivate;
+                this.AsScreen = AsScreen;
             }
 
             public CreateRoom()

@@ -157,6 +157,20 @@ the bracket is drawn when the host starts it, every player's client goes to its 
 goes on. A draw in a draughts or chess match is decided for the bracket only: the side with more material goes on, and
 with equal material the side that moved second.
 
+**Shared screen and remote controls.** A room can play on a shared screen (BaseGame's *Plays on: a shared screen* when
+the room is opened): the screen runs the room's table with no seat of its own and shows the whole game, the board with
+both seats named as players elsewhere, whose turn it is, the room's clock and the result ("{name} wins!", never "you");
+it takes no click, has no Resign, and as the room's host it plays the computer's seat when there is one. Every player
+joins from their own device, as a remote control by default: the device runs the game as every client does and sends
+its moves the same way, so the board stays the control, under BaseGame's remote frame, which here does not cover the
+game: its header says whose turn it is in the game's own words ("Roll the dice", "{name} doubles: take or drop?") with
+the seconds left, the game's HUD moves in between the frame's header and footer (the seat panels, the backgammon
+buttons, the promotion picker, Resign), and the footer's *Play on this device* turns the frame off mid-game (and the
+match menu back on) with nothing else changing. The online tour plays it with `hostscreen` (the screen, which
+photographs the game every half minute), `joinremote` (a remote, with `-boardgames-switch <seconds>` to switch to its
+own device and back during the game) and `joinown` (a player on their own device in a screen room). What a seat may do
+at the table (roll, double, take or drop, resign) is `SeatActions` (`Scripts/Model`), which the HUD reads.
+
 **How it is built.** The rules engines are deterministic and every decision of a player is a `BoardCommand`, so an
 online game is played in step over the action log of the base server, like Monopoly:
 

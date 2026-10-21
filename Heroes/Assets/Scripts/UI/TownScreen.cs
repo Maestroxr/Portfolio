@@ -1095,11 +1095,12 @@ namespace Portfolio.Heroes.UI
                 UIKit.Select(takeTiles[i].Card, kind == take);
                 giveTiles[i].Line.text = owner != null ? owner.resources[kind].ToString("N0") : "0";
                 giveTiles[i].Line.color = kind == give ? UIKit.Gold : UIKit.Ink;
-                int rate = Manager.Game.TradeRate(Manager.Viewer, give, kind);
+                // (The shared screen of a room, which owns no town, may look at a market: it trades for nobody.)
+                int rate = owner != null ? Manager.Game.TradeRate(owner.index, give, kind) : 0;
                 takeTiles[i].Line.text = kind == give || rate == 0 ? "-" : rate < 0 ? Words.F("{0} each", (-rate).ToString("N0")) : Words.F("1 for {0}", rate);
                 takeTiles[i].Line.color = kind == take ? UIKit.Gold : UIKit.Dim;
             }
-            int received = Manager.Game.TradeRate(Manager.Viewer, give, take);
+            int received = owner != null ? Manager.Game.TradeRate(owner.index, give, take) : 0;
             int held = owner != null ? owner.resources[give] : 0;
             // A positive rate is how much has to be given for one unit; a negative one is the gold a unit sells for.
             int price = received < 0 ? 1 : received;

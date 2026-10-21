@@ -397,6 +397,28 @@ namespace Portfolio.Monopoly
             return false;
         }
 
+        private CanvasGroup coverGroup;
+
+        /// <summary>
+        /// Takes the whole interface out of sight and out of reach, or gives it back: on a remote control of a room's
+        /// shared screen the remote panel covers the game (<see cref="MonopolyRemotePanel"/>), and nothing of the board's
+        /// interface is to be seen or pressed under it. Popups keep opening and closing meanwhile, unseen.
+        /// </summary>
+        public void SetCovered(bool covered)
+        {
+            if (coverGroup == null)
+            {
+                coverGroup = GetComponent<CanvasGroup>();
+                if (coverGroup == null)
+                {
+                    coverGroup = gameObject.AddComponent<CanvasGroup>();
+                }
+            }
+            coverGroup.alpha = covered ? 0f : 1f;
+            coverGroup.blocksRaycasts = !covered;
+            coverGroup.interactable = !covered;
+        }
+
         /// <summary>Closes every popup (a new match, a loaded one, back to the title).</summary>
         public void CloseAll()
         {

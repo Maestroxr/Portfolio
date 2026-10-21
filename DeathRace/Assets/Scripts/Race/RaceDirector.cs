@@ -113,11 +113,58 @@ namespace Portfolio.DeathRace
             countdown.Restart();
 
             SpawnCars(race, content, theme);
-            timeLimit = race.HasHumans ? 0f : RaceRules.TimeLimit(track.Path.Length, setup.Laps);
+            // Online the room ends the race (RaceRules.NextOnline); a race of computer cars alone ends by the clock.
+            timeLimit = race.HasHumans || setup.Mode == RaceMode.Online ? 0f : RaceRules.TimeLimit(track.Path.Length, setup.Laps);
             race.Pickups = PickupField.Spawn(race, root);
             BuildViews(race, theme, settings);
             ApplySettings(settings);
             RaiseStarted(race);
+        }
+
+        /// <summary>
+        /// The cars driven at this device changed mid-race (online: a seat handed between the room's shared screen and the
+        /// player's own device): the views and the HUDs are built again for the cars that are people here now
+        /// (<see cref="Car.IsHuman"/>), the overview when there is none.
+        /// </summary>
+        public virtual void RebuildViews()
+        {
+            Race race = Current;
+            if (race == null)
+            {
+                return;
+            }
+            foreach (RaceHud hud in huds)
+            {
+                if (hud != null)
+                {
+                    hud.Remove();
+                }
+            }
+            huds.Clear();
+            foreach (RaceCamera view in cameras)
+            {
+                if (view != null && view != mainView)
+                {
+                    Destroy(view.gameObject);
+                }
+            }
+            cameras.Clear();
+            race.Cameras.Clear();
+            if (mainView != null)
+            {
+                mainView.Release();
+            }
+            if (race.Root != null)
+            {
+                Transform hudRoot = race.Root.Find("HUD");
+                if (hudRoot != null)
+                {
+                    Destroy(hudRoot.gameObject);
+                }
+            }
+            DeathRaceSettings settings = manager != null ? manager.Options : null;
+            BuildViews(race, manager != null ? manager.Look : null, settings);
+            ApplySettings(settings);
         }
 
         /// <summary>Tears the race down without a result (leaving to the menu, or before the next race).</summary>
@@ -438,7 +485,9 @@ namespace Portfolio.DeathRace
             {
                 runners.Add(new RaceRules.Runner { Human = car.IsHuman, Finished = car.HasFinished, Out = car.IsWrecked });
             }
-            RacePhase next = RaceRules.Next(race.Phase, runners, race.Time, ref finishingSince, timeLimit);
+            RacePhase next = race.Setup.Mode == RaceMode.Online
+                ? RaceRules.NextOnline(race.Phase, runners, race.Time, ref finishingSince)
+                : RaceRules.Next(race.Phase, runners, race.Time, ref finishingSince, timeLimit);
             if (next == RacePhase.Over)
             {
                 End(race);

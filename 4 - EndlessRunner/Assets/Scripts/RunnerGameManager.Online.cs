@@ -20,6 +20,16 @@ namespace Portfolio.EndlessRunner
     /// as ghosts in every view. Every run sends its own pose, claims its own coins, reports its own score and finishes
     /// for its own seat; when all of them are done the views follow the runners still out there, and the results name
     /// the winner. With one runner here the race plays as it always did.
+    ///
+    /// A room may play on a shared screen with the players holding remote controls (the base's
+    /// <see cref="OnlineGameController.IsScreen"/> and <see cref="OnlineGameController.IsRemote"/>). The screen holds no
+    /// seat: it drives the seats of its remotes the way it drives the seats of a party, each in a part of the screen on
+    /// the controls that arrive over the network (<see cref="OnlineGameController.ControlsOf"/>), sends their poses,
+    /// claims and finishes, and tells every remote what its runner is up to (<see cref="RunnerRemoteStatus"/>). A remote
+    /// drives nothing: it watches the race as ghosts under its panel. A device that drives no seat (the screen with
+    /// no remote left, a remote) spectates: the runner of the scene is out of sight, the views follow the runners of the
+    /// others, and the results name the winner. A player may switch between the remote and their own device mid-race
+    /// (<see cref="SeatDriverChanged"/>): the seat turns from a ghost into a run seeded from its last pose, or back.
     /// </summary>
     public partial class RunnerGameManager
     {
@@ -29,20 +39,33 @@ namespace Portfolio.EndlessRunner
             /// <summary>The seed of the room, which lays out the endless run the same for everybody.</summary>
             public int Seed;
 
-            /// <summary>The seat of the device's own runner.</summary>
+            /// <summary>The seat of the device's own runner, or <see cref="RoomTurnInfo.NoSeat"/> on the shared screen.</summary>
             public int LocalSeat;
 
             /// <summary>The runners by seat, the local ones included; their order is the order at the start line.</summary>
             public readonly List<Racer> Racers = new List<Racer>();
 
-            /// <summary>The seats of the runners at this device: the device's own first, then its companions'.</summary>
-            public readonly List<int> LocalSeats = new List<int>();
+            /// <summary>
+            /// The seats of the runners driven at this device, in the order of their views: the device's own first, then
+            /// its companions', or on the shared screen the seats of its remotes.
+            /// </summary>
+            public readonly List<int> DrivenSeats = new List<int>();
 
-            /// <summary>The controls of every runner at this device by seat, when several run here; empty otherwise.</summary>
+            /// <summary>The controls of every runner driven at this device by seat, when the runs are explicit (<see cref="IsParty"/>); empty otherwise.</summary>
             public readonly Dictionary<int, PlayerControls> Controls = new Dictionary<int, PlayerControls>();
 
-            /// <summary>Several runners at this device: a party, in split screen.</summary>
-            public bool IsParty => LocalSeats.Count > 1;
+            /// <summary>This device is the shared screen of the room: it drives the seats of the remotes, and nobody here is "you".</summary>
+            public bool Screen;
+
+            /// <summary>
+            /// The runs here are explicit, on the split screen machinery: several runners at this device (a party), or a
+            /// runner whose seat is not the device's own (the shared screen driving a remote). With the device's own runner
+            /// alone the race plays as it always did.
+            /// </summary>
+            public bool IsParty => DrivenSeats.Count > 1 || DrivenSeats.Count == 1 && DrivenSeats[0] != LocalSeat;
+
+            /// <summary>Nobody runs at this device: a remote control, or the shared screen while every player runs on their own device.</summary>
+            public bool Spectates => DrivenSeats.Count == 0;
         }
 
         /// <summary>A member of the room as the server has it while a race runs, and when it is over.</summary>
@@ -116,8 +139,24 @@ namespace Portfolio.EndlessRunner
         /// <summary>The seat of the device's own runner in the race, or -1.</summary>
         internal int LocalSeat => race != null ? race.LocalSeat : -1;
 
-        /// <summary>The seats of the runners at this device in the race, the device's own first; none without a race.</summary>
-        internal IReadOnlyList<int> LocalSeats => race != null ? race.LocalSeats : (IReadOnlyList<int>)System.Array.Empty<int>();
+        /// <summary>The seats of the runners driven at this device in the race, the device's own first; none without a race.</summary>
+        internal IReadOnlyList<int> DrivenSeats => race != null ? race.DrivenSeats : (IReadOnlyList<int>)System.Array.Empty<int>();
+
+        /// <summary>Nobody runs at this device in the race (the shared screen without a remote, a remote control): it watches.</summary>
+        internal bool Spectates => race != null && race.Spectates;
+
+        /// <summary>The ghost of the runner at <paramref name="seat"/> of the race, played elsewhere, or null.</summary>
+        internal RunnerGhost GhostOf(int seat)
+        {
+            return ghosts.TryGetValue(seat, out RunnerGhost ghost) ? ghost : null;
+        }
+
+        /// <summary>Whether the run of the runner at <paramref name="seat"/> of the race is over, wherever it runs.</summary>
+        internal bool IsRacerDone(int seat)
+        {
+            Racer racer = RacerAt(seat);
+            return racer != null && racer.Done;
+        }
 
         /// <summary>The runs at this device: the runner of the scene's, or one per runner of a local race or of a party.</summary>
         internal IReadOnlyList<RunnerRun> LocalRuns => Runs;
@@ -289,7 +328,7 @@ namespace Portfolio.EndlessRunner
 
         /// <summary>
         /// The run of a race begins: the ghosts of the others line up beside the runner (the runners, in a party), and the
-        /// race HUD shows.
+        /// race HUD shows. A device that drives no seat watches them from the start.
         /// </summary>
         private void BeginRace()
         {
@@ -330,6 +369,38 @@ namespace Portfolio.EndlessRunner
             ActivePlayers = active;
             ui?.ShowRace(racers.Count);
             RefreshRaceHud();
+            if (race.Spectates)
+            {
+                SpectateRace();
+            }
+        }
+
+
+        /// <summary>
+        /// Nobody runs at this device (the shared screen while every player runs on their own device, a remote control
+        /// whose screen runs its seat): the runner of the scene is out of sight, nothing goes to the server, and the views
+        /// follow the runners of the others until the race is over (the countdown first, when it is still on).
+        /// </summary>
+        private void SpectateRace()
+        {
+            runEnded = true;
+            if (runner != null)
+            {
+                runner.StopRun();
+                ClearPowerUps(Main);
+                runner.InputSource = null;
+                runner.gameObject.SetActive(false);
+                ActivePlayers.Remove(runner);
+            }
+            if (phase != RunPhase.Countdown && phase != RunPhase.Menu)
+            {
+                phase = RunPhase.Watching;
+                phaseTime = 0f;
+            }
+            runnerCamera?.SetMode(RunnerCamera.Mode.Chase);
+            ui?.ShowSplitScreen(false);
+            ui?.ShowRunStats(false);
+            ui?.ShowRace(racers.Count);
         }
 
 
@@ -402,11 +473,297 @@ namespace Portfolio.EndlessRunner
             trackReady = false;
             runnerCamera?.Watch(null);
             ui?.HideRace();
+            ui?.ShowRunStats(true);
             if (runner != null)
             {
+                runner.gameObject.SetActive(true);
+                runner.InputSource = null;
                 runner.Assign(-1, PlayerControl.Local);
                 ActivePlayers = new List<IPlayer> { runner };
             }
+        }
+
+        #endregion
+
+
+        #region Remote controls
+
+        /// <summary>
+        /// Mid-race, <paramref name="seat"/> is driven at this device from now on (<paramref name="drivenHere"/>: a remote
+        /// control whose runner the shared screen runs, or a player back on their own device) or no longer. The runner
+        /// turns from a ghost into a run seeded from <paramref name="lastPose"/> and the server's books (and the power-ups
+        /// of <paramref name="lastStatus"/>, what the screen last told a remote), on <paramref name="controls"/> (null for
+        /// the keys and swipes of the device's own runner); or from a run into a ghost where it was. A run that was over
+        /// already stays a ghost, and the device that takes it finishes it with the server when its screen could not
+        /// (<paramref name="memberPlaying"/>). A member who left the room (<paramref name="memberGone"/>) leaves the race.
+        /// </summary>
+        internal void SeatDriverChanged(int seat, bool drivenHere, PlayerControls controls, RoomPoseInfo? lastPose, string lastStatus,
+            bool memberPlaying, bool memberGone)
+        {
+            Racer racer = RacerAt(seat);
+            if (race == null || racer == null || racer.Local == drivenHere)
+            {
+                return;
+            }
+            if (drivenHere)
+            {
+                TakeOverSeat(racer, controls, lastPose, lastStatus, memberPlaying);
+            }
+            else
+            {
+                HandOffSeat(racer, memberGone);
+            }
+        }
+
+
+        /// <summary>The seat of <paramref name="racer"/> runs here from now on: its ghost becomes a run where the ghost was.</summary>
+        private void TakeOverSeat(Racer racer, PlayerControls controls, RoomPoseInfo? lastPose, string lastStatus, bool memberPlaying)
+        {
+            RunnerPoseState state = lastPose.HasValue ? RunnerPoseState.Unpack(lastPose.Value.State) : default;
+            bool crossedTheLine = lastPose.HasValue && track != null && lastPose.Value.Position.z >= track.FinishZ;
+            racer.Local = true;
+            if (racer.Done || state.Done || crossedTheLine || !memberPlaying || raceFinished)
+            {
+                // The run was over before the seat came here: the ghost shows how it ended. The server hears of the end
+                // from this device when its screen could not say it any more.
+                racer.Done = true;
+                if (memberPlaying && !raceFinished && !race.Screen && online != null)
+                {
+                    online.FinishRun(racer.Seat, racer.Distance, racer.Score);
+                }
+                return;
+            }
+            RemoveGhost(racer.Seat);
+            race.DrivenSeats.Add(racer.Seat);
+            if (controls != null)
+            {
+                race.Controls[racer.Seat] = controls;
+            }
+            if (race.IsParty)
+            {
+                TakeOverSeatInParty(racer, controls, lastPose, lastStatus);
+            }
+            else
+            {
+                TakeOverSeatAlone(racer, lastPose, lastStatus);
+            }
+        }
+
+
+        /// <summary>The device's own runner runs again (the player left the remote control): the runner of the scene, on its keys and swipes.</summary>
+        private void TakeOverSeatAlone(Racer racer, RoomPoseInfo? lastPose, string lastStatus)
+        {
+            RunnerRun run = Main;
+            runner.gameObject.SetActive(true);
+            runner.InputSource = null;
+            runner.Assign(racer.Seat, PlayerControl.Local, racer.Name);
+            RunnerGhost.Tint(runner.animator, runner.transform, null);
+            SeedRun(run, racer, lastPose, lastStatus);
+            runEnded = false;
+            if (!ActivePlayers.Contains(runner))
+            {
+                ActivePlayers.Add(runner);
+            }
+            runnerCamera.Watch(null);
+            runnerCamera.SetMode(RunnerCamera.Mode.Chase, true);
+            RunnerLevel level = RunnerLevel;
+            bool endless = level == null || level.IsEndless;
+            ui?.BeginRun(RunnerGameTheme.TitleFor(level), LevelIndex, endless, run.MaxHearts, endless ? progress.EndlessBestDistance : level.Length);
+            ui?.ShowSplitScreen(false);
+            ui?.ShowRunStats(true);
+            ui?.ShowRace(racers.Count);
+            if (phase != RunPhase.Countdown)
+            {
+                phase = RunPhase.Running;
+                phaseTime = 0f;
+                sounds?.PlayMusic(sounds.runMusic);
+            }
+            PlayerScore = run.Score;
+            RefreshHud();
+        }
+
+
+        /// <summary>The shared screen drives one more seat (or a party grows): a run, a view and a HUD for it beside the others.</summary>
+        private void TakeOverSeatInParty(Racer racer, PlayerControls controls, RoomPoseInfo? lastPose, string lastStatus)
+        {
+            if (localRace == null)
+            {
+                BeginRuns();
+            }
+            var seat = new LocalSeat(localRace.Runs.Count) { Name = racer.Name, Color = RacerColor(racer.Slot) };
+            RunnerRun run = AddRun(seat, new SeatInput(controls), racer);
+            LayoutRuns();
+            SeedRun(run, racer, lastPose, lastStatus);
+            RunnerLevel level = RunnerLevel;
+            bool endless = level == null || level.IsEndless;
+            run.Hud?.Begin(endless, endless ? 0f : track.FinishZ, run.MaxHearts);
+            run.Hud?.Banner(null);
+            run.Camera.Watch<RunnerPlayer>(null);
+            run.Camera.SetMode(RunnerCamera.Mode.Chase, true);
+            if (!ActivePlayers.Contains(run.Runner))
+            {
+                ActivePlayers.Add(run.Runner);
+            }
+            if (phase == RunPhase.Watching)
+            {
+                // Everybody here was done, or nobody ran here: the race is on again for this run.
+                phase = RunPhase.Running;
+                phaseTime = 0f;
+                watchNotice = null;
+                sounds?.PlayMusic(sounds.runMusic);
+            }
+            ui?.ShowSplitScreen(true);
+            RankLocalRunners();
+            RefreshLocalHuds();
+        }
+
+
+        /// <summary>
+        /// Starts <paramref name="run"/> for <paramref name="racer"/> where its last pose left it (the start line without
+        /// one): the position and the lane, the hearts the pose carries, the coins the server gave the seat, the power-ups
+        /// the status of its remote control had left (else half of what the auras of the pose show), and a moment of
+        /// invulnerability, since the obstacles knocked away and the carts rolling are this device's own. During the
+        /// countdown the run waits on the line with the others.
+        /// </summary>
+        private void SeedRun(RunnerRun run, Racer racer, RoomPoseInfo? lastPose, string lastStatus)
+        {
+            int maxHearts = Mathf.Clamp(RunnerSettings.Hearts, 1, RunnerSettings.HeartLimit);
+            run.Reset(maxHearts);
+            ClearPowerUps(run);
+            RunnerPlayer player = run.Runner;
+            player.ApplySettings(RunnerSettings);
+            Vector3 position = StartPositionOf(racer.Slot);
+            int lane = StartLane(racer.Slot);
+            int hearts = maxHearts;
+            RunnerPoseState state = default;
+            if (lastPose is { } pose && phase != RunPhase.Countdown)
+            {
+                position = pose.Position;
+                position.y = Mathf.Max(position.y, StartPosition.y);
+                lane = Mathf.Clamp(Mathf.RoundToInt(position.x / Mathf.Max(0.1f, player.LaneWidth)), -1, 1);
+                hearts = Mathf.Clamp(pose.Value, 1, maxHearts);
+                state = RunnerPoseState.Unpack(pose.State);
+            }
+            run.SeedProgress(hearts, claims.CoinsOf(racer.Seat), pointsPerCoin, Mathf.Max(0f, position.z));
+            RunnerRemoteStatus known = RunnerRemoteStatus.Parse(lastStatus);
+            for (int i = 0; i < PowerUps.Count; i++)
+            {
+                var type = (PowerUpType)i;
+                float seconds = known != null ? known.PowerUpSeconds(type) : 0f;
+                bool shown = type == PowerUpType.Shield && state.Shield || type == PowerUpType.Magnet && state.Magnet || type == PowerUpType.SuperJump && state.SuperJump;
+                if (seconds <= 0f && shown)
+                {
+                    seconds = PowerUpDuration(type) * 0.5f;
+                }
+                if (seconds > 0f)
+                {
+                    run.GivePowerUp(type, seconds);
+                }
+            }
+            player.ResetToStart(position, lane);
+            if (phase == RunPhase.Countdown)
+            {
+                run.Enter(RunPhase.Countdown);
+            }
+            else
+            {
+                player.BeginRun();
+                player.SetTargetSpeed(RunnerSettings.SpeedAtDistance(position.z));
+                player.MakeInvulnerable(invulnerableTime);
+                run.Enter(RunPhase.Running);
+            }
+            UpdatePowerUps(run, 0f);
+        }
+
+
+        /// <summary>
+        /// The seat of <paramref name="racer"/> is played elsewhere from now on: its run stops where it is, without a word
+        /// to the server (the device that takes it goes on from here), and a ghost stands in its place. A run that was
+        /// ending (over the line, out of hearts) ends now, so the server hears of it from the device that ran it.
+        /// </summary>
+        private void HandOffSeat(Racer racer, bool memberGone)
+        {
+            racer.Local = false;
+            race.DrivenSeats.Remove(racer.Seat);
+            race.Controls.Remove(racer.Seat);
+            Vector3 lastPosition = StartPositionOf(racer.Slot);
+            if (InParty)
+            {
+                RunnerRun run = localRace.RunAt(racer.Seat);
+                if (run != null)
+                {
+                    // The screen may not finish the run with the server any more (the seat is its player's own again):
+                    // the device that takes the seat says so, from the pose that shows the run ending.
+                    lastPosition = run.Runner.transform.position;
+                    RemoveRun(run);
+                }
+                if (localRace.Runs.Count == 0)
+                {
+                    TearDownLocalRace();
+                    SpectateRace();
+                }
+                else
+                {
+                    LayoutRuns();
+                    RankLocalRunners();
+                    RefreshLocalHuds();
+                }
+            }
+            else
+            {
+                if (phase == RunPhase.Finishing || phase == RunPhase.Dying)
+                {
+                    EndRaceRun(phase == RunPhase.Finishing);
+                }
+                lastPosition = runner.transform.position;
+                SpectateRace();
+            }
+            if (memberGone)
+            {
+                racers.Remove(racer);
+                return;
+            }
+            RunnerGhost ghost = AddGhost(racer);
+            if (ghost == null)
+            {
+                return;
+            }
+            ghost.PlaceAt(lastPosition);
+            if (!InParty && !race.Screen && runnerCamera != null)
+            {
+                // The player's own runner, run by the screen now: their device keeps watching it.
+                runnerCamera.Watch(ghost);
+            }
+        }
+
+
+        /// <summary>
+        /// What the shared screen tells the remote control of <paramref name="run"/>: its hearts, coins, score, distance,
+        /// place, how it is doing and what is left of its power-ups (<see cref="RunnerRemoteStatus"/>).
+        /// </summary>
+        private void PublishRunStatus(RunnerRun run)
+        {
+            if (online == null || run.Racer == null || race == null || !race.Screen)
+            {
+                return;
+            }
+            RunnerLevel level = RunnerLevel;
+            var status = new RunnerRemoteStatus
+            {
+                Hearts = run.Hearts,
+                MaxHearts = run.MaxHearts,
+                Coins = run.Coins,
+                Score = Mathf.FloorToInt(run.Score),
+                Distance = Mathf.FloorToInt(run.Distance),
+                Length = level == null || level.IsEndless || track == null ? 0 : Mathf.RoundToInt(track.FinishZ),
+                Place = run.Racer.Place,
+                State = RunnerRemoteStatus.StateOf(run.Phase, run.Finished)
+            };
+            for (int i = 0; i < PowerUps.Count; i++)
+            {
+                status.SetPowerUpSeconds((PowerUpType)i, run.PowerUpLeft((PowerUpType)i));
+            }
+            online.PublishStatus((byte)run.Racer.Seat, status.Write());
         }
 
         #endregion
@@ -662,7 +1019,7 @@ namespace Portfolio.EndlessRunner
                             ui?.Toast(RunnerText.F("{0} left the race", racer.Name), RacerColor(racer.Slot));
                         }
                     }
-                    else if (InParty && RunOfSeat(racer.Seat) is { Done: false } run && run != Main)
+                    else if (InParty && RunOfSeat(racer.Seat) is { Done: false } run && (run != Main || race.Screen))
                     {
                         // The server has nothing more to hear of this run: it is over without a word to it.
                         run.Runner.StopRun();
@@ -784,9 +1141,10 @@ namespace Portfolio.EndlessRunner
         {
             int score = Mathf.FloorToInt(run.Score);
             RunnerLevel level = RunnerLevel;
-            if (run == Main && level != null && level.IsEndless)
+            if (run == Main && level != null && level.IsEndless && !race.Screen)
             {
-                // The record of the endless run is the device's own player's: their run counts, not their companions'.
+                // The record of the endless run is the device's own player's: their run counts, not their companions'
+                // (and the shared screen runs nobody of its own).
                 progress.RecordEndless(run.Distance, score);
             }
             online?.FinishRun(SeatOf(run), run.Distance, score);
@@ -831,7 +1189,9 @@ namespace Portfolio.EndlessRunner
                 }
                 track.UpdateTrack(z, track.keepBehind, track.keepBehind);
                 UpdateWorld(z);
-                notice = RunnerText.F("Watching {0} - the results follow when everybody is done", ghost.DisplayName);
+                notice = race.Spectates
+                    ? RunnerText.F("Watching {0}", ghost.DisplayName)
+                    : RunnerText.F("Watching {0} - the results follow when everybody is done", ghost.DisplayName);
             }
             if (InParty)
             {
@@ -932,7 +1292,8 @@ namespace Portfolio.EndlessRunner
             var standings = new StringBuilder();
             foreach (Racer racer in ranking)
             {
-                standings.Append(standings.Length > 0 ? "\n" : string.Empty).Append(Standings.Line(Mathf.Max(1, racer.Place), racer.Name, racer.Local,
+                // The shared screen runs the seats of its remotes, but none of them is "you".
+                standings.Append(standings.Length > 0 ? "\n" : string.Empty).Append(Standings.Line(Mathf.Max(1, racer.Place), racer.Name, racer.Local && !race.Screen,
                     racer.Score.ToString(), Color.Lerp(RacerColor(racer.Slot), Color.white, 0.3f),
                     RunnerText.SayF("{0:0} m, {1} coins", racer.Distance, racer.Coins)));
             }
@@ -942,34 +1303,37 @@ namespace Portfolio.EndlessRunner
 
         /// <summary>
         /// The results of the race: the standings, and the place of the runner at this device (of the best of a party,
-        /// whose results name the winner, as a race at one device does).
+        /// whose results name the winner, as a race at one device does). The shared screen, or a device that ran nobody,
+        /// has no place of its own: its results name the winner.
         /// </summary>
         private void ShowRaceResults()
         {
             phase = RunPhase.Menu;
             RefreshRaceHud();
             RunnerLevel level = RunnerLevel;
-            Racer local = BestLocalRacer();
-            RunnerRun run = (local != null ? RunOfSeat(local.Seat) : null) ?? Main;
+            Racer local = race.Screen ? null : BestLocalRacer();
+            RunnerRun run = local != null ? RunOfSeat(local.Seat) : null;
+            bool spectator = local == null;
             int place = local != null && local.Place > 0 ? local.Place : Mathf.Max(1, racers.Count);
             raceResultsShown = true;
             ui?.ShowResults(new RunResult
             {
                 LevelTitle = level != null ? RunnerGameTheme.TitleFor(level) : string.Empty,
-                Victory = place == 1,
+                Victory = !spectator && place == 1,
                 Endless = level != null && level.IsEndless,
-                Coins = run.Coins,
-                Distance = run.Distance,
-                Score = local != null ? (int)local.Score : Mathf.FloorToInt(PlayerScore),
+                Coins = run != null ? run.Coins : local != null ? local.Coins : 0,
+                Distance = run != null ? run.Distance : local != null ? local.Distance : 0f,
+                Score = local != null ? (int)local.Score : 0,
                 Online = true,
-                Place = place,
+                Place = spectator ? 0 : place,
                 // Whoever left on the way was beaten all the same.
                 Runners = Mathf.Max(startedRunners, racers.Count),
                 Standings = RaceStandingsText(),
-                Party = InParty,
-                Winner = InParty ? WinnerOfRace() : null
+                Party = InParty && !spectator,
+                Spectator = spectator,
+                Winner = InParty || spectator ? WinnerOfRace() : null
             });
-            TransitionState(place == 1 ? BaseGameState.Victory : BaseGameState.GameOver);
+            TransitionState(spectator || place == 1 ? BaseGameState.Victory : BaseGameState.GameOver);
         }
 
 

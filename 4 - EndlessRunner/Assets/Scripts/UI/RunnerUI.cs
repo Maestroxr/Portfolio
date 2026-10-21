@@ -81,6 +81,8 @@ namespace Portfolio.EndlessRunner
         [SerializeField] internal TMP_Text countdownText;
         [SerializeField] internal TMP_Text toastText;
         [SerializeField] internal CanvasGroup hintGroup;
+        // The parts of the runner's own HUD a spectating device hid (ShowRunStats), to show them again.
+        private readonly List<GameObject> hiddenRunStats = new List<GameObject>();
         [SerializeField] internal TMP_Text hintText;
         [SerializeField] internal Image damageFlash;
         [SerializeField] internal RaceHud raceHud;
@@ -760,6 +762,42 @@ namespace Portfolio.EndlessRunner
             }
         }
 
+        /// <summary>
+        /// The figures of the runner alone (hearts, coins, score, the progress bar): out of sight on a device that runs
+        /// nobody and only watches a race, while the scoreboard of the race and the line of words stay. Shown again
+        /// (what was hidden, nothing else) when the device runs somebody again or the race is over.
+        /// </summary>
+        public void ShowRunStats(bool shown)
+        {
+            if (runHud == null)
+            {
+                return;
+            }
+            if (shown)
+            {
+                foreach (GameObject part in hiddenRunStats)
+                {
+                    if (part != null)
+                    {
+                        part.SetActive(true);
+                    }
+                }
+                hiddenRunStats.Clear();
+                return;
+            }
+            Transform scoreboard = raceHud != null ? raceHud.transform : null;
+            Transform words = hintGroup != null ? hintGroup.transform : null;
+            foreach (Transform part in runHud.transform)
+            {
+                if (part == scoreboard || part == words || !part.gameObject.activeSelf)
+                {
+                    continue;
+                }
+                part.gameObject.SetActive(false);
+                hiddenRunStats.Add(part.gameObject);
+            }
+        }
+
         public void PunchCoins()
         {
             coinPunch = 1f;
@@ -845,9 +883,10 @@ namespace Portfolio.EndlessRunner
                 SetLabel(resultGoals, RunnerText.T("Retry races again with the same players."));
                 resultStarCount = 0;
             }
-            else if (result.Online && result.Party)
+            else if (result.Online && (result.Party || result.Spectator))
             {
-                // A race of several runners at this device and others: the winner by name, as a race at one device says it.
+                // A race of several runners at this device and others, or one watched from the shared screen: the winner
+                // by name, as a race at one device says it.
                 SetLabel(resultTitle, result.Winner != null ? RunnerText.F("{0} WINS!", result.Winner) : RunnerText.T("IT'S A TIE!"));
                 SetLabel(resultSubtitle, RunnerText.F("{0} - race of {1}", levelTitle, result.Runners));
                 SetLabel(resultStats, result.Standings);

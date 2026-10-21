@@ -77,6 +77,15 @@ namespace Portfolio.EndlessRunner
             return hud;
         }
 
+        /// <summary>Lays the HUD over another part of the screen: the runs of the split screen changed (one came or went mid-race).</summary>
+        public void MoveTo(Rect viewport)
+        {
+            SplitScreen.AnchorTo((RectTransform)transform, viewport);
+            scale = viewport.width < 0.75f && viewport.height < 0.75f ? 0.82f : 1f;
+            content.localScale = Vector3.one * scale;
+            Fit();
+        }
+
         private InterfaceSprites Sprites => look != null ? look.Sprites : null;
 
         private InterfaceColors Colors => look != null ? look.Colors : new InterfaceColors();

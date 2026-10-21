@@ -33,20 +33,20 @@ namespace Portfolio.BoardGames
         /// <summary>The place (0 to 23, 24 the bar) of the checker picked, or -1.</summary>
         public int BackgammonSelected => bgSelected;
 
+        /// <summary>What the person to act here may do now by the rules (<see cref="SeatActions"/>); nothing while the table waits for nobody here.</summary>
+        public SeatActions ActingHere => WaitingForHuman && table != null && !table.IsOver ? SeatActions.Of(table, table.SeatToAct) : SeatActions.None;
+
         /// <summary>Whether the person to act here may roll now (the opening roll too).</summary>
-        public bool BackgammonCanRoll => BackgammonWaiting(out BackgammonGame game)
-            && (game.Phase == BackgammonPhase.Opening || game.Phase == BackgammonPhase.Rolling);
+        public bool BackgammonCanRoll => ActingHere.CanRoll;
 
         /// <summary>Whether the person to act here may offer the cube now (before rolling, the cube theirs or in the middle).</summary>
-        public bool BackgammonCanDouble => BackgammonWaiting(out BackgammonGame game)
-            && game.Phase == BackgammonPhase.Rolling && game.CanDouble(game.SideToAct);
+        public bool BackgammonCanDouble => ActingHere.CanDouble;
 
         /// <summary>Whether the person to act here answers an offered cube (Take or Drop).</summary>
-        public bool BackgammonAnswering => BackgammonWaiting(out BackgammonGame game) && game.Phase == BackgammonPhase.Answering;
+        public bool BackgammonAnswering => ActingHere.Answering;
 
         /// <summary>Whether the person to act here has moved checkers this turn that may be taken back.</summary>
-        public bool BackgammonCanUndo => BackgammonWaiting(out BackgammonGame game)
-            && game.Phase == BackgammonPhase.Moving && bgDone.Count > 0 && bgSent == null;
+        public bool BackgammonCanUndo => ActingHere.Moving && bgDone.Count > 0 && bgSent == null;
 
         /// <summary>The HUD's line over the buttons: the cube offered ("{0} doubles to {1}."), the opening roll, or null.</summary>
         public string BackgammonOfferLine

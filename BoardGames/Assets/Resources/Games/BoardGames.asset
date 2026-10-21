@@ -17,12 +17,37 @@ MonoBehaviour:
   description: 'Checkers, chess and backgammon on a 3D table: against the computer, two at one device, or online with tournaments.'
   icon: {fileID: 21300000, guid: 0e7bd298bae31ef4a9a6b98bd8b1d7bd, type: 3}
   sortOrder: 6
-  scenePath: Assets/Scenes/BoardGames.unity
+  scenePath: Packages/com.skinnerboxes.boardgames/Scenes/BoardGames.unity
   extraScenePaths: []
-  theme: {fileID: 11400000, guid: c6267081f5c7ae64ca09f02775699138, type: 2}
-  themes:
-  - {fileID: 11400000, guid: c6267081f5c7ae64ca09f02775699138, type: 2}
-  - {fileID: 11400000, guid: c11e0000aac12bf4a982ffcc7c08b1cf, type: 2}
+  themeReference:
+    m_AssetGUID: c6267081f5c7ae64ca09f02775699138
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  themeReferences:
+  - m_AssetGUID: c6267081f5c7ae64ca09f02775699138
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  - m_AssetGUID: c11e0000aac12bf4a982ffcc7c08b1cf
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  themeCards:
+  - guid: c6267081f5c7ae64ca09f02775699138
+    assetName: Classic
+    displayName: Classic
+    screenshot: {fileID: 21300000, guid: 7c788b6b70de83f4cac6348018e86e70, type: 3}
+    preview: {fileID: 21300000, guid: f9a34eed3c828ef4abb1377298889d25, type: 3}
+  - guid: c11e0000aac12bf4a982ffcc7c08b1cf
+    assetName: Midnight
+    displayName: Midnight
+    screenshot: {fileID: 21300000, guid: c661508c93b94e3408a4090f8246f106, type: 3}
+    preview: {fileID: 21300000, guid: 8e9b37255da135847ac4a8f89ce6b731, type: 3}
+  builtIn: 0
   database: skinnerboxes-boardgames
   scene: {fileID: 102900000, guid: da53689d0e28ba74f9d952efdf0e4393, type: 3}
   extraScenes: []

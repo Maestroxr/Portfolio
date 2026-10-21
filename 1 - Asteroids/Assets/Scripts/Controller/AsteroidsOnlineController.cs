@@ -27,10 +27,14 @@ namespace Portfolio.Asteroids
     /// each pilot with the controls the lobby gave their seat (<see cref="OnlineGameController.ControlsOf"/>), and this
     /// controller sends every local ship's pose, score and end under its pilot's seat. Stand-ins are made only for the
     /// pilots of other devices.
+    ///
+    /// The same party flies the seats of the remote controls on a shared screen, and a player on a remote control flies
+    /// nothing at their own device (AsteroidsOnlineController.Remotes.cs): everything here goes by the seats driven at
+    /// this device (<see cref="OnlineGameController.DrivesSeat"/>), not by the players sitting at it.
     /// </summary>
-    public class AsteroidsOnlineController : OnlineGameController
+    public partial class AsteroidsOnlineController : OnlineGameController
     {
-        private const float StatusInterval = 0.5f;
+        private const float MissionStatusInterval = 0.5f;
         private const float ScoreInterval = 1.5f;
 
         [Tooltip("The ship prefab: the stand-ins of the other pilots are instances of it.")]
@@ -261,6 +265,8 @@ namespace Portfolio.Asteroids
                 Report(T("The mission of the room did not arrive."));
                 return;
             }
+            ForgetRemoteLoadouts();
+            ownSeatFlying = true;
             bool simulates = mission.Simulator == Server.Identity.Value;
             IReadOnlyList<RoomMemberInfo> members = Server.Members;
             int slot = 0;
@@ -271,20 +277,24 @@ namespace Portfolio.Asteroids
                     slot = i;
                 }
             }
+            // The seats flown here: the device's own (unless its player plays through a remote control), its companions',
+            // and on the shared screen the seats of the remotes.
+            bool drivesOwn = DrivesOwnSeat;
             List<byte> seats = PartySeats();
             var setup = new AsteroidsGameManager.CoopSetup
             {
                 Simulates = simulates,
                 LocalSeat = LocalSeat,
+                DrivesOwnSeat = drivesOwn,
                 Slot = slot,
                 Pilots = members.Count,
                 HalfSize = new Vector2(mission.HalfWidth, mission.HalfHeight),
                 Lives = (int)mission.Lives,
                 Difficulty = CoopRules.Difficulty(room.Options)
             };
-            if (seats.Count > 1)
+            if (seats.Count > 1 || seats.Count > 0 && !drivesOwn)
             {
-                // Several pilots at this device: each flies with the controls of their seat.
+                // Several pilots at this device (or seats of others flown here): each flies with the controls of their seat.
                 foreach (byte seat in seats)
                 {
                     for (int i = 0; i < members.Count; i++)
@@ -309,6 +319,17 @@ namespace Portfolio.Asteroids
             base.OnRoomStarted(room);
             SyncShips();
             ShowPilots();
+            ApplyRemoteLoadouts(manager);
+            if (IsRemote)
+            {
+                // The shared screen flies this seat: in a strike mission with this pilot's own kit; and the panel is built
+                // for the kind of mission that starts.
+                if (manager.IsStrike)
+                {
+                    SubmitLoadout(manager.Working);
+                }
+                RemoteUI?.Rebuild();
+            }
         }
 
 
@@ -335,6 +356,7 @@ namespace Portfolio.Asteroids
         {
             replication?.End();
             ships.Clear();
+            ForgetRemoteLoadouts();
         }
 
 
@@ -352,6 +374,7 @@ namespace Portfolio.Asteroids
 
         protected override void OnPoseChanged(RoomPoseInfo pose)
         {
+            NoteOwnPose(pose);
             if (InCharge && ships.TryGetValue(pose.Identity, out RemoteShip ship) && ship != null)
             {
                 ship.Pose(pose);
@@ -392,10 +415,11 @@ namespace Portfolio.Asteroids
                 CompleteMission();
             }
             SendLocalPoses(manager);
+            PublishStatuses(manager);
             float now = Time.unscaledTime;
             if (now >= nextStatus)
             {
-                nextStatus = now + StatusInterval;
+                nextStatus = now + MissionStatusInterval;
                 PublishMission(manager);
                 ShowPilots();
             }
@@ -444,8 +468,9 @@ namespace Portfolio.Asteroids
 
 
         /// <summary>
-        /// The pose of every ship flown at this device: the device's own ship as its player's, and the wingmen of a party
-        /// under the seats of their pilots.
+        /// The pose of every ship flown at this device: the device's own ship as its player's (unless the shared screen
+        /// flies that seat), and the wingmen of a party under the seats of their pilots (on the shared screen, the seats
+        /// of the remotes).
         /// </summary>
         private void SendLocalPoses(AsteroidsGameManager manager)
         {
@@ -453,7 +478,10 @@ namespace Portfolio.Asteroids
             {
                 return;
             }
-            SendShipPose(manager, manager.Ship, RoomTurnInfo.NoSeat);
+            if (!manager.SceneShipParked)
+            {
+                SendShipPose(manager, manager.Ship, RoomTurnInfo.NoSeat, manager.Lives);
+            }
             if (!manager.IsParty)
             {
                 return;
@@ -462,18 +490,26 @@ namespace Portfolio.Asteroids
             {
                 if (pilot.Wingman && pilot.Ship != null)
                 {
-                    SendShipPose(manager, pilot.Ship, (byte)pilot.Seat.Index);
+                    SendShipPose(manager, pilot.Ship, (byte)pilot.Seat.Index, pilot.Record != null ? pilot.Record.Lives : 0);
                 }
             }
         }
 
 
-        /// <summary>The pose of <paramref name="ship"/> for the pilot at <paramref name="seat"/> (<see cref="RoomTurnInfo.NoSeat"/> for the device's own).</summary>
-        private void SendShipPose(AsteroidsGameManager manager, AsteroidsPlayer ship, byte seat)
+        /// <summary>
+        /// The pose of <paramref name="ship"/> for the pilot at <paramref name="seat"/> (<see cref="RoomTurnInfo.NoSeat"/>
+        /// for the device's own), with <paramref name="lives"/> ships left, the weapon and the bombs, for whoever takes the
+        /// seat over mid-mission.
+        /// </summary>
+        private void SendShipPose(AsteroidsGameManager manager, AsteroidsPlayer ship, byte seat, int lives)
         {
             StrikeGunnery gunnery = ship.Mode == MissionMode.Strike ? ship.Strike : null;
             var pose = new ShipPose
             {
+                Lives = lives,
+                Bombs = ship.Bombs,
+                Weapon = (int)ship.Weapons.Type,
+                WeaponLevel = ship.Weapons.Level,
                 Alive = ship.IsAlive,
                 // A strike ship's engines always burn.
                 Thrusting = ship.IsAlive && (ship.Mode == MissionMode.Strike || ship.Simulation.IsThrusting),
@@ -554,9 +590,10 @@ namespace Portfolio.Asteroids
                 return;
             }
             bool sent = false;
-            foreach (RoomMemberInfo member in LocalMembers)
+            foreach (RoomMemberInfo member in Server.Members)
             {
-                if (!member.Playing)
+                // The seats flown here: the players at this device, and on the shared screen the seats of its remotes.
+                if (!member.Playing || !DrivesSeat(member.Seat))
                 {
                     continue;
                 }
@@ -587,7 +624,7 @@ namespace Portfolio.Asteroids
         internal string DescribeStandings()
         {
             var members = new List<RoomMemberInfo>(Server.Members);
-            long Score(RoomMemberInfo member) => Server.IsLocal(member) && Asteroids != null && member.Place == 0 ? Asteroids.CoopScoreOf(member.Seat) : member.Score;
+            long Score(RoomMemberInfo member) => DrivesSeat(member.Seat) && Asteroids != null && member.Place == 0 ? Asteroids.CoopScoreOf(member.Seat) : member.Score;
             int[] places;
             if (members.TrueForAll(member => member.Place > 0))
             {
@@ -620,10 +657,13 @@ namespace Portfolio.Asteroids
         }
 
 
-        /// <summary>The seats of the pilots at this device: the device's own first, then its companions' by seat.</summary>
+        /// <summary>
+        /// The seats flown at this device: the device's own first (when its player flies it here), then its companions'
+        /// by seat; on the shared screen the seats of the remotes, by seat.
+        /// </summary>
         internal List<byte> PartySeats()
         {
-            return DeviceSeats.Order(LocalSeat, LocalSeats);
+            return DeviceSeats.Order(DrivesOwnSeat ? LocalSeat : RoomTurnInfo.NoSeat, new List<byte>(DrivenSeats));
         }
 
 
@@ -631,7 +671,10 @@ namespace Portfolio.Asteroids
         // The other pilots
         // ------------------------------------------------------------------------------------------------
 
-        /// <summary>A stand-in for every other member of the room; the ones of members who left go.</summary>
+        /// <summary>
+        /// A stand-in for every member of the room whose seat is not flown here (on a remote control's device, its own seat
+        /// too: the shared screen flies it); the ones of members who left, or whose seat is flown here now, go.
+        /// </summary>
         private void SyncShips()
         {
             AsteroidsGameManager manager = Asteroids;
@@ -646,7 +689,7 @@ namespace Portfolio.Asteroids
             for (int i = 0; i < members.Count; i++)
             {
                 RoomMemberInfo member = members[i];
-                if (Server.IsLocal(member))
+                if (DrivesSeat(member.Seat))
                 {
                     continue;
                 }
@@ -697,7 +740,7 @@ namespace Portfolio.Asteroids
             var pilots = new List<AsteroidsGameManager.PilotStatus>();
             foreach (RoomMemberInfo member in Server.Members)
             {
-                bool local = Server.IsLocal(member);
+                bool local = DrivesSeat(member.Seat);
                 var status = new AsteroidsGameManager.PilotStatus
                 {
                     Seat = member.Seat,

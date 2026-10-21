@@ -11,9 +11,35 @@ namespace Portfolio.DeathRace.Tests
     /// </summary>
     public class OnlineSetupTest
     {
-        private static OnlineRaceSetup.RoomRacer Member(byte seat, int localIndex = -1, PlayerControls controls = null)
+        private static OnlineRaceSetup.RoomRacer Member(byte seat, int localIndex = -1, PlayerControls controls = null, bool remote = false)
         {
-            return new OnlineRaceSetup.RoomRacer { Seat = seat, Name = "Seat " + seat, Local = localIndex >= 0, LocalIndex = localIndex, Controls = controls };
+            return new OnlineRaceSetup.RoomRacer
+            {
+                Seat = seat, Name = "Seat " + seat, Local = localIndex >= 0, Remote = remote, LocalIndex = localIndex, Controls = controls
+            };
+        }
+
+        [Test]
+        public void ASeatDrivenFromARemoteControlKeepsItsControlsEvenAlone()
+        {
+            var bindings = new ControlBindings(DeathRaceControls.Scheme());
+            PlayerControls network = bindings.For(0);
+            RaceSetup setup = Build(0, "", Member(0), Member(1, 0, network, true), Member(2));
+            Assert.AreEqual(DriverKind.Human, setup.Entrants[1].Driver, "the screen drives the remote's seat");
+            Assert.AreSame(network, setup.Entrants[1].Controls, "on the controls that arrive over the network, not the keyboard");
+            Assert.AreEqual(0, setup.Entrants[1].Viewport);
+            Assert.AreEqual(DriverKind.Remote, setup.Entrants[0].Driver);
+            Assert.AreEqual(DriverKind.Remote, setup.Entrants[2].Driver);
+            Assert.AreEqual(1, setup.Humans);
+        }
+
+        [Test]
+        public void AScreenThatDrivesNobodyShowsPuppetsOnly()
+        {
+            RaceSetup setup = Build(0, "", Member(0), Member(1), Member(2));
+            Assert.AreEqual(3, setup.Entrants.Count);
+            Assert.IsTrue(setup.Entrants.TrueForAll(entrant => entrant.Driver == DriverKind.Remote && entrant.Viewport < 0 && entrant.Controls == null));
+            Assert.AreEqual(0, setup.Humans);
         }
 
         private static RaceSetup Build(int track, string options, params OnlineRaceSetup.RoomRacer[] members)

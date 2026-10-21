@@ -65,6 +65,7 @@ namespace Portfolio.BoardGames
         private float resignAskedAt = -100f;
         private bool onTitle = true;
         private bool over;
+        private bool remoteLayout;
         private int shownClockSeconds = -1;
 
         public BoardGamesManager Games => Manager as BoardGamesManager;
@@ -77,6 +78,29 @@ namespace Portfolio.BoardGames
 
         /// <summary>Whether the menu's buttons are on the screen (not hidden, not covered by the settings panel).</summary>
         public bool IsMenuShown => MenuButtonsUI != null ? MenuButtonsUI.gameObject.activeInHierarchy : MenuRoot != null && MenuRoot.gameObject.activeInHierarchy;
+
+        /// <summary>Whether the HUD is laid out under the frame of a remote control (<see cref="SetRemoteLayout"/>).</summary>
+        public bool IsRemoteLayout => remoteLayout;
+
+        /// <summary>
+        /// Lays the HUD out for the remote control of a shared screen's room, or back
+        /// (<see cref="BoardGamesOnlineController.OnPresentationChanged"/>): its parts move in by <paramref name="top"/>
+        /// and <paramref name="bottom"/>, the frame's header and footer (in the units both canvases share), so the seat
+        /// panels, the backgammon buttons, the promotion picker and Resign stay in reach around the board, which stays
+        /// the control; the HUD's own turn line and clock give way to the frame's header. The result panel stays put.
+        /// </summary>
+        public void SetRemoteLayout(bool remote, float top = 0f, float bottom = 0f)
+        {
+            remoteLayout = remote;
+            RectTransform parts = seatPanels.Length > 0 && seatPanels[0] != null ? seatPanels[0].transform.parent as RectTransform : null;
+            if (parts != null)
+            {
+                parts.offsetMin = new Vector2(parts.offsetMin.x, remote ? Mathf.Max(0f, bottom) : 0f);
+                parts.offsetMax = new Vector2(parts.offsetMax.x, remote ? -Mathf.Max(0f, top) : 0f);
+            }
+            shownClockSeconds = -1;
+            RefreshHud();
+        }
 
         protected override void Awake()
         {
@@ -343,7 +367,8 @@ namespace Portfolio.BoardGames
             }
             if (turnText != null)
             {
-                turnText.text = gameOn && !game.IsOver ? manager.TurnWords ?? "" : "";
+                // Under the remote frame its header says whose turn it is, in the game's words.
+                turnText.text = gameOn && !game.IsOver && !remoteLayout ? manager.TurnWords ?? "" : "";
             }
             bool canResign = gameOn && !game.IsOver && !over && manager.IsGameRunning && (!manager.IsOnlineGame || manager.LocalSeat >= 0);
             SetVisible(resignButton, canResign);
@@ -372,12 +397,12 @@ namespace Portfolio.BoardGames
             }
         }
 
-        /// <summary>The clock of the seat to move: a bar that empties and the seconds left; hidden without a clock.</summary>
+        /// <summary>The clock of the seat to move: a bar that empties and the seconds left; hidden without a clock, and under the remote frame, whose header counts.</summary>
         private void UpdateClock(bool force)
         {
             BoardGamesManager manager = Games;
             IBoardGame game = manager != null ? manager.Current : null;
-            bool shown = game != null && !game.IsOver && manager.ClockRemaining >= 0f;
+            bool shown = game != null && !game.IsOver && manager.ClockRemaining >= 0f && !remoteLayout;
             if (clockFill != null)
             {
                 Transform holder = clockFill.transform.parent != null ? clockFill.transform.parent : clockFill.transform;

@@ -228,6 +228,7 @@ namespace Portfolio.BoardGames
                 GameEnd(table.Mode);
             }
             table = null;
+            onlineTable = false;
             campaignLevel = -1;
             thought = null;
             ForgetPerks();
@@ -790,7 +791,10 @@ namespace Portfolio.BoardGames
             {
                 decided = ReportFinished(winnerSeat);
                 // A seat played at this device won, or the room placed somebody here first when it called the game off.
-                localWon = PlayedHere(decided) || decided < 0 && game.Reason == EndReason.CalledOff && PlacedFirstHere();
+                // The shared screen plays no seat: it celebrates whoever won; a draw or a called-off game is nobody's.
+                localWon = onlineSeats.Any
+                    ? PlayedHere(decided) || decided < 0 && game.Reason == EndReason.CalledOff && PlacedFirstHere()
+                    : winnerSeat >= 0;
             }
             else
             {

@@ -64,6 +64,8 @@ namespace Portfolio.Heroes.UI
         private Tooltip menuTip;
         private bool pulse;
         private float nextRefresh;
+        private bool shown;
+        private bool compact;
 
         private RectTransform log;
         private RectTransform logContent;
@@ -275,16 +277,31 @@ namespace Portfolio.Heroes.UI
 
         public void Show(bool on)
         {
-            top.gameObject.SetActive(on);
-            column.gameObject.SetActive(on);
-            log.gameObject.SetActive(on);
-            if (!on)
+            shown = on;
+            // As a remote control of a shared screen the panel's frame has the treasury and the commands: the bars, the
+            // column and the banner of a new day keep out of its way.
+            bool panels = on && !compact;
+            top.gameObject.SetActive(panels);
+            column.gameObject.SetActive(panels);
+            log.gameObject.SetActive(panels);
+            if (!panels)
             {
                 HideAnnouncement();
             }
         }
 
-        public bool IsShown => column.gameObject.activeSelf;
+        /// <summary>Whether the bars and the column keep off the map (a remote control shows them on its panel instead).</summary>
+        public bool Compact
+        {
+            get => compact;
+            set
+            {
+                compact = value;
+                Show(shown);
+            }
+        }
+
+        public bool IsShown => shown && !compact;
 
         /// <summary>Redraws the numbers: the treasury, the date, whose turn, the heroes and towns, the commands.</summary>
         public void Refresh(bool busy)
@@ -295,7 +312,8 @@ namespace Portfolio.Heroes.UI
                 return;
             }
             GameState state = game.State;
-            PlayerState viewer = manager.ViewerState;
+            // The realm the panels show: the player's at this device; on the shared screen of a room, whose turn it is.
+            PlayerState viewer = manager.WatchedState;
             for (int i = 0; i < ResourceSet.Kinds; i++)
             {
                 int amount = viewer != null ? viewer.resources.values[i] : 0;
@@ -566,6 +584,11 @@ namespace Portfolio.Heroes.UI
 
         public void Announce(string title, string body)
         {
+            if (compact)
+            {
+                // The frame of a remote control says whose turn it is; the banner would stand over the panel's lines.
+                return;
+            }
             announceTitle.text = title;
             announceBody.text = body;
             announceBody.transform.parent.gameObject.SetActive(!string.IsNullOrEmpty(body));

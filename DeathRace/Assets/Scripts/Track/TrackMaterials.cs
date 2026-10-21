@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Gamebox;
 using UnityEngine;
 
 namespace Portfolio.DeathRace
@@ -200,14 +201,14 @@ namespace Portfolio.DeathRace
             {
                 if (lit == null)
                 {
-                    lit = Shader.Find("Universal Render Pipeline/Lit");
+                    lit = GameShaders.Find("Universal Render Pipeline/Lit");
                     if (lit == null)
                     {
-                        lit = Shader.Find("Universal Render Pipeline/Simple Lit");
+                        lit = GameShaders.Find("Universal Render Pipeline/Simple Lit");
                     }
                     if (lit == null)
                     {
-                        lit = Shader.Find("Standard");
+                        lit = GameShaders.Find("Standard");
                     }
                 }
                 return lit;

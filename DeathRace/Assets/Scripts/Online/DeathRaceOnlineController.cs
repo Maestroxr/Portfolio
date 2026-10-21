@@ -27,6 +27,17 @@ namespace Portfolio.DeathRace
     /// names the killer, who gets the kill), or is still running when the time after the first finisher runs out
     /// reports its result (<see cref="OnlineRaceRules.Score"/>); the server ranks the room when the last racer did, and
     /// the standings show (the places are the server's, with every racer's kills, time and best lap).
+    ///
+    /// A room may play on a shared screen with the players holding remote controls (the base's
+    /// <see cref="OnlineGameController.IsScreen"/>, <see cref="OnlineGameController.IsRemote"/>). The cars driven at a
+    /// device are those of the seats it drives (<see cref="OnlineGameController.DrivesSeat"/>): at the screen the seats
+    /// of the remotes, each on the controls that arrive from its phone (<see cref="OnlineGameController.ControlsOf"/>),
+    /// in a view of their own with a HUD, as a split screen race; the screen sends their poses, claims and results as a
+    /// device sends its companions', and tells every remote what its car is up to (<see cref="RemoteRacePanel"/>, the
+    /// remote's panel). A device in remote mode drives nothing: every car is a puppet there, its own included, under the
+    /// panel. A seat handed between the screen and the player's own device mid-race turns from a puppet into a car driven
+    /// here, from its last pose, with its stock reckoned from the room's log (<see cref="HandedOverStock"/>), or back
+    /// (<see cref="OnSeatDriverChanged"/>).
     /// </summary>
     public class DeathRaceOnlineController : OnlineGameController
     {
@@ -55,11 +66,16 @@ namespace Portfolio.DeathRace
         private readonly HashSet<byte> reported = new HashSet<byte>();
         private readonly List<Mine> touched = new List<Mine>();
         private readonly List<int> returned = new List<int>();
+        private readonly Dictionary<byte, HandedOverStock.Usage> usage = new Dictionary<byte, HandedOverStock.Usage>();
+        private readonly Dictionary<byte, Wiring> wiring = new Dictionary<byte, Wiring>();
         private int[] pickupGenerations = new int[0];
         private RaceSetup pendingSetup;
         private Race race;
         private float graceEnds = -1f;
         private float nextScoreReport;
+        private float nextStatus;
+        private Vector2 fedStick;
+        private uint fedHeld, fedPressed;
         private bool endAsked;
         private List<RoomLevelChoice> levelChoices;
         private string choicesLanguage;
@@ -83,10 +99,10 @@ namespace Portfolio.DeathRace
         /// <summary>When the time after the first finisher runs out (unscaled time), or -1.</summary>
         public float GraceEnds => graceEnds;
 
-        /// <summary>The cars of this device in the online race, by room seat.</summary>
+        /// <summary>The cars driven at this device in the online race (the seats of the remotes at the shared screen included), by room seat.</summary>
         public IReadOnlyDictionary<byte, Car> LocalCars => localCars;
 
-        /// <summary>The cars of the other devices, by room seat.</summary>
+        /// <summary>The cars driven elsewhere (puppets of their poses), by room seat.</summary>
         public IReadOnlyDictionary<byte, RemoteCar> RemoteCars => remotes;
 
         /// <summary>Claims answered by the server this race: pickups taken, mines set off (for the tours).</summary>
@@ -211,7 +227,11 @@ namespace Portfolio.DeathRace
         // The race of the room
         // ------------------------------------------------------------------------------------------------
 
-        /// <summary>The host started the race: it is built here from the room, then the base class takes charge and starts it.</summary>
+        /// <summary>
+        /// The host started the race: it is built here from the room, then the base class takes charge and starts it.
+        /// The cars driven here are those of the seats this device drives (the players at it; at the shared screen the
+        /// seats of the remotes, on the controls that arrive from their phones; none on a device in remote mode).
+        /// </summary>
         protected override void OnRoomStarted(RoomInfo room)
         {
             DeathRaceManager game = Game;
@@ -229,14 +249,15 @@ namespace Portfolio.DeathRace
             var members = new List<OnlineRaceSetup.RoomRacer>();
             foreach (RoomMemberInfo member in Server.Members)
             {
-                bool local = Server.IsLocal(member);
+                bool driven = DrivesSeat(member.Seat);
                 members.Add(new OnlineRaceSetup.RoomRacer
                 {
                     Seat = member.Seat,
                     Name = NameOf(member),
-                    Local = local,
-                    LocalIndex = local ? LocalIndexOf(member.Seat) : -1,
-                    Controls = local ? ControlsOf(member.Seat) : null
+                    Local = driven,
+                    Remote = driven && !IsLocalSeat(member.Seat),
+                    LocalIndex = driven ? DrivenIndexOf(member.Seat) : -1,
+                    Controls = driven ? ControlsOf(member.Seat) : null
                 });
             }
             pendingSetup = OnlineRaceSetup.Build(room.Level, room.Options, room.Seed, members,
@@ -279,7 +300,9 @@ namespace Portfolio.DeathRace
                 pickupGenerations = new int[race.Pickups.Pickups.Count];
             }
             nextScoreReport = Time.unscaledTime + ScoreInterval;
-            Note($"race started: track {setup.Track}, {setup.Laps} laps, {setup.Entrants.Count} cars, {localCars.Count} here");
+            nextStatus = 0f;
+            Note($"race started: track {setup.Track}, {setup.Laps} laps, {setup.Entrants.Count} cars, {localCars.Count} here"
+                + (IsScreen ? " (the shared screen)" : IsRemote ? " (a remote control)" : ""));
         }
 
         private void OnCarSpawned(Car car)
@@ -296,24 +319,221 @@ namespace Portfolio.DeathRace
                 remotes[seat] = RemoteCar.Attach(car, car.Driver as RemoteDriver ?? new RemoteDriver(), seat);
                 return;
             }
+            Wire(seat, car);
+        }
+
+        /// <summary>What this device hooked into a car it drives, to unhook when the car is handed to another device.</summary>
+        private sealed class Wiring
+        {
+            public Action<Mine> Mine;
+            public Action<Rocket> Rocket;
+            public Action<OilSlick> Oil;
+            public Action<EmpBlast> Emp;
+            public Action<MortarShell> Mortar;
+            public Action<Car, DamageInfo> Wrecked;
+            public Action<CarEvent> Happened;
+        }
+
+        /// <summary>The car at <paramref name="seat"/> is driven here: its weapons, its wreck and its finish go to the room.</summary>
+        private void Wire(byte seat, Car car)
+        {
             localCars[seat] = car;
-            if (car.Weapons != null)
+            var hooks = new Wiring
             {
-                car.Weapons.MineDropped += mine => OnLocalMine(seat, mine);
-                car.Weapons.RocketFired += rocket => OnLocalRocket(seat, rocket);
-                car.Weapons.OilDropped += slick => OnLocalOil(seat, slick);
-                car.Weapons.EmpFired += blast => OnLocalEmp(seat, blast);
-                car.Weapons.MortarFired += shell => OnLocalMortar(seat, shell);
-            }
-            car.Wrecked += (wrecked, cause) => OnLocalWrecked(seat, wrecked, cause);
-            car.Happened += happened =>
-            {
-                if (happened.Kind == CarEventKind.Finished)
+                Mine = mine => OnLocalMine(seat, mine),
+                Rocket = rocket => OnLocalRocket(seat, rocket),
+                Oil = slick => OnLocalOil(seat, slick),
+                Emp = blast => OnLocalEmp(seat, blast),
+                Mortar = shell => OnLocalMortar(seat, shell),
+                Wrecked = (wrecked, cause) => OnLocalWrecked(seat, wrecked, cause),
+                Happened = happened =>
                 {
-                    StartGrace();
-                    ReportResult(seat, car);
+                    if (happened.Kind == CarEventKind.Finished)
+                    {
+                        StartGrace();
+                        ReportResult(seat, car);
+                    }
                 }
             };
+            if (car.Weapons != null)
+            {
+                car.Weapons.MineDropped += hooks.Mine;
+                car.Weapons.RocketFired += hooks.Rocket;
+                car.Weapons.OilDropped += hooks.Oil;
+                car.Weapons.EmpFired += hooks.Emp;
+                car.Weapons.MortarFired += hooks.Mortar;
+            }
+            car.Wrecked += hooks.Wrecked;
+            car.Happened += hooks.Happened;
+            wiring[seat] = hooks;
+        }
+
+        /// <summary>The car at <paramref name="seat"/> is not driven here any more.</summary>
+        private void Unwire(byte seat, Car car)
+        {
+            localCars.Remove(seat);
+            if (!wiring.TryGetValue(seat, out Wiring hooks))
+            {
+                return;
+            }
+            wiring.Remove(seat);
+            if (car == null)
+            {
+                return;
+            }
+            if (car.Weapons != null)
+            {
+                car.Weapons.MineDropped -= hooks.Mine;
+                car.Weapons.RocketFired -= hooks.Rocket;
+                car.Weapons.OilDropped -= hooks.Oil;
+                car.Weapons.EmpFired -= hooks.Emp;
+                car.Weapons.MortarFired -= hooks.Mortar;
+            }
+            car.Wrecked -= hooks.Wrecked;
+            car.Happened -= hooks.Happened;
+        }
+
+        // ------------------------------------------------------------------------------------------------
+        // The shared screen and the remote controls
+        // ------------------------------------------------------------------------------------------------
+
+        /// <summary>
+        /// Mid-race, <paramref name="seat"/> is driven here from now on (a remote's seat at the shared screen, or the
+        /// player's own seat on their device after they left remote mode): its puppet becomes a car driven here, from its
+        /// last pose. Or no longer: the car driven here becomes a puppet of the poses its new device sends. The views
+        /// follow (a view and a HUD per car driven here).
+        /// </summary>
+        protected override void OnSeatDriverChanged(byte seat, bool drivenHere)
+        {
+            if (!RaceIsOn || !cars.TryGetValue(seat, out Car car) || car == null)
+            {
+                return;
+            }
+            if (drivenHere)
+            {
+                TakeOver(seat, car);
+            }
+            else
+            {
+                HandOff(seat, car);
+            }
+            Game.Director.RebuildViews();
+            Note($"seat {seat} is {(drivenHere ? "driven here now" : "driven elsewhere now")}: {localCars.Count} cars here, {remotes.Count} puppets");
+        }
+
+        /// <summary>
+        /// This device became a remote control or stopped being one. The race runs on either way: in remote mode every
+        /// car is a puppet under the panel (the seat's own among them, so a switch back starts from where it is), and the
+        /// seats driven here changed through <see cref="OnSeatDriverChanged"/>.
+        /// </summary>
+        protected override void OnPresentationChanged()
+        {
+            Note($"presentation: {(IsRemote ? "a remote control" : IsScreen ? "the shared screen" : "this device plays")}");
+        }
+
+        /// <summary>The remote panel: the race's status lines over the pad, with the special weapon's button (<see cref="RemoteRacePanel"/>).</summary>
+        protected override void BuildRemotePanel(RectTransform content, RemotePanelKit kit)
+        {
+            RemoteRacePanel.Build(kit, this);
+        }
+
+        /// <summary>The puppet at <paramref name="seat"/> is this device's to drive from now on.</summary>
+        private void TakeOver(byte seat, Car car)
+        {
+            if (localCars.ContainsKey(seat))
+            {
+                return;
+            }
+            remotes.TryGetValue(seat, out RemoteCar remote);
+            remotes.Remove(seat);
+            RaceEntrant entrant = car.Entrant;
+            PlayerControls controls = ControlsOf(seat);
+            entrant.Driver = DriverKind.Human;
+            entrant.Viewport = Mathf.Max(0, DrivenIndexOf(seat));
+            // Alone at the device the player keeps every keyboard layout (OnlineRaceSetup.Build).
+            entrant.Controls = IsLocalSeat(seat) && LocalSeats.Count < 2 ? null : controls;
+            car.Assign(entrant.Seat, PlayerControl.Local, entrant.Name);
+            if (remote != null)
+            {
+                remote.Detach();
+            }
+            else if (car.Body != null && car.Body.Rigidbody != null)
+            {
+                car.Body.Rigidbody.isKinematic = false;
+            }
+            if (!car.gameObject.activeSelf)
+            {
+                // A finished puppet had left the track; driven here it cruises on past the line.
+                car.gameObject.SetActive(true);
+            }
+            if (car.Health != null)
+            {
+                car.Health.Authoritative = true;
+            }
+            car.Driver = entrant.Controls is PlayerControls bound ? new HumanDriver(bound) : new HumanDriver();
+            if (car.Weapons != null)
+            {
+                HandedOverStock.Usage used = UsageOf(seat);
+                used.RoundsFired = car.Weapons.RoundsFired;
+                used.NitroBurned = car.Weapons.NitroUsed;
+                HandedOverStock.Stock carried = HandedOverStock.Reckon(entrant.Loadout, car.Weapons.AmmoCapacity, used);
+                car.Weapons.Restock(carried);
+                Note($"seat {seat} taken over with {carried.Ammo} rounds, {carried.Mines} mines, {carried.Rockets} rockets, {carried.Nitro} nitro, "
+                    + $"{carried.Oil}/{carried.Emp}/{carried.Mortar} specials");
+            }
+            Wire(seat, car);
+            // A car that was done as a puppet was reported by the device that drove it then.
+            if (car.HasFinished || car.IsWrecked)
+            {
+                reported.Add(seat);
+            }
+        }
+
+        /// <summary>The car at <paramref name="seat"/>, driven here until now, is another device's from now on: a puppet here.</summary>
+        private void HandOff(byte seat, Car car)
+        {
+            if (!localCars.ContainsKey(seat))
+            {
+                return;
+            }
+            Unwire(seat, car);
+            RaceEntrant entrant = car.Entrant;
+            entrant.Driver = DriverKind.Remote;
+            entrant.Viewport = -1;
+            entrant.Controls = null;
+            car.Assign(entrant.Seat, PlayerControl.Remote, entrant.Name);
+            var driver = new RemoteDriver();
+            car.Driver = driver;
+            remotes[seat] = RemoteCar.Attach(car, driver, seat);
+            if (Server.MemberAt(seat) == null && car.gameObject.activeSelf)
+            {
+                // Nobody drives it any more: its player left the room.
+                car.gameObject.SetActive(false);
+                Note($"seat {seat} left the race");
+            }
+        }
+
+        /// <summary>What <paramref name="seat"/> used and picked up since the start, as the room's log and claims said.</summary>
+        private HandedOverStock.Usage UsageOf(byte seat)
+        {
+            return usage.TryGetValue(seat, out HandedOverStock.Usage used) ? used : default;
+        }
+
+        /// <summary>The shared screen tells every remote what its car is up to, a few times a second (the base sends what changed).</summary>
+        private void PublishStatuses()
+        {
+            if (!IsScreen || Time.unscaledTime < nextStatus)
+            {
+                return;
+            }
+            nextStatus = Time.unscaledTime + StatusInterval;
+            foreach (KeyValuePair<byte, Car> local in localCars)
+            {
+                if (local.Value != null && Server.IsRemoteSeat(local.Key))
+                {
+                    PublishStatus(local.Key, RemoteRacePanel.Compose(local.Value, race));
+                }
+            }
         }
 
         /// <summary>The race of the room is not this device's any more (left, aborted, a new one): everything of it goes.</summary>
@@ -324,6 +544,8 @@ namespace Portfolio.DeathRace
             cars.Clear();
             localCars.Clear();
             remotes.Clear();
+            wiring.Clear();
+            usage.Clear();
             mines.Clear();
             mineItems.Clear();
             pendingPickups.Clear();
@@ -332,14 +554,34 @@ namespace Portfolio.DeathRace
             arrivedClaims.Clear();
             pickupGenerations = new int[0];
             graceEnds = -1f;
+            nextStatus = 0f;
             endAsked = false;
             ClaimsSeen = 0;
         }
 
         private bool RaceIsOn => race != null && Game != null && Game.Director != null && Game.Director.Current == race && InCharge;
 
+        /// <summary>
+        /// A piece of the remote's pad state for the next packet (the special weapon's button, a tour's pilot): the sticks
+        /// add up, the bits gather, and the lot goes to the base with the frame's own pad
+        /// (<see cref="OnlineGameController.SetPadState"/>) once a frame, whatever order the pieces came in.
+        /// </summary>
+        public void FeedPad(Vector2 stick, uint held, uint pressed)
+        {
+            fedStick += stick;
+            fedHeld |= held;
+            fedPressed |= pressed;
+        }
+
         protected override void Update()
         {
+            if (IsRemote)
+            {
+                SetPadState(fedStick, Vector2.zero, fedHeld, fedPressed);
+            }
+            fedStick = Vector2.zero;
+            fedHeld = 0;
+            fedPressed = 0;
             base.Update();
             if (race != null && !RaceIsOn)
             {
@@ -352,6 +594,7 @@ namespace Portfolio.DeathRace
             }
             SendPoses();
             ReportScores();
+            PublishStatuses();
             TakeReturnedPickups();
             if (graceEnds >= 0f && Time.unscaledTime >= graceEnds)
             {
@@ -706,6 +949,16 @@ namespace Portfolio.DeathRace
             {
                 return;
             }
+            if (car != null)
+            {
+                // What the pickup gives the seat, for the stock of a car handed to this device later.
+                HandedOverStock.Usage used = UsageOf(claim.Seat);
+                PickupEffect effect = PickupEffect.Of(pickup.Kind, race.Setup.CashPerPickup, car.Health != null ? car.Health.Max : car.Stats.MaxHealth,
+                    car.Weapons != null ? car.Weapons.AmmoCapacity : car.Stats.AmmoCapacity);
+                used.AmmoPicked += effect.Ammo;
+                used.NitroPicked += effect.Nitro;
+                usage[claim.Seat] = used;
+            }
             if (!pickup.Available)
             {
                 // Not back here yet (its time to return runs from when this device heard of the last claim): when it is, it goes.
@@ -727,13 +980,21 @@ namespace Portfolio.DeathRace
         // ------------------------------------------------------------------------------------------------
 
         /// <summary>
-        /// The mines, rockets, special weapons and wrecks of the other devices' cars (this device's own were done when they
-        /// happened). A slick, a pulse or a shell of another device is not this device's to judge for that car, so it is
-        /// laid with <c>Authoritative</c> off: it hurts and hinders only the cars driven here.
+        /// The mines, rockets, special weapons and wrecks of the cars driven elsewhere (those of the cars driven here were
+        /// done when they happened). A slick, a pulse or a shell of another device is not this device's to judge for that
+        /// car, so it is laid with <c>Authoritative</c> off: it hurts and hinders only the cars driven here. Every action
+        /// counts towards what its seat used, for the stock of a car handed to this device later.
         /// </summary>
         protected override void OnActionReceived(RoomActionInfo action)
         {
-            if (!RaceIsOn || IsLocalSeat(action.Seat) || !cars.TryGetValue(action.Seat, out Car owner))
+            if (!RaceIsOn)
+            {
+                return;
+            }
+            HandedOverStock.Usage used = UsageOf(action.Seat);
+            HandedOverStock.Count(ref used, action.Kind);
+            usage[action.Seat] = used;
+            if (localCars.ContainsKey(action.Seat) || !cars.TryGetValue(action.Seat, out Car owner))
             {
                 return;
             }
@@ -790,6 +1051,10 @@ namespace Portfolio.DeathRace
             }
         }
 
+        /// <summary>
+        /// A pose of a car driven elsewhere, this device's own seat included while the shared screen drives it (the base
+        /// client keeps those while the player is a remote): its puppet follows.
+        /// </summary>
         protected override void OnPoseChanged(RoomPoseInfo pose)
         {
             if (!RaceIsOn || !seats.TryGetValue(pose.Identity, out byte seat) || !remotes.TryGetValue(seat, out RemoteCar remote) || remote == null)

@@ -17,12 +17,37 @@ MonoBehaviour:
   description: 'Match cute critters across three worlds and 18 levels: memorize, beat the clock, dodge bombs, play wild cards, crack ice and follow the parade.'
   icon: {fileID: 21300000, guid: 47ace3cc61c3e814794a5dc9c09000ee, type: 3}
   sortOrder: 3
-  scenePath: Assets/Scenes/MemoryCards.unity
+  scenePath: Packages/com.skinnerboxes.memorycards/Scenes/MemoryCards.unity
   extraScenePaths: []
-  theme: {fileID: 11400000, guid: 4412b7c2b92ef514b909871f9f4fb453, type: 2}
-  themes:
-  - {fileID: 11400000, guid: 4412b7c2b92ef514b909871f9f4fb453, type: 2}
-  - {fileID: 11400000, guid: a5174546cdcb57e4184ea7fcbb7f9d77, type: 2}
+  themeReference:
+    m_AssetGUID: 4412b7c2b92ef514b909871f9f4fb453
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  themeReferences:
+  - m_AssetGUID: 4412b7c2b92ef514b909871f9f4fb453
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  - m_AssetGUID: a5174546cdcb57e4184ea7fcbb7f9d77
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  themeCards:
+  - guid: 4412b7c2b92ef514b909871f9f4fb453
+    assetName: Classic
+    displayName: Classic
+    screenshot: {fileID: 21300000, guid: 07f243d316ba3c94cb5c35a63286de13, type: 3}
+    preview: {fileID: 21300000, guid: 3d7eb40c4f4a82e40bd525ec217cce7d, type: 3}
+  - guid: a5174546cdcb57e4184ea7fcbb7f9d77
+    assetName: AfterDark
+    displayName: After Dark
+    screenshot: {fileID: 21300000, guid: b39da799c80360248a3b8a66219dc4f0, type: 3}
+    preview: {fileID: 21300000, guid: 75b7d7e949ab103419ffc842b9a1a588, type: 3}
+  builtIn: 0
   database: skinnerboxes-memorycards
   scene: {fileID: 102900000, guid: bb245004f00683044a3d7ae63e225d81, type: 3}
   extraScenes: []

@@ -17,12 +17,37 @@ MonoBehaviour:
   description: 'Armed cars, twelve deadly tracks and three leagues of twenty drivers: race, shoot and ram your way to the top, and spend the prize money on a better car.'
   icon: {fileID: 21300000, guid: e6db3b0f9ad02694cb402c0a813ad25e, type: 3}
   sortOrder: 7
-  scenePath: Assets/Scenes/DeathRace.unity
+  scenePath: Packages/com.skinnerboxes.deathrace/Scenes/DeathRace.unity
   extraScenePaths: []
-  theme: {fileID: 11400000, guid: 9f2ae6a4bbc5da94f97caa5717efca9e, type: 2}
-  themes:
-  - {fileID: 11400000, guid: 9f2ae6a4bbc5da94f97caa5717efca9e, type: 2}
-  - {fileID: 11400000, guid: 88aa30e6bd92cfe4eba7bd43cc2f43a8, type: 2}
+  themeReference:
+    m_AssetGUID: 9f2ae6a4bbc5da94f97caa5717efca9e
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  themeReferences:
+  - m_AssetGUID: 9f2ae6a4bbc5da94f97caa5717efca9e
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  - m_AssetGUID: 88aa30e6bd92cfe4eba7bd43cc2f43a8
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  themeCards:
+  - guid: 9f2ae6a4bbc5da94f97caa5717efca9e
+    assetName: Scorched
+    displayName: Scorched
+    screenshot: {fileID: 21300000, guid: 079c216fb76bfc549a6562905b0dd7ff, type: 3}
+    preview: {fileID: 21300000, guid: a60ce36ef01b37842ad8def43311445e, type: 3}
+  - guid: 88aa30e6bd92cfe4eba7bd43cc2f43a8
+    assetName: Nightfall
+    displayName: Nightfall
+    screenshot: {fileID: 21300000, guid: 0ab5185e5faab494bbdca7ccd4dead75, type: 3}
+    preview: {fileID: 21300000, guid: 0f922927096e0b94c90a956df555be32, type: 3}
+  builtIn: 0
   database: skinnerboxes-deathrace
   scene: {fileID: 102900000, guid: 1bfe8856d94886f46a81c2676a7919d4, type: 3}
   extraScenes: []
