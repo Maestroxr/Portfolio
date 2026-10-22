@@ -1,3 +1,4 @@
+using Gamebox.Online;
 using UnityEngine;
 
 namespace Portfolio.DeathRace
@@ -5,11 +6,13 @@ namespace Portfolio.DeathRace
     /// <summary>
     /// What a car carries when this device takes it over mid-race: a seat handed from the room's shared screen to the
     /// player's own device, or back (<see cref="DeathRaceOnlineController"/>). Its real stock was counted by the device
-    /// that drove it until now, so it is reckoned here from the start loadout and what the room saw since the start
-    /// (<see cref="Usage"/>): the mines, rockets and special weapons in the room's action log, the ammo and nitro
-    /// pickups claimed for the seat, and the rounds and nitro charges its puppet spent here, which stand for the real
-    /// ones (the puppet's gun fires as long as the pose's bit says, and lights a charge whenever the bit does). Plain
-    /// arithmetic, for the tests.
+    /// that drove it until now. A player's device takes it from the status the screen published for the seat last
+    /// (<see cref="FromStatus"/>: the screen tells every remote its whole stock a few times a second). Without one, and
+    /// on the screen when a car comes back to it, the stock is reckoned (<see cref="Reckon"/>) from the start loadout
+    /// and what the room saw since the start (<see cref="Usage"/>): the mines, rockets and special weapons in the room's
+    /// action log, the ammo and nitro pickups claimed for the seat, and the rounds and nitro charges its puppet spent
+    /// here, which stand for the real ones (the puppet's gun fires as long as the pose's bit says, and lights a charge
+    /// whenever the bit does). Plain arithmetic, for the tests.
     /// </summary>
     public static class HandedOverStock
     {
@@ -57,8 +60,36 @@ namespace Portfolio.DeathRace
         }
 
         /// <summary>
+        /// The stock as the shared screen last published it for the seat (<see cref="RemoteRacePanel.Compose"/>, at most a
+        /// quarter second behind the car): what a player's device starts with when it takes its own car over. False
+        /// without a status, or one without the stock (then the stock is reckoned, <see cref="Reckon"/>).
+        /// </summary>
+        public static bool FromStatus(string status, out Stock stock)
+        {
+            stock = default;
+            if (string.IsNullOrEmpty(status) || RoomOptions.Value(status, RemoteRacePanel.AmmoKey) == null
+                || RoomOptions.Value(status, RemoteRacePanel.MinesKey) == null || RoomOptions.Value(status, RemoteRacePanel.RocketsKey) == null
+                || RoomOptions.Value(status, RemoteRacePanel.NitroKey) == null)
+            {
+                return false;
+            }
+            stock = new Stock
+            {
+                Ammo = Mathf.Max(0, RoomOptions.Number(status, RemoteRacePanel.AmmoKey, 0)),
+                Mines = Mathf.Max(0, RoomOptions.Number(status, RemoteRacePanel.MinesKey, 0)),
+                Rockets = Mathf.Max(0, RoomOptions.Number(status, RemoteRacePanel.RocketsKey, 0)),
+                Nitro = Mathf.Max(0, RoomOptions.Number(status, RemoteRacePanel.NitroKey, 0)),
+                Oil = Mathf.Max(0, RoomOptions.Number(status, RemoteRacePanel.OilKey, 0)),
+                Emp = Mathf.Max(0, RoomOptions.Number(status, RemoteRacePanel.EmpKey, 0)),
+                Mortar = Mathf.Max(0, RoomOptions.Number(status, RemoteRacePanel.MortarKey, 0))
+            };
+            return true;
+        }
+
+        /// <summary>
         /// The stock of a car that started with <paramref name="loadout"/> and a gun of <paramref name="ammoCapacity"/>
-        /// rounds after <paramref name="usage"/>: nothing below zero, the rounds up to the capacity.
+        /// rounds after <paramref name="usage"/>: nothing below zero, the rounds up to the capacity. The fallback of
+        /// <see cref="FromStatus"/>, and what the shared screen uses when a car comes back to it.
         /// </summary>
         public static Stock Reckon(CarLoadout loadout, int ammoCapacity, Usage usage)
         {

@@ -267,6 +267,8 @@ namespace Portfolio.Asteroids
             }
             ForgetRemoteLoadouts();
             ownSeatFlying = true;
+            lastRemoteStatus = null;
+            lastRemoteLoadout = null;
             bool simulates = mission.Simulator == Server.Identity.Value;
             IReadOnlyList<RoomMemberInfo> members = Server.Members;
             int slot = 0;
@@ -416,6 +418,7 @@ namespace Portfolio.Asteroids
             }
             SendLocalPoses(manager);
             PublishStatuses(manager);
+            RememberRemoteStatus();
             float now = Time.unscaledTime;
             if (now >= nextStatus)
             {

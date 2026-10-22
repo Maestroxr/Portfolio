@@ -36,10 +36,6 @@ namespace Portfolio.BoardGames
         /// <summary>The room option of the backgammon doubling cube: "1" plays with it (the default), "0" without.</summary>
         public const string CubeOption = "cube";
 
-        /// <summary>The frame's header (with its gap) and footer, for the HUD's layout before the frame is built to be asked.</summary>
-        private const float FrameTop = 160f;
-        private const float FrameBottom = 110f;
-
         private RoomOptionSpec[] optionSpecs;
 
         /// <summary>The table seat of the player at this device themselves in the game that started last, or -1.</summary>
@@ -255,12 +251,9 @@ namespace Portfolio.BoardGames
                 return;
             }
             bool remote = ShowsRemotePanel;
-            RectTransform content = RemoteUI != null ? RemoteUI.Content : null;
-            float top = content != null ? -content.offsetMax.y : FrameTop;
-            float bottom = content != null ? content.offsetMin.y : FrameBottom;
             if (ui.IsRemoteLayout != remote)
             {
-                ui.SetRemoteLayout(remote, top, bottom);
+                ui.SetRemoteLayout(remote, RemoteControlUI.HeaderHeight, RemoteControlUI.FooterHeight);
             }
         }
 

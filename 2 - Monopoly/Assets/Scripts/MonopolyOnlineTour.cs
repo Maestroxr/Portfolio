@@ -63,6 +63,7 @@ namespace Portfolio.Monopoly
         private bool playingSave;
         private int panelPresses;
         private int panelGaps;
+        private bool builderShot;
         private string switching = "";
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -344,7 +345,16 @@ namespace Portfolio.Monopoly
             yield return WaitFor(() => Server.CurrentRoom != null && Server.CurrentRoom.Phase == RoomPhase.Finished, 60f, "the room to finish");
             Note("places: " + string.Join(", ", Server.Members.Select(member => $"{Server.NameOf(member.Identity)} {member.Place}. with {member.Score}")));
 
-            manager.ActiveController.TransitionState(BaseGameState.Initialization);
+            if (manager.IsScreen)
+            {
+                // Nobody presses anything on a shared screen: the base takes it back to the room by itself after a while.
+                yield return WaitFor(() => !Over, OnlineGameController.ScreenResultsSeconds + 10f, "the screen to go back to the room by itself");
+                Note($"the screen {(Over ? "stayed on the results" : "went back to the room by itself")}");
+            }
+            else
+            {
+                manager.ActiveController.TransitionState(BaseGameState.Initialization);
+            }
             yield return new WaitForSeconds(1.5f);
             yield return Shot(playingSave ? "14_back_in_the_room" : "09_back_in_the_room");
             Note($"back in the room: session {manager.InSession}, match {manager.Match != null}, state {manager.State}, lobby {manager.Online.LobbyUI.IsOpen}");
@@ -532,6 +542,11 @@ namespace Portfolio.Monopoly
                         break;
                     }
                     case MatchPhase.EndTurn:
+                        if (OnPanel && WantsToGive(seat, out PlayerState giftee))
+                        {
+                            yield return ProposeOnPanel(seat, giftee);
+                            break;
+                        }
                         if (!EndTurnExtras(seat, commands))
                         {
                             manager.MonopolyUI.Manage.Close();
@@ -539,6 +554,61 @@ namespace Portfolio.Monopoly
                         }
                         break;
                 }
+            }
+        }
+
+        /// <summary>Whether the seat still owes the table its one small gift (from round two on, with money to spare), and to whom.</summary>
+        private bool WantsToGive(int seat, out PlayerState other)
+        {
+            other = Match.players.Where(p => !p.bot && !p.bankrupt && p.index != seat).OrderByDescending(p => p.index).FirstOrDefault();
+            return !proposed && Match.round >= 2 && other != null && Match.players[seat].cash > 300;
+        }
+
+        /// <summary>
+        /// A remote puts its gift together in the trade builder of the panel, as a person would: Trade, the other player,
+        /// three presses of +10, a picture of it, Propose. The other side answers from their own panel or window.
+        /// </summary>
+        private IEnumerator ProposeOnPanel(int seat, PlayerState other)
+        {
+            proposed = true;
+            MonopolyRemotePanel panel = Panel;
+            PanelChoice open = panel.Find(PanelChoiceKind.Trade);
+            if (open == null || !panel.Press(open))
+            {
+                panelGaps++;
+                Note($"GAP: the panel offers no trade builder for seat {seat} in {Match.phase}: choices {string.Join(", ", panel.Choices)}");
+                yield break;
+            }
+            panelPresses++;
+            panel.PickPartner(other.index);
+            for (int i = 0; i < 3; i++)
+            {
+                panel.AddCash(10, true);
+            }
+            yield return null;
+            if (panel.Trade == null)
+            {
+                panelGaps++;
+                Note($"GAP: the trade builder closed before the gift was proposed (phase {Match.phase})");
+                yield break;
+            }
+            Note($"seat {seat} builds a trade on the panel: {other.name} (seat {other.index}) gets {MonopolyStyle.Money(panel.Trade.giveCash)}; " +
+                 $"the rules say: {SeatPanelModel.TradeStatus(Match, panel.Trade)}");
+            if (!builderShot)
+            {
+                builderShot = true;
+                yield return Shot("06f_trade_builder");
+            }
+            bool sent = panel.Trade != null && panel.ProposeTrade();
+            if (sent)
+            {
+                panelPresses++;
+                Note($"seat {seat} proposes the trade from the panel");
+            }
+            else
+            {
+                panelGaps++;
+                Note($"GAP: the panel did not propose the trade (builder open {panel.Trade != null}, phase {Match.phase})");
             }
         }
 
@@ -561,8 +631,8 @@ namespace Portfolio.Monopoly
             {
                 proposed = true;
                 var offer = new TradeOffer { from = seat, to = other.index, giveCash = 25 };
-                // The remote panel proposes no trades (the trade window is the device's): the offer is sent as the device would.
-                Note($"seat {seat} offers {other.name} (seat {other.index}{(manager.IsLocalSeat(other.index) ? ", at this device" : "")}) a gift of $25{(OnPanel ? " (from the device: the panel has no trade window)" : "")}");
+                // A remote puts its gift together in the panel's trade builder (ProposeOnPanel); here the offer goes as the trade window sends it.
+                Note($"seat {seat} offers {other.name} (seat {other.index}{(manager.IsLocalSeat(other.index) ? ", at this device" : "")}) a gift of $25");
                 commands.ProposeTrade(offer);
                 return true;
             }

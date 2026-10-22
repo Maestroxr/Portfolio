@@ -254,7 +254,7 @@ namespace Portfolio.Heroes
                 Battle.Begin(start, battlefield, Game);
                 ui.BeginBattle(start);
                 ui.ShowAdventureHud(false);
-                battlefield.SetBottom(ui.Bar.CoveredBottom());
+                battlefield.SetViewport(ui.Bar.CoveredBottom(), ui.Bar.CoveredTop());
                 battlefield.Intro();
                 yield return ui.Bar.Fade(0f, 0.7f);
             }

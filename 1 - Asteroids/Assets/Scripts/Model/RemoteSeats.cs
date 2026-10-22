@@ -80,6 +80,30 @@ namespace Portfolio.Asteroids
             return RoomOptions.Number(status, Flying, 1) != 0;
         }
 
+        /// <summary>
+        /// A won strike mission ends on a remote control's device: its saved <paramref name="pilot"/> takes over the kit
+        /// the shared screen flew the seat with (<paramref name="flown"/>, the loadout of the last status, through the
+        /// mission's <paramref name="working"/> copy) and the money <paramref name="earned"/>, as the device's own ship
+        /// would land; the pilot's own difficulty stays (the room's was for that room only). Without a known kit only
+        /// the money is banked, as for a party's wingman.
+        /// </summary>
+        public static void BankFlownSeat(StrikeLoadout pilot, StrikeLoadout working, StrikeLoadout flown, int earned)
+        {
+            if (pilot == null)
+            {
+                return;
+            }
+            StrikeDifficulty own = pilot.Difficulty;
+            bool kit = flown != null && working != null;
+            if (kit)
+            {
+                working.CopyFrom(flown);
+                working.Difficulty = own;
+            }
+            pilot.CommitMission(kit ? working : null, earned);
+            pilot.Difficulty = own;
+        }
+
         private static string Percent(float fraction)
         {
             return Mathf.RoundToInt(Mathf.Clamp01(fraction) * 100f).ToString(CultureInfo.InvariantCulture) + "%";

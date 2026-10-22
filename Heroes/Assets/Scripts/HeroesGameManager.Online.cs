@@ -376,6 +376,11 @@ namespace Portfolio.Heroes
             {
                 return;
             }
+            // A battlefield on the screen is framed again: between the frame's header and footer, or the whole screen.
+            if (battlefield != null)
+            {
+                battlefield.SetViewport(ui.Bar.CoveredBottom(), ui.Bar.CoveredTop());
+            }
             if (!remote && localSeat >= 0 && Game.State.Player(localSeat) != null)
             {
                 ShowViewOf(localSeat);

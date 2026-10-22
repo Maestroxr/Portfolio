@@ -390,19 +390,32 @@ namespace Portfolio.Heroes.UI
             Heroes();
         }
 
-        /// <summary>How much of the height of the screen the bar covers, from the bottom (0 to 1).</summary>
+        /// <summary>How much of the height of the screen the bar covers, from the bottom (0 to 1), the footer of a remote frame under it included.</summary>
         public float CoveredBottom()
+        {
+            return Covered(PanelHeight + BandHeight + (manager.HeroesUI != null ? manager.HeroesUI.BattleBottomInset : 0f));
+        }
+
+        /// <summary>How much of the height of the screen is covered from the top (0 to 1): the header of a remote frame and the panel's battle commands, else nothing.</summary>
+        public float CoveredTop()
+        {
+            return Covered(manager.HeroesUI != null ? manager.HeroesUI.BattleTopInset : 0f);
+        }
+
+        /// <summary>A height in canvas units as a part of the height of the screen (0 to 1).</summary>
+        private float Covered(float units)
         {
             Canvas canvas = GetComponentInParent<Canvas>();
             float scale = canvas != null ? canvas.rootCanvas.scaleFactor : 1f;
-            return Mathf.Clamp01((PanelHeight + BandHeight) * scale / Mathf.Max(1f, Screen.height));
+            return Mathf.Clamp01(units * scale / Mathf.Max(1f, Screen.height));
         }
 
-        /// <summary>The part of the screen the field is framed in, above the bar, in viewport units.</summary>
+        /// <summary>The part of the screen the field is framed in, above the bar and under whatever covers the top, in viewport units.</summary>
         public Rect FreeArea()
         {
             float bottom = CoveredBottom();
-            return new Rect(0.02f, bottom + 0.02f, 0.96f, 0.96f - bottom - 0.02f);
+            float top = CoveredTop();
+            return new Rect(0.02f, bottom + 0.02f, 0.96f, Mathf.Max(0.2f, 0.98f - top - bottom - 0.02f));
         }
 
         /// <summary>How black the screen is, from the fade into and out of a battlefield (0: not at all).</summary>

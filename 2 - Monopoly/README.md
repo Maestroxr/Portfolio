@@ -176,11 +176,15 @@ with the buildings and the build, sell, mortgage and lift buttons of the propert
 allowed, and the decision the match waits for from them as big buttons (roll; pay the fine or use the card in jail;
 the bus rides; the best pick or GO on triples; buy or auction; three bids and pass; go bankrupt; end the turn; accept
 or decline an offer), each going through the same `IMonopolyCommands` seam the board uses (`SeatPanelModel` works out
-what to show, `MonopolyRemotePanel` draws it); once the match is over the panel lists the standings. Trades are
-proposed from the trade window of the device: *Play on this device* in the panel's footer brings the board back at any
+what to show, `MonopolyRemotePanel` draws it); once the match is over the panel lists the standings. *Trade*
+(whenever the player may manage) turns the list into a trade builder: the other player, the properties to tick each
+way, cash each way in steps of 10 and 100, a Get Out of Jail Free card each way, and the rules' verdict; *Propose*
+sends exactly the offer the device's trade window would (`TradeDraft.ToOffer`), and the other side answers it from
+their own panel or window. *Play on this device* in the panel's footer brings the board back at any
 time, with any pending decision shown there, and *Use as a remote control* in the match menu goes back. The tour roles
 `hostscreen` (the room as its screen, waiting for `-monopoly-players` guests, two by default), `joinremote` (plays
-every decision through the panel's buttons and writes down a GAP when the panel lacks one) and `joinown` (joins such a
+every decision through the panel's buttons, proposes one gift through the trade builder from round 2, and writes
+down a GAP when the panel lacks one) and `joinown` (joins such a
 room but plays on its own device) play it; `-monopoly-switch N` makes a remote switch to its own device after N
 seconds and back after twice as long.
 

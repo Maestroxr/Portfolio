@@ -115,7 +115,8 @@ namespace Portfolio.DeathRace
 
             yield return Race();
             // The guest leaves first, so the host still sees the room lose a member.
-            yield return new WaitForSeconds(Hosting ? 3f : 0.5f);
+            // A player of a screen room stays until the screen is back in the room too (its results take a while to go).
+            yield return new WaitForSeconds(Hosting ? 3f : Server.InRoom && Server.HasScreen ? OnlineGameController.ScreenResultsSeconds + 3f : 0.5f);
             Server.LeaveRoom();
             yield return new WaitForSeconds(1f);
             Note("done");
@@ -173,7 +174,7 @@ namespace Portfolio.DeathRace
                     // The player takes the race onto their own device: the seat is handed over from the screen.
                     switchAt = -1f;
                     switchBackAt = raceTime + Mathf.Max(5f, NumberArgument(SwitchBackArgument, 20f));
-                    Note($"switching to this device at t {raceTime:0.0} ({remotePackets} pad packets sent)");
+                    Note($"switching to this device at t {raceTime:0.0} ({remotePackets} pad packets sent); status before the switch \"{online.RemoteStatus}\"");
                     online.SetRemoteMode(false, error => Note("play on this device: " + (error ?? "ok")));
                     yield return WaitFor(() => !online.IsRemote && online.LocalCars.ContainsKey(Server.LocalSeat), 15f, "the seat on this device");
                     yield return new WaitForSeconds(1.5f);
@@ -231,7 +232,15 @@ namespace Portfolio.DeathRace
             yield return new WaitForSeconds(2.5f);
             yield return Shot("09_standings");
             Report();
-            online.BackToRoom();
+            if (AsScreen)
+            {
+                // Nobody presses anything on a shared screen: it goes back to the room by itself after a while.
+                yield return WaitFor(() => !manager.InSession, OnlineGameController.ScreenResultsSeconds + 10f, "the screen's own way back to the room");
+            }
+            else
+            {
+                online.BackToRoom();
+            }
             yield return new WaitForSeconds(1.5f);
             yield return Shot("10_back_in_the_room");
             Note($"racing: {manager.IsRacing}; in a session: {manager.InSession}; in a room: {Server.InRoom}");

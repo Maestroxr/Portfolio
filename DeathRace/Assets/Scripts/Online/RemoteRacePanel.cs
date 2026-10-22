@@ -29,6 +29,9 @@ namespace Portfolio.DeathRace
         public const string MinesKey = "mines";
         public const string RocketsKey = "rockets";
         public const string NitroKey = "nitro";
+        public const string OilKey = "oil";
+        public const string EmpKey = "emp";
+        public const string MortarKey = "mortar";
         public const string SpecialKey = "special";
         public const string KillsKey = "kills";
         public const string CashKey = "cash";
@@ -68,16 +71,23 @@ namespace Portfolio.DeathRace
                 racer != null ? Mathf.Clamp(racer.Lap, 1, laps) : 1, laps,
                 car != null && car.Health != null && !car.IsWrecked ? Mathf.RoundToInt(car.Health.Health01 * 100f) : 0,
                 weapons != null ? weapons.Ammo : 0, weapons != null ? weapons.Mines : 0, weapons != null ? weapons.Rockets : 0,
-                weapons != null ? weapons.NitroCharges : 0, special,
+                weapons != null ? weapons.NitroCharges : 0,
+                weapons != null ? weapons.SpecialsLeft(SpecialKind.Oil) : 0, weapons != null ? weapons.SpecialsLeft(SpecialKind.Emp) : 0,
+                weapons != null ? weapons.SpecialsLeft(SpecialKind.Mortar) : 0, special,
                 racer != null ? racer.Kills : 0, racer != null ? racer.CashPicked : 0, state);
         }
 
-        /// <summary>A status from its numbers (<paramref name="special"/> is the English name of the special armed, "" for none).</summary>
-        public static string Compose(int place, int cars, int lap, int laps, int hull, int ammo, int mines, int rockets, int nitro, string special,
-            int kills, int cash, string state)
+        /// <summary>
+        /// A status from its numbers: the whole stock (the rounds, mines, rockets, nitro charges and each special weapon,
+        /// so a device that takes the car over mid-race starts with it, <see cref="HandedOverStock.FromStatus"/>) and
+        /// <paramref name="special"/>, the English name of the special armed ("" for none).
+        /// </summary>
+        public static string Compose(int place, int cars, int lap, int laps, int hull, int ammo, int mines, int rockets, int nitro, int oil, int emp,
+            int mortar, string special, int kills, int cash, string state)
         {
             return RoomOptions.Write(PlaceKey, place, CarsKey, cars, LapKey, lap, LapsKey, laps, HullKey, hull, AmmoKey, ammo, MinesKey, mines,
-                RocketsKey, rockets, NitroKey, nitro, SpecialKey, special ?? "", KillsKey, kills, CashKey, cash, StateKey, state ?? Racing);
+                RocketsKey, rockets, NitroKey, nitro, OilKey, oil, EmpKey, emp, MortarKey, mortar, SpecialKey, special ?? "", KillsKey, kills,
+                CashKey, cash, StateKey, state ?? Racing);
         }
 
         /// <summary>

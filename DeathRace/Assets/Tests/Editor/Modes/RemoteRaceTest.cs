@@ -56,7 +56,27 @@ namespace Portfolio.DeathRace.Tests
         }
 
         [Test]
-        public void AHandedOverCarCarriesWhatTheLogLeftIt()
+        public void TheStatusSeedsATakenOverCar()
+        {
+            string status = RemoteRacePanel.Compose(2, 4, 2, 3, 78, 112, 1, 2, 3, 1, 0, 1, Specials.Of(SpecialKind.Oil).Name, 1, 150, RemoteRacePanel.Racing);
+            Assert.IsTrue(HandedOverStock.FromStatus(status, out HandedOverStock.Stock stock));
+            Assert.AreEqual(112, stock.Ammo);
+            Assert.AreEqual(1, stock.Mines);
+            Assert.AreEqual(2, stock.Rockets);
+            Assert.AreEqual(3, stock.Nitro);
+            Assert.AreEqual(1, stock.Oil);
+            Assert.AreEqual(0, stock.Emp);
+            Assert.AreEqual(1, stock.Mortar);
+            Assert.IsFalse(HandedOverStock.FromStatus(null, out _), "no status: the stock is reckoned instead");
+            Assert.IsFalse(HandedOverStock.FromStatus("", out _));
+            Assert.IsFalse(HandedOverStock.FromStatus("place=1;cars=2", out _), "a status without the stock does not seed it");
+            Assert.IsTrue(HandedOverStock.FromStatus("ammo=5;mines=0;rockets=0;nitro=0", out stock), "the specials may be missing");
+            Assert.AreEqual(5, stock.Ammo);
+            Assert.AreEqual(0, stock.Oil + stock.Emp + stock.Mortar);
+        }
+
+        [Test]
+        public void WithoutAStatusAHandedOverCarCarriesWhatTheLogLeftIt()
         {
             CarLoadout loadout = DeathRaceLocalRules.Loadout(CarModel.Viper);
             var usage = new HandedOverStock.Usage();
@@ -93,7 +113,7 @@ namespace Portfolio.DeathRace.Tests
         [Test]
         public void TheStatusCarriesTheRaceOfTheSeat()
         {
-            string status = RemoteRacePanel.Compose(2, 4, 2, 3, 78, 112, 1, 2, 3, Specials.Of(SpecialKind.Emp).Name, 1, 150, RemoteRacePanel.Racing);
+            string status = RemoteRacePanel.Compose(2, 4, 2, 3, 78, 112, 1, 2, 3, 0, 1, 1, Specials.Of(SpecialKind.Emp).Name, 1, 150, RemoteRacePanel.Racing);
             Assert.AreEqual(2, RoomOptions.Number(status, RemoteRacePanel.PlaceKey, 0));
             Assert.AreEqual(4, RoomOptions.Number(status, RemoteRacePanel.CarsKey, 0));
             Assert.AreEqual(2, RoomOptions.Number(status, RemoteRacePanel.LapKey, 0));
@@ -103,6 +123,9 @@ namespace Portfolio.DeathRace.Tests
             Assert.AreEqual(1, RoomOptions.Number(status, RemoteRacePanel.MinesKey, 0));
             Assert.AreEqual(2, RoomOptions.Number(status, RemoteRacePanel.RocketsKey, 0));
             Assert.AreEqual(3, RoomOptions.Number(status, RemoteRacePanel.NitroKey, 0));
+            Assert.AreEqual(0, RoomOptions.Number(status, RemoteRacePanel.OilKey, 9));
+            Assert.AreEqual(1, RoomOptions.Number(status, RemoteRacePanel.EmpKey, 9));
+            Assert.AreEqual(1, RoomOptions.Number(status, RemoteRacePanel.MortarKey, 9));
             Assert.AreEqual("EMP Blast", RoomOptions.Value(status, RemoteRacePanel.SpecialKey));
             Assert.AreEqual(1, RoomOptions.Number(status, RemoteRacePanel.KillsKey, 0));
             Assert.AreEqual(150, RoomOptions.Number(status, RemoteRacePanel.CashKey, 0));
@@ -110,9 +133,9 @@ namespace Portfolio.DeathRace.Tests
             Assert.Less(status.Length, 200, "short enough for the server's status row many times over");
             StringAssert.Contains("2", RemoteRaceStatus.Headline(status));
             StringAssert.Contains("2/3", RemoteRaceStatus.Headline(status));
-            StringAssert.Contains("FINAL", RemoteRaceStatus.Headline(RemoteRacePanel.Compose(1, 4, 3, 3, 50, 0, 0, 0, 0, "", 0, 0, RemoteRacePanel.Racing)),
+            StringAssert.Contains("FINAL", RemoteRaceStatus.Headline(RemoteRacePanel.Compose(1, 4, 3, 3, 50, 0, 0, 0, 0, 0, 0, 0, "", 0, 0, RemoteRacePanel.Racing)),
                 "the last lap is the final lap");
-            string wrecked = RemoteRacePanel.Compose(4, 4, 1, 3, 0, 0, 0, 0, 0, "", 0, 0, RemoteRacePanel.Wrecked);
+            string wrecked = RemoteRacePanel.Compose(4, 4, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, "", 0, 0, RemoteRacePanel.Wrecked);
             Assert.AreEqual("", RoomOptions.Value(wrecked, RemoteRacePanel.SpecialKey) ?? "", "no special left reads as none");
             Assert.AreNotEqual(RemoteRaceStatus.Headline(status), RemoteRaceStatus.Headline(wrecked), "a wreck shows in the headline");
         }

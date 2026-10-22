@@ -45,5 +45,14 @@ namespace Portfolio.DeathRace
             }
             ResultsWindow.For(this).ShowOnline(standings, backToRoom);
         }
+
+        /// <summary>
+        /// Closes the standings of an online race without their way back: the session went back to the room some other
+        /// way (the shared screen does by itself a while after the results), so the room's lobby shows instead.
+        /// </summary>
+        public void HideOnlineResults()
+        {
+            ResultsWindow.For(this).Hide();
+        }
     }
 }

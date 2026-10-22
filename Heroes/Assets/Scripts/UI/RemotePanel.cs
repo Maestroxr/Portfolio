@@ -24,11 +24,18 @@ namespace Portfolio.Heroes.UI
         private const float ButtonHeight = 76f;
         private const float Gap = 10f;
         private const float RefreshEvery = 0.2f;
+        /// <summary>The height of the three lines over the commands, with the kit's spacing.</summary>
+        private const float LinesHeight = 3f * (LineHeight + 12f);
+
+        /// <summary>The height the panel takes under the frame's header during a battle: its row of battle commands alone, with the kit's spacing.</summary>
+        public const float BattleRowHeight = ButtonHeight + 12f + 10f;
 
         private HeroesOnlineController online;
         private OverlayKit kit;
         private TMP_Text realm, date, hero, note;
+        private RectTransform realmLine, heroLine, noteLine;
         private RectTransform row;
+        private bool linesShown = true;
         private Button nextHero, endTurn, auto, wait, defend, retreat, onward;
         private readonly Button[] options = new Button[2];
         private readonly List<Button> showing = new List<Button>();
@@ -52,15 +59,17 @@ namespace Portfolio.Heroes.UI
         /// <summary>Builds the panel into the content of the remote frame, under its header.</summary>
         public static RemotePanel Build(HeroesOnlineController online, RectTransform content, RemotePanelKit kit)
         {
-            RectTransform realmLine = kit.Section("Realm", LineHeight);
-            var panel = realmLine.gameObject.AddComponent<RemotePanel>();
+            var panel = content.gameObject.AddComponent<RemotePanel>();
             panel.online = online;
             panel.kit = kit.Kit;
             OverlayLook look = kit.Kit.Look;
-            panel.realm = panel.Line(realmLine, "Resources", 26f, look.text, TextAlignmentOptions.MidlineLeft);
-            panel.date = panel.Line(realmLine, "Date", 26f, look.muted, TextAlignmentOptions.MidlineRight);
-            panel.hero = panel.Line(kit.Section("Hero", LineHeight), "Hero", 26f, look.text, TextAlignmentOptions.MidlineLeft);
-            panel.note = panel.Line(kit.Section("Note", LineHeight), "Note", 28f, look.accent, TextAlignmentOptions.MidlineLeft, FontStyles.Bold);
+            panel.realmLine = kit.Section("Realm", LineHeight);
+            panel.realm = panel.Line(panel.realmLine, "Resources", 26f, look.text, TextAlignmentOptions.MidlineLeft);
+            panel.date = panel.Line(panel.realmLine, "Date", 26f, look.muted, TextAlignmentOptions.MidlineRight);
+            panel.heroLine = kit.Section("Hero", LineHeight);
+            panel.hero = panel.Line(panel.heroLine, "Hero", 26f, look.text, TextAlignmentOptions.MidlineLeft);
+            panel.noteLine = kit.Section("Note", LineHeight);
+            panel.note = panel.Line(panel.noteLine, "Note", 28f, look.accent, TextAlignmentOptions.MidlineLeft, FontStyles.Bold);
             panel.row = kit.Section("Commands", ButtonHeight);
             panel.Buttons(look);
             Current = panel;
@@ -134,6 +143,7 @@ namespace Portfolio.Heroes.UI
                 hero.text = "";
                 note.text = "";
                 Mode = RemoteMode.Watching;
+                Lines(true);
                 Lay();
                 return;
             }
@@ -148,6 +158,18 @@ namespace Portfolio.Heroes.UI
                 retreatArmedFor = -1;
             }
             Mode = mode;
+            HeroesUI ui = Manager.HeroesUI;
+            if (ui != null && ui.WindowOpen)
+            {
+                // A window of the game lies over the map (a town, a hero, a dwelling, the results of a battle), pulled in
+                // between the frame's header and footer: the panel keeps off it, and nothing of the panel's is to be pressed.
+                Lines(false);
+                Lay();
+                return;
+            }
+            // In a battle the bar has the stack in hand and the heroes: only the commands stay, close under the header,
+            // and the field is framed under them.
+            Lines(mode != RemoteMode.Fighting);
             bool may = Manager.OnlineDeciding();
             switch (mode)
             {
@@ -168,6 +190,20 @@ namespace Portfolio.Heroes.UI
                     Lay();
                     break;
             }
+        }
+
+        /// <summary>Shows or hides the three lines over the commands; without them the commands move up under the header.</summary>
+        private void Lines(bool on)
+        {
+            if (on == linesShown && realmLine.gameObject.activeSelf == on)
+            {
+                return;
+            }
+            linesShown = on;
+            realmLine.gameObject.SetActive(on);
+            heroLine.gameObject.SetActive(on);
+            noteLine.gameObject.SetActive(on);
+            row.anchoredPosition = new Vector2(0f, on ? -LinesHeight : 0f);
         }
 
         /// <summary>The hero in hand: his name and level, movement and mana, and his army.</summary>

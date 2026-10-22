@@ -41,6 +41,9 @@ namespace Portfolio.Heroes.UI
         private Coroutine opening;
         private bool underBar;
 
+        /// <summary>The window itself (the frame under the ribbon), for checking where it lies on the screen.</summary>
+        public RectTransform Frame => Window;
+
         /// <summary>Builds the empty window, the size asked for, in the middle of the screen.</summary>
         protected static T Build<T>(Transform parent, HeroesGameManager manager, string name, Vector2 size, string title)
             where T : Dialog
@@ -121,6 +124,10 @@ namespace Portfolio.Heroes.UI
             {
                 AdventureHud hud = Manager.HeroesUI != null ? Manager.HeroesUI.Hud : null;
                 ShadeTop(hud != null && hud.IsShown);
+                // Under a remote frame there is no bar along the top: the window and its ribbon sit in the middle of the
+                // band the screens were pulled into, between the frame's header and footer.
+                bool remote = Manager.HeroesUI != null && Manager.HeroesUI.RemoteView;
+                Window.anchoredPosition = new Vector2(0f, remote ? -RibbonRise * 0.5f : (UnderBarBottom - UnderBarTop) * 0.5f);
             }
             SizeRibbon();
             if (!was)

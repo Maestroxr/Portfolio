@@ -27,7 +27,46 @@ namespace Portfolio.Monopoly
         Build,
         Sell,
         Mortgage,
-        Unmortgage
+        Unmortgage,
+        /// <summary>Opens the trade builder of the panel (<see cref="TradeDraft"/>); sends nothing by itself.</summary>
+        Trade
+    }
+
+    /// <summary>
+    /// A trade a player puts together on the remote panel before proposing it: the other side, the properties and the
+    /// cash each gives, a Get Out of Jail Free card each way. <see cref="ToOffer"/> is the offer the trade window of a
+    /// device builds from its ticks and amounts, so the proposal that goes out is the same command either way.
+    /// </summary>
+    public sealed class TradeDraft
+    {
+        /// <summary>The seat that proposes the trade.</summary>
+        public int from;
+        /// <summary>The seat the offer goes to; -1 while none is picked.</summary>
+        public int to = -1;
+        /// <summary>The properties the proposer gives, in board order.</summary>
+        public readonly List<int> giveSpaces = new List<int>();
+        /// <summary>The properties the proposer asks for, in board order.</summary>
+        public readonly List<int> getSpaces = new List<int>();
+        /// <summary>The cash the proposer gives.</summary>
+        public int giveCash;
+        /// <summary>The cash the proposer asks for.</summary>
+        public int getCash;
+        /// <summary>Whether the proposer gives a Get Out of Jail Free card.</summary>
+        public bool giveCard;
+        /// <summary>Whether the proposer asks for a Get Out of Jail Free card.</summary>
+        public bool getCard;
+
+        /// <summary>The offer as the device's trade window builds it (one card at most each way, as its tick boxes allow).</summary>
+        public TradeOffer ToOffer()
+        {
+            var offer = new TradeOffer { from = from, to = to, giveCash = giveCash, getCash = getCash, giveJailCards = giveCard ? 1 : 0, getJailCards = getCard ? 1 : 0 };
+            offer.giveSpaces.AddRange(giveSpaces);
+            offer.getSpaces.AddRange(getSpaces);
+            return offer;
+        }
+
+        /// <summary>A text that changes exactly when the draft does: the panel redraws the builder on it.</summary>
+        public string Key => $"{from}>{to}|{string.Join(",", giveSpaces)}|{string.Join(",", getSpaces)}|{giveCash}|{getCash}|{giveCard}|{getCard}";
     }
 
     /// <summary>A button of the remote panel: what it says, what it sends, and whether it can be pressed now.</summary>
@@ -47,7 +86,7 @@ namespace Portfolio.Monopoly
         }
 
         /// <summary>Whether the choice manages property (a button of a property row) rather than answering what the match waits for.</summary>
-        public bool IsManagement => kind >= PanelChoiceKind.Build;
+        public bool IsManagement => kind >= PanelChoiceKind.Build && kind <= PanelChoiceKind.Unmortgage;
 
         public override string ToString()
         {
@@ -89,12 +128,16 @@ namespace Portfolio.Monopoly
     /// A choice is sent through the one seam the interface uses (<see cref="Perform"/>, <see cref="IMonopolyCommands"/>).
     /// Whether the seat may decide, manage or answer right now is the caller's to say: it is what the online controller
     /// checks before it sends (<see cref="MonopolyOnlineController.MayDecide"/>), so a button shows exactly when the
-    /// command behind it would go.
+    /// command behind it would go. A trade is put together in a <see cref="TradeDraft"/> (the partners, the properties
+    /// either side may offer, the cash steps, the rules' verdict) and proposed as the device's trade window would.
     /// </summary>
     public static class SeatPanelModel
     {
         /// <summary>The raises the bid buttons offer over the high bid (the auction window's).</summary>
         public static readonly int[] BidRaises = { 10, 50, 100 };
+
+        /// <summary>The steps the cash of a trade moves by on the panel (a minus and a plus button each).</summary>
+        public static readonly int[] CashSteps = { 10, 100 };
 
         // ------------------------------------------------------------------ the seat
 
@@ -268,10 +311,11 @@ namespace Portfolio.Monopoly
 
         /// <summary>
         /// The big buttons of the seat: the answer to the offer on the table when <paramref name="answering"/>, else the
-        /// decision the match waits for when <paramref name="deciding"/> (by phase, as the full screen asks it), else none.
-        /// Managing property has buttons of its own in <see cref="Properties"/>.
+        /// decision the match waits for when <paramref name="deciding"/> (by phase, as the full screen asks it), plus
+        /// Trade (the builder) when <paramref name="managing"/> and somebody is left to trade with. Managing property has
+        /// buttons of its own in <see cref="Properties"/>.
         /// </summary>
-        public static List<PanelChoice> Choices(MonopolyMatch match, LockstepMatch table, int seat, bool deciding, bool answering)
+        public static List<PanelChoice> Choices(MonopolyMatch match, LockstepMatch table, int seat, bool deciding, bool answering, bool managing = false)
         {
             var choices = new List<PanelChoice>();
             if (!Holds(match, seat) || match.IsOver)
@@ -288,10 +332,21 @@ namespace Portfolio.Monopoly
                 }
                 return choices;
             }
-            if (!deciding || match.Decider != seat)
+            if (deciding && match.Decider == seat)
             {
-                return choices;
+                choices.AddRange(Decisions(match, seat));
             }
+            if (CanTrade(match, seat, managing))
+            {
+                choices.Add(PanelChoice.Of(PanelChoiceKind.Trade, L.T("Trade")));
+            }
+            return choices;
+        }
+
+        /// <summary>The decision the match waits for from <paramref name="seat"/>, who is its decider, as buttons.</summary>
+        private static List<PanelChoice> Decisions(MonopolyMatch match, int seat)
+        {
+            var choices = new List<PanelChoice>();
             PlayerState player = match.players[seat];
             switch (match.phase)
             {
@@ -354,6 +409,150 @@ namespace Portfolio.Monopoly
                     break;
             }
             return choices;
+        }
+
+        // ------------------------------------------------------------------ trading
+
+        /// <summary>Whether the seat may open the trade builder now: it may manage, and somebody else is still in the game (what the trade window's button checks).</summary>
+        public static bool CanTrade(MonopolyMatch match, int seat, bool managing)
+        {
+            return managing && Holds(match, seat) && !match.IsOver && match.ActiveCount > 1;
+        }
+
+        /// <summary>The seats the player may trade with: everybody still in the game but themselves, in seat order (as the trade window lists them).</summary>
+        public static List<int> TradePartners(MonopolyMatch match, int seat)
+        {
+            var partners = new List<int>();
+            if (!Holds(match, seat))
+            {
+                return partners;
+            }
+            foreach (PlayerState player in match.players)
+            {
+                if (!player.bankrupt && player.index != seat)
+                {
+                    partners.Add(player.index);
+                }
+            }
+            return partners;
+        }
+
+        /// <summary>A fresh draft of <paramref name="seat"/> with the first partner picked, or null when nobody is left to trade with.</summary>
+        public static TradeDraft NewTrade(MonopolyMatch match, int seat)
+        {
+            List<int> partners = TradePartners(match, seat);
+            if (partners.Count == 0)
+            {
+                return null;
+            }
+            var draft = new TradeDraft { from = seat };
+            SelectPartner(draft, partners[0]);
+            return draft;
+        }
+
+        /// <summary>Picks the other side of <paramref name="draft"/>: what was ticked and counted for the one before goes (as in the trade window).</summary>
+        public static void SelectPartner(TradeDraft draft, int partner)
+        {
+            if (draft == null)
+            {
+                return;
+            }
+            draft.to = partner;
+            draft.giveSpaces.Clear();
+            draft.getSpaces.Clear();
+            draft.giveCash = 0;
+            draft.getCash = 0;
+            draft.giveCard = false;
+            draft.getCard = false;
+        }
+
+        /// <summary>The properties <paramref name="seat"/> may put into a trade (none of a set with buildings on it), in set order.</summary>
+        public static List<int> Offerable(MonopolyMatch match, int seat)
+        {
+            if (!Holds(match, seat))
+            {
+                return new List<int>();
+            }
+            return match.TradableProperties(seat)
+                .OrderBy(space => Array.IndexOf(MonopolyStyle.Groups, match.Space(space).group))
+                .ThenBy(space => space)
+                .ToList();
+        }
+
+        /// <summary>Ticks <paramref name="space"/> into the side the player gives (<paramref name="give"/>) or asks for, or out of it again.</summary>
+        public static void ToggleSpace(TradeDraft draft, int space, bool give)
+        {
+            if (draft == null)
+            {
+                return;
+            }
+            List<int> side = give ? draft.giveSpaces : draft.getSpaces;
+            if (!side.Remove(space))
+            {
+                side.Add(space);
+                side.Sort();
+            }
+        }
+
+        /// <summary>Moves the cash a side gives by <paramref name="step"/>: never below nothing, never above what that side has (as the trade window clamps it).</summary>
+        public static void ChangeCash(MonopolyMatch match, TradeDraft draft, int step, bool give)
+        {
+            if (draft == null || match == null)
+            {
+                return;
+            }
+            int side = give ? draft.from : draft.to;
+            int limit = Holds(match, side) ? match.players[side].cash : 0;
+            if (give)
+            {
+                draft.giveCash = Math.Max(0, Math.Min(limit, draft.giveCash + step));
+            }
+            else
+            {
+                draft.getCash = Math.Max(0, Math.Min(limit, draft.getCash + step));
+            }
+        }
+
+        /// <summary>Ticks a Get Out of Jail Free card into the side the player gives (<paramref name="give"/>) or asks for, or out again.</summary>
+        public static void ToggleCard(TradeDraft draft, bool give)
+        {
+            if (draft == null)
+            {
+                return;
+            }
+            if (give)
+            {
+                draft.giveCard = !draft.giveCard;
+            }
+            else
+            {
+                draft.getCard = !draft.getCard;
+            }
+        }
+
+        /// <summary>Whether the rules take <paramref name="draft"/> as an offer (<see cref="MonopolyMatch.CanTrade"/>), and why not, in the language shown.</summary>
+        public static bool ValidateTrade(MonopolyMatch match, TradeDraft draft, out string reason)
+        {
+            if (match == null || draft == null || draft.to < 0)
+            {
+                reason = L.T("Pick another player to trade with.");
+                return false;
+            }
+            bool ok = match.CanTrade(draft.ToOffer(), out string why);
+            reason = ok ? null : TradeUI.Reason(why);
+            return ok;
+        }
+
+        /// <summary>The line under the draft: who answers it and how when the rules take it, else why they refuse it.</summary>
+        public static string TradeStatus(MonopolyMatch match, TradeDraft draft)
+        {
+            if (ValidateTrade(match, draft, out string reason))
+            {
+                PlayerState partner = match.players[draft.to];
+                string name = MonopolyStyle.NameOf(partner);
+                return partner.bot ? L.F("{0} weighs every deal by the sets it makes.", name) : L.F("{0} answers on their own device.", name);
+            }
+            return reason;
         }
 
         /// <summary>
@@ -486,6 +685,7 @@ namespace Portfolio.Monopoly
                 case PanelChoiceKind.Sell: commands.Sell(seat, choice.argument); return true;
                 case PanelChoiceKind.Mortgage: commands.Mortgage(seat, choice.argument); return true;
                 case PanelChoiceKind.Unmortgage: commands.Unmortgage(seat, choice.argument); return true;
+                // Trade opens the builder on the panel; the proposal goes through IMonopolyCommands.ProposeTrade once built.
                 default: return false;
             }
         }
@@ -503,7 +703,7 @@ namespace Portfolio.Monopoly
             var parts = new List<string>
             {
                 Cash(match, seat), Worth(match, seat), Position(match, seat), Headline(match, table, seat), Detail(match, table, seat),
-                string.Join("|", Choices(match, table, seat, deciding, answering).Select(c => c.ToString())),
+                string.Join("|", Choices(match, table, seat, deciding, answering, managing).Select(c => c.ToString())),
                 string.Join("|", Properties(match, seat, managing).Select(p => $"{p.space}:{p.state}:{string.Join(",", p.actions.Select(a => a.ToString()))}")),
                 match.IsOver ? string.Join("|", Standings(match).Select(s => $"{s.place}:{s.seat}:{s.worth}:{s.bankrupt}")) : ""
             };

@@ -238,9 +238,22 @@ namespace Portfolio.Asteroids
             if (strike)
             {
                 Note($"pilot money after the mission {manager.Pilot.Money} (before {(savedPilot != null ? savedPilot.Money : manager.Pilot.Money)})");
+                Note($"pilot kit after the mission: {AsteroidsTour.Describe(manager.Pilot)} (before: {AsteroidsTour.Describe(savedPilot)})");
+                if (manager.online.LastRemoteLoadout != null)
+                {
+                    Note($"the screen's last word on this seat's kit: {AsteroidsTour.Describe(manager.online.LastRemoteLoadout)}");
+                }
             }
 
-            manager.ReturnToMissionSelect();
+            if (AsScreen)
+            {
+                // Nobody presses anything on a shared screen: it goes back to the room by itself after the results.
+                yield return WaitFor(() => !manager.InSession, OnlineGameController.ScreenResultsSeconds + 5f, "the screen's own return to the room");
+            }
+            else
+            {
+                manager.ReturnToMissionSelect();
+            }
             yield return new WaitForSeconds(1.5f);
             yield return Shot("06_back_in_the_room");
             Note($"back in the room: in session {manager.InSession}, playfield fixed {manager.Playground.IsFixed}, stand-ins {manager.RemoteShips.Count}, " +

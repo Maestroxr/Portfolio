@@ -35,7 +35,8 @@ namespace Portfolio.EndlessRunner
     /// the moves go to the screen as the pad's would, and the pictures show the panel), and <c>joinown</c> joins such a
     /// room but plays on its own device, as <c>join</c> does. <c>-runner-switch &lt;seconds&gt;</c> has a remote play on
     /// its own device from then on, and <c>-runner-switch-back &lt;seconds&gt;</c> makes it a remote again later: the
-    /// race has to go on through both.
+    /// race has to go on through both. A screen goes back to its room by itself a while after the results
+    /// (<see cref="OnlineGameController.ScreenResultsSeconds"/>); the tour takes its picture of the results before that and then waits for it.
     /// </summary>
     public class RunnerOnlineTour : OnlineTour
     {
@@ -62,6 +63,8 @@ namespace Portfolio.EndlessRunner
         private string shotTag = string.Empty;
         private bool switchedToOwn;
         private bool switchedBack;
+        // The seats the shared screen ran when the tour last looked: a change is a seat taken over or handed off.
+        private string screenDriven = string.Empty;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Launch()
@@ -238,6 +241,7 @@ namespace Portfolio.EndlessRunner
             }
             float giveUp = NumberArgument(GiveUpArgument, -1f);
             raceStarted = Time.unscaledTime;
+            screenDriven = string.Join(", ", manager.DrivenSeats);
             shotTag = tag;
             switchedToOwn = false;
             switchedBack = false;
@@ -304,7 +308,16 @@ namespace Portfolio.EndlessRunner
             yield return Shot($"{tag}09_results");
             Report();
 
-            manager.ReturnToLevelSelect();
+            if (screen)
+            {
+                // Nobody presses anything on a shared screen: it goes back to the room by itself after the results.
+                yield return WaitFor(() => !manager.InSession, OnlineGameController.ScreenResultsSeconds + 10f, "the screen to go back to the room by itself");
+                Note($"the screen {(manager.InSession ? "stayed on the results" : "went back to the room by itself")}");
+            }
+            if (manager.InSession)
+            {
+                manager.ReturnToLevelSelect();
+            }
             yield return new WaitForSeconds(1.5f);
             yield return Shot($"{tag}10_back_in_the_room");
             Note($"in a race: {manager.InRace}; in a session: {manager.InSession}; in a room: {Server.InRoom}");
@@ -569,7 +582,7 @@ namespace Portfolio.EndlessRunner
             if (manager.InParty)
             {
                 Note("runs here: " + string.Join(", ", manager.LocalRuns.Select(run =>
-                    $"seat {run.Racer.Seat} {run.Seat.Name} {run.Phase} {run.Distance:0} m {run.Coins} c {run.Hearts} h place {run.Racer.Place}")));
+                    $"seat {run.Racer.Seat} {run.Seat.Name} {run.Phase} {run.Distance:0} m {run.Coins} c {run.Hearts} h {run.Runner.Speed:0.0} m/s place {run.Racer.Place}")));
             }
             if (Online != null && Online.IsRemote)
             {
@@ -590,10 +603,32 @@ namespace Portfolio.EndlessRunner
         private IEnumerator Step()
         {
             yield return null;
+            NoteScreenDrivers();
             if (SwitchDue())
             {
                 yield return Switch();
             }
+        }
+
+        /// <summary>
+        /// On the shared screen: the seats it runs changed (a remote's player went to their own device, or came back),
+        /// so the runs it took over are written down with the pace they went on at.
+        /// </summary>
+        private void NoteScreenDrivers()
+        {
+            if (Online == null || !Online.IsScreen || !manager.InRace)
+            {
+                return;
+            }
+            string driven = string.Join(", ", manager.DrivenSeats);
+            if (driven == screenDriven)
+            {
+                return;
+            }
+            screenDriven = driven;
+            Note($"screen at {Time.unscaledTime - raceStarted:0.0} s: driving {driven}; spectating {manager.Spectates}"
+                + (manager.InParty ? "; runs here: " + string.Join(", ", manager.LocalRuns.Select(run =>
+                    $"seat {run.Racer.Seat} {run.Phase} {run.Distance:0} m {run.Coins} c {run.Hearts} h at {run.Runner.Speed:0.0} m/s")) : string.Empty));
         }
 
         private bool SwitchDue()
@@ -644,8 +679,9 @@ namespace Portfolio.EndlessRunner
                     PilotLocalRunners();
                 }
                 RunnerRun run = manager.Main;
-                Note($"own runner now: seat {run.Runner.Seat}, {run.Phase}, {run.Distance:0} m, {run.Coins} coins, {run.Hearts} hearts, running {run.Runner.IsRunning}, "
-                    + $"at {run.Runner.transform.position}, lane {run.Runner.Lane}; driving {string.Join(", ", manager.DrivenSeats)}; spectating {manager.Spectates}");
+                Note($"own runner now: seat {run.Runner.Seat}, {run.Phase}, {run.Distance:0} m, {run.Coins} coins, {run.Hearts} hearts, running {run.Runner.IsRunning} "
+                    + $"at {run.Runner.Speed:0.0} m/s, at {run.Runner.transform.position}, lane {run.Runner.Lane}; driving {string.Join(", ", manager.DrivenSeats)}; "
+                    + $"spectating {manager.Spectates}");
                 yield return new WaitForSeconds(1.5f);
                 Progress();
                 yield return Shot($"{shotTag}06_own_device");

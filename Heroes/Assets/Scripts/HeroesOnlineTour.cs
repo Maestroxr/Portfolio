@@ -263,11 +263,37 @@ namespace Portfolio.Heroes
             Note($"watch loop over: {battles} battles, {shown} on the screen, room {(Server.CurrentRoom != null ? Server.CurrentRoom.Phase.ToString() : "gone")}, " +
                  $"game {(Game == null ? "gone" : Game.IsOver ? $"over, winner {Game.State.winner}" : "running")}, idle {idle:F0} s, " +
                  $"checksum {(Game != null ? manager.Lockstep.Checksum().ToString("X8") : "-")} after {(Game != null ? manager.Lockstep.Applied : 0)} actions");
-            // The players left: the room called the game off, and the screen shows the standings.
-            yield return WaitFor(() => manager.HeroesUI.Results.IsOpen, 15f, "the standings");
+            // The players left: the room called the game off, and the screen shows the standings (and goes back to the
+            // room by itself a while later: OnlineGameController.ScreenResultsSeconds).
+            yield return WaitFor(() => manager.HeroesUI.Results.IsOpen || !manager.IsOnlineGame, 15f, "the standings");
             yield return new WaitForSeconds(0.6f);
             yield return Shot("07_standings");
-            Note($"the end on the screen: standings {(manager.HeroesUI.Results.IsOpen ? "shown" : "not shown")}, won here {Game != null && manager.WonHere(Game.State)}");
+            Note($"the end on the screen: standings {(manager.HeroesUI.Results.IsOpen ? "shown" : manager.IsOnlineGame ? "not shown" : "gone, the screen is back in the room")}, " +
+                 $"won here {Game != null && manager.WonHere(Game.State)}");
+            // Nobody presses anything on the screen: it leaves the results and goes back to the room by itself.
+            float shownAt = Time.unscaledTime;
+            yield return WaitFor(() => manager.Online == null || !manager.Online.InCharge, OnlineGameController.ScreenResultsSeconds + 10f, "the screen back in the room");
+            yield return new WaitForSeconds(1f);
+            yield return Shot("08_back_in_room");
+            Note($"the screen after the results: {(manager.Online != null && manager.Online.InCharge ? "FAILED, still in the game" : "back in the room by itself")} " +
+                 $"after {Time.unscaledTime - shownAt:F1}s, room {(Server.CurrentRoom != null ? Server.CurrentRoom.Phase.ToString() : "gone")}");
+        }
+
+        /// <summary>Whether the window of <paramref name="dialog"/> lies between the header and the footer of the remote frame, in screen pixels.</summary>
+        private static bool Fits(Dialog dialog)
+        {
+            RectTransform window = dialog != null ? dialog.Frame : null;
+            if (window == null)
+            {
+                return false;
+            }
+            var corners = new Vector3[4];
+            window.GetWorldCorners(corners);
+            Canvas canvas = window.GetComponentInParent<Canvas>();
+            float scale = canvas != null ? canvas.rootCanvas.scaleFactor : 1f;
+            float bottom = RemoteControlUI.FooterHeight * scale;
+            float top = Screen.height - RemoteControlUI.HeaderHeight * scale;
+            return corners[0].y >= bottom - 1f && corners[1].y <= top + 1f;
         }
 
         /// <summary>
@@ -318,6 +344,10 @@ namespace Portfolio.Heroes
             int endedBeforeSwitch = -1;
             bool panelShot = false;
             bool choiceShot = false;
+            bool townShot = false;
+            bool heroShot = false;
+            bool windowShot = false;
+            bool battlePanelShot = false;
             // The other client has to get its turns too, so a day here is a couple of moves and then an end.
             while (ended < turns && Game != null && !Game.IsOver && idle < Patience && (Server.CurrentRoom == null || Server.CurrentRoom.IsPlaying))
             {
@@ -332,6 +362,22 @@ namespace Portfolio.Heroes
                     yield return new WaitForSeconds(0.5f);
                     yield return Shot("11_panel");
                     Note($"the remote panel shows: mode {Panel.Mode}, map panels {(manager.HeroesUI.Hud.IsShown ? "shown" : "off")}, remote view {manager.HeroesUI.RemoteView}");
+                }
+                if (Panel != null && manager.HeroesUI.WindowOpen && !manager.HeroesUI.Bar.Results.IsOpen && !manager.HeroesUI.Results.IsOpen)
+                {
+                    // A window of the game opened under the frame by itself (a dwelling the hero visited, a meeting):
+                    // pictured once, with whether it lies between the header and the footer, then closed as a player would.
+                    if (!windowShot)
+                    {
+                        windowShot = true;
+                        yield return new WaitForSeconds(0.5f);
+                        yield return Shot("17_panel_window");
+                        Note($"a window of the game opened under the frame: dwelling {manager.HeroesUI.Dwelling.IsOpen} (fits {Fits(manager.HeroesUI.Dwelling)}), " +
+                             $"meeting {manager.HeroesUI.Meeting.IsOpen} (fits {Fits(manager.HeroesUI.Meeting)}); closed");
+                    }
+                    manager.HeroesUI.CloseScreens();
+                    yield return null;
+                    continue;
                 }
                 if (Time.realtimeSinceStartup >= switchAt && !manager.IsPassing && switches < 2)
                 {
@@ -437,6 +483,15 @@ namespace Portfolio.Heroes
                     if (manager.WaitingForHuman && manager.OnlineDeciding() && current != null && manager.IsLocalSeat(side))
                     {
                         RemotePanel panel = Panel;
+                        if (panel != null && !battlePanelShot && manager.Battle.Running)
+                        {
+                            // The battle on a remote: the field framed between the frame's header and the bar above its footer.
+                            battlePanelShot = true;
+                            yield return new WaitForSeconds(0.5f);
+                            yield return Shot("12_panel_battle");
+                            Note($"the battle on the remote: bar covers {manager.HeroesUI.Bar.CoveredBottom():0.00} of the bottom, " +
+                                 $"{manager.HeroesUI.Bar.CoveredTop():0.00} of the top is the frame's; panel mode {panel.Mode}");
+                        }
                         if (panel != null)
                         {
                             // A remote fights through its panel: a move of auto combat at a time.
@@ -469,6 +524,29 @@ namespace Portfolio.Heroes
                 if (manager.WaitingForHuman && Game.WaitingPlayer == manager.LocalSeat && !manager.IsPassing)
                 {
                     RemotePanel panel = Panel;
+                    if (panel != null && !townShot && manager.WatchedState != null && manager.WatchedState.towns.Count > 0)
+                    {
+                        // The town screen under the frame: opened as the Town command would, pictured, closed.
+                        townShot = true;
+                        manager.HeroesUI.OpenTown();
+                        yield return new WaitForSeconds(0.6f);
+                        yield return Shot("16_panel_town");
+                        Note($"the town screen opened under the frame: open {manager.HeroesUI.Town.IsOpen}, fits {Fits(manager.HeroesUI.Town)}; closed");
+                        manager.HeroesUI.CloseScreens();
+                        yield return new WaitForSeconds(0.3f);
+                        continue;
+                    }
+                    if (panel != null && !heroShot && manager.Selected != null)
+                    {
+                        heroShot = true;
+                        manager.HeroesUI.OpenHero();
+                        yield return new WaitForSeconds(0.6f);
+                        yield return Shot("18_panel_hero");
+                        Note($"the hero screen opened under the frame: open {manager.HeroesUI.Sheet.IsOpen}, fits {Fits(manager.HeroesUI.Sheet)}; closed");
+                        manager.HeroesUI.CloseScreens();
+                        yield return new WaitForSeconds(0.3f);
+                        continue;
+                    }
                     HeroState hero = null;
                     if (moves < 2 && panel != null)
                     {

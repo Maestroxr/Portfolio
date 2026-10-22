@@ -29,6 +29,10 @@ namespace Portfolio.Heroes.UI
         private Canvas canvas;
         private RectTransform screen;
         private RectTransform safe;
+        /// <summary>The holder of the screens of the game (a town, a hero, a meeting, the questions, the results), pulled in under the remote frame.</summary>
+        private RectTransform windows;
+        /// <summary>The holder of the battle bar, pulled in under the remote frame too.</summary>
+        private RectTransform battleHolder;
         private AdventureHud hud;
         private TitleScreen title;
         private CampaignScreen campaignScreen;
@@ -122,16 +126,20 @@ namespace Portfolio.Heroes.UI
             safe = MakeSafeArea(screen);
 
             hud = AdventureHud.Make(safe, manager, this);
-            town = TownScreen.Make(safe, manager);
-            heroSheet = HeroScreen.Make(safe, manager);
-            battleBar = BattleBar.Make(safe, manager);
-            choice = ChoiceBox.Make(safe, manager);
-            results = ResultsBox.Make(safe, manager);
-            campaignScreen = CampaignScreen.Make(safe, manager);
-            message = MessageBox.Make(safe, manager);
-            dwelling = DwellingBox.Make(safe, manager);
-            meeting = MeetingScreen.Make(safe, manager);
-            split = SplitBox.Make(safe, manager);
+            // The battle bar and the screens of the game sit in holders of their own: as a remote control of a shared
+            // screen they are pulled in between the header and the footer of the remote frame (SetRemoteView).
+            battleHolder = UIKit.Stretch(UIKit.Rect(safe, "BattleHolder"));
+            windows = UIKit.Stretch(UIKit.Rect(safe, "Windows"));
+            town = TownScreen.Make(windows, manager);
+            heroSheet = HeroScreen.Make(windows, manager);
+            battleBar = BattleBar.Make(battleHolder, manager);
+            choice = ChoiceBox.Make(windows, manager);
+            results = ResultsBox.Make(windows, manager);
+            campaignScreen = CampaignScreen.Make(windows, manager);
+            message = MessageBox.Make(windows, manager);
+            dwelling = DwellingBox.Make(windows, manager);
+            meeting = MeetingScreen.Make(windows, manager);
+            split = SplitBox.Make(windows, manager);
             title = TitleScreen.Make(screen, safe, manager, this);
             Tooltip.Prepare(screen);
             CloseAll();
@@ -216,12 +224,44 @@ namespace Portfolio.Heroes.UI
             {
                 hud.Compact = remote;
             }
+            // The frame's header and footer cover the top and the bottom of the screen: the battle bar and the screens of
+            // the game are pulled in between them (the screens scaled down so the tall ones fit), and have the whole
+            // height again on the player's own device.
+            float top = remote ? Gamebox.Online.RemoteControlUI.HeaderHeight : 0f;
+            float bottom = remote ? Gamebox.Online.RemoteControlUI.FooterHeight : 0f;
+            if (battleHolder != null)
+            {
+                UIKit.Stretch(battleHolder, 0f, bottom, 0f, top);
+            }
+            if (windows != null)
+            {
+                UIKit.Stretch(windows, 0f, bottom, 0f, top);
+                windows.localScale = Vector3.one * (remote ? WindowsFit : 1f);
+            }
             if (remote)
             {
                 choice?.Close();
                 TooltipBox.Hide(this);
             }
         }
+
+        /// <summary>
+        /// How much the screens of the game are scaled down under the remote frame: the band between its header and its
+        /// footer over the height the tallest screens (a town, a hero) were laid out for.
+        /// </summary>
+        private const float WindowsFit = (1080f - Gamebox.Online.RemoteControlUI.HeaderHeight - Gamebox.Online.RemoteControlUI.FooterHeight) / 1000f;
+
+        /// <summary>
+        /// Whether a window of the game lies over the map: a town, a hero, a meeting, a dwelling, a split, a message, the
+        /// campaign, the results of the game or of a battle. Under the remote frame the panel then offers nothing.
+        /// </summary>
+        public bool WindowOpen => ScreenOpen || battleBar != null && battleBar.Results.IsOpen;
+
+        /// <summary>How much of the bottom of the screen the footer of the remote frame takes from a battle, in canvas units (0 on the player's own device).</summary>
+        public float BattleBottomInset => remoteView ? Gamebox.Online.RemoteControlUI.FooterHeight : 0f;
+
+        /// <summary>How much of the top of the screen the header of the remote frame and the panel's battle commands take from a battle, in canvas units.</summary>
+        public float BattleTopInset => remoteView ? Gamebox.Online.RemoteControlUI.HeaderHeight + RemotePanel.BattleRowHeight : 0f;
 
         private Canvas MakeCanvas()
         {

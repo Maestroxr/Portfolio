@@ -76,6 +76,8 @@ namespace Portfolio.DeathRace
         private float nextStatus;
         private Vector2 fedStick;
         private uint fedHeld, fedPressed;
+        private string lastStatus;
+        private bool resultsShown;
         private bool endAsked;
         private List<RoomLevelChoice> levelChoices;
         private string choicesLanguage;
@@ -197,6 +199,7 @@ namespace Portfolio.DeathRace
             {
                 Client.ConnectionOpened += Bind;
             }
+            RemoteStatusChanged += NoteStatus;
         }
 
         protected override void OnDestroy()
@@ -205,7 +208,17 @@ namespace Portfolio.DeathRace
             {
                 Client.ConnectionOpened -= Bind;
             }
+            RemoteStatusChanged -= NoteStatus;
             base.OnDestroy();
+        }
+
+        /// <summary>The last status the shared screen published for this device's seat (kept when the row goes, for a take-over).</summary>
+        private void NoteStatus()
+        {
+            if (!string.IsNullOrEmpty(RemoteStatus))
+            {
+                lastStatus = RemoteStatus;
+            }
         }
 
         /// <summary>Claims and racers arrive in the middle of whatever else the server sent: the claims wait for the tick.</summary>
@@ -473,13 +486,21 @@ namespace Portfolio.DeathRace
             car.Driver = entrant.Controls is PlayerControls bound ? new HumanDriver(bound) : new HumanDriver();
             if (car.Weapons != null)
             {
-                HandedOverStock.Usage used = UsageOf(seat);
-                used.RoundsFired = car.Weapons.RoundsFired;
-                used.NitroBurned = car.Weapons.NitroUsed;
-                HandedOverStock.Stock carried = HandedOverStock.Reckon(entrant.Loadout, car.Weapons.AmmoCapacity, used);
+                // The player's own car: the stock the screen last published for it (a quarter second behind at most);
+                // without a status, or a remote's car coming back to the screen: reckoned from the room's log.
+                string source = "from the screen's status";
+                string status = string.IsNullOrEmpty(RemoteStatus) ? lastStatus : RemoteStatus;
+                if (!IsLocalSeat(seat) || !HandedOverStock.FromStatus(status, out HandedOverStock.Stock carried))
+                {
+                    HandedOverStock.Usage used = UsageOf(seat);
+                    used.RoundsFired = car.Weapons.RoundsFired;
+                    used.NitroBurned = car.Weapons.NitroUsed;
+                    carried = HandedOverStock.Reckon(entrant.Loadout, car.Weapons.AmmoCapacity, used);
+                    source = "reckoned from the room's log";
+                }
                 car.Weapons.Restock(carried);
                 Note($"seat {seat} taken over with {carried.Ammo} rounds, {carried.Mines} mines, {carried.Rockets} rockets, {carried.Nitro} nitro, "
-                    + $"{carried.Oil}/{carried.Emp}/{carried.Mortar} specials");
+                    + $"{carried.Oil}/{carried.Emp}/{carried.Mortar} specials ({source})");
             }
             Wire(seat, car);
             // A car that was done as a puppet was reported by the device that drove it then.
@@ -555,6 +576,8 @@ namespace Portfolio.DeathRace
             pickupGenerations = new int[0];
             graceEnds = -1f;
             nextStatus = 0f;
+            lastStatus = null;
+            resultsShown = false;
             endAsked = false;
             ClaimsSeen = 0;
         }
@@ -582,6 +605,12 @@ namespace Portfolio.DeathRace
             fedStick = Vector2.zero;
             fedHeld = 0;
             fedPressed = 0;
+            if (resultsShown && !InCharge)
+            {
+                // The shared screen went back to the room by itself (the base, after its results seconds): the standings go with it.
+                resultsShown = false;
+                Game?.HideOnlineResults();
+            }
             base.Update();
             if (race != null && !RaceIsOn)
             {
@@ -1110,6 +1139,7 @@ namespace Portfolio.DeathRace
             Note("room finished: " + Describe(LastStandings));
             ApplyState(won ? BaseGameState.Victory : BaseGameState.GameOver);
             Game?.ShowOnlineResults(LastStandings, BackToRoom);
+            resultsShown = true;
         }
 
         /// <summary>The standings of the race as the room ranked it, with what the server knows of every racer.</summary>
@@ -1191,7 +1221,7 @@ namespace Portfolio.DeathRace
             return string.Join(" | ", parts);
         }
 
-        /// <summary>The standings' way back: the room, where the host can start the next race.</summary>
+        /// <summary>The standings' way back: the room, where the host can start the next race (the shared screen goes by itself).</summary>
         public void BackToRoom()
         {
             Clear();

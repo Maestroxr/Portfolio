@@ -702,12 +702,13 @@ namespace Portfolio.Asteroids
             if (SceneShipParked)
             {
                 // The shared screen banks nothing (it flew the seats of others). A device whose seat the screen flew banks
-                // the money the seat earned there, like a party's wingman: when the ship was still flying after the win.
+                // the kit the screen last said the seat flies with and the money the seat earned there, as its own ship
+                // would land: when the ship was still flying after the win.
                 earned = IsScreenDevice || online == null ? 0 : (int)Mathf.Clamp(online.OwnSeatScore, 0, int.MaxValue);
                 landed = victory && !IsScreenDevice && online != null && online.OwnSeatFlying;
                 if (landed)
                 {
-                    Pilot.CommitMission(null, earned);
+                    RemoteSeatStatus.BankFlownSeat(Pilot, working, online.LastRemoteLoadout, earned);
                     progress?.SavePilot(Pilot);
                 }
                 DiscardCoopPilot();

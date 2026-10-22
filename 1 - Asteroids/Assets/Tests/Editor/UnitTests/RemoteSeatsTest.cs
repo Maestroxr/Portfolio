@@ -199,5 +199,43 @@ namespace Portfolio.Asteroids.Tests
             Assert.That(squad.Count, Is.EqualTo(0));
             Assert.That(squad.Remove(2), Is.False, "Gone already.");
         }
+
+
+        [Test]
+        public void TheFlownKitComesBackToThePilot()
+        {
+            StrikeLoadout pilot = StrikeLoadout.NewPilot();
+            pilot.Difficulty = StrikeDifficulty.Elite;
+            pilot.SetCount(StrikeItem.PlasmaCannon, 1);
+            StrikeLoadout working = pilot.Clone();
+            working.Difficulty = StrikeDifficulty.Rookie;
+            // What the screen flew the seat with: the plasma cannon was destroyed, a phase shield and megabombs were picked up.
+            StrikeLoadout flown = working.Clone();
+            flown.SetCount(StrikeItem.PlasmaCannon, 0);
+            flown.Megabombs = 2;
+            flown.PhaseShields = 1;
+            flown.ShieldPoints = 40f;
+            flown.Energy = 63f;
+            string status = RemoteSeatStatus.WriteStrike(1500, flown.Energy, flown.PhaseShields, flown.Megabombs, null, true, StrikeLoadoutText.Write(flown));
+            StrikeLoadout back = StrikeLoadoutText.Parse(Value(status, RemoteSeatStatus.Loadout));
+            int money = pilot.Money;
+            RemoteSeatStatus.BankFlownSeat(pilot, working, back, 1500);
+            Assert.That(pilot.Count(StrikeItem.PlasmaCannon), Is.EqualTo(0), "The weapon the seat lost is gone from the saved pilot.");
+            Assert.That(pilot.Count(StrikeItem.MachineGun), Is.EqualTo(1));
+            Assert.That(pilot.Megabombs, Is.EqualTo(2));
+            Assert.That(pilot.PhaseShields, Is.EqualTo(1));
+            Assert.That(pilot.ShieldPoints, Is.EqualTo(40f).Within(0.001f));
+            Assert.That(pilot.Energy, Is.EqualTo(63f).Within(0.001f));
+            Assert.That(pilot.Money, Is.EqualTo(money + 1500), "The money the seat earned, on top of the wallet.");
+            Assert.That(pilot.Difficulty, Is.EqualTo(StrikeDifficulty.Elite), "The room's difficulty was for that room only.");
+
+            // Without a word from the screen only the money is banked, as for a party's wingman.
+            StrikeLoadout other = StrikeLoadout.NewPilot();
+            other.SetCount(StrikeItem.PlasmaCannon, 1);
+            int before = other.Money;
+            RemoteSeatStatus.BankFlownSeat(other, other.Clone(), null, 300);
+            Assert.That(other.Count(StrikeItem.PlasmaCannon), Is.EqualTo(1));
+            Assert.That(other.Money, Is.EqualTo(before + 300));
+        }
     }
 }

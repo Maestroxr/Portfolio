@@ -976,8 +976,15 @@ namespace Portfolio.Heroes
         /// <summary>The part of the screen the field is framed in: above <paramref name="bottom"/> (the battle bar), in viewport units.</summary>
         public void SetBottom(float bottom)
         {
+            SetViewport(bottom, 0f);
+        }
+
+        /// <summary>As <see cref="SetBottom"/>, with <paramref name="top"/> of the screen taken too (the header of a remote frame and its panel).</summary>
+        public void SetViewport(float bottom, float top)
+        {
             bottom = Mathf.Clamp(bottom, 0f, 0.5f);
-            viewport = new Rect(0.015f, bottom + 0.01f, 0.97f, 0.985f - bottom - 0.01f);
+            top = Mathf.Clamp(top, 0f, 0.5f);
+            viewport = new Rect(0.015f, bottom + 0.01f, 0.97f, Mathf.Max(0.2f, 0.985f - top - bottom - 0.01f));
             Frame();
         }
 

@@ -26,6 +26,14 @@ namespace Portfolio.Asteroids
 
         private readonly Dictionary<byte, StrikeLoadout> remoteLoadouts = new Dictionary<byte, StrikeLoadout>();
         private bool ownSeatFlying = true;
+        private string lastRemoteStatus;
+        private StrikeLoadout lastRemoteLoadout;
+
+        /// <summary>
+        /// The loadout the shared screen last said this device's seat flies with (from its status, kept here because the
+        /// status rows go when the room finishes); null before the first status of a strike mission.
+        /// </summary>
+        internal StrikeLoadout LastRemoteLoadout => lastRemoteLoadout;
 
         /// <summary>The panel is the whole interface of a remote: the world goes on underneath, as puppets, for a switch to this device.</summary>
         public override bool RemotePanelCoversGame => true;
@@ -115,6 +123,8 @@ namespace Portfolio.Asteroids
                     if (manager.IsStrike)
                     {
                         SubmitLoadout(manager.Working);
+                        // Until the screen's first status about the seat arrives, the kit this device flew is the seat's.
+                        lastRemoteLoadout = manager.Working != null ? manager.Working.Clone() : lastRemoteLoadout;
                     }
                     manager.GiveUpOwnSeat();
                     SyncShips();
@@ -234,6 +244,27 @@ namespace Portfolio.Asteroids
         }
 
 
+        /// <summary>A remote keeps what the screen last said about its seat: the loadout of the status, for the mission's end and a switch.</summary>
+        private void RememberRemoteStatus()
+        {
+            if (!IsRemote)
+            {
+                return;
+            }
+            string status = RemoteStatus;
+            if (string.IsNullOrEmpty(status) || status == lastRemoteStatus)
+            {
+                return;
+            }
+            lastRemoteStatus = status;
+            StrikeLoadout loadout = StrikeLoadoutText.Parse(RoomOptions.Value(status, RemoteSeatStatus.Loadout));
+            if (loadout != null)
+            {
+                lastRemoteLoadout = loadout;
+            }
+        }
+
+
         /// <summary>What <paramref name="member"/>'s seat is seeded with when this device starts flying it: its last pose, the server's score, a loadout.</summary>
         private AsteroidsGameManager.SeatSeed SeedOf(RoomMemberInfo member, StrikeLoadout loadout)
         {
@@ -250,7 +281,8 @@ namespace Portfolio.Asteroids
             {
                 return default;
             }
-            StrikeLoadout loadout = Asteroids != null && Asteroids.IsStrike ? StrikeLoadoutText.Parse(RemoteStatusValue(RemoteSeatStatus.Loadout)) : null;
+            RememberRemoteStatus();
+            StrikeLoadout loadout = Asteroids != null && Asteroids.IsStrike ? lastRemoteLoadout : null;
             return SeedOf(me, loadout);
         }
 

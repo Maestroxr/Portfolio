@@ -669,6 +669,11 @@ namespace Portfolio.EndlessRunner
             {
                 player.BeginRun();
                 player.SetTargetSpeed(RunnerSettings.SpeedAtDistance(position.z));
+                if (lastPose.HasValue)
+                {
+                    // At the pace the pose had (its forward velocity), not from a standstill.
+                    player.ResumeAt(lastPose.Value.Velocity.z);
+                }
                 player.MakeInvulnerable(invulnerableTime);
                 run.Enter(RunPhase.Running);
             }

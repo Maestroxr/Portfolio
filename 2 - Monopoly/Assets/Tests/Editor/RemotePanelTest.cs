@@ -384,5 +384,114 @@ namespace Portfolio.Monopoly.Tests
             Assert.AreNotEqual(before, SeatPanelModel.Signature(match, table, 0, true, true, false), "The dice moved the seat");
             Assert.AreEqual("", SeatPanelModel.Signature(null, table, 0, true, true, false));
         }
+
+        // ------------------------------------------------------------------ the trade builder
+
+        [Test]
+        public void TradeIsOfferedWhileTheSeatMayManage()
+        {
+            LockstepMatch table = Table();
+            MonopolyMatch match = table.Match;
+            CollectionAssert.AreEqual(new[] { PanelChoiceKind.Roll, PanelChoiceKind.Trade }, Kinds(SeatPanelModel.Choices(match, table, 0, true, false, true)));
+            CollectionAssert.AreEqual(new[] { PanelChoiceKind.Roll }, Kinds(SeatPanelModel.Choices(match, table, 0, true, false, false)), "Not managing");
+            CollectionAssert.AreEqual(new[] { PanelChoiceKind.Trade }, Kinds(SeatPanelModel.Choices(match, table, 0, false, false, true)), "A command on its way: still trading");
+            match.phase = MatchPhase.RaiseFunds;
+            match.debts.Add(new Debt { debtor = 0, creditor = 1, amount = 50, reason = "rent" });
+            CollectionAssert.AreEqual(new[] { PanelChoiceKind.Bankrupt, PanelChoiceKind.Trade }, Kinds(SeatPanelModel.Choices(match, table, 0, true, false, true)), "In debt too");
+            match.phase = MatchPhase.Roll;
+            match.debts.Clear();
+            Assert.IsTrue(table.Apply(MatchCommand.Propose(new TradeOffer { from = 0, to = 1, giveCash = 25 }), 5));
+            Assert.IsEmpty(SeatPanelModel.Choices(match, table, 0, true, false, true), "An offer is on the table: nothing else until it is answered");
+            Assert.IsTrue(table.Apply(MatchCommand.Answer(1, false), 6));
+            match.players[1].bankrupt = true;
+            match.players[2].bankrupt = true;
+            Assert.IsFalse(SeatPanelModel.CanTrade(match, 0, true), "Nobody left to trade with");
+            var recorder = new Recorder();
+            Assert.IsFalse(SeatPanelModel.Perform(PanelChoice.Of(PanelChoiceKind.Trade, "Trade"), 0, recorder, recorder.Answer), "Trade opens the builder, sends nothing");
+            Assert.IsEmpty(recorder.sent);
+        }
+
+        [Test]
+        public void ADraftSendsWhatTheTradeWindowSends()
+        {
+            LockstepMatch table = Table();
+            MonopolyMatch match = table.Match;
+            Give(match, 0, Damrak, Kalverstraat);
+            Give(match, 1, Champs, FifthAvenue);
+            match.players[0].jailCards.Add(CardDeckKind.Chance);
+            CollectionAssert.AreEqual(new[] { 1, 2 }, SeatPanelModel.TradePartners(match, 0), "Everybody else, in seat order");
+            TradeDraft draft = SeatPanelModel.NewTrade(match, 0);
+            Assert.AreEqual(0, draft.from);
+            Assert.AreEqual(1, draft.to, "The first partner is picked");
+            Assert.IsFalse(SeatPanelModel.ValidateTrade(match, draft, out string empty), "Nothing in it yet");
+            Assert.AreEqual("The trade is empty.", empty);
+
+            SeatPanelModel.ToggleSpace(draft, Damrak, true);
+            SeatPanelModel.ToggleSpace(draft, Champs, false);
+            SeatPanelModel.ChangeCash(match, draft, 100, true);
+            SeatPanelModel.ChangeCash(match, draft, 10, false);
+            SeatPanelModel.ToggleCard(draft, true);
+            Assert.IsTrue(SeatPanelModel.ValidateTrade(match, draft, out _));
+            var window = new TradeOffer { from = 0, to = 1, giveCash = 100, getCash = 10, giveJailCards = 1, getJailCards = 0 };
+            window.giveSpaces.Add(Damrak);
+            window.getSpaces.Add(Champs);
+            Assert.AreEqual(UnityEngine.JsonUtility.ToJson(window), UnityEngine.JsonUtility.ToJson(draft.ToOffer()), "The same offer the trade window builds");
+            StringAssert.Contains("P1 answers on their own device.", SeatPanelModel.TradeStatus(match, draft));
+
+            // The proposal goes out as any other and lands on the other side's panel.
+            Assert.IsTrue(table.Apply(MatchCommand.Propose(draft.ToOffer()), 7));
+            Assert.AreEqual("P0 offers you a trade", SeatPanelModel.Headline(match, table, 1));
+            CollectionAssert.AreEqual(new[] { PanelChoiceKind.Accept, PanelChoiceKind.Decline }, Kinds(SeatPanelModel.Choices(match, table, 1, false, true, true)));
+            Assert.IsTrue(table.Apply(MatchCommand.Answer(1, true), 8));
+            Assert.AreEqual(1, match.Owner(Damrak));
+            Assert.AreEqual(0, match.Owner(Champs));
+            Assert.AreEqual(1500 - 100 + 10, match.players[0].cash);
+            Assert.AreEqual(1, match.players[1].jailCards.Count);
+        }
+
+        [Test]
+        public void ADraftKeepsToTheRules()
+        {
+            LockstepMatch table = Table();
+            MonopolyMatch match = table.Match;
+            Give(match, 0, Damrak, Kalverstraat, Prinsengracht, GrandCentral);
+            Give(match, 2, Champs);
+            TradeDraft draft = SeatPanelModel.NewTrade(match, 0);
+            SeatPanelModel.ChangeCash(match, draft, -50, true);
+            Assert.AreEqual(0, draft.giveCash, "Never below nothing");
+            for (int i = 0; i < 20; i++)
+            {
+                SeatPanelModel.ChangeCash(match, draft, 100, true);
+            }
+            Assert.AreEqual(1500, draft.giveCash, "Never above what the player has");
+            SeatPanelModel.ChangeCash(match, draft, 100, false);
+            Assert.AreEqual(100, draft.getCash);
+            Assert.IsTrue(SeatPanelModel.ValidateTrade(match, draft, out _));
+
+            SeatPanelModel.ToggleSpace(draft, Damrak, true);
+            SeatPanelModel.ToggleSpace(draft, Damrak, true);
+            Assert.IsEmpty(draft.giveSpaces, "Ticked twice is not ticked");
+            CollectionAssert.AreEqual(new[] { Damrak, Kalverstraat, Prinsengracht, GrandCentral }, SeatPanelModel.Offerable(match, 0), "Streets by set, then the station");
+            Assert.IsTrue(match.Build(0, Damrak));
+            CollectionAssert.AreEqual(new[] { GrandCentral }, SeatPanelModel.Offerable(match, 0), "A set with buildings stays out of trades");
+
+            SeatPanelModel.SelectPartner(draft, 2);
+            Assert.AreEqual(2, draft.to);
+            Assert.AreEqual(0, draft.giveCash, "Another partner starts a fresh draft");
+            Assert.AreEqual(0, draft.getCash);
+            Assert.IsEmpty(SeatPanelModel.Offerable(match, 1), "Seat 1 owns nothing");
+            CollectionAssert.AreEqual(new[] { Champs }, SeatPanelModel.Offerable(match, 2));
+            SeatPanelModel.ToggleSpace(draft, Champs, false);
+            Assert.IsTrue(SeatPanelModel.ValidateTrade(match, draft, out _));
+            draft.getCash = 5000;
+            Assert.IsFalse(SeatPanelModel.ValidateTrade(match, draft, out string reason), "More than seat 2 has");
+            Assert.AreEqual("P2 only has $1500.", reason);
+
+            match.players[1].bankrupt = true;
+            match.players[2].bankrupt = true;
+            Assert.IsNull(SeatPanelModel.NewTrade(match, 0), "Nobody left to trade with");
+            Assert.IsEmpty(SeatPanelModel.TradePartners(match, 0));
+            Assert.IsEmpty(SeatPanelModel.TradePartners(match, -1), "No seat, no partners");
+        }
     }
 }

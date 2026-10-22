@@ -7,6 +7,7 @@ using Gamebox.Lockstep;
 using Gamebox.Online;
 using Gamebox.UI;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Portfolio.BoardGames
 {
@@ -184,6 +185,7 @@ namespace Portfolio.BoardGames
             if (online.IsRemote)
             {
                 StartCoroutine(ShotWhen("r1_remote_panel", () => online.ShowsRemotePanel && manager.WaitingForHuman, 0.5f));
+                StartCoroutine(RemoteWindows());
             }
             float switchAfter = NumberArgument(SwitchArgument, 0f);
             if (switchAfter > 0f && online.IsRemote)
@@ -390,8 +392,18 @@ namespace Portfolio.BoardGames
             yield return WaitFor(() => Server.CurrentRoom != null && Server.CurrentRoom.Phase == RoomPhase.Finished, 60f, "the room to finish");
             Note("places: " + string.Join(", ", Server.Members.Select(member => $"{Server.NameOf(member.Identity)} {member.Place}. with {member.Score}")));
 
-            // "Back to the room" of the result panel (ReturnToTitle is "Leave the match": it leaves the room).
-            manager.PlayAgain();
+            // "Back to the room" of the result panel (ReturnToTitle is "Leave the match": it leaves the room). Nobody
+            // presses anything on a shared screen: it goes back to the room by itself after a while.
+            if (AsScreen)
+            {
+                float shown = Time.realtimeSinceStartup;
+                yield return WaitFor(() => !manager.InSession, OnlineGameController.ScreenResultsSeconds + 15f, "the screen to go back to the room by itself");
+                Note($"the screen went back to the room by itself {Time.realtimeSinceStartup - shown:0.0} s after the standings (results shown for {OnlineGameController.ScreenResultsSeconds:0} s)");
+            }
+            else
+            {
+                manager.PlayAgain();
+            }
             yield return new WaitForSeconds(1.5f);
             yield return Shot("09_back_in_the_room");
             Note($"back in the room: session {manager.InSession}, table {manager.Table != null}, state {manager.State}, lobby {online.LobbyUI.IsOpen}");
@@ -544,6 +556,60 @@ namespace Portfolio.BoardGames
         private bool HudUnderFrame()
         {
             return manager.UI is BoardGamesUI ui && ui.IsRemoteLayout;
+        }
+
+        /// <summary>
+        /// Pictures of the game's windows on a remote, between the frame's header and footer: the chess promotion picker
+        /// (opened by hand on the remote's first turn, before its move is left to the clock, with the pilot held, since the
+        /// pilot never promotes through the board), the Resign button after its first press ("Resign?", which nobody
+        /// presses a second time) and the match menu the frame's Menu button opens.
+        /// </summary>
+        private IEnumerator RemoteWindows()
+        {
+            yield return WaitFor(() => Over || online.ShowsRemotePanel && manager.WaitingForHuman, 150f, "the remote's first turn");
+            if (Over || !online.ShowsRemotePanel || !manager.WaitingForHuman)
+            {
+                yield break;
+            }
+            piloting = false;
+            if (manager.Mode == GameMode.Chess)
+            {
+                ChessHud chessHud = FindAnyObjectByType<ChessHud>(FindObjectsInactive.Include);
+                if (chessHud != null)
+                {
+                    chessHud.ShowPromotion(kind => Note($"the picker chose {kind}"), () => Note("the picker was cancelled"));
+                    yield return null;
+                    Note($"the promotion picker is {(chessHud.IsOpen ? "open" : "closed")} on the remote");
+                    yield return Shot("r4_promotion_picker");
+                    chessHud.Hide();
+                }
+            }
+            Button resign = null;
+            foreach (Button button in FindObjectsByType<Button>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                if (button.name == "ResignButton")
+                {
+                    resign = button;
+                }
+            }
+            if (resign != null && resign.gameObject.activeInHierarchy)
+            {
+                resign.onClick.Invoke();
+                yield return null;
+                Note("Resign pressed once on the remote: " + (resign.GetComponentInChildren<TMPro.TMP_Text>(true)?.text ?? ""));
+                yield return Shot("r5_resign_asked");
+            }
+            if (online.LobbyUI != null)
+            {
+                online.LobbyUI.ToggleMatchMenu();
+                yield return new WaitForSeconds(0.5f);
+                Note($"the match menu is up on the remote: state {manager.State}, HUD under the frame {HudUnderFrame()}");
+                yield return Shot("r6_match_menu");
+                online.LobbyUI.ToggleMatchMenu();
+                yield return new WaitForSeconds(0.5f);
+                Note($"the match menu is down: state {manager.State}, panel {online.ShowsRemotePanel}");
+            }
+            piloting = true;
         }
 
         /// <summary>The moment of the game worth a picture: a king in draughts, a check in chess, a hit or the cube in backgammon.</summary>

@@ -158,6 +158,15 @@ namespace Portfolio.EndlessRunner
             Speed *= factor;
         }
 
+        /// <summary>
+        /// The runner runs at <paramref name="speed"/> meters a second from now on, as it did elsewhere: a seat taken
+        /// over in the middle of a race goes on at the pace its last pose had, instead of starting over from a standstill.
+        /// </summary>
+        public void ResumeAt(float speed)
+        {
+            Speed = Mathf.Max(0f, speed);
+        }
+
         public void MakeInvulnerable(float seconds)
         {
             invulnerableUntil = Mathf.Max(invulnerableUntil, Time.time + seconds);

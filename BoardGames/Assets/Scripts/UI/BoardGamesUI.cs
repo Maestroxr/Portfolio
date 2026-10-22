@@ -66,6 +66,8 @@ namespace Portfolio.BoardGames
         private bool onTitle = true;
         private bool over;
         private bool remoteLayout;
+        /// <summary>Where the result panel sits by the scene (read the first time the layout changes), to centre it between the remote frame's header and footer and back.</summary>
+        private Vector2? resultHome;
         private int shownClockSeconds = -1;
 
         public BoardGamesManager Games => Manager as BoardGamesManager;
@@ -86,17 +88,27 @@ namespace Portfolio.BoardGames
         /// Lays the HUD out for the remote control of a shared screen's room, or back
         /// (<see cref="BoardGamesOnlineController.OnPresentationChanged"/>): its parts move in by <paramref name="top"/>
         /// and <paramref name="bottom"/>, the frame's header and footer (in the units both canvases share), so the seat
-        /// panels, the backgammon buttons, the promotion picker and Resign stay in reach around the board, which stays
-        /// the control; the HUD's own turn line and clock give way to the frame's header. The result panel stays put.
+        /// panels, the backgammon buttons, the promotion picker, the toast and Resign stay in reach around the board,
+        /// which stays the control; the HUD's own turn line and clock give way to the frame's header. The result panel
+        /// (a sibling of the parts, shown while they hide) is centred in the same band.
         /// </summary>
         public void SetRemoteLayout(bool remote, float top = 0f, float bottom = 0f)
         {
             remoteLayout = remote;
+            float above = Mathf.Max(0f, top);
+            float below = Mathf.Max(0f, bottom);
             RectTransform parts = seatPanels.Length > 0 && seatPanels[0] != null ? seatPanels[0].transform.parent as RectTransform : null;
             if (parts != null)
             {
-                parts.offsetMin = new Vector2(parts.offsetMin.x, remote ? Mathf.Max(0f, bottom) : 0f);
-                parts.offsetMax = new Vector2(parts.offsetMax.x, remote ? -Mathf.Max(0f, top) : 0f);
+                parts.offsetMin = new Vector2(parts.offsetMin.x, remote ? below : 0f);
+                parts.offsetMax = new Vector2(parts.offsetMax.x, remote ? -above : 0f);
+            }
+            RectTransform result = resultPanel != null ? resultPanel.GetComponent<RectTransform>() : null;
+            if (result != null)
+            {
+                resultHome ??= result.anchoredPosition;
+                Vector2 home = resultHome.Value;
+                result.anchoredPosition = remote ? new Vector2(home.x, home.y + (below - above) * 0.5f) : home;
             }
             shownClockSeconds = -1;
             RefreshHud();
