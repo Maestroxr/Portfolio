@@ -247,7 +247,17 @@ namespace Portfolio.MemoryCards.EditorTools
 
         public static AudioClip KenneySound(string name)
         {
-            return MemoryCardsAssets.Load<AudioClip>($"{KenneyAudioFolder}/{name}.ogg");
+            return MemoryCardsAssets.Load<AudioClip>(KenneySoundFile(name));
+        }
+
+        /// <summary>
+        /// The file of a Kenney sound, relative to the project: its .ogg, or a .wav of the same name (a clip too short
+        /// for WebGL's AAC encoder is kept padded with silence as a .wav, under the original's GUID).
+        /// </summary>
+        public static string KenneySoundFile(string name)
+        {
+            string wav = $"{KenneyAudioFolder}/{name}.wav";
+            return File.Exists(MemoryCardsAssets.FullPath(MemoryCardsAssets.Path(wav))) ? wav : $"{KenneyAudioFolder}/{name}.ogg";
         }
 
         public static AudioClip GeneratedSound(string name)
@@ -423,7 +433,7 @@ namespace Portfolio.MemoryCards.EditorTools
         {
             foreach (string sound in KenneySounds)
             {
-                MemoryCardsAssets.ConfigureAudio($"{KenneyAudioFolder}/{sound}.ogg", false);
+                MemoryCardsAssets.ConfigureAudio(KenneySoundFile(sound), false);
             }
             MemoryCardsAssets.SaveAudio(SoundFactory.Wav(SoundFactory.MenuMusic()), $"{GeneratedAudioFolder}/MenuMusic.wav", true);
             MemoryCardsAssets.SaveAudio(SoundFactory.Wav(SoundFactory.PlayMusic()), $"{GeneratedAudioFolder}/PlayMusic.wav", true);

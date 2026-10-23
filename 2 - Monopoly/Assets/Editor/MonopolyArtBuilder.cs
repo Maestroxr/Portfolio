@@ -137,7 +137,9 @@ namespace Portfolio.Monopoly.EditorTools
 
         public static AudioClip Clip(string name)
         {
-            AudioClip clip = MonopolyAssets.Load<AudioClip>($"{KenneyFolder}/{name}.ogg") ?? MonopolyAssets.Load<AudioClip>($"{GeneratedAudioFolder}/{name}.wav");
+            // A Kenney clip too short for WebGL's AAC encoder is kept padded with silence as a .wav of the same name.
+            AudioClip clip = MonopolyAssets.Load<AudioClip>($"{KenneyFolder}/{name}.ogg") ?? MonopolyAssets.Load<AudioClip>($"{KenneyFolder}/{name}.wav")
+                ?? MonopolyAssets.Load<AudioClip>($"{GeneratedAudioFolder}/{name}.wav");
             if (clip == null)
             {
                 throw new System.InvalidOperationException($"Monopoly: sound {name} is missing.");
