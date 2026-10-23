@@ -585,7 +585,7 @@ namespace Portfolio.DeathRace
         private bool RaceIsOn => race != null && Game != null && Game.Director != null && Game.Director.Current == race && InCharge;
 
         /// <summary>
-        /// A piece of the remote's pad state for the next packet (the special weapon's button, a tour's pilot): the sticks
+        /// A piece of the remote's pad state for the next packet (a tour's pilot): the sticks
         /// add up, the bits gather, and the lot goes to the base with the frame's own pad
         /// (<see cref="OnlineGameController.SetPadState"/>) once a frame, whatever order the pieces came in.
         /// </summary>

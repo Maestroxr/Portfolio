@@ -4,7 +4,6 @@ using Gamebox.Online;
 using Gamebox.UI;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Portfolio.DeathRace
 {
@@ -13,10 +12,12 @@ namespace Portfolio.DeathRace
     /// (<see cref="DeathRaceOnlineController.BuildRemotePanel"/>), and the status the screen publishes for every seat it
     /// drives from a remote (<see cref="Compose"/>): the place, the lap, the hull, the stock, the special armed, the
     /// kills and the cash, in the key=value form of the room's options. The panel is the status in three lines
-    /// (<see cref="RemoteRaceStatus"/>) over the shared pad (the stick for the pedals and the wheel; the gun, the nitro,
-    /// the mine and the rocket as its four buttons, by their roles in <see cref="DeathRaceControls"/>) with a fifth button
-    /// for the special weapon beside them (<see cref="RemoteSpecialButton"/>), named after the special the status says
-    /// is armed. A desktop that plays as a remote presses the keys of the first seat, the special's included.
+    /// (<see cref="RemoteRaceStatus"/>) over the shared pad (BaseGame's <see cref="TouchPad"/>: the stick for the wheel
+    /// and the pedals; the gun, the nitro, the mine, the rocket and the special weapon as its buttons, by their roles in
+    /// <see cref="DeathRaceControls"/>). The special's button is named after the special the status says is armed, and a
+    /// weapon the status says is empty is faded. On a touch screen the car accelerates by itself as it does on the
+    /// device (<see cref="DeathRaceSettings.autoAccelerate"/>). A desktop that plays as a remote presses the keys of the
+    /// first seat, the special's included.
     /// </summary>
     public static class RemoteRacePanel
     {
@@ -102,16 +103,19 @@ namespace Portfolio.DeathRace
                 | (input.Special ? Bit(DeathRaceControls.Special) : 0u);
         }
 
-        /// <summary>Builds the panel with <paramref name="kit"/>: the status lines, then the pad with the special's button.</summary>
+        /// <summary>Builds the panel with <paramref name="kit"/>: the status lines, then the pad, which the status names and fades.</summary>
         public static void Build(RemotePanelKit kit, DeathRaceOnlineController controller)
         {
-            RemoteRaceStatus.Build(kit, controller);
+            RemoteRaceStatus status = RemoteRaceStatus.Build(kit, controller);
             LocalPlayRules rules = controller != null && controller.Manager != null ? controller.Manager.LocalPlay : null;
             RemotePad pad = kit.Pad(rules != null && rules.Controls != null ? rules.Controls : Scheme, controller != null ? controller.LocalBindings : null);
-            if (pad != null)
+            if (pad == null)
             {
-                RemoteSpecialButton.Build(kit, controller, (RectTransform)pad.transform);
+                return;
             }
+            DeathRaceSettings settings = controller.Game != null ? controller.Game.Options : null;
+            pad.Touch.AutoForward = MobilePlatform.UsesTouch && (settings == null || settings.autoAccelerate);
+            status.Pad = pad.Touch;
         }
     }
 
@@ -119,7 +123,8 @@ namespace Portfolio.DeathRace
     /// <summary>
     /// The three lines of the race on the remote panel, from the status the screen publishes
     /// (<see cref="RemoteRacePanel.Compose"/>): the place and the lap (and the finish or the wreck), the hull and the
-    /// stock, the kills, the cash and the special armed. Waits for the first status.
+    /// stock, the kills, the cash and the special armed. Waits for the first status. The buttons of the
+    /// <see cref="Pad"/> follow it: the special's is named after the one armed, an empty weapon's is faded.
     /// </summary>
     public sealed class RemoteRaceStatus : MonoBehaviour
     {
@@ -132,6 +137,18 @@ namespace Portfolio.DeathRace
         private DeathRaceOnlineController controller;
         private TMP_Text headline, stock, score;
         private string shown;
+        private TouchPad pad;
+
+        /// <summary>The pad under the lines, whose buttons the status names and fades.</summary>
+        public TouchPad Pad
+        {
+            get => pad;
+            set
+            {
+                pad = value;
+                Refresh();
+            }
+        }
 
         /// <summary>A section of the panel with the lines, following the status as it changes.</summary>
         public static RemoteRaceStatus Build(RemotePanelKit kit, DeathRaceOnlineController controller)
@@ -182,6 +199,7 @@ namespace Portfolio.DeathRace
                 headline.text = L.T("Waiting for the screen...");
                 stock.text = "";
                 score.text = "";
+                pad?.SetLabel(DeathRaceControls.Special, L.T("Special weapon"));
                 return;
             }
             headline.text = Headline(shown);
@@ -191,6 +209,20 @@ namespace Portfolio.DeathRace
             string special = RoomOptions.Value(shown, RemoteRacePanel.SpecialKey);
             score.text = L.F("Kills {0}  ·  ${1}  ·  Special: {2}", Number(RemoteRacePanel.KillsKey), Number(RemoteRacePanel.CashKey),
                 string.IsNullOrEmpty(special) ? L.T("None") : L.T(special));
+            if (pad != null)
+            {
+                pad.SetLabel(DeathRaceControls.Special, string.IsNullOrEmpty(special) ? L.T("Special weapon") : L.T(special));
+                pad.SetAvailable(DeathRaceControls.Special, !string.IsNullOrEmpty(special));
+                pad.SetAvailable(DeathRaceControls.Fire, Count(RemoteRacePanel.AmmoKey) > 0);
+                pad.SetAvailable(DeathRaceControls.Nitro, Count(RemoteRacePanel.NitroKey) > 0);
+                pad.SetAvailable(DeathRaceControls.Mine, Count(RemoteRacePanel.MinesKey) > 0);
+                pad.SetAvailable(DeathRaceControls.Rocket, Count(RemoteRacePanel.RocketsKey) > 0);
+            }
+        }
+
+        private int Count(string key)
+        {
+            return RoomOptions.Number(shown, key, 0);
         }
 
         /// <summary>"Rank 2 of 4  ·  LAP 1/3", with the finish or the wreck after it.</summary>
@@ -214,71 +246,6 @@ namespace Portfolio.DeathRace
         private string Number(string key)
         {
             return RoomOptions.Number(shown, key, 0).ToString(CultureInfo.InvariantCulture);
-        }
-    }
-
-
-    /// <summary>
-    /// The fifth button of the pad, the special weapon (<see cref="DeathRaceControls.Special"/> has no role the shared pad
-    /// lays out): beside the four buttons, named after the special the status says is armed. While held or tapped it
-    /// feeds its bit to the controller (<see cref="DeathRaceOnlineController.FeedPad"/>), which the frame merges with
-    /// its own pad.
-    /// </summary>
-    public sealed class RemoteSpecialButton : MonoBehaviour
-    {
-        private const float Size = 200f;
-        private static readonly Vector2 Spot = new Vector2(-610f, 120f);
-
-        private DeathRaceOnlineController controller;
-        private TouchButton touch;
-        private TMP_Text label;
-        private string shownSpecial;
-        private uint bit;
-
-        /// <summary>The button in <paramref name="pad"/> (the pad's root), in the look of <paramref name="kit"/>.</summary>
-        public static RemoteSpecialButton Build(RemotePanelKit kit, DeathRaceOnlineController controller, RectTransform pad)
-        {
-            OverlayKit overlay = kit.Kit;
-            RectTransform button = overlay.Panel(pad, "Button " + DeathRaceControls.Special, overlay.Look.row, new Vector2(Size, Size), overlay.Look.buttonSprite);
-            OverlayKit.Anchor(button, new Vector2(1f, 0.5f), Spot, new Vector2(Size, Size));
-            var special = button.gameObject.AddComponent<RemoteSpecialButton>();
-            special.controller = controller;
-            special.bit = RemoteRacePanel.Bit(DeathRaceControls.Special);
-            special.touch = button.gameObject.AddComponent<TouchButton>();
-            special.touch.Configure(button.GetComponent<Image>(), button);
-            special.label = overlay.Text(button, "Label", L.T("Special weapon"), 30f, overlay.Look.buttonText, TextAlignmentOptions.Midline, FontStyles.Bold, true);
-            OverlayKit.Stretch(special.label.rectTransform);
-            special.label.margin = new Vector4(10f, 0f, 10f, 0f);
-            OverlayKit.Fit(special.label, 30f);
-            return special;
-        }
-
-        private void Update()
-        {
-            if (controller == null || touch == null)
-            {
-                return;
-            }
-            bool held = touch.IsHeld;
-            bool pressed = touch.ConsumePress();
-            if (held || pressed)
-            {
-                controller.FeedPad(Vector2.zero, held ? bit : 0u, pressed ? bit : 0u);
-            }
-            string special = controller.RemoteStatusValue(RemoteRacePanel.SpecialKey);
-            if (special != shownSpecial && label != null)
-            {
-                shownSpecial = special;
-                label.text = string.IsNullOrEmpty(special) ? L.T("Special weapon") : L.T(special);
-            }
-        }
-
-        private void OnDisable()
-        {
-            if (touch != null)
-            {
-                touch.ReleaseAll();
-            }
         }
     }
 }

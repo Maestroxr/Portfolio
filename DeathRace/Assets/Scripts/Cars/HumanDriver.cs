@@ -5,7 +5,8 @@ namespace Portfolio.DeathRace
 {
     /// <summary>
     /// A person at this device: reads their controls (one seat of a split screen race, or every keyboard layout the
-    /// single player may use) and smooths the keys a little, so a tap steers gently and a held key steers fully.
+    /// single player may use, and the on-screen pad of a phone, <see cref="Touch"/>) and smooths the keys a little, so a
+    /// tap steers gently and a held key steers fully.
     /// </summary>
     public sealed class HumanDriver : ICarDriver
     {
@@ -23,6 +24,9 @@ namespace Portfolio.DeathRace
         /// <summary>Set by tests and tours to drive through code instead of the controls.</summary>
         public CarInput? Override { get; set; }
 
+        /// <summary>The on-screen pad of a phone or a tablet (<see cref="RaceTouchControls"/>), read beside the keys; null without one.</summary>
+        public PlayerControls Touch { get; set; }
+
         public CarInput Drive(Car car, float deltaTime)
         {
             if (Override.HasValue)
@@ -31,8 +35,9 @@ namespace Portfolio.DeathRace
             }
             float throttle = 0f, brake = 0f, left = 0f, right = 0f;
             bool fire = false, nitro = false, mine = false, rocket = false, special = false;
-            foreach (PlayerControls seat in controls)
+            for (int i = 0; i <= controls.Length; i++)
             {
+                PlayerControls seat = i < controls.Length ? controls[i] : Touch;
                 if (seat == null)
                 {
                     continue;

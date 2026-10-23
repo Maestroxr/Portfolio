@@ -5,8 +5,8 @@ namespace Portfolio.DeathRace
 {
     /// <summary>
     /// What the player can tune: the volumes of the sounds and the music, how close the camera follows, whether hits
-    /// shake the screen, whether the minimap shows, and the track, car, difficulty and laps a quick race starts with.
-    /// The settings panel edits a runtime copy of the asset.
+    /// shake the screen, whether the minimap shows, whether the car accelerates by itself on a touch screen, and the
+    /// track, car, difficulty and laps a quick race starts with. The settings panel edits a runtime copy of the asset.
     /// </summary>
     [CreateAssetMenu(fileName = "DeathRaceSettings", menuName = "Death Race/Settings", order = 1)]
     public sealed class DeathRaceSettings : GameSettings
@@ -24,6 +24,8 @@ namespace Portfolio.DeathRace
         public bool screenShake = true;
         [Tooltip("Show the map of the track in a corner during a race.")]
         public bool showMinimap = true;
+        [Tooltip("Played by touch, the car accelerates by itself: the stick only steers, and pulled back it brakes and reverses.")]
+        public bool autoAccelerate = true;
         [Tooltip("The laps of a quick race (0 = the track's own number).")]
         public int quickLaps;
         [Tooltip("The car of a quick race (a CarModel).")]
@@ -82,6 +84,7 @@ namespace Portfolio.DeathRace
             storage.SetInt($"{prefix}.CameraDistance", cameraDistance);
             storage.SetBool($"{prefix}.ScreenShake", screenShake);
             storage.SetBool($"{prefix}.ShowMinimap", showMinimap);
+            storage.SetBool($"{prefix}.AutoAccelerate", autoAccelerate);
             storage.SetInt($"{prefix}.QuickLaps", quickLaps);
             storage.SetInt($"{prefix}.QuickCar", quickCar);
             storage.SetInt($"{prefix}.QuickDifficulty", quickDifficulty);
@@ -94,6 +97,7 @@ namespace Portfolio.DeathRace
             cameraDistance = storage.GetInt($"{prefix}.CameraDistance", cameraDistance);
             screenShake = storage.GetBool($"{prefix}.ScreenShake", screenShake);
             showMinimap = storage.GetBool($"{prefix}.ShowMinimap", showMinimap);
+            autoAccelerate = storage.GetBool($"{prefix}.AutoAccelerate", autoAccelerate);
             quickLaps = storage.GetInt($"{prefix}.QuickLaps", quickLaps);
             quickCar = storage.GetInt($"{prefix}.QuickCar", quickCar);
             quickDifficulty = storage.GetInt($"{prefix}.QuickDifficulty", quickDifficulty);
@@ -110,6 +114,7 @@ namespace Portfolio.DeathRace
             cameraDistance = source.cameraDistance;
             screenShake = source.screenShake;
             showMinimap = source.showMinimap;
+            autoAccelerate = source.autoAccelerate;
             quickLaps = source.quickLaps;
             quickCar = source.quickCar;
             quickDifficulty = source.quickDifficulty;

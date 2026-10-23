@@ -18,7 +18,10 @@ namespace Portfolio.DeathRace
     /// pickup, a lap, the fastest lap, a weapon with nothing left, a status) and the banner at the finish.
     ///
     /// It is laid out once for a 1920 x 1080 screen in a frame that is scaled to the view (a split screen half or quarter
-    /// gets smaller pieces, still in the corners), and drawn again on a new look or language (<see cref="Restyle"/>).
+    /// gets smaller pieces, still in the corners), and drawn again on a new look or language (<see cref="Restyle"/>). A
+    /// view over the whole screen keeps its corners clear of notches and rounded corners; played by touch
+    /// (<see cref="Touch"/>) the bottom corners belong to the thumbs (<see cref="RaceTouchControls"/>), so the car panel
+    /// moves to the top middle with the statuses under it, the cash under the place, and the toasts lower.
     /// Every frame it only reads the car and the race and writes what changed: no strings or garbage per frame.
     /// </summary>
     public class RaceHud : MonoBehaviour
@@ -37,6 +40,7 @@ namespace Portfolio.DeathRace
         private Rect viewport;
         private CanvasScaler scaler;
         private RectTransform frame;
+        private RectTransform area;
         private Vector2 frameFor;
 
         private TMP_Text placeText, ofText, lapText, timeText, bestText, cashText;
@@ -88,11 +92,16 @@ namespace Portfolio.DeathRace
         public Car Car { get; protected set; }
         public Race Race { get; protected set; }
 
+        /// <summary>Laid out for touch play: the bottom corners are left to the on-screen controls.</summary>
+        public bool Touch { get; protected set; }
+
         /// <summary>
         /// A HUD for <paramref name="car"/> under <paramref name="root"/> (a screen canvas of the director), fitted into
-        /// <paramref name="viewport"/> (normalised, as a camera's rect).
+        /// <paramref name="viewport"/> (normalised, as a camera's rect); <paramref name="touch"/> lays it out around the
+        /// on-screen controls.
         /// </summary>
-        public static RaceHud Create(RectTransform root, Rect viewport, Car car, Race race, DeathRaceTheme theme, DeathRaceSettings settings)
+        public static RaceHud Create(RectTransform root, Rect viewport, Car car, Race race, DeathRaceTheme theme, DeathRaceSettings settings,
+            bool touch = false)
         {
             var go = new GameObject($"HUD {car.name}", typeof(RectTransform));
             go.layer = LayerMask.NameToLayer("UI");
@@ -105,6 +114,7 @@ namespace Portfolio.DeathRace
             hud.theme = theme;
             hud.settings = settings;
             hud.viewport = viewport;
+            hud.Touch = touch;
             hud.Build();
             car.Happened += hud.OnHappened;
             if (car.Status != null)
@@ -168,6 +178,25 @@ namespace Portfolio.DeathRace
         private const float ChipWidth = 236f;
         private const float ChipHeight = 60f;
 
+        /// <summary>The height of the car panel, and of the place panel (the cash goes under it with touch).</summary>
+        private const float CarPanelHeight = 168f;
+        private const float StandingHeight = 238f;
+
+        /// <summary>The top of the first toast under the top edge: lower with touch, under the car panel and its statuses.</summary>
+        private float ToastTop => Touch ? 300f : 120f;
+
+        /// <summary>The point the status chips hang from: over the car panel, or under it at the top with touch.</summary>
+        private Vector2 ChipAnchor => Touch ? new Vector2(0.5f, 1f) : new Vector2(0f, 0f);
+
+        /// <summary>The spot of the status chip in <paramref name="slot"/> (packed from the left edge of the car panel).</summary>
+        private Vector2 ChipSpot(int slot)
+        {
+            float x = slot * (ChipWidth + 10f);
+            return Touch
+                ? new Vector2(-CarPanelWidth * 0.5f + ChipWidth * 0.5f + x, -(28f + CarPanelHeight + 12f))
+                : new Vector2(28f + x, 28f + CarPanelHeight + 12f);
+        }
+
         private void Build()
         {
             if (frame != null)
@@ -184,6 +213,14 @@ namespace Portfolio.DeathRace
             frame.anchorMin = frame.anchorMax = frame.pivot = new Vector2(0.5f, 0.5f);
             frameFor = Vector2.zero;
             Fit();
+            area = frame;
+            if (viewport.width > 0.99f && viewport.height > 0.99f)
+            {
+                // The frame covers the whole screen: the panels in its corners stay clear of a notch.
+                area = OverlayKit.Rect(frame, "SafeArea");
+                OverlayKit.Stretch(area);
+                MobilePlatform.ConfigureSafeArea(area.gameObject.AddComponent<SafeArea>());
+            }
 
             BuildStanding();
             BuildCar();
@@ -237,7 +274,7 @@ namespace Portfolio.DeathRace
         /// <summary>The top left: place, lap, the lap's time and the best.</summary>
         private void BuildStanding()
         {
-            RectTransform panel = Panel("Standing", new Vector2(0f, 1f), new Vector2(28f, -28f), new Vector2(360f, 238f));
+            RectTransform panel = Panel("Standing", new Vector2(0f, 1f), new Vector2(28f, -28f), new Vector2(360f, StandingHeight));
             placeText = Words(panel, "", 104f, Accent, TextAlignmentOptions.BottomLeft, true, new Vector2(0f, 1f), new Vector2(22f, -10f),
                 new Vector2(220f, 110f));
             ofText = Words(panel, "", 46f, Text, TextAlignmentOptions.BottomLeft, true, new Vector2(0f, 1f), new Vector2(206f, -18f),
@@ -254,10 +291,15 @@ namespace Portfolio.DeathRace
 
         private Color Muted => Color.Lerp(Text, new Color(0.5f, 0.5f, 0.5f, 1f), 0.45f);
 
-        /// <summary>The bottom left: health and what the car carries; the bottom right: the cash of the race.</summary>
+        /// <summary>
+        /// The bottom left: health and what the car carries; the bottom right: the cash of the race. With touch the car panel
+        /// is at the top in the middle and the cash under the place.
+        /// </summary>
         private void BuildCar()
         {
-            RectTransform panel = Panel("Car", new Vector2(0f, 0f), new Vector2(28f, 28f), new Vector2(CarPanelWidth, 168f));
+            RectTransform panel = Touch
+                ? Panel("Car", new Vector2(0.5f, 1f), new Vector2(0f, -28f), new Vector2(CarPanelWidth, CarPanelHeight))
+                : Panel("Car", new Vector2(0f, 0f), new Vector2(28f, 28f), new Vector2(CarPanelWidth, CarPanelHeight));
             Image heart = Icon(panel, theme != null ? theme.iconHealth : null, Text, new Vector2(0f, 1f), new Vector2(20f, -20f), 40f);
             heart.enabled = heart.sprite != null;
             float barLeft = heart.enabled ? 74f : 22f;
@@ -278,7 +320,9 @@ namespace Portfolio.DeathRace
             nitro = MakeCounter(panel, theme != null ? theme.iconNitro : null, L.T("NITRO"), 3);
             BuildSpecial(panel);
 
-            RectTransform money = Panel("Cash", new Vector2(1f, 0f), new Vector2(-28f, 28f), new Vector2(300f, 84f));
+            RectTransform money = Touch
+                ? Panel("Cash", new Vector2(0f, 1f), new Vector2(28f, -(28f + StandingHeight + 12f)), new Vector2(300f, 84f))
+                : Panel("Cash", new Vector2(1f, 0f), new Vector2(-28f, 28f), new Vector2(300f, 84f));
             Image coin = Icon(money, theme != null ? theme.iconCash : null, Accent, new Vector2(0f, 0.5f), new Vector2(18f, 0f), 48f);
             coin.enabled = coin.sprite != null;
             cashText = Words(money, "", 44f, Accent, TextAlignmentOptions.MidlineRight, true, new Vector2(1f, 0.5f), new Vector2(-20f, 0f),
@@ -393,8 +437,7 @@ namespace Portfolio.DeathRace
             {
                 CarStatusKind kind = kinds[i];
                 Color color = StatusColor(kind);
-                RectTransform rect = Panel($"Status {kind}", new Vector2(0f, 0f), new Vector2(28f + i * (ChipWidth + 10f), 28f + 168f + 12f),
-                    new Vector2(ChipWidth, ChipHeight));
+                RectTransform rect = Panel($"Status {kind}", ChipAnchor, ChipSpot(i), new Vector2(ChipWidth, ChipHeight));
                 Image icon = Icon(rect, Named(kind.ToString()), color, new Vector2(0f, 0.5f), new Vector2(10f, 3f), 40f);
                 icon.enabled = icon.sprite != null;
                 float left = icon.enabled ? 58f : 14f;
@@ -504,7 +547,7 @@ namespace Portfolio.DeathRace
             bannerText.gameObject.SetActive(false);
             for (int i = 0; i < ToastSlots; i++)
             {
-                TMP_Text text = Words(frame, "", 40f, Text, TextAlignmentOptions.Midline, true, new Vector2(0.5f, 1f), new Vector2(0f, -120f - i * 54f),
+                TMP_Text text = Words(frame, "", 40f, Text, TextAlignmentOptions.Midline, true, new Vector2(0.5f, 1f), new Vector2(0f, -ToastTop - i * 54f),
                     new Vector2(1100f, 52f));
                 text.gameObject.SetActive(false);
                 toasts[i] = new Toast { Text = text };
@@ -518,7 +561,7 @@ namespace Portfolio.DeathRace
             {
                 shade.a = opacity;
             }
-            Image image = OverlayKit.NewImage(frame, panelName, shade);
+            Image image = OverlayKit.NewImage(area != null ? area : frame, panelName, shade);
             Sprite sprite = theme != null ? theme.hudPanel : null;
             image.sprite = sprite != null ? sprite : RaceShapes.Rounded;
             image.type = Image.Type.Sliced;
@@ -700,7 +743,7 @@ namespace Portfolio.DeathRace
                     chips[i].Rect.gameObject.SetActive(on);
                     if (on)
                     {
-                        chips[i].Rect.anchoredPosition = new Vector2(28f + slot * (ChipWidth + 10f), 28f + 168f + 12f);
+                        chips[i].Rect.anchoredPosition = ChipSpot(slot);
                         slot++;
                     }
                 }

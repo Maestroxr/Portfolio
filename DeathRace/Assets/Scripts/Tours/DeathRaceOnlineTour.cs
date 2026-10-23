@@ -285,6 +285,11 @@ namespace Portfolio.DeathRace
                 return;
             }
             remotePilot ??= new AiDriver(Mathf.Clamp01(NumberArgument(SkillArgument, 0.85f)), 9000 + Server.LocalSeat);
+            if (online.RemoteUI != null && online.RemoteUI.Pad != null)
+            {
+                // The computer works the pedals itself: on a touch screen the pad would hold the accelerator besides.
+                online.RemoteUI.Pad.Touch.AutoForward = false;
+            }
             CarInput input = remotePilot.Drive(puppet.Car, Time.deltaTime);
             RemoteRacePanel.PadStateOf(input, out Vector2 stick, out uint held, out uint pressed);
             online.FeedPad(stick, held, pressed);

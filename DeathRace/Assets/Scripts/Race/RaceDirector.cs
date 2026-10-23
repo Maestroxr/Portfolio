@@ -11,7 +11,8 @@ namespace Portfolio.DeathRace
     /// Runs races. <see cref="Begin"/> builds everything of a setup under one root object: the track and its racing line,
     /// the effects, the cars on the grid with their drivers and lap trackers, the pickups, a camera for every person at
     /// this device (the scene's camera for the first, copies for the others in split screen; the overview when nobody
-    /// races, like the computer cars behind the menu) and a HUD over each view. Then the race runs on the physics clock:
+    /// races, like the computer cars behind the menu) and a HUD over each view, with the on-screen controls when the one
+    /// person racing here plays by touch (<see cref="RaceTouchControls"/>). Then the race runs on the physics clock:
     /// a moment on the grid, the countdown (the cars held until the green light), the race (places every step, laps,
     /// best laps, finishes, wrecks and kills told to the cars), and the end of <see cref="RaceRules"/>, which draws up
     /// the <see cref="RaceResult"/> and raises <see cref="Finished"/>. The race stays on screen after that (the cars
@@ -40,6 +41,7 @@ namespace Portfolio.DeathRace
         private readonly List<RaceRules.Runner> runners = new List<RaceRules.Runner>();
         private readonly Countdown countdown = new Countdown();
         private RaceCamera mainView;
+        private RaceTouchControls touchControls;
         private float finishingSince;
         private float timeLimit;
         private int finishedCount;
@@ -58,6 +60,9 @@ namespace Portfolio.DeathRace
 
         /// <summary>The HUDs of the race on (one per person at this device).</summary>
         public IReadOnlyList<RaceHud> Huds => huds;
+
+        /// <summary>The on-screen controls of the race on, when it is played by touch; null otherwise.</summary>
+        public RaceTouchControls TouchControls => touchControls;
 
         public DeathRaceManager Manager => manager;
 
@@ -141,6 +146,7 @@ namespace Portfolio.DeathRace
                 }
             }
             huds.Clear();
+            touchControls = null;
             foreach (RaceCamera view in cameras)
             {
                 if (view != null && view != mainView)
@@ -180,6 +186,11 @@ namespace Portfolio.DeathRace
                 }
             }
             huds.Clear();
+            if (touchControls != null)
+            {
+                Destroy(touchControls.gameObject);
+                touchControls = null;
+            }
             cameras.Clear();
             if (mainView != null)
             {
@@ -233,6 +244,10 @@ namespace Portfolio.DeathRace
                     hud.Restyle(theme);
                 }
             }
+            if (touchControls != null)
+            {
+                touchControls.Restyle(theme);
+            }
         }
 
         /// <summary>The language changed: the HUDs write their words again.</summary>
@@ -245,6 +260,10 @@ namespace Portfolio.DeathRace
                 {
                     hud.Restyle(theme);
                 }
+            }
+            if (touchControls != null)
+            {
+                touchControls.Restyle(theme);
             }
         }
 
@@ -269,6 +288,10 @@ namespace Portfolio.DeathRace
                 {
                     hud.ApplySettings(settings);
                 }
+            }
+            if (touchControls != null)
+            {
+                touchControls.ApplySettings(settings);
             }
         }
 
@@ -356,13 +379,19 @@ namespace Portfolio.DeathRace
             }
 
             RectTransform hudRoot = OverlayKit.Canvas(race.Root, "HUD", HudSortingOrder).GetComponent<RectTransform>();
+            // One person racing by touch drives with the thumbs: the HUD leaves them the bottom corners.
+            bool touch = people.Count == 1 && RaceTouchControls.WantedFor(people[0]);
             for (int i = 0; i < people.Count; i++)
             {
                 Rect viewport = SplitScreen.Viewport(i, people.Count);
                 RaceCamera view = i == 0 ? mainView : CopyView(main, race.Root, $"Camera {i + 1}");
                 view.Follow(people[i], race, viewport);
                 AddView(race, view);
-                huds.Add(RaceHud.Create(hudRoot, viewport, people[i], race, theme, settings));
+                huds.Add(RaceHud.Create(hudRoot, viewport, people[i], race, theme, settings, touch));
+            }
+            if (touch)
+            {
+                touchControls = RaceTouchControls.Create(hudRoot, people[0], manager, theme, settings);
             }
             Rect? spare = SplitScreen.Spare(people.Count);
             if (spare.HasValue)

@@ -8,10 +8,10 @@ namespace Portfolio.DeathRace
 {
     /// <summary>
     /// The game's menu: BaseGame's shared menu (installed by the scene builder) with the game's buttons. Start is
-    /// relabelled Career and opens the career; Quick Race, Split Screen and Play Online sit under it. The shared menu
-    /// does not show over the results of a race (the results window does), nor while one of the game's windows (the
-    /// garage, the quick race setup) is open: a window asks for the menu to step aside with <see cref="Cover"/> and gives
-    /// it back with <see cref="Uncover"/>.
+    /// relabelled Career and opens the career; Quick Race, Split Screen (not on a touch screen) and Play Online sit under
+    /// it. The shared menu does not show over the results of a race (the results window does), nor while one of the
+    /// game's windows (the garage, the quick race setup) is open: a window asks for the menu to step aside with
+    /// <see cref="Cover"/> and gives it back with <see cref="Uncover"/>.
     /// </summary>
     public sealed class DeathRaceUI : GameUI
     {
@@ -52,6 +52,8 @@ namespace Portfolio.DeathRace
             if (localPlayButton != null)
             {
                 localPlayButton.onClick.AddListener(() => Game?.OpenLocalPlay());
+                // Split screen needs keys or pads for everybody: a touch screen has one pair of thumbs.
+                localPlayButton.gameObject.SetActive(!MobilePlatform.UsesTouch);
             }
             if (onlineButton != null)
             {
